@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Supplier KYC</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar / Navigation -->
+        
+
+        <!-- Main Content -->
+        <main class="invoice-generator">
+            <header class="generator-header">
+                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                    <a href="index.html">
+                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                    </a>
+                    <div>
+                        <h1>Supplier KYC Database</h1>
+                        <p>Manage and verify supplier and partner profiles</p>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button type="button" class="btn-liquid btn-secondary" onclick="window.location.href='admin.html'">Back to
+                        Admin</button>
+                    <button type="button" class="btn-animated-add" id="add-supplier-btn">
+                      <span class="add-text">New Supplier</span>
+                      <span class="add-icon-wrap">
+                        <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                          <line x1="12" x2="12" y1="5" y2="19"></line>
+                          <line x1="5" x2="19" y1="12" y2="12"></line>
+                        </svg>
+                      </span>
+                    </button>
+                </div>
+            </header>
+
+            <form id="supplier-form" class="invoice-form"
+                style="margin-bottom: 3rem; display: none; background: white; padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
+                <div class="form-grid" style="grid-template-columns: 1fr; margin-bottom: 2rem;">
+                    <div class="form-grid">
+                        <section class="form-section">
+                            <h3>Supplier Info</h3>
+                            <div class="field-group">
+                                <input type="text" id="v-id" readonly placeholder="Supplier ID"
+                                    style="background-color: #f3f4f6; cursor: not-allowed; font-weight: 700; color: var(--primary);">
+                                <input type="date" id="v-date" required title="Registration Date">
+                                <input type="text" id="v-name" placeholder="Name / Company Name" required>
+                            </div>
+                        </section>
+
+                        <section class="form-section">
+                            <h3>Contact Details</h3>
+                            <div class="field-group">
+                                <input type="tel" id="v-mobile" placeholder="Mobile Number (Primary ID)" required>
+                                <input type="email" id="v-email" placeholder="Email Address">
+                                <textarea id="v-address" placeholder="Full Address (Street, City, etc.)" rows="2"
+                                    required></textarea>
+                                <input type="text" id="v-pin" name="ship_state" placeholder="Postal Code / PIN"
+                                    maxlength="6">
+                            </div>
+                        </section>
+
+                        <section class="form-section">
+                            <h3>Registration IDs</h3>
+                            <div class="field-group">
+                                <input type="text" id="v-gst" placeholder="GSTIN Number" required>
+                                <input type="text" id="v-pan" placeholder="PAN Number" required>
+                                <input type="text" id="v-msme" placeholder="Udyam / MSME Number (Optional)">
+                            </div>
+                        </section>
+                        <section class="form-section">
+                            <h3>Bank Details</h3>
+                            <div class="field-group">
+                                <input type="text" id="v-bank-name" placeholder="Bank Name">
+                                <input type="text" id="v-bank-branch" placeholder="Branch Name">
+                                <input type="text" id="v-bank-acc" placeholder="Account Number">
+                                <input type="text" id="v-bank-ifsc" placeholder="IFSC Code">
+                                <input type="text" id="v-bank-upi" placeholder="UPI ID / Number">
+                            </div>
+                        </section>
+                    </div>
+
+                    <div
+                        style="text-align: right; margin-top: 1.5rem; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+                        <button type="button" class="btn-liquid btn-outline" id="cancel-supplier">Cancel</button>
+                        <button type="submit" class="btn-liquid btn-primary">Save Profile</button>
+                    </div>
+                </div>
+            </form>
+
+            <div style="margin-bottom: 1rem;">
+                <input type="text" id="search-supplier" class="input-wrapper"
+                    placeholder="Search suppliers by name, ID, or phone..."
+                    onkeyup="filterTable('search-supplier', 'suppliers-table')"
+                    style="max-width: 400px; padding: 10px; font-size: 1rem;">
+            </div>
+
+            <div class="table-container">
+                <table id="suppliers-table">
+                    <thead>
+                        <tr>
+                            <th>Supplier ID</th>
+                            <th>Date</th>
+                            <th>Company / Name</th>
+                            <th>Mobile</th>
+                            <th>GST / PAN / PIN</th>
+                            <th>Bank Details</th>
+                            <th width="80">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suppliers-body">
+                        <!-- Rows added dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script src="script.js?v=24"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('supplier-form');
+            const toggleBtn = document.getElementById('add-supplier-btn');
+            const cancelBtn = document.getElementById('cancel-supplier');
+            const tbody = document.getElementById('suppliers-body');
+
+            let records = [];
+            try {
+                const stored = localStorage.getItem('manti_supplier_kyc_records');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed)) records = parsed;
+                }
+            } catch (e) {
+                console.error("Failed to parse KYC records:", e);
+                records = [];
+            }
+
+            // Clean up any corrupted null/undefined entries
+            const originalLength = records.length;
+            records = records.filter(r => r && typeof r === 'object' && !Array.isArray(r));
+            if (records.length !== originalLength) {
+                localStorage.setItem('manti_supplier_kyc_records', JSON.stringify(records));
+            }
+
+            function generateSupplierId() {
+                // Find highest existing ID
+                let maxId = 1000;
+                records.forEach(rec => {
+                    if (rec && rec.id && typeof rec.id === 'string' && rec.id.startsWith('SUP-')) {
+                        const num = parseInt(rec.id.replace('SUP-', ''), 10);
+                        if (!isNaN(num) && num > maxId) {
+                            maxId = num;
+                        }
+                    }
+                });
+                return 'SUP-' + (maxId + 1);
+            }
+
+            function renderTable() {
+                tbody.innerHTML = '';
+                if (records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">No registered suppliers found.</td></tr>';
+                    return;
+                }
+
+                records.forEach((rec, index) => {
+                    const tr = document.createElement('tr');
+
+                    let gstPanDetails = [];
+                    if (rec.gst) gstPanDetails.push(rec.gst);
+                    if (rec.pan) gstPanDetails.push(rec.pan);
+                    const kycInfo = gstPanDetails.length > 0 ? gstPanDetails.join('<br>') : '-';
+
+                    const pinInfo = rec.pin || '-';
+                    const bankDetailsStr = rec.bankAcc ? `${rec.bankName || ''} <br> ${rec.bankAcc} <br> ${rec.ifsc || ''}` : '-';
+
+                    tr.innerHTML = `
+                        <td style="font-weight: 700; color: #3b82f6;">${rec.id}</td>
+                        <td>${rec.date}</td>
+                        <td style="font-weight: 700; color: var(--primary);">${rec.name}</td>
+                        <td style="font-weight: 600;">${rec.mobile}</td>
+                        <td><span style="font-size: 0.85rem;">${kycInfo}</span><br><span style="font-size: 0.8rem; color: #666;">${pinInfo}</span></td>
+                        <td><span style="font-size: 0.85rem;">${bankDetailsStr}</span></td>
+                        <td style="display: flex; gap: 10px; align-items: center; justify-content: center;">
+                            <button onclick="editRecord(${index})" class="btn-edit" title="Edit">
+                                <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
+                            </button>
+                            <button onclick="deleteRecord(${index})" class="btn-remove" title="Delete">
+                                <svg viewBox="0 0 448 512" class="del-icon"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path></svg>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            let editIndex = -1;
+
+            window.editRecord = function (index) {
+                const rec = records[index];
+                document.getElementById('v-date').value = rec.date;
+                document.getElementById('v-id').value = rec.id || generateSupplierId();
+                document.getElementById('v-name').value = rec.name || '';
+                document.getElementById('v-mobile').value = rec.mobile || '';
+                document.getElementById('v-email').value = rec.email || '';
+                document.getElementById('v-gst').value = rec.gst || '';
+                document.getElementById('v-pan').value = rec.pan || '';
+                document.getElementById('v-msme').value = rec.msme || '';
+                document.getElementById('v-pin').value = rec.pin || '';
+                document.getElementById('v-address').value = rec.address || '';
+                document.getElementById('v-bank-name').value = rec.bankName || '';
+                document.getElementById('v-bank-branch').value = rec.bankBranch || '';
+                document.getElementById('v-bank-acc').value = rec.bankAcc || '';
+                document.getElementById('v-bank-ifsc').value = rec.ifsc || '';
+                document.getElementById('v-bank-upi').value = rec.upi || '';
+
+                editIndex = index;
+                form.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            window.deleteRecord = function (index) {
+                if (confirm("Delete this supplier profile?")) {
+                    records.splice(index, 1);
+                    localStorage.setItem('manti_supplier_kyc_records', JSON.stringify(records));
+                    renderTable();
+                    lucide.createIcons();
+                }
+            };
+
+            toggleBtn.addEventListener('click', () => {
+                form.reset();
+                document.getElementById('v-date').valueAsDate = new Date();
+                document.getElementById('v-id').value = generateSupplierId();
+                editIndex = -1;
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                form.style.display = 'none';
+                editIndex = -1;
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const rec = {
+                    date: document.getElementById('v-date').value,
+                    id: document.getElementById('v-id').value,
+                    name: document.getElementById('v-name').value,
+                    mobile: document.getElementById('v-mobile').value,
+                    email: document.getElementById('v-email').value,
+                    gst: document.getElementById('v-gst').value,
+                    pan: document.getElementById('v-pan').value,
+                    msme: document.getElementById('v-msme').value,
+                    pin: document.getElementById('v-pin').value,
+                    address: document.getElementById('v-address').value,
+                    bankName: document.getElementById('v-bank-name').value,
+                    bankBranch: document.getElementById('v-bank-branch').value,
+                    bankAcc: document.getElementById('v-bank-acc').value,
+                    ifsc: document.getElementById('v-bank-ifsc').value,
+                    upi: document.getElementById('v-bank-upi').value
+                };
+
+                if (editIndex >= 0) {
+                    records[editIndex] = rec;
+                } else {
+                    records.unshift(rec); // Add to beginning
+                }
+
+                localStorage.setItem('manti_supplier_kyc_records', JSON.stringify(records));
+                form.style.display = 'none';
+                renderTable();
+                lucide.createIcons();
+            });
+
+            renderTable();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+
+</html>

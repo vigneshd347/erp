@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Create Invoice</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar / Navigation -->
+                <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; padding: 2.5rem;">
+
+            <header class="generator-header">
+                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                    <a href="index.html">
+                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                    </a>
+                    <div>
+                        <h1>Tax Invoice</h1>
+                        <p>MANTI JEWEL ART PRIVATE LIMITED</p>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button type="button" id="btn-push-irp" class="btn-liquid btn-accent" onclick="pushToIRP()" title="Generate e-Invoice via GST Portal">
+                        <i data-lucide="zap" style="width:16px;height:16px;"></i> e-Invoice
+                    </button>
+                    <button type="button" id="complete-invoice" class="btn-liquid btn-primary">Complete</button>
+                    <button type="button" id="show-preview" class="btn-liquid btn-outline">Preview</button>
+                    <button type="button" id="print-invoice" class="btn-liquid btn-secondary">Print Invoice</button>
+                    <button id="reset-form" class="btn-liquid btn-outline">Reset</button>
+                </div>
+            </header>
+
+            <form id="invoice-form" class="invoice-form">
+                <!-- Customer Details Section -->
+                <div class="form-grid">
+                    <section class="form-section">
+                        <h3>Bill To</h3>
+                        <div class="field-group">
+                            <input type="text" name="bill_name" list="vendor-kyc-list" placeholder="Customer Name"
+                                autocomplete="off" required>
+                            <datalist id="vendor-kyc-list"></datalist>
+                            <textarea name="bill_address" placeholder="Address" rows="2"></textarea>
+                            <input type="text" name="bill_state" placeholder="Postal Pin" maxlength="6">
+                            <input type="text" name="bill_gstin" placeholder="GSTIN">
+                            <input type="text" name="bill_mobile" placeholder="Mobile No">
+                            <input type="email" name="bill_email" placeholder="Email ID">
+                        </div>
+                    </section>
+
+                    <section class="form-section">
+                        <div class="section-title-sync">
+                            <h3>Ship To</h3>
+                            <label class="sync-label">
+                                <input type="checkbox" id="sync-shipping" onchange="syncShippingDetails()"> Same as Bill
+                                To
+                            </label>
+                        </div>
+                        <div class="field-group">
+                            <input type="text" name="ship_name" placeholder="Receiver Name">
+                            <textarea name="ship_address" placeholder="Address" rows="2"></textarea>
+                            <input type="text" name="ship_state" placeholder="Postal Pin" maxlength="6">
+                            <input type="text" name="ship_gstin" placeholder="GSTIN">
+                            <input type="text" name="ship_mobile" placeholder="Mobile No">
+                            <input type="email" name="ship_email" placeholder="Email ID">
+                        </div>
+                    </section>
+
+                    <section class="form-section">
+                        <h3>Invoice Info</h3>
+                        <div class="field-row">
+                            <input type="text" name="inv_no" placeholder="Inv No">
+                            <input type="date" name="inv_date" id="current-date">
+                        </div>
+                        <div class="field-row">
+                            <input type="text" name="payment_mode" placeholder="Payment Mode">
+                            <select name="payment_status" id="payment-status" onchange="togglePaymentDisplay()">
+                                <option value="paid">Paid</option>
+                                <option value="pending" selected>Pending</option>
+                            </select>
+                        </div>
+                        <div class="field-row">
+                            <select name="buyer_order" id="so-select" onchange="handleSOSelect(this)"
+                                style="padding: 10px; border: 1.5px solid #d1d5db; border-radius: 8px; background: #f9fafb; color: #374151; font-size: 0.9rem;">
+                                <option value="">Buyer's Order No (Select SO)</option>
+                            </select>
+                            <input type="text" name="supplier_ref" placeholder="Supplier's Ref.">
+                        </div>
+                        <div class="field-row">
+                            <input type="text" name="vehicle_no" placeholder="Vehicle No">
+                            <input type="date" name="delivery_date" placeholder="Delivery Date">
+                        </div>
+                        <div class="field-row">
+                            <input type="text" name="transport_details" placeholder="Transport Details">
+                            <input type="text" name="eway_bill" placeholder="E-Way Bill No">
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Items Table -->
+                <div class="table-container">
+                    <table id="items-table" data-no-filter="true">
+                        <thead>
+                            <tr>
+                                <th width="50">Sr</th>
+                                <th>Goods & Description</th>
+                                <th width="100">HSN</th>
+                                <th width="100">Weight (g)</th>
+                                <th width="150">Metal Type</th>
+                                <th width="120">Rate</th>
+                                <th width="80">MC %</th>
+                                <th width="120">Total</th>
+                                <th width="40"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-body">
+                            <!-- Rows added dynamically -->
+                        </tbody>
+                    </table>
+                    <button type="button" id="add-item" class="btn-animated-add" style="margin-top: 15px;">
+                      <span class="add-text">Add Item</span>
+                      <span class="add-icon-wrap">
+                        <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                          <line x1="12" x2="12" y1="5" y2="19"></line>
+                          <line x1="5" x2="19" y1="12" y2="12"></line>
+                        </svg>
+                      </span>
+                    </button>
+                </div>
+
+                <!-- Calculation Summary -->
+                <div class="summary-container">
+                    <div class="bank-details-info">
+                        <p class="info-note">Bank details and metal rates are managed in the <a href="admin.html">Admin
+                                Settings</a>.</p>
+                    </div>
+
+                    <div class="totals-panel">
+                        <div class="total-row">
+                            <span>Sub-Total:</span>
+                            <span id="sub-total">₹ 0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>CGST (1.5%):</span>
+                            <span id="cgst-total">₹ 0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>SGST (1.5%):</span>
+                            <span id="sgst-total">₹ 0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Insurance/Freight:</span>
+                            <input type="number" name="freight_amt" value="0.00" step="0.01" class="small-input">
+                        </div>
+                        <div class="total-row">
+                            <span>Round Off:</span>
+                            <input type="number" name="round_off" value="0.00" step="0.01" class="small-input">
+                        </div>
+                        <div class="total-row highlight">
+                            <span>Grand Total:</span>
+                            <span id="grand-total">₹ 0.00</span>
+                        </div>
+                        <p id="total-words" class="total-words"></p>
+                    </div>
+                </div>
+            </form>
+
+            <!-- e-Invoice Status Banner -->
+            <div id="einv-banner" style="display:none; margin-top: 1.5rem; border-radius: 12px; overflow: hidden; border: 1.5px solid #bbf7d0; background: #f0fdf4;">
+                <div style="padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="background: #16a34a; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i data-lucide="check-circle" style="width: 20px; height: 20px; color: white;"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; color: #15803d; font-size: 0.95rem;">e-Invoice Generated Successfully</div>
+                            <div style="font-size: 0.8rem; color: #166534;">IRN: <span id="display-irn" style="font-family: monospace; font-weight: 600;"></span></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="button" class="btn-liquid" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 8px 14px; font-size: 0.8rem; border-radius: 8px;" onclick="document.getElementById('irp-result-modal').classList.add('active')">
+                            View Details
+                        </button>
+                        <button type="button" class="btn-liquid" id="btn-add-ewaybill" style="background: #fff; color: #1d4ed8; border: 1px solid #93c5fd; padding: 8px 14px; font-size: 0.8rem; border-radius: 8px;" onclick="toggleEWayPanel()">
+                            + Add E-Way Bill Details
+                        </button>
+                    </div>
+                </div>
+
+                <!-- E-Way Bill Full Panel (Zoho-style) -->
+                <div id="eway-panel" style="display:none; border-top: 1px solid #bbf7d0; background: #fff;">
+
+                    <!-- Threshold Warning (shown if under ₹50k) -->
+                    <div id="eway-threshold-warning" style="display:none; background: #fffbeb; border-bottom: 1px solid #fde68a; padding: 0.6rem 1.5rem; font-size: 0.8rem; color: #92400e;">
+                        ⚠️ <strong>Note:</strong> Invoice value is below ₹50,000 (threshold). E-Way Bill is optional unless this is an interstate job work or handicraft consignment.
+                    </div>
+
+                    <!-- Tab Switcher -->
+                    <div style="display: flex; border-bottom: 2px solid #e5e7eb; padding: 0 1.5rem;">
+                        <button type="button" id="ewb-tab-generate" onclick="switchEWBTab('generate')"
+                            style="padding: 0.75rem 1.25rem; font-size: 0.85rem; font-weight: 600; border: none; background: none; cursor: pointer; border-bottom: 2px solid #2563eb; color: #2563eb; margin-bottom: -2px;">
+                            Generate New E-Way Bill
+                        </button>
+                        <button type="button" id="ewb-tab-associate" onclick="switchEWBTab('associate')"
+                            style="padding: 0.75rem 1.25rem; font-size: 0.85rem; font-weight: 600; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; color: #6b7280; margin-bottom: -2px;">
+                            Associate Existing EWB No.
+                        </button>
+                    </div>
+
+                    <!-- Generate Tab -->
+                    <div id="ewb-generate-tab" style="padding: 1.25rem 1.5rem;">
+                        <!-- Part A: Auto-filled from Invoice -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem; margin-bottom: 1.25rem;">
+                            <div style="font-size: 0.75rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+                                Part A — Transaction Details <span style="font-weight: 400; color: #9ca3af;">(auto-filled from invoice)</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Supply Type</label>
+                                    <select id="ewb-supply-type" style="width:100%; padding: 7px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem;">
+                                        <option value="O">Outward</option>
+                                        <option value="I">Inward</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Transaction Sub-Type</label>
+                                    <select id="ewb-sub-type" style="width:100%; padding: 7px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem;">
+                                        <option value="1">Supply</option>
+                                        <option value="2">Import</option>
+                                        <option value="3">Export</option>
+                                        <option value="4">Job Work</option>
+                                        <option value="5">For Own Use</option>
+                                        <option value="6">Job Work Returns</option>
+                                        <option value="7">Sales Returns</option>
+                                        <option value="8">Others</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Document Type</label>
+                                    <select id="ewb-doc-type" style="width:100%; padding: 7px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem;">
+                                        <option value="INV">Tax Invoice</option>
+                                        <option value="BIL">Bill of Supply</option>
+                                        <option value="BOE">Bill of Entry</option>
+                                        <option value="CHL">Delivery Challan</option>
+                                        <option value="CNT">Credit Note</option>
+                                        <option value="OTH">Others</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Document No.</label>
+                                    <input type="text" id="ewb-doc-no" readonly style="width:100%; padding: 7px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem; background: #f1f5f9; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Document Date</label>
+                                    <input type="text" id="ewb-doc-date" readonly style="width:100%; padding: 7px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem; background: #f1f5f9; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Taxable Value (₹)</label>
+                                    <input type="text" id="ewb-value" readonly style="width:100%; padding: 7px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem; background: #f1f5f9; box-sizing: border-box;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part B: Transport Details -->
+                        <div style="background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
+                            <div style="font-size: 0.75rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+                                Part B — Transportation Details
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Transport Mode <span style="color:#ef4444;">*</span></label>
+                                    <select id="ewb-mode" onchange="onEWBModeChange()" style="width:100%; padding: 8px; border: 1px solid #93c5fd; border-radius: 6px; font-size: 0.85rem;">
+                                        <option value="1">Road</option>
+                                        <option value="2">Rail</option>
+                                        <option value="3">Air</option>
+                                        <option value="4">Ship</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Approx. Distance (km) <span style="color:#ef4444;">*</span></label>
+                                    <input type="number" id="ewb-distance" placeholder="e.g. 150" min="1" style="width:100%; padding: 8px; border: 1px solid #93c5fd; border-radius: 6px; font-size: 0.85rem; box-sizing: border-box;">
+                                    <div style="font-size: 0.7rem; color: #6b7280; margin-top: 3px;">If ≤ 50 km, Part B not strictly required</div>
+                                </div>
+
+                                <!-- Road-only fields -->
+                                <div id="ewb-road-fields" style="display:contents;">
+                                    <div>
+                                        <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Vehicle Number <span style="color:#ef4444;">*</span></label>
+                                        <input type="text" id="ewb-vehicle" placeholder="e.g. TN01AB1234" style="width:100%; padding: 8px; border: 1px solid #93c5fd; border-radius: 6px; font-size: 0.85rem; box-sizing: border-box;" oninput="this.value=this.value.toUpperCase()">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Vehicle Type</label>
+                                        <select id="ewb-vehicle-type" style="width:100%; padding: 8px; border: 1px solid #93c5fd; border-radius: 6px; font-size: 0.85rem;">
+                                            <option value="R">Regular</option>
+                                            <option value="O">Over Dimensional Cargo (ODC)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Transporter Name</label>
+                                    <input type="text" id="ewb-transporter-name" placeholder="e.g. Blue Dart" style="width:100%; padding: 8px; border: 1px solid #93c5fd; border-radius: 6px; font-size: 0.85rem; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 3px;">Transporter GSTIN (optional)</label>
+                                    <input type="text" id="ewb-transporter-gstin" placeholder="Enter Transporter GSTIN" style="width:100%; padding: 8px; border: 1px solid #93c5fd; border-radius: 6px; font-size: 0.85rem; box-sizing: border-box;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                            <button type="button" onclick="generateEWayBill()" class="btn-liquid btn-primary" style="font-size: 0.85rem; padding: 10px 22px;">
+                                Generate E-Way Bill
+                            </button>
+                            <button type="button" onclick="toggleEWayPanel()" class="btn-liquid btn-secondary" style="font-size: 0.85rem; padding: 10px 18px;">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Associate Existing Tab -->
+                    <div id="ewb-associate-tab" style="display:none; padding: 1.25rem 1.5rem;">
+                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 1rem;">
+                            If you already generated an E-Way Bill on the government portal, enter the EWB number below to link it to this invoice.
+                        </p>
+                        <div style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="font-size: 0.8rem; color: #64748b; display: block; margin-bottom: 4px;">E-Way Bill Number (12 digits)</label>
+                                <input type="text" id="ewb-associate-no" placeholder="e.g. 111001704183" maxlength="12"
+                                    style="width:100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box; font-family: monospace;">
+                            </div>
+                            <button type="button" onclick="associateEWayBill()" class="btn-liquid btn-primary" style="font-size: 0.85rem; padding: 10px 20px; white-space: nowrap;">
+                                Associate EWB No.
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Printable Template -->
+    <div id="invoice-template">
+        <img src="header.jpg" alt="Invoice Header"
+            style="width: 100%; height: auto; display: block; margin-bottom: 20px;">
+
+        <div class="p-details-row">
+            <div class="p-details-left">
+                <h4 class="p-section-title">Bill To</h4>
+                <div class="kv-grid">
+                    <div>Name</div>
+                    <div>: <span id="p-bill-name"></span></div>
+                    <div>Address</div>
+                    <div>: <span id="p-bill-address"></span></div>
+                    <div>Mobile / Email</div>
+                    <div>: <span id="p-bill-contact"></span></div>
+                    <div>Pin Code</div>
+                    <div>: <span id="p-bill-state"></span></div>
+                    <div>GSTIN</div>
+                    <div>: <span id="p-bill-gstin"></span></div>
+                </div>
+
+                <div class="p-thin-orange-hr mt-10 mb-10" style="margin-left: 0;"></div>
+
+                <h4 class="p-section-title">Ship To</h4>
+                <div class="kv-grid">
+                    <div>Name</div>
+                    <div>: <span id="p-ship-name"></span></div>
+                    <div>Address</div>
+                    <div>: <span id="p-ship-address"></span></div>
+                    <div>Mobile / Email</div>
+                    <div>: <span id="p-ship-contact"></span></div>
+                    <div>Pin Code</div>
+                    <div>: <span id="p-ship-state"></span></div>
+                    <div>GSTIN</div>
+                    <div>: <span id="p-ship-gstin"></span></div>
+                </div>
+            </div>
+
+            <div class="p-details-right">
+                <div class="kv-grid mt-20">
+                    <div># Inv. No</div>
+                    <div>: <span id="p-inv-no"></span></div>
+                    <div>Inv. Date</div>
+                    <div>: <span id="p-inv-date"></span></div>
+                    <div>Payment Mode</div>
+                    <div>: <span id="p-payment-mode"></span></div>
+                </div>
+
+                <div class="p-thin-orange-hr mt-10 mb-10"></div>
+
+                <div class="kv-grid">
+                    <div>Buyer's Order No</div>
+                    <div>: <span id="p-buyer-order"></span></div>
+                    <div>Supplier's Ref.</div>
+                    <div>: <span id="p-supplier-ref"></span></div>
+                    <div>Vehicle Number</div>
+                    <div>: <span id="p-vehicle"></span></div>
+                    <div>Delivery Date</div>
+                    <div>: <span id="p-delivery-date"></span></div>
+                    <div>Transport Details</div>
+                    <div>: <span id="p-transport"></span></div>
+                    <div>E-Way Bill No</div>
+                    <div>: <span id="p-eway-bill"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-table-container">
+            <div class="watermark-overlay"></div>
+            <table class="p-table" data-no-filter="true">
+                <thead>
+                    <tr>
+                        <th width="30">Sr</th>
+                        <th>Goods & Description</th>
+                        <th width="60">HSN</th>
+                        <th width="60">Weight (g)</th>
+                        <th width="80">Metal Type</th>
+                        <th width="70">Rate</th>
+                        <th width="60">MC %</th>
+                        <th width="80">Taxable</th>
+                    </tr>
+                </thead>
+                <tbody id="p-items-body"></tbody>
+            </table>
+        </div>
+
+        <div class="p-footer-grid">
+            <div class="p-bank-info">
+                <h4 class="p-blue-title">Our Bank Details</h4>
+                <div class="kv-grid">
+                    <div>Bank Name</div>
+                    <div>: <span id="p-bank-name"></span></div>
+                    <div>Branch</div>
+                    <div>: <span id="p-bank-branch"></span></div>
+                    <div>Account No</div>
+                    <div>: <span id="p-bank-acc"></span></div>
+                    <div>IFSC Code</div>
+                    <div>: <span id="p-bank-ifsc"></span></div>
+                    <div>UPI ID</div>
+                    <div>: <span id="p-bank-upi"></span></div>
+                </div>
+            </div>
+
+            <div class="p-thin-orange-vr"></div>
+
+            <div class="p-summary-box">
+                <h4 class="p-blue-title ms-5">Summary</h4>
+                <table class="summary-table">
+                    <tr>
+                        <td class="st-label">Taxable Amt</td>
+                        <td class="st-colon">:</td>
+                        <td class="st-val"><span id="p-sub-total-print"></span></td>
+                    </tr>
+                    <tr>
+                        <td class="st-label">CGST Amt (1.5%)</td>
+                        <td class="st-colon">:</td>
+                        <td class="st-val"><span id="p-cgst-total-print"></span></td>
+                    </tr>
+                    <tr>
+                        <td class="st-label">SGST Amt (1.5%)</td>
+                        <td class="st-colon">:</td>
+                        <td class="st-val"><span id="p-sgst-total-print"></span></td>
+                    </tr>
+                    <tr>
+                        <td class="st-label">Freight Packing Charges</td>
+                        <td class="st-colon">:</td>
+                        <td class="st-val"><span id="p-freight-total-print">-</span></td>
+                    </tr>
+                    <tr>
+                        <td class="st-label">Round off</td>
+                        <td class="st-colon">:</td>
+                        <td class="st-val"><span id="p-round-off-print">-</span></td>
+                    </tr>
+                    <tr class="st-total-row">
+                        <td class="st-label">Grand Total</td>
+                        <td class="st-colon">:</td>
+                        <td class="st-val"><span id="p-grand-total-final"></span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="p-words-section">
+            <div class="p-words-header">
+                <h4 class="p-blue-title line-title">Invoice Total in Word :</h4>
+                <div class="p-words-text" id="p-total-words"
+                    style="margin-top: 0; border-bottom: none; margin-right: 10px;"></div>
+                <div class="p-line"></div>
+            </div>
+
+            <div id="payment-qr" class="qr-container"
+                style="align-items: flex-start; padding-left: 0; margin-top: 10px;">
+                <img id="qr-image" src="" alt="Payment QR" style="width: 90px; height: 90px; margin-bottom: 3px;">
+                <p style="font-size: 0.8rem; font-weight: bold;">Scan to Pay</p>
+            </div>
+        </div>
+
+        <div class="p-sign-grid">
+            <div class="p-payment-visuals">
+                <div id="paid-seal" class="paid-seal">PAID</div>
+            </div>
+            <div class="p-sign-box">
+                <div class="font-bold blue-text text-right f11">For, MANTI JEWEL ART PRIVATE LIMITED</div>
+                <div class="p-sign-space"></div>
+                <div class="font-bold text-right f11">Authorised Signatory</div>
+            </div>
+        </div>
+
+        <div class="p-bottom-bleed-bar">
+            Thank You For Business With US!
+        </div>
+    </div>
+
+    <!-- Print Preview Modal -->
+    <div id="preview-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="preview-container"></div>
+            <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button id="send-whatsapp" class="btn-liquid btn-outline">Send WhatsApp</button>
+                <button id="send-email" class="btn-liquid btn-outline">Send Email</button>
+                <button id="print-from-preview" class="btn-liquid btn-primary">Print This Invoice</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="liquid-button.js"></script>
+    <script src="script.js?v=24"></script>
+
+    <!-- IRP Result Modal -->
+    <div id="irp-result-modal" class="modal-overlay">
+        <div class="premium-modal" style="max-width: 520px;">
+            <div class="premium-modal-header" style="background: linear-gradient(135deg, #065f46, #059669); color: white; border-radius: 16px 16px 0 0;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i data-lucide="shield-check" style="width: 24px; height: 24px; color: #a7f3d0;"></i>
+                    <h2 style="color: white; font-size: 1.1rem;">e-Invoice Registered Successfully</h2>
+                </div>
+                <button type="button" class="btn-close-modal" onclick="document.getElementById('irp-result-modal').classList.remove('active')" style="color: white;">
+                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+            <div class="premium-modal-body">
+                <!-- IRN -->
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
+                    <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Invoice Reference Number (IRN)</div>
+                    <div id="modal-irn" style="font-family: monospace; font-size: 0.8rem; word-break: break-all; color: #065f46; font-weight: 600;"></div>
+                </div>
+                <!-- Acknowledgement -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem;">
+                        <div style="font-size: 0.72rem; color: #9ca3af; margin-bottom: 2px;">Ack Number</div>
+                        <div id="modal-ack" style="font-weight: 600; font-size: 0.9rem; color: #111827;"></div>
+                    </div>
+                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem;">
+                        <div style="font-size: 0.72rem; color: #9ca3af; margin-bottom: 2px;">Ack Date</div>
+                        <div id="modal-ack-date" style="font-weight: 600; font-size: 0.9rem; color: #111827;"></div>
+                    </div>
+                </div>
+                <!-- QR Code -->
+                <div style="text-align: center; padding: 1rem; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;">
+                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.5rem;">e-Invoice QR Code</div>
+                    <img id="modal-qr" src="" alt="e-Invoice QR" style="width: 150px; height: 150px;">
+                    <p style="font-size: 0.72rem; color: #9ca3af; margin-top: 0.5rem;">Scan with any GST-compliant app</p>
+                </div>
+            </div>
+            <div class="premium-modal-footer">
+                <button type="button" class="btn-liquid btn-secondary" onclick="document.getElementById('irp-result-modal').classList.remove('active')">Close</button>
+                <button type="button" class="btn-liquid btn-primary" onclick="document.getElementById('irp-result-modal').classList.remove('active'); document.getElementById('show-preview').click();">Print with e-Invoice QR</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ─── e-Invoicing Logic ────────────────────────────────────────────────────
+    
+    function pushToIRP() {
+        // Check if e-Invoicing is configured
+        const settings = JSON.parse(localStorage.getItem('manti_einvoice_settings') || '{}');
+        if (!settings.enable_einvoicing) {
+            if (!confirm('e-Invoicing is not enabled. Go to Admin Settings to configure?')) return;
+            window.location.href = 'admin.html';
+            return;
+        }
+
+        const btn = document.getElementById('btn-push-irp');
+        const invoiceNo = document.querySelector('input[name="inv_no"]').value;
+        if (!invoiceNo) {
+            alert('Please enter an Invoice Number before generating an e-Invoice.');
+            return;
+        }
+
+        // Simulate API call (Replace with real GSP API fetch when credentials are ready)
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" style="width:16px;height:16px;"></i> Pushing...';
+        lucide.createIcons();
+
+        // Simulate network delay representing the IRP response
+        setTimeout(() => {
+            // --- REAL INTEGRATION: Replace this block with actual fetch() call ---
+            // const irpPayload = buildIRPPayload();
+            // fetch(settings.use_sandbox ? 'https://einv-apisandbox.nic.in/...' : 'https://einvoice1.gst.gov.in/...',
+            //   { method: 'POST', headers: {...}, body: JSON.stringify(irpPayload) })
+            //   .then(res => res.json())
+            //   .then(data => { showIRNResult(data.Irn, data.AckNo, data.AckDt, data.SignedQRCode); })
+            // -------------------------------------------------------------------
+
+            // SIMULATED RESPONSE (for UI demonstration)
+            const fakeIRN = generateFakeIRN(invoiceNo);
+            const fakeAck = 'ACK' + Math.floor(Math.random() * 9000000 + 1000000);
+            const fakeDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const qrContent = `${fakeIRN}|${invoiceNo}|${fakeDate}`;
+
+            showIRNResult(fakeIRN, fakeAck, fakeDate, qrContent);
+
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="check-circle" style="width:16px;height:16px;"></i> e-Invoice ✓';
+            btn.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
+            lucide.createIcons();
+        }, 2500);
+    }
+
+    function generateFakeIRN(invNo) {
+        // Deterministic fake IRN based on invoice number for demo consistency
+        const str = (invNo + Date.now()).toString();
+        let hash = '';
+        for (let i = 0; i < 64; i++) {
+            hash += '0123456789abcdef'[(str.charCodeAt(i % str.length) + i * 7) % 16];
+        }
+        return hash;
+    }
+
+    function showIRNResult(irn, ackNo, ackDate, qrContent) {
+        // Populate banner
+        document.getElementById('display-irn').textContent = irn.substring(0, 20) + '...';
+        document.getElementById('einv-banner').style.display = 'block';
+        lucide.createIcons();
+
+        // Populate modal
+        document.getElementById('modal-irn').textContent = irn;
+        document.getElementById('modal-ack').textContent = ackNo;
+        document.getElementById('modal-ack-date').textContent = ackDate;
+        document.getElementById('modal-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrContent)}`;
+
+        // Save IRN to form so it prints on invoice
+        window.currentIRN = irn;
+        window.currentQRContent = qrContent;
+    }
+
+    // ─── E-Way Bill Logic (Zoho-style) ──────────────────────────────────────
+
+    function toggleEWayPanel() {
+        const panel = document.getElementById('eway-panel');
+        const isVisible = panel.style.display !== 'none';
+        if (isVisible) {
+            panel.style.display = 'none';
+        } else {
+            panel.style.display = 'block';
+            autoFillEWBPartA();
+        }
+    }
+
+    function autoFillEWBPartA() {
+        // Pull values from the invoice form
+        const invNo = document.querySelector('input[name="inv_no"]').value;
+        const invDate = document.querySelector('input[name="inv_date"]').value;
+        const grandTotalEl = document.getElementById('grand-total');
+        const grandTotal = grandTotalEl ? parseFloat(grandTotalEl.textContent.replace(/[^0-9.]/g, '')) || 0 : 0;
+
+        document.getElementById('ewb-doc-no').value = invNo || '—';
+        document.getElementById('ewb-doc-date').value = invDate || '—';
+        document.getElementById('ewb-value').value = grandTotal > 0 ? '₹ ' + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '—';
+
+        // Threshold check
+        const threshold = 50000;
+        const warning = document.getElementById('eway-threshold-warning');
+        warning.style.display = (grandTotal < threshold && grandTotal > 0) ? 'block' : 'none';
+    }
+
+    function switchEWBTab(tab) {
+        const generateTab = document.getElementById('ewb-generate-tab');
+        const associateTab = document.getElementById('ewb-associate-tab');
+        const btnGenerate = document.getElementById('ewb-tab-generate');
+        const btnAssociate = document.getElementById('ewb-tab-associate');
+
+        if (tab === 'generate') {
+            generateTab.style.display = 'block';
+            associateTab.style.display = 'none';
+            btnGenerate.style.borderBottomColor = '#2563eb';
+            btnGenerate.style.color = '#2563eb';
+            btnAssociate.style.borderBottomColor = 'transparent';
+            btnAssociate.style.color = '#6b7280';
+        } else {
+            generateTab.style.display = 'none';
+            associateTab.style.display = 'block';
+            btnAssociate.style.borderBottomColor = '#2563eb';
+            btnAssociate.style.color = '#2563eb';
+            btnGenerate.style.borderBottomColor = 'transparent';
+            btnGenerate.style.color = '#6b7280';
+        }
+    }
+
+    function onEWBModeChange() {
+        const mode = document.getElementById('ewb-mode').value;
+        const roadFields = document.getElementById('ewb-road-fields');
+        // Vehicle details only needed for Road transport
+        roadFields.style.display = (mode === '1') ? 'contents' : 'none';
+    }
+
+    function generateEWayBill() {
+        const mode = document.getElementById('ewb-mode').value;
+        const distance = document.getElementById('ewb-distance').value;
+        const vehicle = mode === '1' ? document.getElementById('ewb-vehicle').value : 'N/A';
+
+        if (!distance) {
+            alert('Please enter approximate Distance (km).');
+            return;
+        }
+        if (mode === '1' && !vehicle) {
+            alert('Vehicle Number is required for Road transport.');
+            return;
+        }
+
+        const ewayBtn = event.target;
+        const originalText = ewayBtn.textContent;
+        ewayBtn.textContent = 'Generating…';
+        ewayBtn.disabled = true;
+
+        // ── REAL INTEGRATION POINT ──────────────────────────────
+        // Collect Part A + Part B into payload:
+        // const payload = {
+        //   supplyType: document.getElementById('ewb-supply-type').value,
+        //   subSupplyType: document.getElementById('ewb-sub-type').value,
+        //   docType:  document.getElementById('ewb-doc-type').value,
+        //   docNo:    document.getElementById('ewb-doc-no').value,
+        //   docDate:  document.getElementById('ewb-doc-date').value,
+        //   transMode: mode, distance,
+        //   vehicleNo: vehicle,
+        //   vehicleType: document.getElementById('ewb-vehicle-type').value,
+        //   transporterName: document.getElementById('ewb-transporter-name').value,
+        //   transporterId:   document.getElementById('ewb-transporter-gstin').value,
+        // };
+        // fetch('/api/generate-eway-bill', { method:'POST', body: JSON.stringify(payload) })
+        //   .then(r => r.json()).then(d => applyEWBSuccess(d.ewbNo, vehicle));
+        // ────────────────────────────────────────────────────────
+
+        // SIMULATED RESPONSE
+        setTimeout(() => {
+            const ewbNo = String(Math.floor(Math.random() * 900000000000 + 100000000000)); // 12-digit
+            applyEWBSuccess(ewbNo, vehicle, ewayBtn, originalText);
+        }, 1800);
+    }
+
+    function applyEWBSuccess(ewbNo, vehicle, btn, originalText) {
+        // Auto-fill the invoice form fields
+        document.querySelector('input[name="eway_bill"]').value = ewbNo;
+        if (vehicle && vehicle !== 'N/A') document.querySelector('input[name="vehicle_no"]').value = vehicle;
+
+        if (btn) {
+            btn.textContent = '✓ Generated!';
+            btn.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
+            btn.disabled = false;
+        }
+
+        // Show success note above buttons
+        const existing = document.getElementById('ewb-success-note');
+        if (existing) existing.remove();
+        const note = document.createElement('div');
+        note.id = 'ewb-success-note';
+        note.style.cssText = 'padding: 0.6rem 1rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 0.82rem; color: #15803d; font-weight: 600;';
+        note.innerHTML = `✅ E-Way Bill No: <span style="font-family:monospace;">${ewbNo}</span> — Auto-filled on invoice!`;
+        if (btn) btn.parentNode.insertBefore(note, btn);
+    }
+
+    function associateEWayBill() {
+        const ewbNo = document.getElementById('ewb-associate-no').value.trim();
+        if (ewbNo.length !== 12 || isNaN(ewbNo)) {
+            alert('Please enter a valid 12-digit E-Way Bill Number.');
+            return;
+        }
+        document.querySelector('input[name="eway_bill"]').value = ewbNo;
+
+        const btn = event.target;
+        btn.textContent = '✓ Associated!';
+        btn.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
+
+        const note = document.createElement('div');
+        note.style.cssText = 'margin-top: 0.5rem; font-size: 0.82rem; color: #15803d; font-weight: 600;';
+        note.innerHTML = `✅ EWB No. <span style="font-family:monospace;">${ewbNo}</span> linked to this invoice!`;
+        btn.parentNode.appendChild(note);
+    }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Asset Management</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-container">
+                <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        
+
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; padding: 2rem;">
+            <header class="generator-header">
+                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                    <a href="index.html">
+                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                    </a>
+                    <div>
+                        <h1>Asset Management</h1>
+                        <p>Track fixed assets, machinery, and equipment depreciation</p>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button type="button" class="btn-liquid btn-secondary" onclick="window.location.href='index.html'">Back to
+                        Dashboard</button>
+                    <button type="button" id="add-asset" class="btn-animated-add">
+                      <span class="add-text">New Asset</span>
+                      <span class="add-icon-wrap">
+                        <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                          <line x1="12" x2="12" y1="5" y2="19"></line>
+                          <line x1="5" x2="19" y1="12" y2="12"></line>
+                        </svg>
+                      </span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Asset Table -->
+            <div style="margin-bottom: 1rem;">
+                <input type="text" id="search-assets" class="input-wrapper" placeholder="Search assets..."
+                    onkeyup="filterTable('search-assets', 'assets-table')"
+                    style="max-width: 400px; padding: 10px; font-size: 1rem;">
+            </div>
+
+            <div class="table-container">
+                <table id="assets-table">
+                    <thead>
+                        <tr>
+                            <th width="50">Sr</th>
+                            <th width="150">Purchase Date</th>
+                            <th>Asset Name / Description</th>
+                            <th width="150">Category</th>
+                            <th width="120">Purchase Value</th>
+                            <th width="120">Current Value</th>
+                            <th width="120">Status</th>
+                            <th width="100" style="text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assets-body">
+                        <!-- Entries populated dynamically from localStorage -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="summary-container" style="margin-top: 2rem;">
+                <!-- Updated info note -->
+                <p class="info-note">Use this module to track your company's machinery, tools, and other assets permanently via the database.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Asset Modal -->
+    <div id="asset-modal" class="modal print-only-wrapper" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 16px; width: 500px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: inset 0 1px 1px rgba(255,255,255,0.9), 0 8px 32px rgba(31,38,135,0.07);">
+            <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.3); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.2);">
+                <h2 id="modal-title" style="font-size: 1.2rem; color: #2c3e50; margin: 0;">Add New Asset</h2>
+                <button type="button" id="close-asset-modal" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #6c757d; display: flex; align-items: center; justify-content: center;"><i data-lucide="x" style="width: 20px; height: 20px;"></i></button>
+            </div>
+            
+            <div style="padding: 20px; overflow-y: auto;">
+                <form id="asset-form" style="display: flex; flex-direction: column; gap: 15px;">
+                    <input type="hidden" id="asset-id">
+                    
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Asset Name / Description *</label>
+                        <input type="text" id="a-name" required placeholder="E.g., Gold Melting Machine" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Category *</label>
+                            <select id="a-category" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                <option value="Machinery">Machinery</option>
+                                <option value="Tools">Tools</option>
+                                <option value="Furniture">Furniture</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Status *</label>
+                            <select id="a-status" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                <option value="Active">Active</option>
+                                <option value="Pending Approval">Pending Approval</option>
+                                <option value="Maintenance">Maintenance</option>
+                                <option value="Retired">Retired</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Purchase Date *</label>
+                            <input type="date" id="a-date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Purchase Value (₹)</label>
+                            <input type="number" id="a-value" step="0.01" min="0" placeholder="0.00" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Depreciation Rate (% p.a.)</label>
+                            <input type="number" id="a-depreciation" step="0.1" min="0" max="100" placeholder="0.0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <!-- Placeholder for alignment -->
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Notes / Specifications</label>
+                        <textarea id="a-notes" rows="3" placeholder="Model number, warranty info, etc..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
+                    </div>
+
+                    <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <button type="button" id="delete-asset" class="btn-text" style="display: none; color: var(--danger); font-weight: 600; text-decoration: underline;">Delete Asset</button>
+                        <div style="display: flex; gap: 10px; margin-left: auto;">
+                            <button type="button" id="cancel-asset" class="btn-liquid btn-outline">Cancel</button>
+                            <button type="submit" class="btn-liquid btn-success">Save Asset</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="liquid-button.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="script.js?v=24"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnAdd = document.getElementById('add-asset');
+            const modal = document.getElementById('asset-modal');
+            const btnClose = document.getElementById('close-asset-modal');
+            const btnCancel = document.getElementById('cancel-asset');
+            const btnDelete = document.getElementById('delete-asset');
+            const form = document.getElementById('asset-form');
+            const tbody = document.getElementById('assets-body');
+            
+            // Generate basic ID
+            function generateId() {
+                return 'AST-' + Date.now().toString().slice(-6);
+            }
+
+            // Load from storage
+            function loadAssets() {
+                const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                tbody.innerHTML = '';
+                
+                if (assets.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No assets found. Click Add New Asset.</td></tr>';
+                    return;
+                }
+
+                assets.forEach((a, index) => {
+                    let statusColor = 'var(--success)'; // Active
+                    if (a.status === 'Maintenance') statusColor = 'var(--accent)';
+                    if (a.status === 'Retired') statusColor = 'var(--danger)';
+                    if (a.status === 'Pending Approval') statusColor = '#8b5cf6'; // Keep purple for distinction or use var(--primary)
+
+                    // Calculate Current Value (Depreciation)
+                    let displayCurrentValue = '-';
+                    if (a.value && a.date) {
+                        const pDate = new Date(a.date);
+                        const today = new Date();
+                        const diffDays = Math.max(0, Math.floor((today - pDate) / (1000 * 60 * 60 * 24)));
+                        const years = diffDays / 365;
+                        const rate = parseFloat(a.depreciation || 0) / 100;
+                        const curVal = parseFloat(a.value) * Math.pow(1 - rate, years);
+                        displayCurrentValue = '₹ ' + (curVal > 0 ? curVal.toFixed(2) : '0.00');
+                    }
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${a.date}</td>
+                            <td style="text-align: left; padding-left: 15px;"><strong>${a.name}</strong><br><span style="font-size:0.75rem; color:#666;">ID: ${a.id}</span></td>
+                            <td>${a.category}</td>
+                            <td>${a.value ? '₹ ' + parseFloat(a.value).toFixed(2) : '-'}</td>
+                            <td><strong>${displayCurrentValue}</strong></td>
+                            <td><span style="color: ${statusColor}; font-weight: 600; background: ${statusColor}15; padding: 4px 10px; border-radius: 20px;">${a.status}</span></td>
+                            <td style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
+                                ${a.status === 'Pending Approval' ? 
+                                `<button type="button" class="btn-text approve-btn" data-id="${a.id}" style="padding: 4px; color: var(--success); display: flex; align-items: center; justify-content: center;" title="Approve">
+                                    <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+                                </button>` : ''}
+                                <button type="button" class="btn-edit edit-btn" data-id="${a.id}" title="Edit">
+                                    <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                lucide.createIcons();
+                
+                // Attach edit listeners
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.currentTarget.getAttribute('data-id');
+                        openEditModal(id);
+                    });
+                });
+
+                // Attach approve listeners
+                window.approveAsset = function(id) {
+                    if(confirm("Approve this asset and mark it as Active?")) {
+                        let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                        const index = assets.findIndex(a => a.id === id);
+                        if(index !== -1) {
+                            assets[index].status = 'Active';
+                            localStorage.setItem('manti_assets', JSON.stringify(assets));
+                            loadAssets();
+                        }
+                    }
+                };
+
+                document.querySelectorAll('.approve-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.currentTarget.getAttribute('data-id');
+                        window.approveAsset(id);
+                    });
+                });
+            }
+
+            // Open for New
+            btnAdd.addEventListener('click', () => {
+                form.reset();
+                document.getElementById('asset-id').value = '';
+                document.getElementById('modal-title').textContent = 'Add New Asset';
+                document.getElementById('a-date').valueAsDate = new Date();
+                btnDelete.style.display = 'none';
+                modal.style.display = 'flex';
+            });
+
+            // Open for Edit
+            function openEditModal(id) {
+                const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                const asset = assets.find(a => a.id === id);
+                if (!asset) return;
+
+                document.getElementById('asset-id').value = asset.id;
+                document.getElementById('a-name').value = asset.name || '';
+                document.getElementById('a-category').value = asset.category || 'Machinery';
+                document.getElementById('a-status').value = asset.status || 'Active';
+                document.getElementById('a-date').value = asset.date || '';
+                document.getElementById('a-value').value = asset.value || '';
+                document.getElementById('a-depreciation').value = asset.depreciation || '';
+                document.getElementById('a-notes').value = asset.notes || '';
+                
+                document.getElementById('modal-title').textContent = 'Edit Asset';
+                btnDelete.style.display = 'inline-block';
+                
+                // Bind delete locally
+                btnDelete.onclick = function() {
+                    if(confirm("Are you sure you want to completely delete '" + asset.name + "'?")) {
+                        let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                        assets = assets.filter(a => a.id !== id);
+                        localStorage.setItem('manti_assets', JSON.stringify(assets));
+                        closeModal();
+                        loadAssets();
+                    }
+                };
+
+                modal.style.display = 'flex';
+            }
+
+            // Close Modal
+            const closeModal = () => modal.style.display = 'none';
+            btnClose.addEventListener('click', closeModal);
+            btnCancel.addEventListener('click', closeModal);
+
+            // Handle Save
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                
+                const idInput = document.getElementById('asset-id').value;
+                const isEdit = idInput !== '';
+                
+                const newData = {
+                    id: isEdit ? idInput : generateId(),
+                    name: document.getElementById('a-name').value.trim(),
+                    category: document.getElementById('a-category').value,
+                    status: document.getElementById('a-status').value,
+                    date: document.getElementById('a-date').value,
+                    value: document.getElementById('a-value').value,
+                    depreciation: document.getElementById('a-depreciation').value,
+                    notes: document.getElementById('a-notes').value.trim()
+                };
+
+                if (isEdit) {
+                    const idx = assets.findIndex(a => a.id === idInput);
+                    if (idx > -1) assets[idx] = newData;
+                } else {
+                    assets.push(newData);
+                }
+
+                localStorage.setItem('manti_assets', JSON.stringify(assets));
+                closeModal();
+                loadAssets();
+            });
+
+            // Initial Load
+            loadAssets();
+        });
+    </script>
+</body>
+</html>

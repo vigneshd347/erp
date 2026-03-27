@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Reports & Analytics</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Modern Report Table Styling */
+        #report-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: none;
+        }
+
+        #report-table th {
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #4b5563 !important;
+            letter-spacing: 0.05em;
+            padding: 16px 20px;
+            background: #f9fafb !important;
+            border: none;
+            border-bottom: 2px solid #e5e7eb;
+            font-weight: 600;
+        }
+
+        #report-table td {
+            text-align: left;
+            padding: 14px 20px;
+            border: none;
+            border-bottom: 1px solid #f3f4f6;
+            color: #1f2937;
+            font-size: 0.9rem;
+        }
+
+        #report-table tbody tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        #report-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        @media print {
+            body { background: white; margin: 0; padding: 0; color: #000; }
+            
+            /* Hide non-essential UI */
+            .sidebar, .generator-header, .report-selector-section, 
+            #search-report, button, .input-wrapper, #empty-state-greeting {
+                display: none !important;
+            }
+
+            .main-content { padding: 0 !important; margin: 0 !important; }
+            
+            #report-container-wrapper {
+                border: none !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+            }
+
+            #print-header { display: block !important; }
+            
+            #report-title {
+                display: none !important;
+            }
+
+            #report-table th {
+                background: #fff !important;
+                color: #000 !important;
+                border-bottom: 2px solid #000;
+                padding: 12px 10px;
+                font-size: 10pt;
+            }
+
+            #report-table td {
+                border-bottom: 1px solid #e5e7eb;
+                padding: 10px;
+                font-size: 10pt;
+                color: #000;
+            }
+
+            #report-table tbody tr:nth-child(even) td {
+                background-color: #f9fafb !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+                <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+        <main class="main-content" style="flex: 1; padding: 2rem;">
+            <header class="generator-header">
+                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                    <a href="index.html">
+                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                    </a>
+                    <div>
+                        <h1>Reports & Analytics</h1>
+                        <p>Generate centralized, printable reports for the entire system</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Report Directory (Zoho-style list) -->
+            <div class="report-selector-section" style="margin-bottom: 28px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 30px;">
+                <style>
+                    .report-directory {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                        gap: 30px 40px;
+                    }
+                    .report-group-title {
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        color: #6b7280;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        margin-bottom: 12px;
+                        border-bottom: 1px solid #f3f4f6;
+                        padding-bottom: 8px;
+                    }
+                    .report-list {
+                        list-style: none;
+                        padding: 0;
+                        margin: 0;
+                    }
+                    .report-list li {
+                        margin-bottom: 12px;
+                    }
+                    .report-link {
+                        color: #0076d1;
+                        font-size: 0.9rem;
+                        text-decoration: none;
+                        cursor: pointer;
+                        display: inline-block;
+                        transition: color 0.15s;
+                    }
+                    .report-link:hover {
+                        text-decoration: underline;
+                        color: #0369a1;
+                    }
+                    .report-link.active {
+                        font-weight: 600;
+                        color: #0369a1;
+                    }
+                </style>
+                <div class="report-directory">
+                    <div class="report-group">
+                        <div class="report-group-title">Sales & Purchases</div>
+                        <ul class="report-list">
+                            <li><a class="report-link" onclick="selectReport('sales-orders', this)">Sales Orders</a></li>
+                            <li><a class="report-link" onclick="selectReport('purchase-orders', this)">Purchase Orders</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="report-group">
+                        <div class="report-group-title">Job Work Tracker</div>
+                        <ul class="report-list">
+                            <li><a class="report-link" onclick="selectReport('jobwork-jobno', this)">Job No. Wise</a></li>
+                            <li><a class="report-link" onclick="selectReport('jobwork-process', this)">Process Wise</a></li>
+                            <li><a class="report-link" onclick="selectReport('jobwork-worker', this)">Worker Wise</a></li>
+                            <li><a class="report-link" onclick="selectReport('jobwork-wastage', this)">Wastage Wise</a></li>
+                            <li><a class="report-link" onclick="selectReport('jobwork-metal', this)">Metal Balance Report</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="report-group">
+                        <div class="report-group-title">Inventory &amp; Production</div>
+                        <ul class="report-list">
+                            <li><a class="report-link" onclick="selectReport('inventory', this)">Inventory &amp; Stock</a></li>
+                            <li><a class="report-link" onclick="selectReport('production', this)">Production Report</a></li>
+                            <li><a class="report-link" onclick="selectReport('assets', this)">Asset Summary</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="report-group">
+                        <div class="report-group-title">Financial Statements</div>
+                        <ul class="report-list">
+                            <li><a class="report-link" onclick="selectReport('profit-loss', this)" style="font-weight: 700; color: var(--success);">Profit & Loss</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <select id="report-type" style="display:none;"></select>
+                <script>
+                    window.backToReports = function() {
+                        document.querySelector('.report-selector-section').style.display = 'block';
+                        document.querySelector('.generator-header').style.display = 'flex';
+                        document.getElementById('report-container-wrapper').style.display = 'none';
+                        document.querySelectorAll('.report-link').forEach(c => c.classList.remove('active'));
+                    };
+
+                    window.selectReport = function(type, linkEl) {
+                        document.querySelectorAll('.report-link').forEach(c => c.classList.remove('active'));
+                        if (linkEl) linkEl.classList.add('active');
+                        
+                        document.querySelector('.report-selector-section').style.display = 'none';
+                        document.querySelector('.generator-header').style.display = 'none';
+                        document.getElementById('report-container-wrapper').style.display = 'block';
+                        document.getElementById('empty-state-greeting').style.display = 'none';
+
+                        if (window.lucide) {
+                            window.lucide.createIcons();
+                        }
+
+                        if (typeof window.loadReport === 'function') window.loadReport(type);
+                        else window._pendingReport = type;
+                    };
+                </script>
+            </div>
+
+            <!-- Empty State Landing -->
+            <div id="empty-state-greeting" style="background: #fff; border: 1px dashed #d1d5db; border-radius: 12px; padding: 60px 20px; text-align: center; margin-bottom: 24px;">
+                <div style="background: #f3f4f6; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                    <i data-lucide="clipboard-list" style="width: 32px; height: 32px; color: #9ca3af;"></i>
+                </div>
+                <h3 style="font-size: 1.25rem; color: #374151; margin: 0 0 8px;">Select a report to view</h3>
+                <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">Choose any report from the categories above to view your analytics data here.</p>
+            </div>
+
+            <!-- Report Containers -->
+            <div id="report-container-wrapper" style="display: none; background: transparent; padding: 0 10px;">
+                
+                <!-- Print Only Header -->
+                <div id="print-header" style="display: none; margin-bottom: 25px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div>
+                            <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; margin-bottom: 10px;">
+                            <h1 style="margin: 0; font-size: 16pt; color: #000;">MANTI JEWEL ART PRIVATE LIMITED</h1>
+                            <p style="margin: 5px 0 0 0; color: #555; font-size: 10pt;">Comprehensive System Report</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <h2 id="print-report-title" style="margin: 0 0 5px 0; font-size: 14pt; color: #000;">Report Title</h2>
+                            <p id="print-report-date" style="margin: 0; color: #555; font-size: 10pt;"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zoho Style Screen Header -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e5e7eb;" class="screen-header">
+                    <div style="flex: 1; padding-top: 5px;">
+                        <a href="javascript:void(0)" onclick="backToReports()" style="display: inline-flex; align-items: center; gap: 6px; color: var(--primary); text-decoration: none; font-size: 0.95rem; font-weight: 500;">
+                            <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+                            Back to Reports
+                        </a>
+                    </div>
+                    
+                    <div style="text-align: center; flex: 2;">
+                        <h2 id="report-title" style="font-size: 1.45rem; color: #111827; margin: 0 0 4px 0; font-weight: 600;">Report Title</h2>
+                        <div id="report-subtitle" style="font-size: 0.9rem; color: #6b7280; font-weight: 500;"></div>
+                    </div>
+
+                    <div style="display: flex; gap: 8px; flex: 1; justify-content: flex-end;">
+                        <input type="text" id="search-report" class="input-wrapper" placeholder="Search data..." onkeyup="filterTable('search-report', 'report-table')" style="width: 180px; padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 4px;">
+                        <button type="button" class="btn-outline" style="padding: 6px 12px; border-radius: 4px; display: flex; align-items: center; gap: 6px; font-size: 0.85rem;" id="btn-customize-columns-inner">
+                            <i data-lucide="settings-2" style="width: 14px; height: 14px;"></i> Customize Report
+                        </button>
+                        <button type="button" class="btn-outline" style="padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center;" onclick="window.print()" title="Print">
+                            <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
+                        </button>
+                        <button type="button" class="btn-outline" style="padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center;" onclick="exportTableToExcel('report-table', 'Manti_Report')" title="Export as Excel">
+                            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container" id="report-container" style="box-shadow: none; border: 1px solid #f3f4f6; border-radius: 8px;">
+                    <table id="report-table">
+                        <thead id="report-head">
+                            <!-- Dynamic Headers -->
+                        </thead>
+                        <tbody id="report-body">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    
+    <!-- Column Manager Modal -->
+    <div id="column-manager-modal" class="modal print-only-wrapper" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; width: 450px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            <div style="padding: 20px; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa;">
+                <h2 style="font-size: 1.2rem; color: #2c3e50; margin: 0;">Customize Columns</h2>
+                <button type="button" id="close-col-modal" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #6c757d; display: flex; align-items: center; justify-content: center;"><i data-lucide="x" style="width: 20px; height: 20px;"></i></button>
+            </div>
+            
+            <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Drag to reorder. Uncheck to hide permanently in this view.</p>
+                
+                <div id="column-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Drag-and-drop items generated here -->
+                </div>
+            </div>
+            
+            <div style="padding: 20px; border-top: 1px solid #dee2e6; background: #f8f9fa;">
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 0.8rem; font-weight: 600; color: #666; display: block; margin-bottom: 5px;">Save As Custom Template</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="custom-view-name" placeholder="E.g., My Print View" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
+                        <button type="button" id="btn-save-custom-view" class="btn-primary" style="padding: 8px 15px; border-radius: 6px;">Save</button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <button type="button" id="btn-reset-view" class="btn-text" style="color: var(--danger); font-size: 0.85rem; font-weight: 600; text-decoration: underline;">Reset to Default</button>
+                    <button type="button" id="btn-apply-columns" class="btn-success" style="padding: 10px 20px; border-radius: 6px;">Apply Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script src="script.js?v=24"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Lucide icons immediately on page load (fixes sidebar icons)
+            if (window.lucide) window.lucide.createIcons();
+            
+            const reportSelector = document.getElementById('report-type');
+            const reportHead = document.getElementById('report-head');
+            const reportBody = document.getElementById('report-body');
+            const reportTitle = document.getElementById('report-title');
+            
+            // Custom Reports State
+            window.manti_custom_reports = JSON.parse(localStorage.getItem('manti_custom_reports')) || {};
+            let currentActiveView = null; // Stores { name, baseType, columns: [{name, visible}] }
+
+            window.loadReport = function(type) {
+                const searchInput = document.getElementById('search-report');
+
+                // Check if this is a custom report being loaded
+                if (type.startsWith('custom-')) {
+                    const viewName = type.replace('custom-', '');
+                    currentActiveView = window.manti_custom_reports[viewName];
+                    if (currentActiveView) {
+                        type = currentActiveView.baseType; // Route logic through base type
+                    }
+                } else {
+                    currentActiveView = null;
+                }
+                const table = document.getElementById('report-table');
+
+                // Standard Reset
+                searchInput.style.display = 'block';
+                table.removeAttribute('data-no-filter');
+                if (window.attachExcelFilters) attachExcelFilters(); // Refresh filters for new content
+
+                if (type === 'tax-invoices' || type === 'sales-orders') {
+                    searchInput.style.display = 'none';
+                    table.setAttribute('data-no-filter', 'true');
+                    if (window.attachExcelFilters) attachExcelFilters(); // Remove existing filter row
+                }
+
+                reportHead.innerHTML = '';
+                reportBody.innerHTML = '';
+
+                if (type === 'sales-orders' || type === 'purchase-orders') {
+                    const isSales = type === 'sales-orders';
+                    const reportName = isSales ? 'Sales' : 'Purchase';
+                    reportTitle.textContent = `${reportName} Orders Report (${new Date().toLocaleDateString()})`;
+
+                    reportHead.innerHTML = `
+                        <tr>
+                            <th>Order No.</th>
+                            <th>Date</th>
+                            <th>Due Date</th>
+                            <th>${isSales ? 'Customer' : 'Vendor'}</th>
+                            <th>Product</th>
+                            <th>Weight/Qty</th>
+                            <th>Remark</th>
+                        </tr>
+                    `;
+                    const allOrders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+                    const filterType = isSales ? 'Sales Order' : 'Purchase Order';
+                    const orders = allOrders.filter(o => o.type === filterType);
+
+                    if (orders.length === 0) {
+                        reportBody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No ${reportName.toLowerCase()} orders found.</td></tr>`;
+                    } else {
+                        orders.forEach(o => {
+                            reportBody.innerHTML += `
+                                <tr>
+                                    <td>${o.id}</td>
+                                    <td>${o.date}</td>
+                                    <td>${o.dueDate}</td>
+                                    <td>${o.vendor}</td>
+                                    <td>${o.product}</td>
+                                    <td>${o.qty} ${o.mainMetal || ''}</td>
+                                    <td>${o.remark || '-'}</td>
+                                </tr>
+                            `;
+                        });
+                    }
+                }
+                else if (type === 'jobwork-metal') {
+                    reportTitle.textContent = "Metal Balance Report (" + new Date().toLocaleDateString() + ")";
+                    reportHead.innerHTML = `
+                        <tr>
+                            <th>Job No.</th>
+                            <th>Worker</th>
+                            <th style="color: #3b82f6;">Metal Issued</th>
+                            <th style="color: #10b981;">Metal + Pwd Rcv</th>
+                            <th style="color: #3b82f6; font-weight: bold;">Metal Bal (M)</th>
+                            <th style="color: #8b5cf6;">Solder Issued</th>
+                            <th style="color: #10b981;">Solder Rcv</th>
+                            <th style="color: #8b5cf6; font-weight: bold;">Solder Bal (S)</th>
+                        </tr>
+                    `;
+
+                    const jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+                    if (jobs.length === 0) {
+                        reportBody.innerHTML = `<tr><td colspan="8" style="text-align: center;">No job work records found.</td></tr>`;
+                        return;
+                    }
+
+                    // Map balances by Job -> Worker
+                    const balances = {};
+                    
+                    jobs.forEach(r => {
+                        if (!r.jobnum) return;
+                        const workerName = r.worker || r.workerNameRec || r.workerName || '-';
+                        const key = r.jobnum + '___' + workerName;
+                        
+                        if (!balances[key]) {
+                            balances[key] = { 
+                                jobnum: r.jobnum, 
+                                worker: workerName, 
+                                metal_issue: 0, 
+                                solder_issue: 0, 
+                                metal_rec: 0, 
+                                solder_rec: 0, 
+                                powder: 0, 
+                                wastage: 0 
+                            };
+                        }
+                        
+                        const b = balances[key];
+
+                        if (r.status === '1. Issue') {
+                            if (r.issueLines && r.issueLines.length > 0) {
+                                r.issueLines.forEach(l => {
+                                    if (l.type === 'Solder') b.solder_issue += (parseFloat(l.weight) || 0);
+                                    else if (l.type === 'Metal' || l.type === 'Final Pcs') b.metal_issue += (parseFloat(l.weight) || 0);
+                                });
+                            } else {
+                                if (r.issueType === 'Solder') b.solder_issue += (parseFloat(r.issueWt) || 0);
+                                else if (r.issueType === 'Metal' || r.issueType === 'Final Pcs') b.metal_issue += (parseFloat(r.issueWt) || 0);
+                                else b.metal_issue += (parseFloat(r.issueWt) || 0); // fallback legacy
+                            }
+                        } else if (r.status === '2. Receive') {
+                            const wt = parseFloat(r.receiveWt) || 0;
+                            if (r.receiveLines && r.receiveLines.length > 0) {
+                                r.receiveLines.forEach(l => {
+                                    if (l.type === 'Solder') b.solder_rec += (parseFloat(l.weight) || 0);
+                                    else if (l.type === 'Powder') b.powder += (parseFloat(l.weight) || 0);
+                                    else if (l.type === 'Wastage(Loss)') b.wastage += (parseFloat(l.weight) || 0);
+                                    else if (l.type === 'Metal' || l.type === 'Final Pcs') b.metal_rec += (parseFloat(l.weight) || 0);
+                                });
+                            } else {
+                                if (r.returnType === 'Solder') b.solder_rec += wt;
+                                else if (r.returnType === 'Powder') b.powder += wt;
+                                else if (r.returnType === 'Wastage(Loss)') b.wastage += wt;
+                                else if (r.returnType === 'Metal' || r.returnType === 'Final Pcs') b.metal_rec += wt;
+                                else b.metal_rec += wt; // fallback legacy
+                            }
+                        }
+                    });
+
+                    // Sort by Job Number
+                    const balanceArray = Object.values(balances);
+                    balanceArray.sort((a, b) => a.jobnum.localeCompare(b.jobnum));
+
+                    balanceArray.forEach(b => {
+                        const metalBal = b.metal_issue - (b.metal_rec + b.powder + b.wastage);
+                        const solderBal = b.solder_issue - b.solder_rec;
+                        
+                        // Only show rows that have some sort of metal interaction
+                        if (b.metal_issue > 0 || b.solder_issue > 0 || b.metal_rec > 0 || b.solder_rec > 0) {
+                            
+                            // Style negative balances differently (worker over-returned)
+                            const mBalStyle = metalBal > 0 ? 'color: #3b82f6; font-weight: bold;' : 'color: #333;';
+                            const sBalStyle = solderBal > 0 ? 'color: #8b5cf6; font-weight: bold;' : 'color: #333;';
+                            
+                            reportBody.innerHTML += `
+                                <tr>
+                                    <td><strong>${b.jobnum}</strong></td>
+                                    <td>${b.worker}</td>
+                                    <td style="color: #3b82f6;">${b.metal_issue.toFixed(3)}</td>
+                                    <td style="color: #10b981;">${(b.metal_rec + b.powder + b.wastage).toFixed(3)}</td>
+                                    <td style="${mBalStyle}">${metalBal.toFixed(3)}</td>
+                                    <td style="color: #8b5cf6;">${b.solder_issue.toFixed(3)}</td>
+                                    <td style="color: #10b981;">${b.solder_rec.toFixed(3)}</td>
+                                    <td style="${sBalStyle}">${solderBal.toFixed(3)}</td>
+                                </tr>
+                            `;
+                        }
+                    });
+                }
+                else if (type.startsWith('jobwork-')) {
+                    const jwType = type.split('-')[1];
+                    let titleSuffix = '';
+                    if (jwType === 'jobno') titleSuffix = 'Job No. Wise';
+                    if (jwType === 'process') titleSuffix = 'Process Wise';
+                    if (jwType === 'worker') titleSuffix = 'Worker Wise';
+                    if (jwType === 'wastage') titleSuffix = 'Wastage (Loss) Wise';
+
+                    reportTitle.textContent = `Job Work Report - ${titleSuffix} (${new Date().toLocaleDateString()})`;
+
+                    // Base Headers
+                    let hRow = '<tr>';
+                    if (jwType === 'jobno') hRow += '<th>Job No.</th><th>Date</th><th>Process</th><th>Worker</th>';
+                    if (jwType === 'process') hRow += '<th>Process</th><th>Date</th><th>Job No.</th><th>Worker</th>';
+                    if (jwType === 'worker') hRow += '<th>Worker</th><th>Date</th><th>Job No.</th><th>Process</th>';
+                    if (jwType === 'wastage') hRow += '<th>Wastage (g)</th><th>Job No.</th><th>Process</th><th>Worker</th>';
+
+                    hRow += '<th>Item Name</th><th>Issue Wt (g)</th><th>Rcv Wt (g)</th>';
+                    if (jwType !== 'wastage') hRow += '<th>Loss/Bal (g)</th>';
+                    hRow += '</tr>';
+                    reportHead.innerHTML = hRow;
+
+                    let jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+
+                    if (jobs.length === 0) {
+                        reportBody.innerHTML = `<tr><td colspan="8" style="text-align: center;">No job work records found.</td></tr>`;
+                        return;
+                    }
+
+                    // Helper to get wastage for a job record
+                    function getWastage(j) {
+                        if (j.status !== '2. Receive') return 0;
+                        let loss = 0;
+                        if (j.receiveLines && j.receiveLines.length > 0) {
+                            j.receiveLines.forEach(l => {
+                                if (l.type === 'Wastage(Loss)' || l.type === 'Wastage') {
+                                    loss += parseFloat(l.weight) || 0;
+                                }
+                            });
+                        } else if (j.returnType === 'Wastage(Loss)' || j.returnType === 'Wastage') {
+                            loss += parseFloat(j.receiveWt) || 0;
+                        } else {
+                            // Fallback if no specific wastage lines exist but total receive < total issue
+                            // Note: Might be inaccurate if they also received powder/solder, but keeps legacy behavior
+                            const relatedIss = jobs.find(x => x.jobnum === j.jobnum && x.process === j.process && x.status === '1. Issue');
+                            if (relatedIss) {
+                                let issWt = parseFloat(relatedIss.issueWt) || 0;
+                                let recWt = parseFloat(j.receiveWt) || 0;
+                                let diff = issWt - recWt;
+                                if (diff > 0) loss = diff;
+                            }
+                        }
+                        return loss;
+                    }
+
+                    // Sort Logic
+                    if (jwType === 'jobno') {
+                        jobs.sort((a, b) => (a.jobnum || '').localeCompare(b.jobnum || ''));
+                    } else if (jwType === 'process') {
+                        jobs.sort((a, b) => (a.process || '').localeCompare(b.process || ''));
+                    } else if (jwType === 'worker') {
+                        jobs.sort((a, b) => {
+                            const wa = a.worker || '';
+                            const wb = b.worker || '';
+                            return wa.localeCompare(wb);
+                        });
+                    } else if (jwType === 'wastage') {
+                        jobs.sort((a, b) => {
+                            return getWastage(b) - getWastage(a);
+                        });
+                    }
+
+                    jobs.forEach(j => {
+                        const worker = j.worker || '-';
+                        let issueWt = parseFloat(j.issueWt) || 0;
+                        let receiveWt = parseFloat(j.receiveWt) || 0;
+                        if (j.status === '1. Issue') receiveWt = 0;
+                        if (j.status === '2. Receive') {
+                            const relatedIss = jobs.find(x => x.jobnum === j.jobnum && x.process === j.process && x.status === '1. Issue');
+                            if (relatedIss) issueWt = parseFloat(relatedIss.issueWt) || 0;
+                        }
+
+                        let loss = getWastage(j);
+
+                        let rRow = '<tr>';
+                        if (jwType === 'jobno') {
+                            rRow += `<td><strong>${j.jobnum || '-'}</strong></td><td>${j.date || '-'}</td><td>${j.process || '-'}</td><td>${worker}</td>`;
+                        } else if (jwType === 'process') {
+                            rRow += `<td><strong>${j.process || '-'}</strong></td><td>${j.date || '-'}</td><td>${j.jobnum || '-'}</td><td>${worker}</td>`;
+                        } else if (jwType === 'worker') {
+                            rRow += `<td><strong>${worker}</strong></td><td>${j.date || '-'}</td><td>${j.jobnum || '-'}</td><td>${j.process || '-'}</td>`;
+                        } else if (jwType === 'wastage') {
+                            if (loss <= 0) return; // Only show rows with actual loss in the wastage view
+                            const lossStyle = loss > 0 ? 'color: red; font-weight: bold;' : '';
+                            rRow += `<td style="${lossStyle}">${loss.toFixed(3)}</td><td>${j.jobnum || '-'}</td><td>${j.process || '-'}</td><td>${worker}</td>`;
+                        }
+
+                        rRow += `<td>${j.item || '-'}</td><td>${issueWt > 0 ? issueWt.toFixed(3) : '-'}</td><td>${receiveWt > 0 ? receiveWt.toFixed(3) : '-'}</td>`;
+                        if (jwType !== 'wastage') {
+                            const lossStyle = loss > 0 ? 'color: red;' : '';
+                            let lossStr = '-';
+                            if (j.status === '2. Receive') lossStr = loss.toFixed(3);
+                            rRow += `<td style="${lossStyle}">${lossStr}</td>`;
+                        }
+                        rRow += '</tr>';
+                        reportBody.innerHTML += rRow;
+                    });
+                }
+                else if (type === 'inventory') {
+                    reportTitle.textContent = "Inventory & Stock Report (" + new Date().toLocaleDateString() + ")";
+                    reportHead.innerHTML = `
+                        <tr>
+                            <th>Metal / Type</th>
+                            <th style="color: #10b981;">Total Inflow (Grams)</th>
+                            <th style="color: #ef4444;">Total Outflow (Grams)</th>
+                            <th style="color: var(--primary);">Available Stock (Grams)</th>
+                        </tr>
+                    `;
+
+                    const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+                    const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+                    const jobRecords = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+
+                    const inventoryData = {
+                        'Gold': { 'Metal': { inflow: 0, outflow: 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } },
+                        'Silver': { 'Metal': { inflow: 0, outflow: 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } }
+                    };
+
+                    function initType(metal, type) {
+                        const m = metal || 'Unknown';
+                        const t = type || 'Metal';
+                        if (!inventoryData[m]) inventoryData[m] = {};
+                        if (!inventoryData[m][t]) inventoryData[m][t] = { inflow: 0, outflow: 0 };
+                    }
+
+                    orders.forEach(o => {
+                        if (o.type === 'Purchase Order' && o.qty && o.status !== 'Completed' && o.status !== 'Archived') {
+                            const m = o.mainMetalType || 'Unknown';
+                            let t = 'Metal';
+                            const prodDesc = (o.product || '').toLowerCase();
+                            if (prodDesc.includes('solder')) t = 'Solder';
+                            else if (prodDesc.includes('scrap')) t = 'Scrap';
+                            else if (prodDesc.includes('dust')) t = 'Dust';
+                            initType(m, t);
+                            inventoryData[m][t].inflow += (parseFloat(o.qty) || 0);
+                        }
+                    });
+
+                    history.forEach(h => {
+                        const wt = Math.abs(parseFloat(h.weight) || 0);
+                        if (h.weight < 0) { 
+                            const m = (h.metal.includes('gold') ? 'Gold' : (h.metal.includes('silver') ? 'Silver' : 'Unknown'));
+                            initType(m, 'Metal');
+                            inventoryData[m]['Metal'].outflow += wt;
+                        }
+                    });
+
+                    jobRecords.forEach(r => {
+                        const so = orders.find(o => o.id === r.jobnum);
+                        const mainM = so ? (so.mainMetalType || 'Unknown') : 'Unknown';
+
+                        if (r.status === '1. Issue') {
+                            if (r.issueLines && r.issueLines.length > 0) {
+                                r.issueLines.forEach(l => {
+                                    const subType = l.type || 'Metal';
+                                    initType(mainM, subType);
+                                    inventoryData[mainM][subType].outflow += (parseFloat(l.weight) || 0);
+                                });
+                            } else if (r.issueType) {
+                                initType(mainM, r.issueType);
+                                inventoryData[mainM][r.issueType].outflow += (parseFloat(r.issueWt) || 0);
+                            } else if (parseFloat(r.issueWt) > 0) {
+                                initType(mainM, 'Metal'); 
+                                inventoryData[mainM]['Metal'].outflow += (parseFloat(r.issueWt) || 0);
+                            }
+                        }
+                        if (r.status === '2. Receive') {
+                            if (r.receiveLines && r.receiveLines.length > 0) {
+                                r.receiveLines.forEach(l => {
+                                    const subType = l.type || 'Metal';
+                                    if (subType !== 'Wastage' && subType !== 'Wastage(Loss)') {
+                                        initType(mainM, subType);
+                                        inventoryData[mainM][subType].outflow -= (parseFloat(l.weight) || 0);
+                                    }
+                                });
+                            } else if (r.returnType) {
+                                if (r.returnType !== 'Wastage' && r.returnType !== 'Wastage(Loss)') {
+                                    initType(mainM, r.returnType);
+                                    inventoryData[mainM][r.returnType].outflow -= (parseFloat(r.receiveWt) || 0);
+                                }
+                            } else if (parseFloat(r.receiveWt) > 0) {
+                                initType(mainM, 'Metal');
+                                inventoryData[mainM]['Metal'].outflow -= (parseFloat(r.receiveWt) || 0);
+                            }
+                        }
+                    });
+
+                    let hasStock = false;
+                    for (const [metal, typesObj] of Object.entries(inventoryData)) {
+                        for (const [type, data] of Object.entries(typesObj)) {
+                            if (data.inflow === 0 && data.outflow === 0) continue;
+                            hasStock = true;
+                            let available = data.inflow - data.outflow;
+                            const textColor = available < 0 ? 'color: #ef4444;' : 'color: var(--primary);';
+
+                            reportBody.innerHTML += `
+                                <tr>
+                                    <td style="font-weight: 600;">${metal} <span style="color: #6b7280; font-weight: normal; font-size: 0.9em;">- ${type}</span></td>
+                                    <td style="color: #10b981;">${data.inflow.toFixed(3)}</td>
+                                    <td style="color: #ef4444;">${data.outflow.toFixed(3)}</td>
+                                    <td style="font-weight: 700; ${textColor}">${available.toFixed(3)}</td>
+                                </tr>
+                            `;
+                        }
+                    }
+
+                    if (!hasStock) {
+                        reportBody.innerHTML += '<tr><td colspan="4" style="text-align: center; color: #666;">No recorded stock found. Ensure transactions are logged.</td></tr>';
+                    }
+                }
+                else if (type === 'assets') {
+                    reportTitle.textContent = "Asset Summary Report (" + new Date().toLocaleDateString() + ")";
+                    reportHead.innerHTML = `
+                        <tr>
+                            <th>Asset ID</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Purchase Date</th>
+                            <th style="text-align: right;">Purchase Value (₹)</th>
+                            <th style="text-align: right;">Current Book Value (₹)</th>
+                            <th style="text-align: center;">Status</th>
+                        </tr>
+                    `;
+
+                    const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                    if (assets.length === 0) {
+                        reportBody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No assets found in the system.</td></tr>`;
+                    } else {
+                        let totalValue = 0;
+                        assets.forEach(ast => {
+                            const val = parseFloat(ast.value) || 0;
+                            
+                            // Calculation logic from assets.html
+                            let currentVal = val;
+                            if (ast.depreciation && ast.date) {
+                                const purchaseDate = new Date(ast.date);
+                                const today = new Date();
+                                const years = (today - purchaseDate) / (1000 * 60 * 60 * 24 * 365.25);
+                                if (years > 0) {
+                                    const rate = parseFloat(ast.depreciation) / 100;
+                                    currentVal = val * Math.pow((1 - rate), years);
+                                }
+                            }
+                            
+                            totalValue += currentVal;
+
+                            reportBody.innerHTML += `
+                                <tr>
+                                    <td><strong>${ast.id}</strong></td>
+                                    <td>${ast.name}</td>
+                                    <td><span style="background:#f3f4f6; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">${ast.category || 'Other'}</span></td>
+                                    <td>${ast.date || '-'}</td>
+                                    <td style="text-align: right;">₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    <td style="text-align: right; font-weight: 700; color: #16a34a;">₹${currentVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    <td style="text-align: center;">
+                                        <span style="font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; 
+                                              ${ast.status === 'Active' ? 'background:#dcfce7; color:#16a34a;' : 'background:#fef9c3; color:#ca8a04;'}">
+                                            ${ast.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        
+                        // Summary Row
+                        reportBody.innerHTML += `
+                            <tr style="background: #f9fafb; font-weight: 700;">
+                                <td colspan="5" style="text-align: right;">Total Asset Valuation:</td>
+                                <td style="text-align: right; color: #16a34a; font-size: 1rem;">₹${totalValue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                <td></td>
+                            </tr>
+                        `;
+                    }
+                }
+                else if (type === 'production') {
+                    reportTitle.textContent = "Production Report (" + new Date().toLocaleDateString() + ")";
+                    reportHead.innerHTML = `
+                        <tr>
+                            <th>Date</th>
+                            <th>Job No.</th>
+                            <th>Worker</th>
+                            <th>Item Name</th>
+                            <th>Weight (g)</th>
+                            <th>Process</th>
+                            <th>Status</th>
+                            <th>Invoice</th>
+                        </tr>
+                    `;
+
+                    const jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+                    const dispatchJobs = jobs.filter(j => j.process === '5. Despatch');
+                    const savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
+
+                    if (dispatchJobs.length === 0) {
+                        reportBody.innerHTML = `<tr><td colspan="8" style="text-align: center;">No production/dispatch records found.</td></tr>`;
+                    } else {
+                        dispatchJobs.forEach(j => {
+                            const weight = j.status === '1. Issue' ? j.issueWt : j.receiveWt;
+                            const statusColor = j.status === '2. Receive' ? '#10b981' : '#3b82f6';
+                            const savedInvoiceData = savedInvoices[j.jobnum];
+                            const invoiceAction = savedInvoiceData
+                                ? `<a href="create-invoice.html?data=${savedInvoiceData}" target="_blank" class="btn-text" style="font-size: 0.85rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #bae6fd; display: inline-block;">View</a>`
+                                : '-';
+
+                            reportBody.innerHTML += `
+                                <tr>
+                                    <td>${j.date || '-'}</td>
+                                    <td><strong>${j.jobnum || '-'}</strong></td>
+                                    <td>${j.worker || '-'}</td>
+                                    <td>${j.item || '-'}</td>
+                                    <td style="font-weight: 600;">${parseFloat(weight).toFixed(3)}</td>
+                                    <td>${j.process || '-'}</td>
+                                    <td><span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${j.status}</span></td>
+                                    <td>${invoiceAction}</td>
+                                </tr >
+                            `;
+                        });
+                    }
+                }
+                else if (type === 'profit-loss') {
+                    reportTitle.textContent = "Profit & Loss Statement (" + new Date().toLocaleDateString() + ")";
+                    reportHead.innerHTML = `
+                        <tr>
+                            <th style="width: 70%;">Particulars</th>
+                            <th style="text-align: right; width: 30%;">Amount (₹)</th>
+                        </tr>
+                    `;
+
+                    const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+                    const payments = JSON.parse(localStorage.getItem('manti_payments_made')) || [];
+                    const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+
+                    let revenue = 0;
+                    let cogs = 0;
+                    let opExpenses = 0;
+                    let depreciation = 0;
+
+                    orders.forEach(o => {
+                        if (o.status === 'Cancelled') return;
+                        const amt = parseFloat(o.amount) || 0;
+                        if (o.type === 'Sales Order') revenue += amt;
+                        else if (o.type === 'Purchase Order') cogs += amt;
+                    });
+
+                    payments.forEach(p => {
+                        opExpenses += parseFloat(p.amount) || 0;
+                    });
+
+                    assets.forEach(ast => {
+                        if (ast.status === 'Active' && ast.depreciation && ast.date && ast.value) {
+                            const val = parseFloat(ast.value) || 0;
+                            const purchaseDate = new Date(ast.date);
+                            const today = new Date();
+                            const years = (today - purchaseDate) / (1000 * 60 * 60 * 24 * 365.25);
+                            if (years > 0) {
+                                const rate = parseFloat(ast.depreciation) / 100;
+                                const currentVal = val * Math.pow((1 - rate), years);
+                                depreciation += (val - currentVal); // Total depreciation since purchase
+                            }
+                        }
+                    });
+
+                    const grossProfit = revenue - cogs;
+                    const totalExpenses = opExpenses + depreciation;
+                    const netProfit = grossProfit - totalExpenses;
+
+                    reportBody.innerHTML = `
+                        <tr style="background: #f8fafc; font-weight: 700;">
+                            <td colspan="2">INCOME</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left: 30px;">Sales Revenue (Sales Orders)</td>
+                            <td style="text-align: right;">${revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr style="border-top: 2px solid #e5e7eb; font-weight: 700; background: #f1f5f9;">
+                            <td>Total Income (A)</td>
+                            <td style="text-align: right;">${revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+
+                        <tr style="background: #f8fafc; font-weight: 700; margin-top: 10px;">
+                            <td colspan="2">COST OF GOODS SOLD (COGS)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left: 30px;">Direct Purchases (Purchase Orders)</td>
+                            <td style="text-align: right;">${cogs.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr style="border-top: 1px solid #e5e7eb; font-weight: 700;">
+                            <td>Total COGS (B)</td>
+                            <td style="text-align: right;">${cogs.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr style="background: var(--primary-light); color: var(--primary); font-weight: 800;">
+                            <td>GROSS PROFIT (C = A - B)</td>
+                            <td style="text-align: right;">${grossProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+
+                        <tr style="background: #f8fafc; font-weight: 700; margin-top: 10px;">
+                            <td colspan="2">OPERATING EXPENSES</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left: 30px;">General Expenses & Payments</td>
+                            <td style="text-align: right;">${opExpenses.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left: 30px;">Asset Depreciation</td>
+                            <td style="text-align: right;">${depreciation.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr style="border-top: 1px solid #e5e7eb; font-weight: 700;">
+                            <td>Total Expenses (D)</td>
+                            <td style="text-align: right;">${totalExpenses.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+
+                        <tr style="background: ${netProfit >= 0 ? 'var(--success-light)' : '#fee2e2'}; color: ${netProfit >= 0 ? 'var(--success)' : '#dc2626'}; font-weight: 800; font-size: 1.1rem; border-top: 3px double ${netProfit >= 0 ? 'var(--success)' : '#dc2626'};">
+                            <td>NET PROFIT / LOSS (E = C - D)</td>
+                            <td style="text-align: right;">${netProfit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+                    
+                    // Hide search and filters for P&L as it's a summary
+                    const table = document.getElementById('report-table');
+                    const searchInput = document.getElementById('search-report');
+                    searchInput.style.display = 'none';
+                    table.setAttribute('data-no-filter', 'true');
+                } // End if (type === 'production')
+                
+                let genericTitle = 'Report';
+                if(type === 'sales-orders') genericTitle = 'Sales Orders Report';
+                if(type === 'purchase-orders') genericTitle = 'Purchase Orders Report';
+                if(type === 'jobwork-jobno') genericTitle = 'Job Work - Job No. Wise';
+                if(type === 'jobwork-process') genericTitle = 'Job Work - Process Wise';
+                if(type === 'jobwork-worker') genericTitle = 'Job Work - Worker Wise';
+                if(type === 'jobwork-wastage') genericTitle = 'Job Work - Wastage Wise';
+                if(type === 'jobwork-metal') genericTitle = 'Metal Balance Report';
+                if(type === 'inventory') genericTitle = 'Inventory & Stock Report';
+                if(type === 'production') genericTitle = 'Production Report';
+                if(type === 'profit-loss') genericTitle = 'Profit & Loss Statement';
+                
+                if (currentActiveView && currentActiveView.name) {
+                    genericTitle = currentActiveView.name + ' (' + genericTitle + ')';
+                }
+                
+                const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                document.getElementById('report-title').textContent = genericTitle;
+                
+                const reportSub = document.getElementById('report-subtitle');
+                if(reportSub) {
+                    const firstDayStr = `01 ${new Date().toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}`;
+                    reportSub.textContent = `From ${firstDayStr} To ${todayStr}`;
+                }
+                
+                const prt = document.getElementById('print-report-title');
+                if(prt) prt.textContent = genericTitle;
+                
+                const prd = document.getElementById('print-report-date');
+                if(prd) prd.textContent = `From ${firstDayStr} To ${todayStr}`;
+                
+                if (currentActiveView) window.applyCustomViewColumnMapping(); // Run the DOM intercepter
+                window.calculateReportTotals(); // Recalculate at end of load
+            } // End loadReport
+
+            // Intercept DOM and reorder/hide columns based on currentActiveView
+            window.applyCustomViewColumnMapping = function() {
+                if (!currentActiveView || !currentActiveView.columns) return;
+                
+                const table = document.getElementById('report-table');
+                const theadTr = table.querySelector('thead tr');
+                const tbodyTrs = table.querySelectorAll('tbody tr');
+                if (!theadTr) return;
+
+                const ths = Array.from(theadTr.children);
+                
+                // 1. Build a map of Original Index -> Column Name from the freshly generated table
+                const originalIndexMap = {};
+                ths.forEach((th, idx) => {
+                    originalIndexMap[th.innerText.trim()] = { el: th, index: idx };
+                });
+
+                // 2. Re-arrange Header
+                theadTr.innerHTML = '';
+                const activeIndicesMap = []; // Maps new order index -> old order index for row re-ordering
+                
+                currentActiveView.columns.forEach(colConfig => {
+                    if (!colConfig.visible) return; // Skip hidden columns completely
+                    
+                    const origCol = originalIndexMap[colConfig.name];
+                    if (origCol) {
+                        activeIndicesMap.push(origCol.index);
+                        theadTr.appendChild(origCol.el); // Move the physical element
+                    }
+                });
+
+                // 3. Re-arrange Body Rows
+                tbodyTrs.forEach(tr => {
+                    // Skip 'No records found' rows (colspan rows)
+                    if (tr.children.length <= 1) return;
+                    
+                    const copyTds = Array.from(tr.children);
+                    tr.innerHTML = '';
+                    
+                    activeIndicesMap.forEach(oldIdx => {
+                        if (copyTds[oldIdx]) tr.appendChild(copyTds[oldIdx]);
+                    });
+                });
+            };
+
+            // Function to calculate and append totals row
+            window.calculateReportTotals = function() {
+                const table = document.getElementById('report-table');
+                if (!table) return;
+                
+                const headRow = table.querySelector('thead tr:first-child') || table.querySelector('thead tr:not(.excel-filter-row)');
+                const bodyRows = table.querySelectorAll('tbody tr');
+                let tfoot = table.querySelector('tfoot');
+                
+                if (tfoot) tfoot.remove(); // Clear existing
+                
+                if (!headRow || bodyRows.length === 0) return;
+                
+                // Don't calculate if it's the "No records found" message
+                if (bodyRows.length === 1 && bodyRows[0].cells.length === 1) return;
+                
+                const sumColumns = [];
+                const headers = headRow.querySelectorAll('th');
+                
+                headers.forEach((th, idx) => {
+                    const text = th.innerText.toLowerCase();
+                    if (text.includes('weight') || text.includes('wt') || text.includes('qty') || 
+                        text.includes('bal') || text.includes('loss') || text.includes('inflow') || 
+                        text.includes('outflow') || text.includes('stock') || text.includes('solder') || 
+                        text.includes('metal') || text.includes('wastage') || text.includes('powder')) {
+                        sumColumns.push(idx);
+                    }
+                });
+                
+                if (sumColumns.length === 0) return;
+                
+                let hasValidRows = false;
+                const totals = new Array(headers.length).fill(0);
+                const hasValue = new Array(headers.length).fill(false);
+                
+                bodyRows.forEach(row => {
+                    if (row.style.display === 'none') return;
+                    hasValidRows = true;
+                    
+                    const cells = row.querySelectorAll('td');
+                    sumColumns.forEach(idx => {
+                        if (cells[idx]) {
+                            const rawStr = cells[idx].innerText.replace(/,/g, '');
+                            const val = parseFloat(rawStr);
+                            if (!isNaN(val)) {
+                                totals[idx] += val;
+                                hasValue[idx] = true;
+                            }
+                        }
+                    });
+                });
+                
+                if (!hasValidRows) return;
+                
+                tfoot = document.createElement('tfoot');
+                const tr = document.createElement('tr');
+                tr.style.backgroundColor = '#f8fafc';
+                tr.style.fontWeight = 'bold';
+                
+                let firstValIndex = headers.length;
+                for (let i = 0; i < headers.length; i++) {
+                    if (sumColumns.includes(i) && hasValue[i]) {
+                        firstValIndex = i;
+                        break;
+                    }
+                }
+
+                // Create the 'TOTAL' cell spanning empty columns before the first value
+                if (firstValIndex > 0) {
+                    const tdTotal = document.createElement('td');
+                    tdTotal.colSpan = firstValIndex;
+                    tdTotal.innerText = 'TOTAL';
+                    tdTotal.style.textAlign = 'right';
+                    tdTotal.style.padding = '12px 15px';
+                    tdTotal.style.borderTop = '2px solid #333';
+                    tdTotal.style.fontSize = '1.05rem';
+                    tdTotal.style.color = '#1b2a4e';
+                    tr.appendChild(tdTotal);
+                }
+
+                headers.forEach((th, idx) => {
+                    if (idx < firstValIndex) return; // Skip columns covered by colspan
+                    
+                    const td = document.createElement('td');
+                    td.style.borderTop = '2px solid #333';
+                    td.style.padding = '12px 8px';
+                    td.style.textAlign = 'center';
+                    
+                    if (sumColumns.includes(idx) && hasValue[idx]) {
+                        // Format clearly to 3 digits ALWAYS
+                        td.innerText = totals[idx].toFixed(3);
+                        td.style.color = '#0284c7';
+                        td.style.fontSize = '1.05rem';
+                    } else {
+                        td.innerText = '-';
+                        td.style.color = '#ccc';
+                    }
+                    tr.appendChild(td);
+                });
+                
+                tfoot.appendChild(tr);
+                table.appendChild(tfoot);
+            };
+
+            // Global EXPORT function (Native CSV for Excel compatibility)
+            window.exportTableToExcel = function(tableID, filename = 'Report') {
+                let table = document.getElementById(tableID);
+                if (!table) return;
+
+                let csv = [];
+                let rows = table.querySelectorAll('tr');
+
+                for (let i = 0; i < rows.length; i++) {
+                    // Skip hidden rows and filter rows
+                    if (rows[i].style.display === 'none' || rows[i].classList.contains('excel-filter-row')) continue;
+                    
+                    let row = [];
+                    let cols = rows[i].querySelectorAll('td, th');
+                    
+                    for (let j = 0; j < cols.length; j++) {
+                        // Clean text: remove newlines, escape double quotes
+                        let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""');
+                        // Quote the string to handle commas/spaces natively
+                        row.push('"' + data + '"');
+                    }
+                    csv.push(row.join(','));
+                }
+                
+                // Add prefix to filename
+                const reportTitle = document.getElementById('report-title');
+                if (reportTitle && reportTitle.innerText) {
+                    filename = reportTitle.innerText.replace(/[^a-zA-Z0-9\s-]/gi, '').trim().replace(/\s+/g, '_').toLowerCase();
+                }
+
+                let blob = new Blob([csv.join('\\n')], { type: 'text/csv;charset=utf-8;' });
+                let downloadLink = document.createElement("a");
+                
+                downloadLink.href = URL.createObjectURL(blob);
+                downloadLink.download = filename + '.csv';
+                downloadLink.style.display = 'none';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            };
+
+            // --- Column Manager UI Logic ---
+            const btnCustomize = document.getElementById('btn-customize-columns-inner');
+            const colModal = document.getElementById('column-manager-modal');
+            const closeColModal = document.getElementById('close-col-modal');
+            const colList = document.getElementById('column-list');
+            const btnSaveView = document.getElementById('btn-save-custom-view');
+            const btnApplyCols = document.getElementById('btn-apply-columns');
+            const btnResetView = document.getElementById('btn-reset-view');
+            const viewNameInput = document.getElementById('custom-view-name');
+            
+            let tempColumnsState = [];
+
+            // Open Modal and populate current columns
+            if (btnCustomize) {
+                btnCustomize.addEventListener('click', () => {
+                const table = document.getElementById('report-table');
+                const theadTr = table.querySelector('thead tr');
+                if (!theadTr) return;
+
+                // Sync the custom views dropdown optgroup
+                refreshCustomViewsDropdown();
+
+                colList.innerHTML = '';
+                tempColumnsState = [];
+                
+                Array.from(theadTr.children).forEach((th, idx) => {
+                    const colName = th.innerText.trim();
+                    if (!colName) return;
+                    
+                    // If we are currently IN a custom view, we read from its config instead of DOM assumes
+                    let isVisible = true;
+                    if (currentActiveView) {
+                        const existingCol = currentActiveView.columns.find(c => c.name === colName);
+                        if (existingCol) isVisible = existingCol.visible;
+                    }
+
+                    tempColumnsState.push({ name: colName, visible: isVisible });
+                    
+                    const item = document.createElement('div');
+                    item.className = 'col-drag-item';
+                    item.draggable = true;
+                    item.dataset.index = idx;
+                    item.style.cssText = 'display: flex; align-items: center; padding: 10px 15px; background: white; border: 1px solid #dee2e6; border-radius: 6px; cursor: grab; user-select: none;';
+                    
+                    item.innerHTML = `
+                        <span style="color: #adb5bd; margin-right: 15px;">☰</span>
+                        <input type="checkbox" class="col-vis-toggle" ${isVisible ? 'checked' : ''} style="margin-right: 10px; cursor: pointer; transform: scale(1.2);">
+                        <span style="font-weight: 500; color: #495057; flex: 1;">${colName}</span>
+                    `;
+                    
+                    // Toggle visibility state in memory
+                    item.querySelector('.col-vis-toggle').addEventListener('change', (e) => {
+                        const activeIndex = tempColumnsState.findIndex(c => c.name === colName);
+                        if(activeIndex > -1) tempColumnsState[activeIndex].visible = e.target.checked;
+                    });
+                    
+                    // Drag and Drop Logic
+                    item.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', idx);
+                        item.style.opacity = '0.5';
+                    });
+                    item.addEventListener('dragend', () => item.style.opacity = '1');
+                    item.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        item.style.borderTop = '2px solid #3b82f6';
+                    });
+                    item.addEventListener('dragleave', () => item.style.borderTop = '1px solid #dee2e6');
+                    item.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        item.style.borderTop = '1px solid #dee2e6';
+                        
+                        const draggedIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                        const targetIdx = idx;
+                        
+                        if (draggedIdx === targetIdx) return;
+                        
+                        // Reorder memory array
+                        const draggedItem = tempColumnsState.splice(draggedIdx, 1)[0];
+                        tempColumnsState.splice(targetIdx, 0, draggedItem);
+                        
+                        // Re-render
+                        btnCustomize.click(); 
+                    });
+
+                    colList.appendChild(item);
+                });
+
+                if(currentActiveView) {
+                    viewNameInput.value = currentActiveView.name;
+                } else {
+                    viewNameInput.value = '';
+                }
+                
+                colModal.style.display = 'flex';
+            });
+            } // Close if (btnCustomize)
+
+            closeColModal.addEventListener('click', () => colModal.style.display = 'none');
+
+            // Save as Custom View
+            btnSaveView.addEventListener('click', () => {
+                const viewName = viewNameInput.value.trim();
+                const baseType = currentActiveView ? currentActiveView.baseType : reportSelector.value;
+                
+                if (!viewName) {
+                    alert("Please enter a name for this custom template.");
+                    return;
+                }
+                
+                window.manti_custom_reports[viewName] = {
+                    name: viewName,
+                    baseType: baseType,
+                    columns: tempColumnsState
+                };
+                
+                localStorage.setItem('manti_custom_reports', JSON.stringify(window.manti_custom_reports));
+                refreshCustomViewsDropdown();
+                
+                // Switch dropdown to this new view immediately
+                reportSelector.value = 'custom-' + viewName;
+                loadReport('custom-' + viewName);
+                
+                colModal.style.display = 'none';
+                alert('Custom view "' + viewName + '" saved successfully!');
+            });
+            
+            // Apply (without saving as preset)
+            btnApplyCols.addEventListener('click', () => {
+                // If they are just applying, we create a temporary active view
+                currentActiveView = {
+                    name: 'Unsaved Custom View',
+                    baseType: currentActiveView ? currentActiveView.baseType : reportSelector.value,
+                    columns: tempColumnsState
+                };
+                
+                loadReport(currentActiveView.baseType);
+                colModal.style.display = 'none';
+            });
+
+            // Reset to Default
+            btnResetView.addEventListener('click', () => {
+                if(currentActiveView && window.manti_custom_reports[currentActiveView.name]) {
+                    if(confirm("Are you sure you want to delete the '" + currentActiveView.name + "' template?")) {
+                        delete window.manti_custom_reports[currentActiveView.name];
+                        localStorage.setItem('manti_custom_reports', JSON.stringify(window.manti_custom_reports));
+                    }
+                }
+                
+                currentActiveView = null;
+                refreshCustomViewsDropdown();
+                
+                // Fallback to base type based on dropdown
+                const selectedVal = reportSelector.value;
+                if(selectedVal.startsWith('custom-')) {
+                    reportSelector.value = 'sales-orders'; // safe default
+                    loadReport('sales-orders');
+                } else {
+                    loadReport(selectedVal);
+                }
+                colModal.style.display = 'none';
+            });
+
+            function refreshCustomViewsDropdown() {
+                // Check if optgroup exists
+                let customOptGroup = reportSelector.querySelector('optgroup[label="Custom Reports"]');
+                if (!customOptGroup) {
+                    customOptGroup = document.createElement('optgroup');
+                    customOptGroup.label = "Custom Reports";
+                    reportSelector.appendChild(customOptGroup);
+                }
+                
+                customOptGroup.innerHTML = '';
+                
+                Object.keys(window.manti_custom_reports).forEach(viewName => {
+                    const opt = document.createElement('option');
+                    opt.value = 'custom-' + viewName;
+                    opt.textContent = '★ ' + viewName;
+                    customOptGroup.appendChild(opt);
+                });
+                
+                if (Object.keys(window.manti_custom_reports).length === 0) {
+                    customOptGroup.remove();
+                }
+            }
+            
+            // Generate custom view optgroup on initial load
+            refreshCustomViewsDropdown();
+
+            // Resolve any pending report triggered by a card click before DOMContentLoaded
+            if (window._pendingReport) {
+                loadReport(window._pendingReport);
+                window._pendingReport = null;
+            }
+
+            // Also load last-used on startup
+            const lastReport = localStorage.getItem('manti_last_report') || 'sales-orders';
+            loadReport(lastReport);
+            // Highlight matching card
+            document.querySelectorAll('.report-card').forEach(card => {
+                const cardType = card.getAttribute('onclick').match(/'([^']+)'/)?.[1];
+                if (cardType === lastReport) card.classList.add('active');
+            });
+
+            // Override selectReport to also save
+            const origSelect = window.selectReport;
+            window.selectReport = function(type, cardEl) {
+                localStorage.setItem('manti_last_report', type);
+                if (origSelect) origSelect(type, cardEl);
+            };
+
+        });
+    </script>
+</body>
+
+</html>

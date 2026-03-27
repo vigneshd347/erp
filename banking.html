@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Banking</title>
+    <link rel="stylesheet" href="style.css?v=18">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Banking Page Styles */
+        .banking-container {
+            display: flex;
+            gap: 0;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Left Panel - Accounts List */
+        .bank-accounts-panel {
+            width: 280px;
+            min-width: 280px;
+            background: #fff;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 90px);
+            overflow-y: auto;
+        }
+
+        .bank-panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .bank-panel-header h2 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-add-account {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-add-account:hover { background: var(--primary-light); }
+
+        .bank-account-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bank-account-item:hover { background: #f9fafb; }
+        .bank-account-item.active { background: var(--primary-light); border-left: 3px solid var(--primary); }
+
+        .bank-account-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .bank-account-icon.bank-type { background: #dbeafe; color: #1d4ed8; }
+        .bank-account-icon.credit-type { background: #fce7f3; color: #be185d; }
+        .bank-account-icon.cash-type { background: #d1fae5; color: #047857; }
+
+        .bank-account-info { flex: 1; min-width: 0; }
+        .bank-account-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1f2937;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bank-account-num {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        .bank-account-balance {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #1f2937;
+            white-space: nowrap;
+        }
+
+        .bank-no-accounts {
+            padding: 40px 20px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+
+        /* Right Panel - Transactions */
+        .bank-transactions-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f9fafb;
+            overflow: hidden;
+        }
+
+        .bank-transaction-header {
+            padding: 16px 24px;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .bank-account-summary {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .bank-balance-chip {
+            background: var(--success-light);
+            border: 1px solid var(--success-light);
+            border-radius: 8px;
+            padding: 6px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .bank-balance-chip .label { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; }
+        .bank-balance-chip .amount { font-size: 1.1rem; font-weight: 800; color: var(--success); }
+
+        .bank-action-btns { display: flex; gap: 10px; align-items: center; }
+
+        .btn-bank-action {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-bank-primary { background: var(--primary); color: #fff; }
+        .btn-bank-primary:hover { background: var(--primary-hover); }
+        .btn-bank-secondary { background: #fff; color: var(--text-main); border: 1px solid var(--border); }
+        .btn-bank-secondary:hover { background: #f9fafb; }
+
+        .bank-transactions-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .bank-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            color: #9ca3af;
+            text-align: center;
+        }
+        .bank-empty-state svg { opacity: 0.3; margin-bottom: 16px; }
+        .bank-empty-state h3 { font-size: 1rem; font-weight: 600; color: #4b5563; margin-bottom: 6px; }
+        .bank-empty-state p { font-size: 0.85rem; }
+
+        /* Transactions Table */
+        .bank-txn-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+        .bank-txn-table thead tr { background: #f8fafc; }
+        .bank-txn-table th { padding: 12px 16px; font-size: 0.78rem; font-weight: 600; color: #6b7280; text-align: left; border-bottom: 1px solid #e5e7eb; text-transform: uppercase; letter-spacing: 0.04em; }
+        .bank-txn-table td { padding: 13px 16px; font-size: 0.85rem; color: #374151; border-bottom: 1px solid #f3f4f6; }
+        .bank-txn-table tr:last-child td { border-bottom: none; }
+        .bank-txn-table tr:hover td { background: #fafbfc; }
+        .amount-in { color: var(--success); font-weight: 600; }
+        .amount-out { color: var(--danger); font-weight: 600; }
+
+        /* No Account Selected State */
+        .no-account-selected {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            gap: 12px;
+        }
+
+        /* Modal Styles */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-backdrop.open { display: flex; }
+
+        .modal-card {
+            background: #fff;
+            border-radius: 16px;
+            width: 520px;
+            max-width: 95vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-card-header h2 { font-size: 1.1rem; font-weight: 700; color: #1f2937; }
+        .modal-close { background: none; border: none; cursor: pointer; color: #6b7280; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 6px; }
+        .modal-close:hover { background: #f3f4f6; }
+        .modal-body { padding: 24px; }
+
+        .account-type-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .account-type-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .account-type-card:hover { border-color: var(--primary); background: var(--primary-light); }
+        .account-type-card.selected { border-color: var(--primary); background: var(--primary-light); }
+        .account-type-card .type-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 1.5rem;
+        }
+        .account-type-card .type-icon.bank { background: #dbeafe; color: #1d4ed8; }
+        .account-type-card .type-icon.credit { background: #fce7f3; color: #be185d; }
+        .account-type-card .type-icon.cash { background: #d1fae5; color: #047857; }
+        .account-type-card h3 { font-size: 0.9rem; font-weight: 700; color: #1f2937; margin-bottom: 4px; }
+        .account-type-card p { font-size: 0.75rem; color: #6b7280; }
+
+        .form-field { margin-bottom: 16px; }
+        .form-field label { display: block; font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+        .form-field input, .form-field select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; font-family: inherit; box-sizing: border-box; transition: border 0.2s; }
+        .form-field input:focus, .form-field select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .modal-footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-modal-cancel { padding: 9px 18px; border: 1px solid #d1d5db; background: #fff; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
+        .btn-modal-save { padding: 9px 18px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
+        .btn-modal-save:hover { background: var(--primary-hover); }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; padding: 0; display: flex; flex-direction: column; overflow: hidden;">
+            <!-- Top Bar -->
+            <div style="padding: 16px 24px; background: #fff; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h1 style="font-size: 1.3rem; font-weight: 800; color: #1f2937; margin: 0;">Banking</h1>
+                    <p style="font-size: 0.82rem; color: #6b7280; margin: 2px 0 0;">Manage your bank accounts, credit cards, and cash</p>
+                </div>
+                <button class="btn-add-account" id="btn-open-add-account" style="background: var(--primary); color: #fff; padding: 9px 16px; border-radius: 8px; font-size: 0.85rem;">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                    Add Bank or Credit Card
+                </button>
+            </div>
+
+            <!-- Banking layout: left accounts panel + right txn panel -->
+            <div class="banking-container">
+                <!-- Left: Accounts List -->
+                <div class="bank-accounts-panel">
+                    <div class="bank-panel-header">
+                        <h2>All Accounts</h2>
+                    </div>
+                    <div id="bank-accounts-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Right: Transactions -->
+                <div class="bank-transactions-panel" id="bank-right-panel">
+                    <div class="no-account-selected" id="no-account-placeholder">
+                        <i data-lucide="landmark" style="width: 64px; height: 64px; opacity: 0.2;"></i>
+                        <h3>Select an Account</h3>
+                        <p>Choose a bank or credit card account from the left panel to view transactions.</p>
+                        <button class="btn-bank-primary btn-bank-action" id="btn-quick-add" style="margin-top: 16px;">
+                            <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                            Add Bank or Credit Card
+                        </button>
+                    </div>
+
+                    <!-- Account transaction view (hidden until account selected) -->
+                    <div id="account-txn-view" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
+                        <div class="bank-transaction-header">
+                            <div class="bank-account-summary">
+                                <div>
+                                    <div id="txn-account-name" style="font-size: 1rem; font-weight: 700; color: #1f2937;"></div>
+                                    <div id="txn-account-sub" style="font-size: 0.78rem; color: #6b7280; margin-top: 2px;"></div>
+                                </div>
+                                <div class="bank-balance-chip">
+                                    <span class="label">Balance</span>
+                                    <span class="amount" id="txn-balance">₹ 0.00</span>
+                                </div>
+                            </div>
+                            <div class="bank-action-btns">
+                                <button class="btn-bank-action btn-bank-secondary" id="btn-delete-account" title="Delete Account">
+                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                    Delete
+                                </button>
+                                <button class="btn-bank-action btn-bank-primary" id="btn-add-journal">
+                                    <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                                    Add Transaction
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bank-transactions-body">
+                            <table class="bank-txn-table" id="bank-txn-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Type</th>
+                                        <th>Money In (₹)</th>
+                                        <th>Money Out (₹)</th>
+                                        <th>Balance (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bank-txn-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Bank/Credit Card Modal -->
+    <div class="modal-backdrop" id="add-account-modal">
+        <div class="modal-card">
+            <div class="modal-card-header">
+                <h2>Add Bank or Credit Card</h2>
+                <button class="modal-close" id="close-account-modal"><i data-lucide="x" style="width: 20px; height: 20px;"></i></button>
+            </div>
+            <div class="modal-body">
+                <!-- Account Type Selection -->
+                <p style="font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 12px;">Select Account Type</p>
+                <div class="account-type-grid">
+                    <div class="account-type-card selected" data-type="Bank" onclick="selectAccountType('Bank', this)">
+                        <div class="type-icon bank"><i data-lucide="landmark" style="width: 22px; height: 22px;"></i></div>
+                        <h3>Bank</h3>
+                        <p>Savings, Current, or Overdraft accounts</p>
+                    </div>
+                    <div class="account-type-card" data-type="Credit Card" onclick="selectAccountType('Credit Card', this)">
+                        <div class="type-icon credit"><i data-lucide="credit-card" style="width: 22px; height: 22px;"></i></div>
+                        <h3>Credit Card</h3>
+                        <p>Credit card liability account</p>
+                    </div>
+                    <div class="account-type-card" data-type="Cash" onclick="selectAccountType('Cash', this)">
+                        <div class="type-icon cash"><i data-lucide="banknote" style="width: 22px; height: 22px;"></i></div>
+                        <h3>Cash</h3>
+                        <p>Petty cash or cash-in-hand</p>
+                    </div>
+                    <div class="account-type-card" data-type="Other" onclick="selectAccountType('Other', this)">
+                        <div class="type-icon bank" style="background:#f3f4f6; color:#6b7280;"><i data-lucide="wallet" style="width: 22px; height: 22px;"></i></div>
+                        <h3>Other</h3>
+                        <p>Loan, payment gateway, etc.</p>
+                    </div>
+                </div>
+
+                <!-- Account Details Form -->
+                <form id="add-account-form">
+                    <input type="hidden" id="acc-type" value="Bank">
+                    <div class="form-field">
+                        <label>Account Name <span style="color:#ef4444;">*</span></label>
+                        <input type="text" id="acc-name" placeholder="E.g. HDFC Current Account" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field" id="acc-number-field">
+                            <label>Account / Card Number (Last 4 digits)</label>
+                            <input type="text" id="acc-number" placeholder="XXXX" maxlength="4">
+                        </div>
+                        <div class="form-field">
+                            <label>Bank Name</label>
+                            <input type="text" id="acc-bank-name" placeholder="E.g. HDFC Bank">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>Opening Balance (₹)</label>
+                            <input type="number" id="acc-opening-balance" placeholder="0.00" step="0.01" min="0">
+                        </div>
+                        <div class="form-field">
+                            <label>As of Date</label>
+                            <input type="date" id="acc-opening-date">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-cancel" id="cancel-account-modal">Cancel</button>
+                <button class="btn-modal-save" id="save-account-btn">Save Account</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="liquid-button.js"></script>
+    <script src="script.js?v=25"></script>
+    <script>
+        lucide.createIcons();
+
+        let selectedAccountId = null;
+
+        // ---- Storage Helpers ----
+        function getAccounts() { return JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]'); }
+        function saveAccounts(arr) { localStorage.setItem('manti_bank_accounts', JSON.stringify(arr)); }
+        function getJournals() { return JSON.parse(localStorage.getItem('manti_journal_entries') || '[]'); }
+
+        // ---- Compute Balance for an account name ----
+        function computeBalance(accountName, openingBalance) {
+            const journals = getJournals();
+            let balance = parseFloat(openingBalance) || 0;
+            journals.forEach(j => {
+                if (!j.lines) return;
+                j.lines.forEach(line => {
+                    if ((line.account || '').toLowerCase() === accountName.toLowerCase() ||
+                        (line.account || '') === 'Bank') {
+                        balance += (parseFloat(line.debit) || 0) - (parseFloat(line.credit) || 0);
+                    }
+                });
+            });
+            return balance;
+        }
+
+        // ---- Render Accounts Panel ----
+        function renderAccountsList() {
+            const list = document.getElementById('bank-accounts-list');
+            const accounts = getAccounts();
+
+            if (accounts.length === 0) {
+                list.innerHTML = `<div class="bank-no-accounts">
+                    <i data-lucide="bank" style="width:32px;height:32px;opacity:0.3;margin-bottom:10px;"></i>
+                    <p>No accounts yet.<br>Click <strong>Add Bank or Credit Card</strong> to get started.</p>
+                </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            list.innerHTML = '';
+            accounts.forEach(acc => {
+                const balance = computeBalance(acc.name, acc.openingBalance);
+                const iconClass = acc.type === 'Credit Card' ? 'credit-type' : acc.type === 'Cash' ? 'cash-type' : 'bank-type';
+                const iconName = acc.type === 'Credit Card' ? 'credit-card' : acc.type === 'Cash' ? 'banknote' : 'landmark';
+                const isActive = selectedAccountId === acc.id ? 'active' : '';
+
+                const item = document.createElement('div');
+                item.className = `bank-account-item ${isActive}`;
+                item.setAttribute('data-id', acc.id);
+                item.innerHTML = `
+                    <div class="bank-account-icon ${iconClass}">
+                        <i data-lucide="${iconName}" style="width:18px;height:18px;"></i>
+                    </div>
+                    <div class="bank-account-info">
+                        <div class="bank-account-name">${acc.name}</div>
+                        <div class="bank-account-num">${acc.type}${acc.number ? ' •••• ' + acc.number : ''}</div>
+                    </div>
+                    <div class="bank-account-balance">₹ ${balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                `;
+                item.addEventListener('click', () => selectAccount(acc.id));
+                list.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        // ---- Select Account & Show Transactions ----
+        function selectAccount(id) {
+            selectedAccountId = id;
+            const accounts = getAccounts();
+            const acc = accounts.find(a => a.id === id);
+            if (!acc) return;
+
+            document.getElementById('no-account-placeholder').style.display = 'none';
+            const txnView = document.getElementById('account-txn-view');
+            txnView.style.display = 'flex';
+
+            document.getElementById('txn-account-name').textContent = acc.name;
+            document.getElementById('txn-account-sub').textContent = `${acc.type}${acc.bankName ? ' — ' + acc.bankName : ''}${acc.number ? ' •••• ' + acc.number : ''}`;
+
+            renderAccountsList(); // re-render to apply active state
+
+            // Build ledger lines for this account
+            const journals = getJournals();
+            let ledgerLines = [];
+
+            // Opening balance entry if any
+            if (parseFloat(acc.openingBalance) > 0) {
+                ledgerLines.push({
+                    date: acc.openingDate || acc.createdAt,
+                    desc: 'Opening Balance',
+                    type: 'Opening',
+                    moneyIn: parseFloat(acc.openingBalance),
+                    moneyOut: 0,
+                    timestamp: acc.openingDate || acc.createdAt
+                });
+            }
+
+            journals.forEach(j => {
+                if (!j.lines) return;
+                j.lines.forEach(line => {
+                    const lAccount = (line.account || '').toLowerCase();
+                    const aName = acc.name.toLowerCase();
+                    if (lAccount === aName || lAccount === 'bank') {
+                        ledgerLines.push({
+                            date: j.date,
+                            desc: line.desc || j.notes || 'Journal Entry',
+                            type: 'Journal',
+                            moneyIn: parseFloat(line.debit) || 0,
+                            moneyOut: parseFloat(line.credit) || 0,
+                            timestamp: j.timestamp || j.date
+                        });
+                    }
+                });
+            });
+
+            ledgerLines.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            const tbody = document.getElementById('bank-txn-body');
+            tbody.innerHTML = '';
+            let runningBalance = 0;
+
+            if (ledgerLines.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#9ca3af; padding: 40px;">No transactions found for this account.</td></tr>`;
+            } else {
+                ledgerLines.forEach((line, i) => {
+                    runningBalance += line.moneyIn - line.moneyOut;
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${i + 1}</td>
+                        <td>${new Date(line.date).toLocaleDateString('en-GB')}</td>
+                        <td><span style="font-weight:500;">${line.desc}</span></td>
+                        <td><span style="font-size:0.75rem; background:#f3f4f6; border-radius:4px; padding:2px 8px;">${line.type}</span></td>
+                        <td class="amount-in">${line.moneyIn > 0 ? '₹ ' + line.moneyIn.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</td>
+                        <td class="amount-out">${line.moneyOut > 0 ? '₹ ' + line.moneyOut.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</td>
+                        <td style="font-weight:600;">₹ ${runningBalance.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            const finalBalance = computeBalance(acc.name, acc.openingBalance);
+            document.getElementById('txn-balance').textContent = '₹ ' + finalBalance.toLocaleString('en-IN', {minimumFractionDigits:2});
+        }
+
+        // ---- Add Account Modal ----
+        let currentType = 'Bank';
+
+        function selectAccountType(type, el) {
+            currentType = type;
+            document.getElementById('acc-type').value = type;
+            document.querySelectorAll('.account-type-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function openAddAccountModal() {
+            document.getElementById('add-account-form').reset();
+            document.getElementById('acc-type').value = 'Bank';
+            currentType = 'Bank';
+            document.querySelectorAll('.account-type-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector('.account-type-card[data-type="Bank"]').classList.add('selected');
+            document.getElementById('acc-opening-date').valueAsDate = new Date();
+            document.getElementById('add-account-modal').classList.add('open');
+        }
+
+        function closeAddAccountModal() {
+            document.getElementById('add-account-modal').classList.remove('open');
+        }
+
+        document.getElementById('btn-open-add-account').addEventListener('click', openAddAccountModal);
+        document.getElementById('btn-quick-add').addEventListener('click', openAddAccountModal);
+        document.getElementById('close-account-modal').addEventListener('click', closeAddAccountModal);
+        document.getElementById('cancel-account-modal').addEventListener('click', closeAddAccountModal);
+
+        document.getElementById('save-account-btn').addEventListener('click', () => {
+            const name = document.getElementById('acc-name').value.trim();
+            if (!name) { alert('Please enter an Account Name.'); return; }
+
+            const accounts = getAccounts();
+            const newAcc = {
+                id: 'ACC-' + Date.now(),
+                type: currentType,
+                name: name,
+                number: document.getElementById('acc-number').value.trim(),
+                bankName: document.getElementById('acc-bank-name').value.trim(),
+                openingBalance: document.getElementById('acc-opening-balance').value || '0',
+                openingDate: document.getElementById('acc-opening-date').value,
+                createdAt: new Date().toISOString()
+            };
+            accounts.push(newAcc);
+            saveAccounts(accounts);
+            closeAddAccountModal();
+            renderAccountsList();
+            selectAccount(newAcc.id);
+        });
+
+        // ---- Delete Account ----
+        document.getElementById('btn-delete-account').addEventListener('click', () => {
+            if (!selectedAccountId) return;
+            const accounts = getAccounts();
+            const acc = accounts.find(a => a.id === selectedAccountId);
+            if (!acc) return;
+            if (confirm(`Delete "${acc.name}"? This will not delete related journal entries.`)) {
+                const updated = accounts.filter(a => a.id !== selectedAccountId);
+                saveAccounts(updated);
+                selectedAccountId = null;
+                document.getElementById('no-account-placeholder').style.display = 'flex';
+                document.getElementById('account-txn-view').style.display = 'none';
+                renderAccountsList();
+            }
+        });
+
+        // ---- Add Transaction -> go to journal entry ----
+        document.getElementById('btn-add-journal').addEventListener('click', () => {
+            window.location.href = 'journal-entry.html';
+        });
+
+        // ---- Init ----
+        document.addEventListener('DOMContentLoaded', () => {
+            renderAccountsList();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+
+</html>

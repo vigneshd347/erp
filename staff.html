@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Staff Data Sheet</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-container">
+                <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content" style="flex: 1; padding: 2rem;">
+            <header class="generator-header">
+                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                    <a href="index.html">
+                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                    </a>
+                    <div>
+                        <h1>Staff Data Sheet</h1>
+                        <p>MANTI JEWEL ART PRIVATE LIMITED</p>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button type="button" class="btn-animated-add" id="add-staff-btn">
+                      <span class="add-text">New Staff</span>
+                      <span class="add-icon-wrap">
+                        <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                          <line x1="12" x2="12" y1="5" y2="19"></line>
+                          <line x1="5" x2="19" y1="12" y2="12"></line>
+                        </svg>
+                      </span>
+                    </button>
+                    <button type="button" class="btn-liquid btn-secondary" onclick="window.location.href='admin.html'">Back to Settings</button>
+                </div>
+            </header>
+
+            <form id="staff-form" class="invoice-form"
+                style="margin-bottom: 3rem; display: none; background: white; padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
+
+                <!-- Profile Photo Upload -->
+                <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                    <div style="position: relative; flex-shrink: 0;">
+                        <img id="staff-photo-preview"
+                            src="https://ui-avatars.com/api/?name=Photo&background=e5e7eb&color=9ca3af&size=100"
+                            alt="Staff Photo"
+                            style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #e5e7eb; cursor: pointer;"
+                            onclick="document.getElementById('staff-photo-input').click()">
+                        <div onclick="document.getElementById('staff-photo-input').click()"
+                            style="position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid white;">
+                            <i data-lucide="camera" style="width:14px;height:14px;"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; color: #1f2937; margin: 0 0 4px;">Profile Photo</p>
+                        <p style="font-size: 0.82rem; color: #6b7280; margin: 0 0 10px;">Upload a passport-size photo (JPG, PNG)</p>
+                        <button type="button" onclick="document.getElementById('staff-photo-input').click()"
+                            style="padding: 6px 16px; font-size: 0.82rem; border: 1px solid var(--border); border-radius: 6px; background: #f9fafb; cursor: pointer; font-family: inherit;">
+                            Choose Photo
+                        </button>
+                        <input type="file" id="staff-photo-input" accept="image/*" style="display:none;"
+                            onchange="
+                                const file = this.files[0];
+                                if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = e => {
+                                        document.getElementById('staff-photo-preview').src = e.target.result;
+                                        document.getElementById('staff-photo-data').value = e.target.result;
+                                    };
+                                    reader.readAsDataURL(file);
+                                }
+                            ">
+                        <input type="hidden" id="staff-photo-data">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <!-- Basic Info Section -->
+                    <section class="form-section">
+                        <h3 style="color: var(--primary);">Employment Info</h3>
+                        <div class="field-group">
+                            <div class="field-row">
+                                <select id="st-type" required>
+                                    <option value="" disabled selected>Role Type</option>
+                                    <option value="Staff">1. Staff</option>
+                                    <option value="Worker">2. Worker (Karigar)</option>
+                                    <option value="Contractor">3. Contractor</option>
+                                </select>
+                                <input type="date" id="st-doj" required title="Joining Date">
+                            </div>
+                            <input type="text" id="st-id" placeholder="ID (Auto-gen)" readonly
+                                style="background: #f3f4f6;">
+                            <input type="text" id="st-name" placeholder="Full Name" required>
+                            <input type="text" id="st-designation" placeholder="Designation" required>
+                            <div class="field-row">
+                                <input type="text" id="st-guardian" placeholder="Father/Spouse Name" required>
+                                <input type="tel" id="st-guardian-mobile" placeholder="Guardian Mobile No" required>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Contact & Identity Section -->
+                    <section class="form-section">
+                        <h3 style="color: var(--primary);">Contact & KYC</h3>
+                        <div class="field-group">
+                            <div class="field-row" style="grid-template-columns: 2fr 1.5fr; display: grid; gap: 1rem;">
+                                <input type="tel" id="st-mobile" placeholder="Mobile Number" required>
+                                <input type="email" id="st-email" placeholder="Email Address">
+                            </div>
+                            <textarea id="st-address" placeholder="Full Address" rows="2" required></textarea>
+                            <input type="text" id="st-pincode" placeholder="Postal Code" required>
+                            <div class="field-row">
+                                <input type="text" id="st-aadhar" placeholder="Aadhar No" required>
+                                <input type="text" id="st-pan" placeholder="PAN No" required>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Bank & Payroll Section -->
+                    <section class="form-section" id="payroll-bank-section">
+                        <h3 style="color: var(--primary);">Payroll & Bank</h3>
+                        <div class="field-group">
+                            <div id="payroll-fields">
+                                <div class="field-row" style="margin-bottom: 0.75rem;">
+                                    <input type="text" id="st-pf" placeholder="PF No">
+                                    <input type="text" id="st-esi" placeholder="ESI No">
+                                </div>
+                                <input type="number" step="0.01" id="st-salary" placeholder="Salary (₹)" required
+                                    style="margin-bottom: 0.75rem;">
+                            </div>
+                            <div id="bank-fields">
+                                <div class="field-row">
+                                    <input type="text" id="st-bank-name" placeholder="Bank Name" required>
+                                    <input type="text" id="st-bank-acc" placeholder="Account No" required>
+                                </div>
+                                <div class="field-row" style="margin-top: 0.75rem;">
+                                    <input type="text" id="st-bank-ifsc" placeholder="IFSC" required>
+                                    <input type="text" id="st-bank-upi" placeholder="UPI ID">
+                                </div>
+                                <input type="text" id="st-bank-branch" placeholder="Branch Name" required
+                                    style="margin-top: 0.75rem;">
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div
+                    style="text-align: right; margin-top: 1.5rem; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn-liquid btn-outline" id="cancel-staff-btn">Cancel</button>
+                    <button type="submit" class="btn-liquid btn-primary">Save Member</button>
+                </div>
+            </form>
+
+            <!-- Table -->
+            <div style="margin-bottom: 1rem;">
+                <input type="text" id="search-staff" class="input-wrapper"
+                    placeholder="Search staff by name, ID, or role..."
+                    onkeyup="filterTable('search-staff', 'staff-table')"
+                    style="max-width: 400px; padding: 10px; font-size: 1rem;">
+            </div>
+
+            <div class="table-container">
+                <table id="staff-table">
+                    <thead>
+                        <tr>
+                            <th width="80">Emp ID</th>
+                            <th width="80">Type</th>
+                            <th>Name & Designation</th>
+                            <th>Contact</th>
+                            <th>Salary</th>
+                            <th width="80">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staff-body">
+                        <!-- Dynamic list -->
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="script.js?v=24"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('staff-form');
+            const tbody = document.getElementById('staff-body');
+            const toggleBtn = document.getElementById('add-staff-btn');
+
+            let records = JSON.parse(localStorage.getItem('manti_staff_records')) || [];
+            let editIndex = -1;
+
+            document.getElementById('st-doj').valueAsDate = new Date();
+
+            function generateEmpId(selectedType) {
+                let type = selectedType || document.getElementById('st-type').value;
+                let prefix = type === 'Contractor' ? 'TP-' : 'MSP-';
+                let maxId = 0;
+
+                records.forEach(rec => {
+                    if (rec.id && rec.id.startsWith(prefix)) {
+                        let numStr = rec.id.split('-')[1];
+                        let num = parseInt(numStr);
+                        if (!isNaN(num) && num > maxId) {
+                            maxId = num;
+                        }
+                    }
+                });
+                return `${prefix}${(maxId + 1).toString().padStart(4, '0')}`;
+            }
+
+            function updateFieldVisibility() {
+                const type = document.getElementById('st-type').value;
+                const payroll = document.getElementById('payroll-fields');
+                const salary = document.getElementById('st-salary');
+                const bankInputs = document.querySelectorAll('#bank-fields input');
+
+                if (type === 'Contractor') {
+                    payroll.style.display = 'none';
+                    salary.required = false;
+                    bankInputs.forEach(input => {
+                        if (input.id !== 'st-bank-upi') input.required = false;
+                    });
+                } else {
+                    payroll.style.display = 'block';
+                    salary.required = true;
+                    bankInputs.forEach(input => {
+                        if (input.id !== 'st-bank-upi') input.required = true;
+                    });
+                }
+            }
+
+            document.getElementById('st-type').addEventListener('change', () => {
+                if (editIndex === -1) {
+                    document.getElementById('st-id').value = generateEmpId();
+                }
+                updateFieldVisibility();
+            });
+
+            function renderTable() {
+                tbody.innerHTML = '';
+                if (records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No staff records found.</td></tr>';
+                    return;
+                }
+
+                records.forEach((rec, index) => {
+                    let color = 'var(--primary)'; // Staff
+                    if (rec.type === 'Worker') color = 'var(--accent)';
+                    if (rec.type === 'Contractor') color = '#6366f1'; // Indigo for contractor
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-weight: 700;">${rec.id}</td>
+                        <td><span style="background: ${color}20; color: ${color}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${rec.type}</span></td>
+                        <td style="line-height: 1.4;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <img src="${rec.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(rec.name) + '&background=e5e7eb&color=6b7280&size=40'}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb;flex-shrink:0;">
+                                <div><strong style="color: var(--primary); font-size: 1rem;">${rec.name}</strong><br><span style="font-size: 0.8rem; color: #6b7280;">${rec.designation}</span></div>
+                            </div>
+                        </td>
+                        <td style="line-height: 1.4;">
+                            <span style="color: #6b7280; font-size: 0.85rem;">Ph:</span> ${rec.mobile}<br>
+                            <span style="font-size: 0.8rem; color: #6b7280;">${rec.guardian} (${rec.guardianMobile || '-'})</span>
+                        </td>
+                        <td style="font-weight: 600; color: var(--success);">₹ ${parseFloat(rec.salary || 0).toLocaleString()}</td>
+                        <td style="display: flex; gap: 10px; align-items: center; justify-content: center; height: 100%;">
+                            <button onclick="editRecord(${index})" class="btn-edit" title="Edit">
+                                <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
+                            </button>
+                            <button onclick="deleteRecord(${index})" class="btn-remove" title="Delete">
+                                <svg viewBox="0 0 448 512" class="del-icon"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path></svg>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            window.editRecord = function (index) {
+                editIndex = index;
+                const rec = records[index];
+
+                document.getElementById('st-id').value = rec.id || '';
+                document.getElementById('st-type').value = rec.type || '';
+                document.getElementById('st-doj').value = rec.doj || '';
+                document.getElementById('st-name').value = rec.name || '';
+                document.getElementById('st-designation').value = rec.designation || '';
+                document.getElementById('st-guardian').value = rec.guardian || '';
+                document.getElementById('st-guardian-mobile').value = rec.guardianMobile || '';
+                document.getElementById('st-mobile').value = rec.mobile || '';
+                document.getElementById('st-email').value = rec.email || '';
+                document.getElementById('st-address').value = rec.address || '';
+                document.getElementById('st-pincode').value = rec.pincode || '';
+                document.getElementById('st-aadhar').value = rec.aadhar || '';
+                document.getElementById('st-pan').value = rec.pan || '';
+                document.getElementById('st-pf').value = rec.pf || '';
+                document.getElementById('st-esi').value = rec.esi || '';
+                document.getElementById('st-salary').value = rec.salary || '';
+
+                document.getElementById('st-bank-name').value = rec.bankName || '';
+                document.getElementById('st-bank-branch').value = rec.bankBranch || '';
+                document.getElementById('st-bank-acc').value = rec.bankAcc || '';
+                document.getElementById('st-bank-ifsc').value = rec.bankIfsc || '';
+                document.getElementById('st-bank-upi').value = rec.bankUpi || '';
+
+                // Load photo if exists
+                const photoData = rec.photo || '';
+                const preview = document.getElementById('staff-photo-preview');
+                preview.src = photoData || `https://ui-avatars.com/api/?name=${encodeURIComponent(rec.name)}&background=e5e7eb&color=9ca3af&size=100`;
+                document.getElementById('staff-photo-data').value = photoData;
+
+                updateFieldVisibility();
+                form.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            window.deleteRecord = function (index) {
+                if (confirm("Are you sure you want to delete this record?")) {
+                    records.splice(index, 1);
+                    localStorage.setItem('manti_staff_records', JSON.stringify(records));
+                    renderTable();
+                }
+            };
+
+            toggleBtn.addEventListener('click', () => {
+                form.reset();
+                editIndex = -1;
+                document.getElementById('st-type').value = 'Staff';
+                document.getElementById('st-id').value = generateEmpId('Staff');
+                document.getElementById('st-doj').valueAsDate = new Date();
+                document.getElementById('staff-photo-preview').src = 'https://ui-avatars.com/api/?name=Photo&background=e5e7eb&color=9ca3af&size=100';
+                document.getElementById('staff-photo-data').value = '';
+                updateFieldVisibility();
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                form.style.display = 'none';
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const rec = {
+                    id: document.getElementById('st-id').value || generateEmpId(),
+                    type: document.getElementById('st-type').value,
+                    doj: document.getElementById('st-doj').value,
+                    name: document.getElementById('st-name').value.trim(),
+                    designation: document.getElementById('st-designation').value.trim(),
+                    guardian: document.getElementById('st-guardian').value.trim(),
+                    guardianMobile: document.getElementById('st-guardian-mobile').value.trim(),
+                    mobile: document.getElementById('st-mobile').value.trim(),
+                    email: document.getElementById('st-email').value.trim(),
+                    address: document.getElementById('st-address').value.trim(),
+                    pincode: document.getElementById('st-pincode').value.trim(),
+                    aadhar: document.getElementById('st-aadhar').value.trim(),
+                    pan: document.getElementById('st-pan').value.trim(),
+                    pf: document.getElementById('st-pf').value.trim(),
+                    esi: document.getElementById('st-esi').value.trim(),
+                    salary: document.getElementById('st-salary').value,
+                    bankName: document.getElementById('st-bank-name').value.trim(),
+                    bankBranch: document.getElementById('st-bank-branch').value.trim(),
+                    bankAcc: document.getElementById('st-bank-acc').value.trim(),
+                    bankIfsc: document.getElementById('st-bank-ifsc').value.trim(),
+                    bankUpi: document.getElementById('st-bank-upi').value.trim(),
+                    photo: document.getElementById('staff-photo-data').value
+                };
+
+                if (editIndex >= 0) {
+                    records[editIndex] = rec;
+                } else {
+                    records.push(rec);
+                }
+
+                localStorage.setItem('manti_staff_records', JSON.stringify(records));
+
+                form.style.display = 'none';
+                form.reset();
+                renderTable();
+            });
+
+            renderTable();
+        });
+    </script>
+</body>
+
+</html>

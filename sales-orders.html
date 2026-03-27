@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Orders - Manti ERP</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .form-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar / Navigation -->
+                <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-content">
+                    <h1>Sales Order</h1>
+                </div>
+            </header>
+
+            <!-- KPI Stats Bar -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+                <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;"><i data-lucide="shopping-bag" style="width:18px;height:18px;"></i></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Total SOs</div><div id="kpi-so-total" style="font-size:1.3rem;font-weight:800;color:var(--accent);">0</div></div>
+                </div>
+                <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;"><i data-lucide="clock" style="width:18px;height:18px;"></i></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Open</div><div id="kpi-so-open" style="font-size:1.3rem;font-weight:800;color:var(--primary);">0</div></div>
+                </div>
+                <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:var(--success-light);color:var(--success);display:flex;align-items:center;justify-content:center;"><i data-lucide="check-circle" style="width:18px;height:18px;"></i></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Completed</div><div id="kpi-so-completed" style="font-size:1.3rem;font-weight:800;color:var(--success);">0</div></div>
+                </div>
+                <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:#fce7f3;color:#be185d;display:flex;align-items:center;justify-content:center;"><i data-lucide="star" style="width:18px;height:18px;"></i></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Fixed Rate</div><div id="kpi-so-fixed" style="font-size:1.3rem;font-weight:800;color:#be185d;">0</div></div>
+                </div>
+            </div>
+            <script>
+                (function(){
+                    const allOrders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+                    const sos = allOrders.filter(o => o.type === 'Sales Order');
+                    document.getElementById('kpi-so-total').textContent = sos.length;
+                    document.getElementById('kpi-so-open').textContent = sos.filter(o => o.status !== 'Completed').length;
+                    document.getElementById('kpi-so-completed').textContent = sos.filter(o => o.status === 'Completed').length;
+                    document.getElementById('kpi-so-fixed').textContent = sos.filter(o => o.isFixed).length;
+                })();
+            </script>
+
+            <form id="order-form" class="form-container" style="display: none; background: #f9fafb; padding: 25px; border-radius: 16px; border: 1.5px solid #e5e7eb; margin-bottom: 2rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    
+                    <section class="form-section">
+                        <h3>Order Identity</h3>
+                        <div class="field-group">
+                            <input type="text" id="ord-id" placeholder="Order ID" readonly style="background-color: #f3f4f6; cursor: not-allowed; font-weight: 700; color: var(--primary);">
+                            <input type="date" id="ord-date" required title="Order Date">
+                            
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Due Date</label>
+                                    <input type="date" id="ord-due-date" required title="Due Date" style="margin-bottom: 0;">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="form-section">
+                        <h3>Customer & Product</h3>
+                        <div class="field-group">
+                            <select id="ord-vendor" class="input-wrapper" required>
+                                <option value="" disabled selected>Select Customer</option>
+                                <!-- Dynamic options -->
+                            </select>
+                            <input type="text" id="ord-product" placeholder="Product / Description" required>
+                            
+                            <div id="ord-metal-type-container">
+                                <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Metal Type</label>
+                                <select id="ord-main-metal-type" class="input-wrapper" required>
+                                    <option value="" disabled selected>Select Metal Type</option>
+                                    <option value="Gold">1. Gold</option>
+                                    <option value="Silver">2. Silver</option>
+                                    <option value="Others">3. others</option>
+                                </select>
+                            </div>
+                            <input type="number" step="0.001" id="ord-qty" placeholder="Weight (g)" required>
+                        </div>
+                    </section>
+
+                    <section class="form-section">
+                        <h3>Pricing & Commitment</h3>
+                        <div class="field-group">
+                            <div id="sales-pricing-container" class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <input type="number" step="0.01" id="ord-mc-percent" placeholder="MC (%)">
+                                <input type="number" step="0.01" id="ord-mc-amount" placeholder="MC Amount (₹)">
+                            </div>
+                            
+                            <div style="position: relative;">
+                                <input type="number" step="0.01" id="ord-amount" placeholder="Final Amount (₹)" style="width: 100%; padding-right: 70px;">
+                                <span id="ord-amount-label" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: #6b7280; pointer-events: none; font-weight: 600;">(Optional)</span>
+                            </div>
+
+                            <label id="sales-fixed-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--primary);">
+                                <input type="checkbox" id="ord-is-fixed" style="width: 16px; height: 16px; cursor: pointer;">
+                                <strong>Fixed Order (Fixed Rate Commitment)</strong>
+                            </label>
+
+                            <input type="text" id="ord-remark" placeholder="Remark / Notes">
+                        </div>
+                    </section>
+                </div>
+
+                <div style="text-align: right; margin-top: 1.5rem; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn-liquid btn-outline" id="cancel-order">Cancel</button>
+                    <button type="submit" class="btn-liquid btn-primary">Save Sales Order</button>
+                </div>
+            </form>
+
+            <!-- SO List section -->
+            <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+                <!-- Toolbar: Search + Filter Tabs -->
+                <div style="padding:14px 20px; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                    <!-- Status Filter Tabs -->
+                    <div id="so-filter-tabs" style="display:flex; gap:0; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+                        <button class="so-tab active" data-filter="All"    onclick="filterSOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:var(--primary); color:#fff; cursor:pointer; transition:all 0.15s;">All</button>
+                        <button class="so-tab"        data-filter="Open"   onclick="filterSOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-main); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Open</button>
+                        <button class="so-tab"        data-filter="Completed" onclick="filterSOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-main); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Completed</button>
+                        <button class="so-tab"        data-filter="Cancelled" onclick="filterSOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-main); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Cancelled</button>
+                    </div>
+
+                    <!-- Search & Actions -->
+                    <div style="display:flex; align-items:center; gap:12px; flex:1; justify-content:flex-end;">
+                        <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:7px 12px; max-width:280px; width:100%;">
+                            <i data-lucide="search" style="width:15px;height:15px;color:var(--text-muted);flex-shrink:0;"></i>
+                            <input type="text" id="search-orders" placeholder="Search orders, customers..." 
+                                oninput="filterSOTable()"
+                                style="border:none; background:transparent; outline:none; font-size:0.84rem; color:var(--text-main); width:100%;">
+                        </div>
+                        <button type="button" class="btn-animated-add" id="add-order-btn">
+                          <span class="add-text">New SO</span>
+                          <span class="add-icon-wrap">
+                            <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                              <line x1="12" x2="12" y1="5" y2="19"></line>
+                              <line x1="5" x2="19" y1="12" y2="12"></line>
+                            </svg>
+                          </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <table id="orders-table" data-no-filter="true" style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#f8fafc;">
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">SO #</th>
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Date</th>
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Customer</th>
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Items</th>
+                            <th style="padding:11px 16px; text-align:right; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Weight</th>
+                            <th style="padding:11px 16px; text-align:right; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Amount</th>
+                            <th style="padding:11px 16px; text-align:center; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Status</th>
+                            <th style="padding:11px 16px; text-align:center; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-body">
+                        <!-- Dynamic rows -->
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div id="so-empty-state" style="display:none; text-align:center; padding:48px 24px;">
+                    <div style="width:56px;height:56px;background:#f3f4f6;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <i data-lucide="shopping-bag" style="width:24px;height:24px;color:#9ca3af;"></i>
+                    </div>
+                    <div style="font-size:1rem;font-weight:600;color:#374151;margin-bottom:6px;">No sales orders found</div>
+                    <div style="font-size:0.85rem;color:#9ca3af;">Click "+ New" to create your first one.</div>
+                </div>
+            </div>
+
+            <style>
+                .so-tab:hover { filter: brightness(0.93); }
+                #orders-table th { background: transparent; color: #6b7280; border: none; }
+                #orders-table tbody tr { border-bottom: 1px solid #f9fafb; transition: background 0.12s; }
+                #orders-table tbody tr:hover { background: #fafbff; }
+                #orders-table tbody tr:last-child { border-bottom: none; }
+                .so-status-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
+            </style>
+        </main>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="script.js?v=24"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load rates for Fixed logic
+            const savedRates = localStorage.getItem('manti_metal_rates');
+            if (savedRates) {
+                const rates = JSON.parse(savedRates);
+                const gRate = document.getElementById('p-gold-rate');
+                const sRate = document.getElementById('p-silver-rate');
+                if (gRate) gRate.textContent = '₹ ' + (rates.pureGold || 0).toLocaleString();
+                if (sRate) sRate.textContent = '₹ ' + (rates.pureSilver || 0).toLocaleString();
+            }
+
+            // Load Customers (Vendors)
+            const vendorSelect = document.getElementById('ord-vendor');
+            const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records')) || [];
+            vendors.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.textContent = v.id;
+                vendorSelect.appendChild(opt);
+            });
+
+            const form = document.getElementById('order-form');
+            const toggleBtn = document.getElementById('add-order-btn');
+            const cancelBtn = document.getElementById('cancel-order');
+            const tbody = document.getElementById('orders-body');
+            
+            let records = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+
+            function generateOrderId() {
+                let prefix = 'SO-';
+                let maxId = 1000;
+                records.forEach(rec => {
+                    if (rec.id && rec.id.startsWith(prefix)) {
+                        const num = parseInt(rec.id.replace(prefix, ''), 10);
+                        if (!isNaN(num) && num > maxId) maxId = num;
+                    }
+                });
+                return prefix + (maxId + 1);
+            }
+
+            function calculateFixedAmount() {
+                const isFixed = document.getElementById('ord-is-fixed').checked;
+                const amtInput = document.getElementById('ord-amount');
+                const amtLabel = document.getElementById('ord-amount-label');
+                
+                if (!isFixed) {
+                    amtInput.required = false;
+                    if (amtLabel) { amtLabel.textContent = "(Optional)"; amtLabel.style.color = "#6b7280"; }
+                    return;
+                }
+
+                amtInput.required = true;
+                if (amtLabel) { amtLabel.textContent = "(Required)"; amtLabel.style.color = "#ef4444"; }
+
+                const qty = parseFloat(document.getElementById('ord-qty').value) || 0;
+                const metalType = document.getElementById('ord-main-metal-type').value;
+                if (qty <= 0 || !metalType) return;
+
+                const rates = JSON.parse(localStorage.getItem('manti_metal_rates') || '{}');
+                let rate = 0;
+                if (metalType === 'Gold') rate = rates.gold22k || ((rates.pureGold || 0) / 24 * 22);
+                else if (metalType === 'Silver') rate = rates.silver925 || ((rates.pureSilver || 0) * 0.925);
+
+                let baseAmount = qty * rate;
+                let mcAmt = 0;
+                const mcPercent = parseFloat(document.getElementById('ord-mc-percent').value) || 0;
+                const mcFixed = parseFloat(document.getElementById('ord-mc-amount').value) || 0;
+
+                if (mcPercent > 0) mcAmt = baseAmount * (mcPercent / 100);
+                else mcAmt = mcFixed;
+
+                amtInput.value = (baseAmount + mcAmt).toFixed(2);
+            }
+
+            // Sync MC inputs
+            document.getElementById('ord-mc-percent').addEventListener('input', () => {
+                if (document.getElementById('ord-mc-percent').value) document.getElementById('ord-mc-amount').value = '';
+                calculateFixedAmount();
+            });
+            document.getElementById('ord-mc-amount').addEventListener('input', () => {
+                if (document.getElementById('ord-mc-amount').value) document.getElementById('ord-mc-percent').value = '';
+                calculateFixedAmount();
+            });
+            ['ord-qty', 'ord-main-metal-type', 'ord-is-fixed'].forEach(id => {
+                document.getElementById(id).addEventListener('input', calculateFixedAmount);
+            });
+
+            let currentSOFilter = 'All';
+
+            window.filterSOTab = function(btn) {
+                document.querySelectorAll('.so-tab').forEach(t => {
+                    t.style.background = '#fff';
+                    t.style.color = 'var(--text-main)';
+                });
+                btn.style.background = 'var(--primary)';
+                btn.style.color = '#fff';
+                currentSOFilter = btn.getAttribute('data-filter');
+                renderTable();
+            };
+
+            window.filterSOTable = function() { renderTable(); };
+
+            window.completeOrder = function(idx) {
+                if (confirm("Mark this sales order as Completed?")) {
+                    records[idx].status = 'Completed';
+                    localStorage.setItem('manti_order_records', JSON.stringify(records));
+                    renderTable();
+                    
+                    // Update KPI numbers
+                    const sos = records.filter(o => o.type === 'Sales Order');
+                    document.getElementById('kpi-so-total').textContent = sos.length;
+                    document.getElementById('kpi-so-open').textContent = sos.filter(o => o.status !== 'Completed').length;
+                    document.getElementById('kpi-so-completed').textContent = sos.filter(o => o.status === 'Completed').length;
+                    document.getElementById('kpi-so-fixed').textContent = sos.filter(o => o.isFixed).length;
+                }
+            };
+
+            function renderTable() {
+                tbody.innerHTML = '';
+                const search = (document.getElementById('search-orders')?.value || '').toLowerCase();
+                const emptyState = document.getElementById('so-empty-state');
+                const tableEl = document.getElementById('orders-table');
+
+                const filtered = records.filter(rec => {
+                    if (rec.type !== 'Sales Order') return false;
+                    const status = rec.status || 'Open';
+                    if (currentSOFilter !== 'All' && status !== currentSOFilter) return false;
+                    if (search) {
+                        const haystack = [rec.id, rec.vendor, rec.date, rec.dueDate, rec.product, 
+                            rec.mainMetalType, rec.remark].join(' ').toLowerCase();
+                        if (!haystack.includes(search)) return false;
+                    }
+                    return true;
+                });
+
+                if (filtered.length === 0) {
+                    if (emptyState) emptyState.style.display = 'block';
+                    if (tableEl) tableEl.style.display = 'none';
+                    return;
+                }
+                
+                if (emptyState) emptyState.style.display = 'none';
+                if (tableEl) tableEl.style.display = 'table';
+
+                filtered.forEach((rec) => {
+                    const index = records.indexOf(rec);
+                    const status = rec.status || 'Open';
+
+                    // Status chip colors
+                    const statusStyles = {
+                        'Open':      { bg: '#fef9c3', color: '#ca8a04', dot: '#ca8a04' },
+                        'Completed': { bg: '#dcfce7', color: '#16a34a', dot: '#16a34a' },
+                        'Cancelled': { bg: '#fee2e2', color: '#dc2626', dot: '#dc2626' }
+                    };
+                    const sc = statusStyles[status] || { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af' };
+
+                    // Badges
+                    let catBadge = '';
+                    if (rec.mainMetalType) catBadge += `<span style="font-size:0.7rem;background:#fef3c7;color:#d97706;padding:1px 6px;border-radius:4px;font-weight:700;margin-right:4px;">${rec.mainMetalType}</span>`;
+                    if (rec.isFixed) catBadge += `<span style="font-size:0.7rem;background:#fce7f3;color:#be185d;padding:1px 6px;border-radius:4px;font-weight:700;">Fixed Rate</span>`;
+
+                    const amt = parseFloat(rec.amount || 0);
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="padding:13px 16px;">
+                            <div style="font-weight:700;color:#0284c7;font-size:0.9rem;">${rec.id || '—'}</div>
+                        </td>
+                        <td style="padding:13px 16px;">
+                            <div style="font-size:0.85rem;color:#374151;">${rec.date || '—'}</div>
+                            ${rec.dueDate ? `<div style="font-size:0.72rem;color:#ef4444;margin-top:2px;font-weight:600;">Due: ${rec.dueDate}</div>` : ''}
+                        </td>
+                        <td style="padding:13px 16px;">
+                            <div style="font-weight:600;color:#1f2937;font-size:0.9rem;">${rec.vendor || '—'}</div>
+                        </td>
+                        <td style="padding:13px 16px;max-width:220px;">
+                            <div style="font-size:0.85rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${rec.product || '—'}</div>
+                            <div style="margin-top:4px;">${catBadge}</div>
+                        </td>
+                        <td style="padding:13px 16px;text-align:right;">
+                            <div style="font-weight:700;color:#111827;font-size:0.9rem;">${parseFloat(rec.qty || 0).toFixed(3)}</div>
+                            <div style="font-size:0.72rem;color:#6b7280;margin-top:2px;">MC: ${rec.mcPercent ? rec.mcPercent + '%' : '₹' + (rec.mcAmount || 0)}</div>
+                        </td>
+                        <td style="padding:13px 16px;text-align:right;">
+                            <div style="font-weight:700;color:#059669;font-size:0.9rem;">${amt > 0 ? '₹' + amt.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</div>
+                        </td>
+                        <td style="padding:13px 16px;text-align:center;">
+                            <span class="so-status-chip" style="background:${sc.bg};color:${sc.color};">
+                                <span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};display:inline-block;"></span>
+                                ${status}
+                            </span>
+                        </td>
+                        <td style="padding:13px 16px;text-align:center;">
+                            <div style="display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;">
+                                ${status === 'Open' ? `<button onclick="completeOrder(${index})" style="padding:4px 10px;font-size:0.75rem;background:var(--success);color:#fff;border-radius:6px;border:none;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:3px;" title="Complete"><i data-lucide="check" style="width:12px;height:12px;"></i> Complete</button>` : ''}
+                                <button onclick="editRecord(${index})" class="btn-edit" title="Edit">
+                                    <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
+                                </button>
+                                <button onclick="deleteRecord(${index})" class="btn-remove" title="Delete">
+                                    <svg viewBox="0 0 448 512" class="del-icon"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path></svg>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                lucide.createIcons();
+            }
+
+            let editIndex = -1;
+            window.editRecord = function(idx) {
+                editIndex = idx;
+                const rec = records[idx];
+                document.getElementById('ord-id').value = rec.id;
+                document.getElementById('ord-date').value = rec.date;
+                document.getElementById('ord-due-date').value = rec.dueDate;
+                document.getElementById('ord-vendor').value = rec.vendor;
+                document.getElementById('ord-product').value = rec.product;
+                document.getElementById('ord-main-metal-type').value = rec.mainMetalType || '';
+                document.getElementById('ord-qty').value = rec.qty;
+                document.getElementById('ord-mc-percent').value = rec.mcPercent || '';
+                document.getElementById('ord-mc-amount').value = rec.mcAmount || '';
+                document.getElementById('ord-amount').value = rec.amount || '';
+                document.getElementById('ord-remark').value = rec.remark || '';
+                document.getElementById('ord-is-fixed').checked = rec.isFixed || false;
+                
+                form.style.display = 'block';
+                calculateFixedAmount();
+            };
+
+            window.deleteRecord = function(idx) {
+                if (confirm("Delete this sales order?")) {
+                    records.splice(idx, 1);
+                    localStorage.setItem('manti_order_records', JSON.stringify(records));
+                    renderTable();
+                }
+            };
+
+            toggleBtn.addEventListener('click', () => {
+                form.reset();
+                editIndex = -1;
+                document.getElementById('ord-id').value = generateOrderId();
+                document.getElementById('ord-date').valueAsDate = new Date();
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                form.style.display = 'none';
+                editIndex = -1;
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const rec = {
+                    id: document.getElementById('ord-id').value,
+                    type: 'Sales Order',
+                    date: document.getElementById('ord-date').value,
+                    dueDate: document.getElementById('ord-due-date').value,
+                    vendor: document.getElementById('ord-vendor').value,
+                    product: document.getElementById('ord-product').value,
+                    mainMetalType: document.getElementById('ord-main-metal-type').value,
+                    qty: document.getElementById('ord-qty').value,
+                    mcPercent: document.getElementById('ord-mc-percent').value,
+                    mcAmount: document.getElementById('ord-mc-amount').value,
+                    amount: document.getElementById('ord-amount').value,
+                    remark: document.getElementById('ord-remark').value,
+                    isFixed: document.getElementById('ord-is-fixed').checked,
+                    status: 'Open'
+                };
+
+                if (editIndex >= 0) records[editIndex] = rec;
+                else records.unshift(rec);
+
+                localStorage.setItem('manti_order_records', JSON.stringify(records));
+                form.style.display = 'none';
+                renderTable();
+            });
+
+            renderTable();
+        });
+    </script>
+    <script src="liquid-button.js"></script>
+</body>
+
+</html>

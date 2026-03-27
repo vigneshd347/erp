@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Job Work Management</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar / Navigation -->
+                <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; padding: 2rem;">
+            <header class="generator-header">
+                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                    <a href="index.html">
+                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                    </a>
+                    <div>
+                        <h1>Job Work Tracker</h1>
+                        <p>Track issue and received weight for job work (Karigars)</p>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button type="button" class="btn-liquid btn-secondary" onclick="window.location.href='inventory.html'">Back to
+                        Inventory</button>
+                    <button type="button" class="btn-animated-add" id="add-jobwork">
+                      <span class="add-text">New Entry</span>
+                      <span class="add-icon-wrap">
+                        <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                          <line x1="12" x2="12" y1="5" y2="19"></line>
+                          <line x1="5" x2="19" y1="12" y2="12"></line>
+                        </svg>
+                      </span>
+                    </button>
+                </div>
+            </header>
+
+            <form id="jobwork-form" class="invoice-form"
+                style="margin-bottom: 3rem; display: none; background: white; padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
+                <div class="form-grid">
+                    <section class="form-section">
+                        <h3>General Details</h3>
+                        <div class="field-group">
+                            <input type="date" id="jw-date" required title="Date">
+                            <select id="jw-status" class="input-wrapper" required>
+                                <option value="1. Issue">1. Issue</option>
+                                <option value="2. Receive">2. Receive</option>
+                            </select>
+                            <select id="jw-jobnum" class="input-wrapper" required>
+                                <option value="" disabled selected>Select Sales Order / Job No.</option>
+                                <!-- Dynamic options -->
+                            </select>
+                            <select id="jw-process" class="input-wrapper" required>
+                                <option value="" disabled selected>Select Process</option>
+                                <option value="1. Casting">1. Casting</option>
+                                <option value="2. Filling">2. Filling</option>
+                                <option value="3. Buffing">3. Buffing</option>
+                                <option value="4. Final Process">4. Final Process</option>
+                                <option value="5. Despatch">5. Despatch</option>
+                            </select>
+                            <div id="jw-job-balance-display"
+                                style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; padding: 8px 12px; border-radius: 6px; margin-top: 8px; font-size: 0.85rem; line-height: 1.4;">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="form-section" id="section-issue">
+                        <h3 style="color: var(--danger);">Issue Details</h3>
+                        <div class="field-group">
+                            <select id="jw-worker" class="input-wrapper" required>
+                                <option value="" disabled selected>Select Worker (Karigar)</option>
+                            </select>
+                            <input type="text" id="jw-item" placeholder="Item Description (E.g., Gold Chain 22K)">
+
+                            <!-- Dynamic issue lines -->
+                            <div id="jw-issue-lines"
+                                style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;"></div>
+
+                            <button type="button" id="add-issue-line"
+                                style="align-self: flex-start; margin-top: 0.25rem; padding: 6px 14px; background: #eff6ff; color: #3b82f6; border: 1.5px dashed #3b82f6; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">+
+                                Add</button>
+
+                            <!-- Total display -->
+                            <div id="jw-issue-total-row"
+                                style="display: none; margin-top: 0.5rem; padding: 10px 14px; background: #fff1f2; border: 1px solid var(--danger); border-radius: 8px; font-size: 0.9rem; font-weight: 700; color: var(--danger);">
+                                Total: <span id="jw-issue-total-display">0.000</span> g
+                            </div>
+
+                            <!-- Hidden total field for validation -->
+                            <input type="hidden" id="jw-issue" value="0">
+                        </div>
+                    </section>
+
+                    <section class="form-section" id="section-receive" style="display: none;">
+                        <h3 style="color: var(--success);">Receive Details</h3>
+                        <div class="field-group">
+                            <select id="jw-worker-rec" class="input-wrapper" required>
+                                <option value="" disabled selected>Select Worker (Karigar)</option>
+                            </select>
+                            <input type="text" id="jw-item-rec" placeholder="Item Description">
+
+                            <!-- Dynamic receive lines -->
+                            <div id="jw-receive-lines"
+                                style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;"></div>
+
+                            <button type="button" id="add-receive-line"
+                                style="align-self: flex-start; margin-top: 0.25rem; padding: 6px 14px; background: #f0fdf4; color: #10b981; border: 1.5px dashed #10b981; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">+
+                                Add</button>
+
+                            <!-- Total display -->
+                            <div id="jw-receive-total-row"
+                                style="display: none; margin-top: 0.5rem; padding: 10px 14px; background: #f0fdf4; border: 1px solid var(--success); border-radius: 8px; font-size: 0.9rem; font-weight: 700; color: var(--success);">
+                                Total: <span id="jw-receive-total-display">0.000</span> g
+                            </div>
+
+                            <!-- Hidden total field -->
+                            <input type="hidden" id="jw-receive" value="0">
+                        </div>
+                    </section>
+                </div>
+                <div
+                    style="text-align: right; margin-top: 1.5rem; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+                    <button type="button" class="btn-liquid btn-outline" id="cancel-jobwork">Cancel</button>
+                    <button type="submit" class="btn-liquid btn-primary">Save Record</button>
+                </div>
+            </form>
+
+            <div style="margin-bottom: 1rem;">
+                <input type="text" id="search-jobwork" class="input-wrapper" placeholder="Search job work records..."
+                    onkeyup="filterTable('search-jobwork', 'jobwork-table')"
+                    style="max-width: 400px; padding: 10px; font-size: 1rem;">
+            </div>
+
+            <div class="table-container">
+                <table id="jobwork-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Job No. & Process</th>
+                            <th>Worker</th>
+                            <th>Description</th>
+                            <th>Issue Wt. (g)</th>
+                            <th>Received Wt. (g)</th>
+                            <th>Balance/Loss (g)</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobwork-body">
+                        <!-- Dynamic list -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/lucide.min.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="script.js?v=24"></script>
+</body>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set default date
+            document.getElementById('jw-date').value = new Date().toISOString().split('T')[0];
+
+            // Load Sales Orders for Dropdown
+            const jobNumSelect = document.getElementById('jw-jobnum');
+            const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+            const salesOrders = orders.filter(o => o.type === 'Sales Order' && o.status !== 'Completed');
+
+            if (salesOrders.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = "No sales orders found.";
+                opt.disabled = true;
+                jobNumSelect.appendChild(opt);
+            } else {
+                salesOrders.forEach(so => {
+                    const opt = document.createElement('option');
+                    opt.value = so.id;
+                    const metalLabel = so.mainMetalType ? ` [${so.mainMetalType}]` : '';
+                    opt.textContent = `${so.id}${metalLabel} - ${so.product} (${so.qty})`;
+                    jobNumSelect.appendChild(opt);
+                });
+            }
+
+            // Load Workers for Dropdowns
+            const workerIssueSelect = document.getElementById('jw-worker');
+            const workerRecSelect = document.getElementById('jw-worker-rec');
+            const staffRecords = JSON.parse(localStorage.getItem('manti_staff_records')) || [];
+            const workersAndContractors = staffRecords.filter(s => s.type === 'Worker' || s.type === 'Contractor');
+
+            if (workersAndContractors.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = "No personnel found (Worker/Contractor). Add them in Staff Data Sheet.";
+                opt.disabled = true;
+                workerIssueSelect.appendChild(opt.cloneNode(true));
+                workerRecSelect.appendChild(opt.cloneNode(true));
+            } else {
+                workersAndContractors.forEach(worker => {
+                    const opt = document.createElement('option');
+                    opt.value = `${worker.id} - ${worker.name}`;
+                    opt.textContent = `${worker.id} - ${worker.name}`;
+                    workerIssueSelect.appendChild(opt.cloneNode(true));
+                    workerRecSelect.appendChild(opt.cloneNode(true));
+                });
+            }
+
+            // Job Work Logic
+            const form = document.getElementById('jobwork-form');
+            const toggleBtn = document.getElementById('add-jobwork');
+            const cancelBtn = document.getElementById('cancel-jobwork');
+            const processSelect = document.getElementById('jw-process');
+            const tbody = document.getElementById('jobwork-body');
+
+            // Default date
+            document.getElementById('jw-date').valueAsDate = new Date();
+
+            const statusSelect = document.getElementById('jw-status');
+            const sectionIssue = document.getElementById('section-issue');
+            const sectionReceive = document.getElementById('section-receive');
+
+            function updateReceiveWorkerDropdown() {
+                const jobNum = jobNumSelect.value;
+                const currentProcess = document.getElementById('jw-process').value;
+                const workerRec = document.getElementById('jw-worker-rec');
+                const itemRec = document.getElementById('jw-item-rec');
+
+                // Clear current options, keeping the placeholder
+                workerRec.innerHTML = '<option value="" disabled selected>Select Worker (Karigar)</option>';
+                workerRec.disabled = false;
+                itemRec.readOnly = false;
+                workerRec.style.backgroundColor = '';
+                itemRec.style.backgroundColor = '';
+
+                if (!jobNum || !currentProcess || statusSelect.value !== '2. Receive') return;
+
+                // Find all workers who have issued to this job+process
+                const issuedWorkers = {};
+                records.forEach(r => {
+                    if (r.jobnum === jobNum && r.process === currentProcess && r.status === '1. Issue') {
+                        if (!issuedWorkers[r.worker]) {
+                            issuedWorkers[r.worker] = r.item || '';
+                        }
+                    }
+                });
+
+                const workerKeys = Object.keys(issuedWorkers);
+                if (workerKeys.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No issue found for this Job No & Process';
+                    opt.disabled = true;
+                    workerRec.appendChild(opt);
+                } else {
+                    workerKeys.forEach(w => {
+                        const opt = document.createElement('option');
+                        opt.value = w;
+                        opt.textContent = w;
+                        workerRec.appendChild(opt);
+                    });
+                    // Auto-select if only one worker
+                    if (workerKeys.length === 1 && editIndex === -1) {
+                        workerRec.value = workerKeys[0];
+                        itemRec.value = issuedWorkers[workerKeys[0]];
+                    }
+                }
+            }
+
+            function autoFillReceiveDetails() {
+                updateReceiveWorkerDropdown();
+            }
+
+            function unlockReceiveFields() {
+                updateReceiveWorkerDropdown();
+            }
+
+            function toggleSections() {
+                const currentProcess = processSelect.value;
+                const isDespatch = currentProcess === '5. Despatch';
+
+                if (isDespatch) {
+                    statusSelect.value = '1. Issue';
+                    statusSelect.disabled = true;
+                    // Keep layout intact by keeping it visible but disabled, or hide and unrequire
+                    statusSelect.style.display = 'none';
+                    const workerIssue = document.getElementById('jw-worker');
+                    workerIssue.style.display = 'none';
+                    workerIssue.required = false;
+
+                    // Automatically calculate receive weight from 4. Final Process and fill it
+                    const jobNum = document.getElementById('jw-jobnum').value;
+                    let totalReceivedMetalPrev = 0;
+                    if (jobNum) {
+                        records.forEach(r => {
+                            if (r.jobnum === jobNum && r.process === '4. Final Process' && r.status === '2. Receive') {
+                                if (r.receiveLines && r.receiveLines.length > 0) {
+                                    r.receiveLines.forEach(l => {
+                                        if (l.type === 'Metal' || l.type === 'Final Pcs') totalReceivedMetalPrev += l.weight;
+                                    });
+                                } else if (r.returnType === 'Metal' || r.returnType === 'Final Pcs') {
+                                    totalReceivedMetalPrev += (parseFloat(r.receiveWt) || 0);
+                                }
+                            }
+                        });
+                    }
+
+                    // Force 1 single line with the total and make it readonly
+                    clearIssueLines();
+                    addIssueLine();
+                    const singleRow = issueLines.querySelector('.issue-line-row');
+                    if (singleRow) {
+                        const wtInput = singleRow.querySelector('.issue-line-wt');
+                        wtInput.value = totalReceivedMetalPrev > 0 ? totalReceivedMetalPrev : '';
+                        wtInput.readOnly = true;
+
+                        const typeSelect = singleRow.querySelector('.issue-line-type');
+                        typeSelect.value = 'Metal';
+
+                        const removeBtn = singleRow.querySelector('.btn-remove');
+                        removeBtn.style.display = 'none';
+                    }
+
+                    document.getElementById('add-issue-line').style.display = 'none';
+                    if (totalReceivedMetalPrev === 0 && jobNum) {
+                        alert(`No "Metal" received from '4. Final Process' for ${jobNum}. Cannot despatch.`);
+                    }
+
+                } else {
+                    statusSelect.disabled = false;
+                    statusSelect.style.display = '';
+                    document.getElementById('jw-worker').style.display = '';
+
+                    // Reset single row readonly states
+                    document.getElementById('add-issue-line').style.display = 'block';
+                    issueLines.querySelectorAll('.issue-line-row').forEach(row => {
+                        row.querySelector('.issue-line-wt').readOnly = false;
+                        row.querySelector('.btn-remove').style.display = 'block';
+                    });
+                }
+
+                if (statusSelect.value === '1. Issue') {
+                    sectionIssue.style.display = 'block';
+                    sectionReceive.style.display = 'none';
+                    if (!isDespatch) {
+                        document.getElementById('jw-worker').required = true;
+                    }
+                    document.getElementById('jw-worker-rec').required = false;
+                    unlockReceiveFields();
+                } else {
+                    sectionIssue.style.display = 'none';
+                    sectionReceive.style.display = 'block';
+                    document.getElementById('jw-worker').required = false;
+                    document.getElementById('jw-worker-rec').required = true;
+                    autoFillReceiveDetails();
+                }
+            }
+
+            // --- Issue Multi-line Logic ---
+            const issueLines = document.getElementById('jw-issue-lines');
+            const issueTotalRow = document.getElementById('jw-issue-total-row');
+            const issueTotalDisplay = document.getElementById('jw-issue-total-display');
+            const issueHidden = document.getElementById('jw-issue');
+
+            function recalculateIssueTotal() {
+                let total = 0;
+                const rows = issueLines.querySelectorAll('.issue-line-row');
+                let summaryParts = [];
+                rows.forEach(row => {
+                    const type = row.querySelector('.issue-line-type').value;
+                    const wt = parseFloat(row.querySelector('.issue-line-wt').value) || 0;
+                    if (wt > 0) { total += wt; if (type) summaryParts.push(`${type} ${wt.toFixed(3)}`); }
+                });
+                issueHidden.value = total.toFixed(3);
+                issueTotalDisplay.textContent = total.toFixed(3);
+                if (rows.length > 0) {
+                    issueTotalRow.style.display = 'block';
+                    issueTotalRow.innerHTML = summaryParts.length > 1
+                        ? summaryParts.join(' + ') + ` = <strong>${total.toFixed(3)} g</strong>`
+                        : `Total: <strong>${total.toFixed(3)} g</strong>`;
+                } else {
+                    issueTotalRow.style.display = 'none';
+                }
+            }
+
+            function addIssueLine(type = '', weight = '') {
+                const row = document.createElement('div');
+                row.className = 'issue-line-row';
+                row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; align-items: center;';
+                row.innerHTML = `
+                    <select class="issue-line-type input-wrapper" style="margin:0;">
+                        <option value="" disabled ${!type ? 'selected' : ''}>Select Type</option>
+                        <option value="Metal" ${type === 'Metal' ? 'selected' : ''}>1. Metal</option>
+                        <option value="Solder" ${type === 'Solder' ? 'selected' : ''}>2. Solder</option>
+                        <option value="Final Pcs" ${type === 'Final Pcs' ? 'selected' : ''}>3. Final Pcs</option>
+                    </select>
+                    <input type="number" step="0.001" class="issue-line-wt" placeholder="Weight (g)" value="${weight}" style="margin:0;">
+                    <button type="button" class="btn-remove-sm" title="Remove">×</button>
+                `;
+                row.querySelector('.btn-remove').addEventListener('click', () => { row.remove(); recalculateIssueTotal(); });
+                row.querySelector('.issue-line-type').addEventListener('change', recalculateIssueTotal);
+                row.querySelector('.issue-line-wt').addEventListener('input', recalculateIssueTotal);
+                issueLines.appendChild(row);
+                recalculateIssueTotal();
+            }
+
+            function clearIssueLines() {
+                issueLines.innerHTML = '';
+                issueHidden.value = '0';
+                issueTotalRow.style.display = 'none';
+            }
+
+            document.getElementById('add-issue-line').addEventListener('click', () => addIssueLine());
+            addIssueLine();
+
+            // --- Receive Multi-line Logic ---
+            const receiveLines = document.getElementById('jw-receive-lines');
+            const receiveTotalRow = document.getElementById('jw-receive-total-row');
+            const receiveHidden = document.getElementById('jw-receive');
+
+            function recalculateReceiveTotal() {
+                let total = 0;
+                const rows = receiveLines.querySelectorAll('.receive-line-row');
+                let summaryParts = [];
+                rows.forEach(row => {
+                    const type = row.querySelector('.receive-line-type').value;
+                    const wt = parseFloat(row.querySelector('.receive-line-wt').value) || 0;
+                    if (wt > 0) { total += wt; if (type) summaryParts.push(`${type} ${wt.toFixed(3)}`); }
+                });
+                receiveHidden.value = total.toFixed(3);
+                if (rows.length > 0) {
+                    receiveTotalRow.style.display = 'block';
+                    receiveTotalRow.innerHTML = summaryParts.length > 1
+                        ? summaryParts.join(' + ') + ` = <strong>${total.toFixed(3)} g</strong>`
+                        : `Total: <strong>${total.toFixed(3)} g</strong>`;
+                } else {
+                    receiveTotalRow.style.display = 'none';
+                }
+            }
+
+            function addReceiveLine(type = '', weight = '') {
+                const row = document.createElement('div');
+                row.className = 'receive-line-row';
+                row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; align-items: center;';
+                row.innerHTML = `
+                    <select class="receive-line-type input-wrapper" style="margin:0;">
+                        <option value="" disabled ${!type ? 'selected' : ''}>Select Type</option>
+                        <option value="Metal" ${type === 'Metal' ? 'selected' : ''}>1. Metal</option>
+                        <option value="Solder" ${type === 'Solder' ? 'selected' : ''}>2. Solder</option>
+                        <option value="Powder" ${type === 'Powder' ? 'selected' : ''}>3. Powder</option>
+                        <option value="Wastage" ${type === 'Wastage' ? 'selected' : ''}>4. Wastage</option>
+                        <option value="Final Pcs" ${type === 'Final Pcs' ? 'selected' : ''}>5. Final Pcs</option>
+                    </select>
+                    <input type="number" step="0.001" class="receive-line-wt" placeholder="Weight (g)" value="${weight}" style="margin:0;">
+                    <button type="button" class="btn-remove-sm" title="Remove">×</button>
+                `;
+                row.querySelector('.btn-remove').addEventListener('click', () => { row.remove(); recalculateReceiveTotal(); });
+                row.querySelector('.receive-line-type').addEventListener('change', recalculateReceiveTotal);
+                row.querySelector('.receive-line-wt').addEventListener('input', recalculateReceiveTotal);
+                receiveLines.appendChild(row);
+                recalculateReceiveTotal();
+            }
+
+            function clearReceiveLines() {
+                receiveLines.innerHTML = '';
+                receiveHidden.value = '0';
+                receiveTotalRow.style.display = 'none';
+            }
+
+            document.getElementById('add-receive-line').addEventListener('click', () => addReceiveLine());
+            addReceiveLine();
+
+            let records = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+
+            function updateJobBalanceDisplay() {
+                const jobNum = jobNumSelect.value;
+                const balanceDiv = document.getElementById('jw-job-balance-display');
+                if (!jobNum) {
+                    balanceDiv.style.display = 'none';
+                    return;
+                }
+
+                let metalIssue = 0, solderIssue = 0;
+                let metalRec = 0, solderRec = 0, powderRec = 0, wastageRec = 0;
+
+                records.forEach(r => {
+                    if (r.jobnum === jobNum) {
+                        if (r.status === '1. Issue') {
+                            if (r.issueLines && r.issueLines.length > 0) {
+                                r.issueLines.forEach(l => {
+                                    if (l.type === 'Solder') solderIssue += l.weight;
+                                    else if (l.type === 'Metal' || l.type === 'Final Pcs') metalIssue += l.weight;
+                                });
+                            } else {
+                                if (r.issueType === 'Solder') solderIssue += parseFloat(r.issueWt) || 0;
+                                else metalIssue += parseFloat(r.issueWt) || 0;
+                            }
+                        } else if (r.status === '2. Receive') {
+                            if (r.receiveLines && r.receiveLines.length > 0) {
+                                r.receiveLines.forEach(l => {
+                                    if (l.type === 'Solder') solderRec += l.weight;
+                                    else if (l.type === 'Powder') powderRec += l.weight;
+                                    else if (l.type === 'Wastage') wastageRec += l.weight;
+                                    else if (l.type === 'Metal' || l.type === 'Final Pcs') metalRec += l.weight;
+                                });
+                            } else {
+                                const wt = parseFloat(r.receiveWt) || 0;
+                                if (r.returnType === 'Solder') solderRec += wt;
+                                else if (r.returnType === 'Powder') powderRec += wt;
+                                else if (r.returnType === 'Wastage') wastageRec += wt;
+                                else metalRec += wt;
+                            }
+                        }
+                    }
+                });
+
+                const metalBalance = metalIssue - (metalRec + powderRec + wastageRec);
+                const solderBalance = solderIssue - solderRec;
+                const totalBalance = metalBalance + solderBalance;
+
+                if (metalIssue === 0 && solderIssue === 0 && metalRec === 0 && solderRec === 0) {
+                    balanceDiv.style.display = 'none';
+                } else {
+                    balanceDiv.style.display = 'block';
+                    balanceDiv.innerHTML = `
+                        <div style="color: var(--primary); font-weight: 700; margin-bottom: 2px;">Balance for ${jobNum}:</div>
+                        ${metalIssue > 0 ? `<span style="color: var(--primary); font-weight: 600;">M: ${metalBalance.toFixed(3)}g</span>` : ''}
+                        ${solderIssue > 0 ? `<span style="color: #8b5cf6; font-weight: 600; margin-left: ${metalIssue > 0 ? '10px' : '0'};">S: ${solderBalance.toFixed(3)}g</span>` : ''}
+                        <span style="color: ${totalBalance < 0 ? 'var(--danger)' : 'var(--success)'}; font-weight: 700; margin-left: 10px;">(Net: ${totalBalance.toFixed(3)}g)</span>
+                    `;
+                }
+            }
+
+            statusSelect.addEventListener('change', () => {
+                localStorage.setItem('manti_last_jw_status', statusSelect.value);
+                toggleSections();
+                updateReceiveWorkerDropdown();
+            });
+            jobNumSelect.addEventListener('change', () => {
+                updateReceiveWorkerDropdown();
+                updateJobBalanceDisplay();
+                
+                // Auto-fill Item Description with SO Metal Type
+                const selectedJob = jobNumSelect.value;
+                if (selectedJob) {
+                    const so = orders.find(o => o.id === selectedJob && o.type === 'Sales Order');
+                    if (so && so.mainMetalType) {
+                        document.getElementById('jw-item').value = so.mainMetalType;
+                    }
+                }
+            });
+            document.getElementById('jw-process').addEventListener('change', (e) => {
+                localStorage.setItem('manti_last_jw_process', e.target.value);
+                toggleSections();
+                updateReceiveWorkerDropdown();
+            });
+
+            function renderTable() {
+                tbody.innerHTML = '';
+                if (records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">No job work records found.</td></tr>';
+                    return;
+                }
+
+                // Precompute balances per job
+                const jobBalances = {};
+                records.forEach(r => {
+                    if (r.jobnum) {
+                        if (!jobBalances[r.jobnum]) jobBalances[r.jobnum] = { metal_issue: 0, solder_issue: 0, metal_rec: 0, solder_rec: 0, powder: 0, wastage: 0 };
+
+                        if (r.status === '1. Issue') {
+                            if (r.issueLines && r.issueLines.length > 0) {
+                                r.issueLines.forEach(l => {
+                                    if (l.type === 'Solder') jobBalances[r.jobnum].solder_issue += l.weight;
+                                    else if (l.type === 'Metal' || l.type === 'Final Pcs') jobBalances[r.jobnum].metal_issue += l.weight;
+                                });
+                            } else {
+                                if (r.issueType === 'Solder') jobBalances[r.jobnum].solder_issue += (parseFloat(r.issueWt) || 0);
+                                else jobBalances[r.jobnum].metal_issue += (parseFloat(r.issueWt) || 0);
+                            }
+                        } else if (r.status === '2. Receive') {
+                            if (r.receiveLines && r.receiveLines.length > 0) {
+                                r.receiveLines.forEach(l => {
+                                    if (l.type === 'Solder') jobBalances[r.jobnum].solder_rec += l.weight;
+                                    else if (l.type === 'Powder') jobBalances[r.jobnum].powder += l.weight;
+                                    else if (l.type === 'Wastage') jobBalances[r.jobnum].wastage += l.weight;
+                                    else if (l.type === 'Metal' || l.type === 'Final Pcs') jobBalances[r.jobnum].metal_rec += l.weight;
+                                });
+                            } else {
+                                const wt = (parseFloat(r.receiveWt) || 0);
+                                if (r.returnType === 'Solder') jobBalances[r.jobnum].solder_rec += wt;
+                                else if (r.returnType === 'Powder') jobBalances[r.jobnum].powder += wt;
+                                else if (r.returnType === 'Wastage') jobBalances[r.jobnum].wastage += wt;
+                                else jobBalances[r.jobnum].metal_rec += wt;
+                            }
+                        }
+                    }
+                });
+
+                records.forEach((rec, index) => {
+                    const issueWt = parseFloat(rec.issueWt) || 0;
+                    const receiveWt = parseFloat(rec.receiveWt) || 0;
+
+                    let balanceHtml = '-';
+                    if (rec.jobnum && jobBalances[rec.jobnum]) {
+                        const jb = jobBalances[rec.jobnum];
+                        let metalBal = jb.metal_issue - (jb.metal_rec + jb.powder + jb.wastage);
+                        let solderBal = jb.solder_issue - jb.solder_rec;
+                        let netBal = metalBal + solderBal;
+
+                        let lines = [];
+                        if (metalBal !== 0 || jb.metal_issue > 0 || jb.metal_rec > 0) lines.push(`<span style="color: var(--primary); font-size: 0.8rem; font-weight: 500;">M: ${metalBal.toFixed(3)}</span>`);
+                        if (solderBal !== 0 || jb.solder_issue > 0 || jb.solder_rec > 0) lines.push(`<span style="color: #8b5cf6; font-size: 0.8rem; font-weight: 500;">S: ${solderBal.toFixed(3)}</span>`);
+                        lines.push(`<span style="font-weight: 700; font-size: 0.9rem; color: ${netBal < 0 ? 'var(--danger)' : 'inherit'}">Net: ${netBal.toFixed(3)}</span>`);
+
+                        balanceHtml = lines.join('<br>');
+                    }
+
+                    let statusColor = 'var(--accent)'; // default orange
+                    if (rec.status === '2. Receive') statusColor = 'var(--success)';
+                    if (rec.status === '1. Issue') statusColor = 'var(--primary)';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${rec.date || '-'}</td>
+                        <td style="line-height: 1.4;">
+                            <span style="font-weight: 700;">${rec.jobnum || '-'}</span>
+                            ${rec.process ? `<br><span style="font-size: 0.75rem; color: #6b7280; font-weight: 500;">${rec.process}</span>` : ''}
+                            ${(() => { const so = orders.find(o => o.id === rec.jobnum); return so && so.mainMetalType ? `<br><span style="font-size: 0.74rem; background: #fef3c7; color: #d97706; padding: 1px 6px; border-radius: 4px; font-weight: 700;">${so.mainMetalType}</span>` : ''; })()}
+                        </td>
+                        <td style="font-weight: 600; color: var(--primary);">${rec.worker || '-'}</td>
+                        <td>${rec.item || '-'}</td>
+                        <td style="color: var(--danger); font-weight: 600;">
+                            ${issueWt > 0 ? issueWt.toFixed(3) : '-'}
+                            ${rec.status === '1. Issue' && rec.issueLines && rec.issueLines.length > 1
+                            ? '<br>' + rec.issueLines.map(l => `<span style="font-size: 0.7rem; color: #6b7280; font-weight: 400;">${l.type}: ${parseFloat(l.weight).toFixed(3)}</span>`).join(' + ')
+                            : (rec.status === '1. Issue' && rec.issueType ? `<br><span style="font-size: 0.7rem; color: #6b7280; font-weight: 400;">(${rec.issueType})</span>` : '')
+                        }
+                        </td>
+                        <td style="color: var(--success); font-weight: 600;">
+                            ${receiveWt > 0 ? receiveWt.toFixed(3) : '-'}
+                            ${rec.status === '2. Receive' && rec.receiveLines && rec.receiveLines.length > 1
+                            ? '<br>' + rec.receiveLines.map(l => `<span style="font-size: 0.7rem; color: #6b7280; font-weight: 400;">${l.type}: ${parseFloat(l.weight).toFixed(3)}</span>`).join(' + ')
+                            : (rec.status === '2. Receive' && rec.returnType ? `<br><span style="font-size: 0.7rem; color: #6b7280; font-weight: 400;">(${rec.returnType})</span>` : '')
+                        }
+                        </td>
+                        <td style="line-height: 1.3;">${balanceHtml}</td>
+                        <td><span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${rec.status}</span></td>
+                        <td style="display: flex; gap: 10px; align-items: center; justify-content: center;">
+                            <button onclick="editRecord(${index})" class="btn-edit" title="Edit">
+                                <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
+                            </button>
+                            <button onclick="deleteRecord(${index})" class="btn-remove" title="Delete">
+                                <svg viewBox="0 0 448 512" class="del-icon"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path></svg>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                lucide.createIcons();
+            }
+
+            let editIndex = -1;
+
+            window.deleteRecord = function (index) {
+                if (confirm("Delete this record?")) {
+                    records.splice(index, 1);
+                    localStorage.setItem('manti_jobwork_records', JSON.stringify(records));
+                    renderTable();
+                }
+            };
+
+            toggleBtn.addEventListener('click', () => {
+                form.reset();
+                clearIssueLines();
+                addIssueLine();
+                clearReceiveLines();
+                addReceiveLine();
+                document.getElementById('jw-date').valueAsDate = new Date();
+                editIndex = -1;
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+                toggleSections();
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                form.style.display = 'none';
+                editIndex = -1;
+                clearIssueLines();
+                addIssueLine();
+                clearReceiveLines();
+                addReceiveLine();
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const isReceive = document.getElementById('jw-status').value === '2. Receive';
+                const currentProcess = document.getElementById('jw-process').value;
+                const jobNum = document.getElementById('jw-jobnum').value;
+
+                if (isReceive) {
+                    const selectedWorker = document.getElementById('jw-worker-rec').value;
+
+                    // Find total issued weight for this Worker + Job + Process
+                    let matchingIssue = null;
+                    let totalIssueWt = 0;
+
+                    records.forEach((r, i) => {
+                        if (r.jobnum === jobNum && r.process === currentProcess && r.status === '1. Issue' && r.worker === selectedWorker) {
+                            totalIssueWt += (parseFloat(r.issueWt) || 0);
+                            matchingIssue = r;
+                        }
+                    });
+
+                    // Block completely if no matching issue exists for this Worker + Job + Process
+                    if (!matchingIssue) {
+                        alert(`Cannot receive! No Issue record found for:\n• Job No: ${jobNum}\n• Process: ${currentProcess}\n• Worker: ${selectedWorker}\n\nYou must first create an Issue entry before receiving.`);
+                        return;
+                    }
+
+                    // Total already received for this exact Worker + Job + Process
+                    let previouslyReceived = 0;
+                    records.forEach((r, i) => {
+                        if (r.jobnum === jobNum && r.process === currentProcess && r.worker === selectedWorker && r.status === '2. Receive' && i !== editIndex) {
+                            previouslyReceived += (parseFloat(r.receiveWt) || 0);
+                        }
+                    });
+
+                    const currentRecWt = parseFloat(document.getElementById('jw-receive').value) || 0;
+                    const totalAfterReceive = previouslyReceived + currentRecWt;
+
+                    if (totalAfterReceive > totalIssueWt) {
+                        alert(`❌ Invalid! Received weight (${totalAfterReceive.toFixed(3)}g) cannot exceed Issued weight (${totalIssueWt.toFixed(3)}g) for:\n• Job: ${jobNum}\n• Process: ${currentProcess}\n• Worker: ${selectedWorker}`);
+                        return;
+                    }
+                } else {
+                    // Issue Validation
+                    const selectedIssueWorker = document.getElementById('jw-worker').value;
+
+                    // Check: worker must not have any open (unreceived) job
+                    if (editIndex === -1) {
+                        // Group issued vs received per worker+job+process
+                        const workerBalances = {};
+                        records.forEach(r => {
+                            if (r.worker !== selectedIssueWorker) return;
+                            const key = `${r.jobnum}|${r.process}`;
+                            if (!workerBalances[key]) workerBalances[key] = { issued: 0, received: 0, jobnum: r.jobnum, process: r.process };
+                            if (r.status === '1. Issue') workerBalances[key].issued += (parseFloat(r.issueWt) || 0);
+                            if (r.status === '2. Receive') workerBalances[key].received += (parseFloat(r.receiveWt) || 0);
+                        });
+
+                        const openJobs = Object.values(workerBalances).filter(b => b.issued > b.received);
+                        const currentKey = `${jobNum}|${currentProcess}`;
+                        const isNewJob = openJobs.some(b => `${b.jobnum}|${b.process}` !== currentKey);
+
+                        if (isNewJob) {
+                            const open = openJobs.find(b => `${b.jobnum}|${b.process}` !== currentKey);
+                            alert(`❌ Cannot issue! Worker "${selectedIssueWorker}" still has an open job:\n• Job: ${open.jobnum}\n• Process: ${open.process}\n• Pending: ${(open.issued - open.received).toFixed(3)}g\n\nThe worker must return materials before being issued a new job.`);
+                            return;
+                        }
+                    }
+
+                    if (currentProcess !== '1. Casting') {
+                        let prevProcess = '';
+                        if (currentProcess === '2. Filling') prevProcess = '1. Casting';
+                        if (currentProcess === '3. Buffing') prevProcess = '2. Filling';
+                        if (currentProcess === '4. Final Process') prevProcess = '3. Buffing';
+                        if (currentProcess === '5. Despatch') prevProcess = '4. Final Process';
+
+                        let totalReceivedMetalPrev = 0;
+                        let totalIssuedCurr = 0;
+
+                        records.forEach((r, i) => {
+                            if (r.jobnum === jobNum) {
+                                if (r.process === prevProcess && r.status === '2. Receive') {
+                                    if (r.receiveLines && r.receiveLines.length > 0) {
+                                        r.receiveLines.forEach(l => {
+                                            if (l.type === 'Metal' || l.type === 'Final Pcs') totalReceivedMetalPrev += l.weight;
+                                        });
+                                    } else if (r.returnType === 'Metal' || r.returnType === 'Final Pcs') {
+                                        totalReceivedMetalPrev += (parseFloat(r.receiveWt) || 0);
+                                    }
+                                }
+                                if (r.process === currentProcess && r.status === '1. Issue' && i !== editIndex) {
+                                    totalIssuedCurr += (parseFloat(r.issueWt) || 0);
+                                }
+                            }
+                        });
+
+                        const currentIssWt = parseFloat(document.getElementById('jw-issue').value) || 0;
+                        if ((totalIssuedCurr + currentIssWt) > totalReceivedMetalPrev && currentProcess !== '5. Despatch') {
+                            alert(`Cannot issue ${currentIssWt.toFixed(3)}g! You have only successfully received ${totalReceivedMetalPrev.toFixed(3)}g of pure METAL from ${prevProcess}. (Already issued: ${totalIssuedCurr.toFixed(3)}g to ${currentProcess})`);
+                            return; // Prevent save
+                        }
+                    }
+                }
+
+                // Collect issue lines breakdown
+                let issueLineItems = [];
+                let totalIssueWtFinal = 0;
+                if (!isReceive) {
+                    issueLines.querySelectorAll('.issue-line-row').forEach(row => {
+                        const t = row.querySelector('.issue-line-type').value;
+                        const w = parseFloat(row.querySelector('.issue-line-wt').value) || 0;
+                        if (t && w > 0) { issueLineItems.push({ type: t, weight: w }); totalIssueWtFinal += w; }
+                    });
+                    if (issueLineItems.length === 0) {
+                        alert('Please add at least one issue line with a type and weight.');
+                        return;
+                    }
+                }
+
+                // Collect receive lines breakdown
+                let receiveLineItems = [];
+                let totalReceiveWtFinal = 0;
+                if (isReceive) {
+                    receiveLines.querySelectorAll('.receive-line-row').forEach(row => {
+                        const t = row.querySelector('.receive-line-type').value;
+                        const w = parseFloat(row.querySelector('.receive-line-wt').value) || 0;
+                        if (t && w > 0) { receiveLineItems.push({ type: t, weight: w }); totalReceiveWtFinal += w; }
+                    });
+                    if (receiveLineItems.length === 0) {
+                        alert('Please add at least one receive line with a type and weight.');
+                        return;
+                    }
+                }
+
+                const rec = {
+                    date: document.getElementById('jw-date').value,
+                    jobnum: document.getElementById('jw-jobnum').value,
+                    process: currentProcess,
+                    worker: isReceive ? document.getElementById('jw-worker-rec').value : (currentProcess === '5. Despatch' ? 'Internal/Despatch' : document.getElementById('jw-worker').value),
+                    item: isReceive ? document.getElementById('jw-item-rec').value : document.getElementById('jw-item').value,
+                    issueWt: isReceive ? 0 : totalIssueWtFinal,
+                    issueLines: isReceive ? [] : issueLineItems,
+                    receiveWt: isReceive ? totalReceiveWtFinal : 0,
+                    receiveLines: isReceive ? receiveLineItems : [],
+                    issueType: isReceive ? '' : (issueLineItems.map(l => l.type).join('+')),
+                    returnType: isReceive ? (receiveLineItems.map(l => l.type).join('+')) : '',
+                    status: (currentProcess === '5. Despatch') ? '1. Issue' : document.getElementById('jw-status').value
+                };
+
+                if (editIndex >= 0) {
+                    records[editIndex] = rec;
+                } else {
+                    records.unshift(rec);
+                }
+
+                localStorage.setItem('manti_jobwork_records', JSON.stringify(records));
+
+                // If Despatch issue saved → redirect to invoice
+                if (!isReceive && currentProcess === '5. Despatch') {
+                    const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+                    const so = orders.find(o => o.id === rec.jobnum);
+                    const despatchData = {
+                        soId: rec.jobnum,
+                        worker: rec.worker,
+                        item: rec.item,
+                        totalWeight: rec.issueWt,
+                        issueLines: rec.issueLines,
+                        metalType: so ? so.mainMetalType : '',
+                        customer: so ? (so.vendor || '') : '',
+                        product: so ? (so.product || '') : '',
+                        date: rec.date
+                    };
+                    localStorage.setItem('manti_pending_despatch', JSON.stringify(despatchData));
+                    alert('✅ Despatch saved! Redirecting to Tax Invoice...');
+                    window.location.href = 'create-invoice.html';
+                    return;
+                }
+
+                form.style.display = 'none';
+                clearIssueLines();
+                addIssueLine();
+                clearReceiveLines();
+                addReceiveLine();
+                renderTable();
+                updateJobBalanceDisplay();
+            });
+
+            window.editRecord = function (index) {
+                const rec = records[index];
+                document.getElementById('jw-date').value = rec.date;
+                document.getElementById('jw-jobnum').value = rec.jobnum || '';
+                document.getElementById('jw-process').value = rec.process || '';
+                document.getElementById('jw-status').value = rec.status;
+
+                clearIssueLines();
+                clearReceiveLines();
+
+                if (rec.status === '2. Receive') {
+                    document.getElementById('jw-worker-rec').value = rec.worker;
+                    document.getElementById('jw-item-rec').value = rec.item;
+                    document.getElementById('jw-worker').value = '';
+                    document.getElementById('jw-item').value = '';
+                    addIssueLine();
+                    // Restore receive lines
+                    if (rec.receiveLines && rec.receiveLines.length > 0) {
+                        rec.receiveLines.forEach(l => addReceiveLine(l.type, l.weight));
+                    } else {
+                        addReceiveLine(rec.returnType || '', rec.receiveWt || '');
+                    }
+                } else {
+                    document.getElementById('jw-worker').value = rec.worker;
+                    document.getElementById('jw-item').value = rec.item;
+                    document.getElementById('jw-worker-rec').value = '';
+                    document.getElementById('jw-item-rec').value = '';
+                    addReceiveLine();
+                    // Restore issue lines
+                    if (rec.issueLines && rec.issueLines.length > 0) {
+                        rec.issueLines.forEach(l => addIssueLine(l.type, l.weight));
+                    } else {
+                        addIssueLine(rec.issueType || '', rec.issueWt || '');
+                    }
+                }
+
+                editIndex = index;
+                form.style.display = 'block';
+                toggleSections();
+                updateJobBalanceDisplay();
+            };
+
+            // Initial persistence load
+            const lastJwStatus = localStorage.getItem('manti_last_jw_status');
+            if (lastJwStatus) statusSelect.value = lastJwStatus;
+            
+            const lastJwProcess = localStorage.getItem('manti_last_jw_process');
+            if (lastJwProcess) document.getElementById('jw-process').value = lastJwProcess;
+
+            toggleSections();
+            updateJobBalanceDisplay();
+
+            renderTable();
+        });
+    </script>
+    <script src="liquid-button.js"></script>
+</body>
+
+</html>

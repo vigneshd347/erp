@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Orders & Purchases</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar / Navigation -->
+                <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content" style="flex: 1; padding: 2.5rem;">
+            <header class="content-header">
+                <div class="header-content">
+                    <h1>Purchase Order</h1>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                </div>
+            </header>
+
+            <!-- KPI Stats Bar -->
+            <div id="po-kpi-bar" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;"><i data-lucide="shopping-cart" style="width:18px;height:18px;"></i></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Total POs</div><div id="kpi-po-total" style="font-size:1.3rem;font-weight:800;color:#111827;">0</div></div>
+                </div>
+                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:#fef9c3;color:#ca8a04;display:flex;align-items:center;justify-content:center;"><i data-lucide="clock" style="width:18px;height:18px;"></i></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Open</div><div id="kpi-po-open" style="font-size:1.3rem;font-weight:800;color:#ca8a04;">0</div></div>
+                </div>
+                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;"><i data-lucide="check-circle" style="width:18px;height:18px;"></i></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Completed</div><div id="kpi-po-completed" style="font-size:1.3rem;font-weight:800;color:#16a34a;">0</div></div>
+                </div>
+                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:#fae8ff;color:#9333ea;display:flex;align-items:center;justify-content:center;"><i data-lucide="package" style="width:18px;height:18px;"></i></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Asset POs</div><div id="kpi-po-assets" style="font-size:1.3rem;font-weight:800;color:#9333ea;">0</div></div>
+                </div>
+            </div>
+            <script>
+                (function(){
+                    const allOrders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+                    const pos = allOrders.filter(o => o.type === 'Purchase Order');
+                    document.getElementById('kpi-po-total').textContent = pos.length;
+                    document.getElementById('kpi-po-open').textContent = pos.filter(o => o.status !== 'Completed').length;
+                    document.getElementById('kpi-po-completed').textContent = pos.filter(o => o.status === 'Completed').length;
+                    document.getElementById('kpi-po-assets').textContent = pos.filter(o => o.category === 'Assets').length;
+                })();
+            </script>
+
+            <form id="order-form" class="invoice-form"
+                style="margin-bottom: 5rem; display: none; background: #fbfbfc; padding: 0; border-radius: 12px; border: 1px solid var(--border); position: relative;">
+                
+                <div style="padding: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="background: #008cd1; color: white; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🛒</div>
+                            <h2 style="margin: 0; color: #1f2937;">New Purchase Order</h2>
+                        </div>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <section class="form-section">
+                            <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Vendor Information</h3>
+                            <div class="field-group">
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Vendor Name <span style="color:#ef4444;">*</span></label>
+                                    <select id="ord-vendor" class="input-wrapper" required style="width: 100%; border-color: #d1d5db;">
+                                        <option value="" disabled selected>Select Vendor</option>
+                                        <!-- Dynamic options -->
+                                    </select>
+                                </div>
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Bill No. / Reference</label>
+                                    <input type="text" id="ord-bill-no" placeholder="e.g. INV-123" class="input-wrapper" style="width: 100%; border-color: #d1d5db;">
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="form-section">
+                            <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Order Details</h3>
+                            <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Purchase Order# <span style="color:#ef4444;">*</span></label>
+                                    <input type="text" id="ord-id" readonly style="background-color: #f3f4f6; border-color: #d1d5db; font-weight: 700; color: #008cd1;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">PO Date <span style="color:#ef4444;">*</span></label>
+                                    <input type="date" id="ord-date" required style="border-color: #d1d5db;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Expected Delivery Date</label>
+                                    <input type="date" id="ord-due-date" required style="border-color: #d1d5db;">
+                                </div>
+                                <div id="po-category-container">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Category <span style="color:#ef4444;">*</span></label>
+                                    <select id="ord-category" class="input-wrapper" style="border-color: #d1d5db;">
+                                        <option value="" disabled selected>Select Category</option>
+                                        <option value="Stock">1. Stock</option>
+                                        <option value="Assets">2. Assets</option>
+                                        <option value="Consumables">3. Consumables</option>
+                                        <option value="Others">4. Others</option>
+                                    </select>
+                                </div>
+                                <div id="ord-asset-type-container" style="display: none;">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Asset Type <span style="color:#ef4444;">*</span></label>
+                                    <select id="ord-asset-type" class="input-wrapper" style="border-color: #d1d5db;">
+                                        <option value="Other">1. Other</option>
+                                        <option value="Machinery">2. Machinery</option>
+                                        <option value="Tools">3. Tools</option>
+                                        <option value="Furniture">4. Furniture</option>
+                                        <option value="Electronics">5. Electronics</option>
+                                    </select>
+                                </div>
+                                <div id="ord-metal-type-container" style="display: none; grid-column: span 2;">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Metal Type <span style="color:#ef4444;">*</span></label>
+                                    <select id="ord-main-metal-type" class="input-wrapper" style="border-color: #d1d5db;">
+                                        <option value="" disabled selected>Select Metal Type</option>
+                                        <option value="Gold">1. Gold</option>
+                                        <option value="Silver">2. Silver</option>
+                                        <option value="Others">3. others</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div style="margin-top: 3rem;">
+                        <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                            <thead style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                                <tr>
+                                    <th style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Item Details</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Quantity</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Rate</th>
+                                    <th style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">GST %</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Amount</th>
+                                    <th style="padding: 12px; width: 40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="po-items-body">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                        <button type="button" id="add-po-item" class="btn-animated-add" style="margin-top: 15px;">
+                          <span class="add-text">Add New Row</span>
+                          <span class="add-icon-wrap">
+                            <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                              <line x1="12" x2="12" y1="5" y2="19"></line>
+                              <line x1="5" x2="19" y1="12" y2="12"></line>
+                            </svg>
+                          </span>
+                        </button>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; margin-top: 3rem; gap: 3rem;">
+                        <div style="width: 100%; max-width: 400px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #4b5563;">
+                                <span>Sub Total</span>
+                                <span id="po-sub-total" style="font-weight: 600;">0.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #4b5563;">
+                                <span>GST Total</span>
+                                <span id="po-gst-total" style="font-weight: 600;">0.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 1px solid #eee; margin-top: 12px;">
+                                <strong style="font-size: 1.1rem; color: #111827;">Total (₹)</strong>
+                                <strong id="po-grand-total" style="font-size: 1.2rem; color: var(--primary);">0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 2rem;">
+                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Notes / Remarks</label>
+                        <textarea id="ord-remark" class="input-wrapper" style="width: 100%; min-height: 80px; border-color: #d1d5db;" placeholder="Enter any specific instructions or notes..."></textarea>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Status</label>
+                        <select id="ord-status" class="input-wrapper" style="width: 200px; border-color: #d1d5db;">
+                            <option value="Open">Open</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Sticky Footer -->
+                <div style="position: sticky; bottom: 0; background: white; padding: 1rem 2rem; border-top: 1px solid #e5e7eb; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: flex-start; gap: 12px; z-index: 100; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                    <button type="submit" class="btn-liquid btn-primary">Save and Send</button>
+                    <button type="button" class="btn-liquid btn-outline" id="cancel-order">Cancel</button>
+                </div>
+
+                <div style="display:none;">
+                    <!-- Obsolete / Hidden SO fields to maintain JS compatibility -->
+                    <select id="ord-type"><option value="Purchase Order">Purchase Order</option></select>
+                    <input type="checkbox" id="ord-is-fixed">
+                    <input type="number" id="ord-mc-percent">
+                    <input type="number" id="ord-mc-amount">
+                </div>
+            </form>
+
+            <!-- PO List section -->
+            <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+                <!-- Toolbar: Search + Filter Tabs -->
+                <div style="padding:14px 20px; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                    <!-- Status Filter Tabs -->
+                    <div id="po-filter-tabs" style="display:flex; gap:0; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+                        <button class="po-tab active" data-filter="All"    onclick="filterPOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:var(--primary); color:#fff; cursor:pointer; transition:all 0.15s;">All</button>
+                        <button class="po-tab"        data-filter="Open"   onclick="filterPOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-muted); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Open</button>
+                        <button class="po-tab"        data-filter="Completed" onclick="filterPOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-muted); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Completed</button>
+                        <button class="po-tab"        data-filter="Cancelled" onclick="filterPOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-muted); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Cancelled</button>
+                    </div>
+
+                    <!-- Search & Actions -->
+                    <div style="display:flex; align-items:center; gap:12px; flex:1; justify-content:flex-end;">
+                        <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:7px 12px; max-width:280px; width:100%;">
+                            <i data-lucide="search" style="width:15px;height:15px;color:#9ca3af;flex-shrink:0;"></i>
+                            <input type="text" id="search-purchases" placeholder="Search orders, vendors..." 
+                                oninput="filterPOTable()"
+                                style="border:none; background:transparent; outline:none; font-size:0.84rem; color:#374151; width:100%;">
+                        </div>
+                        <button type="button" class="btn-animated-add" id="add-order-btn">
+                          <span class="add-text">New PO</span>
+                          <span class="add-icon-wrap">
+                            <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                              <line x1="12" x2="12" y1="5" y2="19"></line>
+                              <line x1="5" x2="19" y1="12" y2="12"></line>
+                            </svg>
+                          </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <table id="orders-table" data-no-filter="true" style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#f8fafc;">
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">PO #</th>
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Date</th>
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Vendor</th>
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Items</th>
+                            <th style="padding:11px 16px; text-align:right; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Qty</th>
+                            <th style="padding:11px 16px; text-align:right; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Amount</th>
+                            <th style="padding:11px 16px; text-align:center; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Status</th>
+                            <th style="padding:11px 16px; text-align:center; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-body">
+                        <!-- Dynamic rows -->
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div id="po-empty-state" style="display:none; text-align:center; padding:48px 24px;">
+                    <div style="width:56px;height:56px;background:#f3f4f6;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <i data-lucide="shopping-cart" style="width:24px;height:24px;color:#9ca3af;"></i>
+                    </div>
+                    <div style="font-size:1rem;font-weight:600;color:#374151;margin-bottom:6px;">No purchase orders found</div>
+                    <div style="font-size:0.85rem;color:#9ca3af;">Click "New Purchase Order" to create your first one.</div>
+                </div>
+            </div>
+
+            <style>
+                .po-tab:hover { filter: brightness(0.93); }
+                #orders-table th { background: transparent; color: #6b7280; border: none; }
+                #orders-table tbody tr { border-bottom: 1px solid #f9fafb; transition: background 0.12s; }
+                #orders-table tbody tr:hover { background: #fafbff; }
+                #orders-table tbody tr:last-child { border-bottom: none; }
+                .po-status-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
+            </style>
+
+        </main>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script src="script.js?v=24"></script>
+    <script>
+        let records = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load rates
+            const savedRates = localStorage.getItem('manti_metal_rates');
+            if (savedRates) {
+                const rates = JSON.parse(savedRates);
+                const goldRateEl = document.getElementById('p-gold-rate-header');
+                if (goldRateEl) goldRateEl.textContent = '₹ ' + (rates.pureGold || 0).toLocaleString();
+
+                const silverRateEl = document.getElementById('p-silver-rate-header');
+                if (silverRateEl) silverRateEl.textContent = '₹ ' + (rates.pureSilver || 0).toLocaleString();
+            }
+
+            const isFixedCb = document.getElementById('ord-is-fixed');
+            const mainMetalSelect = document.getElementById('ord-main-metal-type');
+            const typeSelect = document.getElementById('ord-type');
+            const qtyInput = document.getElementById('ord-qty');
+
+            // Load Vendors for Dropdown
+            const vendorSelect = document.getElementById('ord-vendor');
+            const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records')) || [];
+            if (vendors.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.textContent = "No vendors found. Please add in KYC.";
+                opt.disabled = true;
+                vendorSelect.appendChild(opt);
+            } else {
+                vendors.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = v.id;
+                    vendorSelect.appendChild(opt);
+                });
+            }
+
+            // Multi-Item PO Table Logic
+            const poItemsBody = document.getElementById('po-items-body');
+            const addPoItemBtn = document.getElementById('add-po-item');
+            
+            function addPORow(itemData = {}) {
+                const tr = document.createElement('tr');
+                tr.classList.add('po-item-row');
+                const rowCount = poItemsBody.rows.length + 1;
+                
+                tr.innerHTML = `
+                    <td style="padding: 12px; vertical-align: top;">
+                        <textarea class="po-desc input-wrapper" placeholder="Type items or descriptions..." required style="width: 100%; border: none; resize: none; background: transparent; padding: 0; min-height: 40px; font-size: 0.9rem;">${itemData.desc || ''}</textarea>
+                    </td>
+                    <td style="padding: 12px; vertical-align: top;">
+                        <input type="number" step="0.001" class="po-qty input-wrapper" placeholder="0.000" required value="${itemData.qty || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0;">
+                    </td>
+                    <td style="padding: 12px; vertical-align: top;">
+                        <input type="number" step="0.01" class="po-rate input-wrapper" placeholder="0.00" value="${itemData.rate || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0;">
+                    </td>
+                    <td style="padding: 12px; vertical-align: top;">
+                        <input type="number" step="0.1" class="po-gst input-wrapper" placeholder="3" value="${itemData.gst || '3'}" style="width: 100%; border: none; background: transparent; padding: 0;">
+                    </td>
+                    <td style="padding: 12px; vertical-align: top;">
+                        <input type="text" class="po-row-amount input-wrapper" placeholder="0.00" readonly style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; font-weight: 600;">
+                    </td>
+                    <td style="padding: 12px; vertical-align: top; text-align: center;">
+                        <button type="button" class="btn-remove-sm" onclick="this.closest('tr').remove(); calculatePOTotals();">×</button>
+                    </td>
+                `;
+                
+                poItemsBody.appendChild(tr);
+                
+                // Add calculation listeners
+                tr.querySelectorAll('input, textarea').forEach(input => {
+                    input.addEventListener('input', calculatePOTotals);
+                });
+                
+                calculatePOTotals();
+            }
+
+            function calculatePOTotals() {
+                let subtotal = 0;
+                let gstTotal = 0;
+                
+                const rows = poItemsBody.querySelectorAll('.po-item-row');
+                rows.forEach(row => {
+                    const qty = parseFloat(row.querySelector('.po-qty').value) || 0;
+                    const rate = parseFloat(row.querySelector('.po-rate').value) || 0;
+                    const gstPercent = parseFloat(row.querySelector('.po-gst').value) || 0;
+                    
+                    const rowSubtotal = qty * rate;
+                    const rowGst = rowSubtotal * (gstPercent / 100);
+                    const rowTotal = rowSubtotal + rowGst;
+                    
+                    row.querySelector('.po-row-amount').value = rowTotal.toFixed(2);
+                    
+                    subtotal += rowSubtotal;
+                    gstTotal += rowGst;
+                });
+                
+                const grandTotal = subtotal + gstTotal;
+                
+                document.getElementById('po-sub-total').textContent = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                document.getElementById('po-gst-total').textContent = gstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                document.getElementById('po-grand-total').textContent = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            }
+
+            if (addPoItemBtn) {
+                addPoItemBtn.addEventListener('click', () => addPORow());
+            }
+
+            // Order Management Logic
+            const form = document.getElementById('order-form');
+            const toggleBtn = document.getElementById('add-order-btn');
+            const cancelBtn = document.getElementById('cancel-order');
+            const tbody = document.getElementById('orders-body');
+
+            // Removed SO Fixed Amount logic as POs now use multi-item table
+            function calculateFixedAmount() {
+                // Legacy for SO - removal in progress
+            }
+
+            if (isFixedCb && qtyInput) {
+                [isFixedCb, document.getElementById('ord-main-metal-type'), qtyInput].forEach(el => {
+                    if (el) {
+                        el.addEventListener('input', calculateFixedAmount);
+                        el.addEventListener('change', calculateFixedAmount);
+                    }
+                });
+            }
+
+            function generateOrderId(type) {
+                let prefix = type === 'Purchase Order' ? 'PO-' : 'SO-';
+                let maxId = 1000;
+                records.forEach(rec => {
+                    if (rec.id && rec.id.startsWith(prefix)) {
+                        const num = parseInt(rec.id.replace(prefix, ''), 10);
+                        if (!isNaN(num) && num > maxId) {
+                            maxId = num;
+                        }
+                    }
+                });
+                return prefix + (maxId + 1);
+            }
+
+            function toggleTypeDetails() {
+                const poCategoryContainer = document.getElementById('po-category-container');
+                const ordCategory = document.getElementById('ord-category');
+                const metalTypeContainer = document.getElementById('ord-metal-type-container');
+
+                if (poCategoryContainer) poCategoryContainer.style.display = 'block';
+                
+                if (ordCategory && ordCategory.value === 'Stock') {
+                    if (metalTypeContainer) metalTypeContainer.style.display = 'block';
+                    mainMetalSelect.required = true;
+                } else if (ordCategory && ordCategory.value === 'Assets') {
+                    if (metalTypeContainer) metalTypeContainer.style.display = 'none';
+                    if (document.getElementById('ord-asset-type-container')) {
+                        document.getElementById('ord-asset-type-container').style.display = 'block';
+                    }
+                    mainMetalSelect.required = false;
+                    mainMetalSelect.value = '';
+                } else {
+                    if (metalTypeContainer) metalTypeContainer.style.display = 'none';
+                    if (document.getElementById('ord-asset-type-container')) {
+                        document.getElementById('ord-asset-type-container').style.display = 'none';
+                    }
+                    mainMetalSelect.required = false;
+                    mainMetalSelect.value = '';
+                }
+            }
+
+            // Listen for Category changes to toggle Metal Type
+            if (document.getElementById('ord-category')) {
+                document.getElementById('ord-category').addEventListener('change', (e) => {
+                    localStorage.setItem('manti_last_ord_category', e.target.value);
+                    toggleTypeDetails();
+                });
+            }
+
+            if (typeSelect) {
+                typeSelect.value = 'Purchase Order';
+                typeSelect.disabled = true;
+                typeSelect.style.background = '#f3f4f6';
+            }
+
+            let currentPOFilter = 'All';
+
+            window.filterPOTab = function(btn) {
+                document.querySelectorAll('.po-tab').forEach(t => {
+                    t.style.background = '#fff';
+                    t.style.color = 'var(--text-muted)';
+                });
+                btn.style.background = 'var(--primary)';
+                btn.style.color = '#fff';
+                currentPOFilter = btn.getAttribute('data-filter');
+                renderTable();
+            };
+
+            window.filterPOTable = function() { renderTable(); };
+
+            function renderTable() {
+                tbody.innerHTML = '';
+                const search = (document.getElementById('search-purchases')?.value || '').toLowerCase();
+                const emptyState = document.getElementById('po-empty-state');
+
+                const filtered = records.filter(rec => {
+                    if (rec.type !== 'Purchase Order') return false;
+                    const status = rec.status || 'Open';
+                    if (currentPOFilter !== 'All' && status !== currentPOFilter) return false;
+                    if (search) {
+                        const haystack = [rec.id, rec.vendor, rec.date, rec.dueDate, rec.billNo, rec.category,
+                            rec.mainMetalType, rec.remark,
+                            ...(rec.items || []).map(i => i.desc)].join(' ').toLowerCase();
+                        if (!haystack.includes(search)) return false;
+                    }
+                    return true;
+                });
+
+                if (filtered.length === 0) {
+                    if (emptyState) emptyState.style.display = 'block';
+                    return;
+                }
+                if (emptyState) emptyState.style.display = 'none';
+
+                filtered.forEach((rec) => {
+                    const index = records.indexOf(rec);
+                    const status = rec.status || 'Open';
+
+                    // Status chip colors
+                    const statusStyles = {
+                        'Open':      { bg: '#fef9c3', color: '#ca8a04', dot: '#ca8a04' },
+                        'Completed': { bg: '#dcfce7', color: '#16a34a', dot: '#16a34a' },
+                        'Cancelled': { bg: '#fee2e2', color: '#dc2626', dot: '#dc2626' }
+                    };
+                    const sc = statusStyles[status] || { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af' };
+
+                    // Items summary
+                    let itemsSummary = '', totalQty = 0;
+                    if (rec.items && rec.items.length > 0) {
+                        itemsSummary = rec.items.map(it => it.desc).filter(Boolean).join(' · ');
+                        if (itemsSummary.length > 45) itemsSummary = itemsSummary.substring(0, 42) + '…';
+                        totalQty = rec.items.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
+                    } else {
+                        itemsSummary = rec.product || '—';
+                        totalQty = parseFloat(rec.qty) || 0;
+                    }
+
+                    // Amount + payment status
+                    const amt = parseFloat(rec.amount || 0);
+                    const paid = parseFloat(rec.paidAmount || 0);
+                    const due = amt - paid;
+                    let payBadge = '';
+                    if (amt > 0) {
+                        if (due <= 0.001) payBadge = `<span style="font-size:0.7rem;color:#16a34a;font-weight:700;"> ✓ Paid</span>`;
+                        else if (paid > 0) payBadge = `<span style="font-size:0.7rem;color:#ef4444;font-weight:700;"> Due: ₹${due.toLocaleString('en-IN',{maximumFractionDigits:0})}</span>`;
+                    }
+
+                    // Category + metal badges
+                    let catBadge = '';
+                    if (rec.category) catBadge += `<span style="font-size:0.7rem;background:#e0e7ff;color:#4338ca;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px;">${rec.category}</span>`;
+                    if (rec.mainMetalType) catBadge += `<span style="font-size:0.7rem;background:#fef3c7;color:#d97706;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px;">${rec.mainMetalType}</span>`;
+
+                    const tr = document.createElement('tr');
+                    tr.setAttribute('data-status', status);
+                    tr.innerHTML = `
+                        <td style="padding:13px 16px;">
+                            <div style="font-weight:700;color:#0284c7;font-size:0.9rem;">${rec.id || '—'}</div>
+                            ${rec.billNo ? `<div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">Bill: ${rec.billNo}</div>` : ''}
+                        </td>
+                        <td style="padding:13px 16px;">
+                            <div style="font-size:0.85rem;color:#374151;">${rec.date || '—'}</div>
+                            ${rec.dueDate ? `<div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">Due: ${rec.dueDate}</div>` : ''}
+                        </td>
+                        <td style="padding:13px 16px;">
+                            <div style="font-weight:600;color:#1f2937;font-size:0.9rem;">${rec.vendor || '—'}</div>
+                        </td>
+                        <td style="padding:13px 16px;max-width:220px;">
+                            <div style="font-size:0.85rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemsSummary}</div>
+                            <div style="margin-top:4px;">${catBadge}</div>
+                        </td>
+                        <td style="padding:13px 16px;text-align:right;">
+                            <div style="font-weight:700;color:#111827;font-size:0.9rem;">${totalQty > 0 ? totalQty.toFixed(3) : '—'}</div>
+                        </td>
+                        <td style="padding:13px 16px;text-align:right;">
+                            <div style="font-weight:700;color:#059669;font-size:0.9rem;">${amt > 0 ? '₹' + amt.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</div>
+                            <div>${payBadge}</div>
+                        </td>
+                        <td style="padding:13px 16px;text-align:center;">
+                            <span class="po-status-chip" style="background:${sc.bg};color:${sc.color};">
+                                <span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};display:inline-block;"></span>
+                                ${status}
+                            </span>
+                        </td>
+                        <td style="padding:13px 16px;text-align:center;">
+                            <div style="display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;">
+                                ${status === 'Open' ? `<button onclick="receiveOrder(${index})" style="padding:4px 10px;font-size:0.75rem;background:#10b981;color:#fff;border-radius:6px;border:none;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:3px;" title="Mark Received"><i data-lucide="check" style="width:12px;height:12px;"></i> Receive</button>` : ''}
+                                <button onclick="editRecord(${index})" class="btn-edit" title="Edit">
+                                    <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
+                                </button>
+                                <button onclick="deleteRecord(${index})" class="btn-remove" title="Delete">
+                                    <svg viewBox="0 0 448 512" class="del-icon"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path></svg>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                lucide.createIcons();
+            }
+
+            let editIndex = -1;
+
+            window.editRecord = function (index) {
+                const rec = records[index];
+                document.getElementById('ord-type').value = rec.type;
+                document.getElementById('ord-id').value = rec.id || '';
+                document.getElementById('ord-date').value = rec.date;
+                document.getElementById('ord-due-date').value = rec.dueDate;
+                document.getElementById('ord-vendor').value = rec.vendor;
+                document.getElementById('ord-bill-no').value = rec.billNo || '';
+                
+                if (document.getElementById('ord-category')) {
+                    document.getElementById('ord-category').value = rec.category || '';
+                }
+                
+                document.getElementById('ord-main-metal-type').value = rec.mainMetalType || '';
+                document.getElementById('ord-remark').value = rec.remark || '';
+                document.getElementById('ord-status').value = rec.status || 'Open';
+
+                // Reload items into table
+                poItemsBody.innerHTML = '';
+                if (rec.items && rec.items.length > 0) {
+                    rec.items.forEach(it => addPORow(it));
+                } else {
+                    // Legacy single item support
+                    addPORow({
+                        desc: rec.product,
+                        qty: rec.qty,
+                        rate: (parseFloat(rec.amount) / parseFloat(rec.qty)) || 0,
+                        gst: 3
+                    });
+                }
+
+                editIndex = index;
+                form.style.display = 'block';
+                toggleTypeDetails();
+            };
+
+            window.deleteRecord = function (index) {
+                if (confirm("Delete this order?")) {
+                    records.splice(index, 1);
+                    localStorage.setItem('manti_order_records', JSON.stringify(records));
+                    renderTable();
+                }
+            };
+
+            window.receiveOrder = function (index) {
+                const rec = records[index];
+                if (rec.type === 'Purchase Order' && !rec.billNo) {
+                    const billNo = prompt("Please enter the Bill No. to complete this sequence:");
+                    if (!billNo || billNo.trim() === "") {
+                        alert("Bill No. is required to mark a Purchase Order as Completed.");
+                        return;
+                    }
+                    rec.billNo = billNo.trim();
+                }
+
+                if (confirm("Mark this order as Received / Completed? This will add the items to your Assets/Inventory if applicable.")) {
+                    records[index].status = 'Completed';
+                    // Auto-Add to Assets if category is Assets
+                    if ((rec.type === 'Purchase Order' || rec.category === 'Assets') && rec.category === 'Assets' && rec.items && rec.items.length > 0) {
+                        let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                        let addedCount = 0;
+                        
+                        rec.items.forEach((it, i) => {
+                            const totalVal = parseFloat(it.total) || 0;
+                            const noteStr = 'Auto-added from PO: ' + rec.id;
+                            if (totalVal > 0 && !assets.some(a => a.notes && a.notes.includes(noteStr))) {
+                                assets.push({
+                                    id: 'AST-' + Date.now().toString().slice(-6) + i,
+                                    name: it.desc + (it.qty > 1 ? ` (Qty: ${it.qty})` : ''),
+                                    category: rec.assetType || 'Other',     
+                                    status: 'Pending Approval',
+                                    date: rec.date,
+                                    value: totalVal.toString(),
+                                    notes: noteStr
+                                });
+                                addedCount++;
+                            }
+                        });
+                        
+                        if (addedCount > 0) {
+                            localStorage.setItem('manti_assets', JSON.stringify(assets));
+                            alert(`${addedCount} new Asset(s) successfully routed to Asset Management for Approval!`);
+                        }
+                    }
+
+                    localStorage.setItem('manti_order_records', JSON.stringify(records));
+                    renderTable();
+                }
+            };
+
+            toggleBtn.addEventListener('click', () => {
+                form.reset();
+
+                if (isFixedCb) isFixedCb.checked = false;
+
+                document.getElementById('ord-date').valueAsDate = new Date();
+                
+                poItemsBody.innerHTML = '';
+                addPORow(); // Start with one empty row
+
+                // Reset ID Generation
+                document.getElementById('ord-type').value = 'Purchase Order';
+                document.getElementById('ord-id').value = generateOrderId('Purchase Order');
+                
+                const lastCat = localStorage.getItem('manti_last_ord_category');
+                if (lastCat && document.getElementById('ord-category')) {
+                    document.getElementById('ord-category').value = lastCat;
+                }
+
+                document.getElementById('ord-status').value = 'Open';
+
+                let tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 7);
+                document.getElementById('ord-due-date').valueAsDate = tomorrow;
+
+                editIndex = -1;
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+                toggleTypeDetails();
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                form.style.display = 'none';
+                editIndex = -1;
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const ordType = document.getElementById('ord-type').value;
+                const ordStatus = document.getElementById('ord-status').value || 'Open';
+                const mainMetal = document.getElementById('ord-main-metal-type').value;
+                const billNo = document.getElementById('ord-bill-no').value;
+                let categoryVal = '';
+                if (document.getElementById('ord-category')) {
+                    categoryVal = document.getElementById('ord-category').value;
+                }
+
+                // Enforce Bill No for Completed Purchase Orders
+                if (ordType === 'Purchase Order' && ordStatus === 'Completed' && (!billNo || billNo.trim() === "")) {
+                    alert('Please enter a Bill No. before marking this Purchase Order as Completed.');
+                    document.getElementById('ord-bill-no').focus();
+                    return;
+                }
+
+                // Enforce metal type for Sales Orders, or POs if 'Stock' is selected
+                if (ordType === 'Sales Order' && !mainMetal) {
+                    alert('Please select a Metal Type for this Sales Order.');
+                    document.getElementById('ord-main-metal-type').focus();
+                    return;
+                }
+                
+                if (ordType === 'Purchase Order' && categoryVal === 'Stock' && !mainMetal) {
+                    alert('Please select a Metal Type when purchasing Stock.');
+                    document.getElementById('ord-main-metal-type').focus();
+                    return;
+                }
+
+                // Collect items from table
+                const items = [];
+                const rows = poItemsBody.querySelectorAll('.po-item-row');
+                let totalAmount = 0;
+                let totalQty = 0;
+                
+                rows.forEach(row => {
+                    const it = {
+                        desc: row.querySelector('.po-desc').value,
+                        qty: row.querySelector('.po-qty').value,
+                        rate: row.querySelector('.po-rate').value,
+                        gst: row.querySelector('.po-gst').value,
+                        total: row.querySelector('.po-row-amount').value
+                    };
+                    items.push(it);
+                    totalAmount += parseFloat(it.total) || 0;
+                    totalQty += parseFloat(it.qty) || 0;
+                });
+
+                if (items.length === 0) {
+                    alert('Please add at least one item.');
+                    return;
+                }
+
+                const rec = {
+                    id: document.getElementById('ord-id').value || generateOrderId('Purchase Order'),
+                    type: 'Purchase Order',
+                    date: document.getElementById('ord-date').value,
+                    dueDate: document.getElementById('ord-due-date').value,
+                    vendor: document.getElementById('ord-vendor').value,
+                    billNo: document.getElementById('ord-bill-no').value,
+                    category: categoryVal,
+                    assetType: document.getElementById('ord-asset-type')?.value || 'Other',
+                    items: items,
+                    qty: totalQty,
+                    amount: totalAmount.toFixed(2),
+                    remark: document.getElementById('ord-remark').value,
+                    mainMetalType: mainMetal,
+                                        status: ordStatus
+                };
+
+                if (editIndex >= 0) {
+                    records[editIndex] = rec;
+                } else {
+                    records.unshift(rec);
+                }
+
+                // Check and add assets safely without duplicates
+                if (rec.category === 'Assets' && rec.items && rec.items.length > 0) {
+                    let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                    let addedCount = 0;
+                    
+                    rec.items.forEach((it, i) => {
+                        const totalVal = parseFloat(it.total) || 0;
+                        const noteStr = 'Auto-added from PO: ' + rec.id;
+                        if (totalVal > 0 && !assets.some(a => a.notes && a.notes.includes(noteStr))) {
+                            assets.push({
+                                id: 'AST-' + Date.now().toString().slice(-6) + i,
+                                name: it.desc + (it.qty > 1 ? ` (Qty: ${it.qty})` : ''),
+                                category: rec.assetType || 'Other',     
+                                status: 'Pending Approval',
+                                date: rec.date,
+                                value: totalVal.toString(),
+                                notes: noteStr
+                            });
+                            addedCount++;
+                        }
+                    });
+                    
+                    if (addedCount > 0) {
+                        localStorage.setItem('manti_assets', JSON.stringify(assets));
+                        alert(`${addedCount} new Asset(s) routed to Asset Management for Approval!`);
+                    }
+                }
+
+                localStorage.setItem('manti_order_records', JSON.stringify(records));
+                form.style.display = 'none';
+                renderTable();
+            });
+
+            renderTable();
+        });
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="liquid-button.js"></script>
+</body>
+</html>

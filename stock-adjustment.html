@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Stock Adjustment</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar / Navigation -->
+        
+
+        <!-- Main Content -->
+        <main class="invoice-generator">
+            <header class="generator-header">
+                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                    <a href="index.html">
+                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                    </a>
+                    <div>
+                        <h1>Stock Adjustment</h1>
+                        <p>Buy metal stock and manage available inventory for invoices.</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-grid" style="margin-bottom: 2rem;">
+                <section class="form-section">
+                    <h3 style="color: var(--primary);">Current Available Stock</h3>
+                    <div class="field-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="total-row"
+                            style="background: white; border-radius: 8px; padding: 15px; border: 1px solid var(--border);">
+                            <span style="font-size: 0.9rem; color: var(--text-muted);">Pure Gold (24K)</span>
+                            <span id="bal-pure_gold" style="font-weight: 700; color: #d97706; font-size: 1.2rem;">0.000
+                                g</span>
+                        </div>
+                        <div class="total-row"
+                            style="background: white; border-radius: 8px; padding: 15px; border: 1px solid var(--border);">
+                            <span style="font-size: 0.9rem; color: var(--text-muted);">Gold (22K)</span>
+                            <span id="bal-gold_22k" style="font-weight: 700; color: #d97706; font-size: 1.2rem;">0.000
+                                g</span>
+                        </div>
+                        <div class="total-row"
+                            style="background: white; border-radius: 8px; padding: 15px; border: 1px solid var(--border);">
+                            <span style="font-size: 0.9rem; color: var(--text-muted);">Pure Silver (999)</span>
+                            <span id="bal-pure_silver"
+                                style="font-weight: 700; color: #6b7280; font-size: 1.2rem;">0.000 g</span>
+                        </div>
+                        <div class="total-row"
+                            style="background: white; border-radius: 8px; padding: 15px; border: 1px solid var(--border);">
+                            <span style="font-size: 0.9rem; color: var(--text-muted);">Silver (925)</span>
+                            <span id="bal-silver_925" style="font-weight: 700; color: #6b7280; font-size: 1.2rem;">0.000
+                                g</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <h3 style="color: #10b981;">Buy / Adjust Stock</h3>
+                    <form id="stock-adjust-form">
+                        <div class="field-group">
+                            <select id="adj-type" class="input-wrapper" required>
+                                <option value="Buy">Buy Stock (+)</option>
+                                <option value="Adjust">Manual Adjust / Deduct (-)</option>
+                            </select>
+
+                            <select id="adj-metal" class="input-wrapper" required>
+                                <option value="" disabled selected>Select Invoice Metal Type</option>
+                                <option value="pure_gold">Pure Gold (24K)</option>
+                                <option value="gold_22k">Gold (22K)</option>
+                                <option value="pure_silver">Pure Silver</option>
+                                <option value="silver_925">Silver (925)</option>
+                            </select>
+
+                            <input type="number" step="0.001" id="adj-weight" placeholder="Weight (grams)" required>
+                            <input type="text" id="adj-note" placeholder="Remarks / Ref No. (Optional)">
+
+                            <button type="submit" class="btn-liquid btn-primary" style="margin-top: 10px; width: 100%;">Save
+                                Adjustment</button>
+                        </div>
+                    </form>
+                </section>
+            </div>
+
+            <!-- History Table -->
+            <div style="margin-bottom: 1rem;">
+                <input type="text" id="search-stock" class="input-wrapper" placeholder="Search stock adjustments..."
+                    onkeyup="filterTable('search-stock', 'stock-table')"
+                    style="max-width: 400px; padding: 10px; font-size: 1rem;">
+            </div>
+
+            <div class="table-container">
+                <table id="stock-table">
+                    <thead>
+                        <tr>
+                            <th width="150">Date</th>
+                            <th width="100">Type</th>
+                            <th width="150">Metal Type</th>
+                            <th width="100">Weight (g)</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-body">
+                        <!-- Dynamic list -->
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script src="script.js?v=24"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('stock-adjust-form');
+            const tbody = document.getElementById('stock-body');
+
+            let balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {
+                pure_gold: 0, gold_22k: 0, pure_silver: 0, silver_925: 0
+            };
+
+            let history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+
+            function renderData() {
+                // Render Balances
+                document.getElementById('bal-pure_gold').textContent = (balances.pure_gold || 0).toFixed(3) + ' g';
+                document.getElementById('bal-gold_22k').textContent = (balances.gold_22k || 0).toFixed(3) + ' g';
+                document.getElementById('bal-pure_silver').textContent = (balances.pure_silver || 0).toFixed(3) + ' g';
+                document.getElementById('bal-silver_925').textContent = (balances.silver_925 || 0).toFixed(3) + ' g';
+
+                // Render History Table
+                tbody.innerHTML = '';
+                if (history.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No stock transactions yet.</td></tr>';
+                    return;
+                }
+
+                // Show latest first
+                let sorted = [...history].reverse();
+                sorted.forEach(rec => {
+                    const isAdd = rec.type === 'Buy' || rec.weight > 0;
+                    const color = isAdd ? '#10b981' : '#ef4444';
+
+                    const metalMap = {
+                        pure_gold: 'Pure Gold (24K)',
+                        gold_22k: 'Gold (22K)',
+                        pure_silver: 'Pure Silver',
+                        silver_925: 'Silver (925)'
+                    };
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${rec.date}</td>
+                        <td><span style="background: ${color}20; color: ${color}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${rec.type}</span></td>
+                        <td style="font-weight: 600;">${metalMap[rec.metal] || rec.metal}</td>
+                        <td style="color: ${color}; font-weight: 700;">${parseFloat(rec.weight).toFixed(3)}</td>
+                        <td>${rec.note || '-'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const type = document.getElementById('adj-type').value;
+                const metal = document.getElementById('adj-metal').value;
+                let weight = parseFloat(document.getElementById('adj-weight').value) || 0;
+                const note = document.getElementById('adj-note').value;
+
+                if (weight <= 0) {
+                    alert("Please enter a valid weight!");
+                    return;
+                }
+
+                if (type === 'Adjust') {
+                    weight = -weight; // Deduct
+                }
+
+                // Check if deduct goes below 0? Allow negative or not?
+                if (type === 'Adjust' && balances[metal] + weight < 0) {
+                    if (!confirm("This will result in negative stock. Proceed?")) return;
+                }
+
+                balances[metal] = (balances[metal] || 0) + weight;
+
+                history.push({
+                    date: new Date().toISOString().split('T')[0] + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    type: type,
+                    metal: metal,
+                    weight: weight,
+                    note: note
+                });
+
+                localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+                localStorage.setItem('manti_stock_history', JSON.stringify(history));
+
+                form.reset();
+                renderData();
+            });
+
+            renderData();
+        });
+    </script>
+</body>
+
+</html>

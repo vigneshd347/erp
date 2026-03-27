@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Challans | Manti ERP</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar / Navigation -->
+                <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content" style="flex: 1; padding: 2.5rem;">
+            <div id="challan-list-view">
+                <header class="generator-header">
+                    <div class="header-content">
+                        <h1>Delivery Challans</h1>
+                        <p>Track and manage your shipments to customers.</p>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-liquid btn-primary" onclick="showNewChallanForm()">+ New Delivery Challan</button>
+                    </div>
+                </header>
+
+                <div class="table-container" style="margin-top: 2rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; padding-left: 15px;">DATE</th>
+                                <th style="text-align: left;">CHALLAN#</th>
+                                <th style="text-align: left;">CUSTOMER NAME</th>
+                                <th style="text-align: left;">REFERENCE#</th>
+                                <th style="text-align: left;">STATUS</th>
+                                <th style="text-align: right; padding-right: 15px;">AMOUNT</th>
+                                <th style="text-align: center; width: 100px;">ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="challan-list-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="challan-form-view" style="display: none;">
+                <header class="generator-header">
+                    <div class="header-content">
+                        <h1>New Delivery Challan</h1>
+                    </div>
+                    <button class="btn-text" onclick="hideNewChallanForm()">✕ Close</button>
+                </header>
+
+                <form id="challan-form" onsubmit="saveChallan(event)">
+                    <div class="form-grid" style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <div class="form-section" style="grid-column: span 3;">
+                            <h3 style="color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: 1.5rem;">Customer Details</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                                <div class="field-group">
+                                    <label>Customer Name*</label>
+                                    <select id="challan-customer" required>
+                                        <option value="">Select or add a customer</option>
+                                    </select>
+                                </div>
+                                <div class="field-group">
+                                    <label>Delivery Challan#</label>
+                                    <input type="text" id="challan-number" readonly style="background: #f8f9fa;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section" style="grid-column: span 3; margin-top: 2rem;">
+                            <h3 style="color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: 1.5rem;">Order Details</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem;">
+                                <div class="field-group">
+                                    <label>Challan Date*</label>
+                                    <input type="date" id="challan-date" required>
+                                </div>
+                                <div class="field-group">
+                                    <label>Reference#</label>
+                                    <input type="text" id="challan-reference" placeholder="e.g. Order #123">
+                                </div>
+                                <div class="field-group">
+                                    <label>Expected Shipment Date</label>
+                                    <input type="date" id="challan-shipment-date">
+                                </div>
+                                <div class="field-group">
+                                    <label>Delivery Method</label>
+                                    <select id="challan-delivery-method">
+                                        <option value="Hand Delivery">Hand Delivery</option>
+                                        <option value="Courier">Courier</option>
+                                        <option value="Vehicle">Vehicle</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section" style="grid-column: span 3; margin-top: 3rem;">
+                            <h3 style="color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: 1.5rem;">Item Details</h3>
+                            <div class="table-container" style="padding: 0; box-shadow: none;">
+                                <table id="challan-items-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40%; text-align: left; padding-left: 10px;">ITEM DETAILS</th>
+                                            <th style="width: 15%; text-align: right;">QUANTITY</th>
+                                            <th style="width: 15%; text-align: right;">RATE</th>
+                                            <th style="width: 15%; text-align: right;">TAX (%)</th>
+                                            <th style="width: 15%; text-align: right; padding-right: 10px;">AMOUNT</th>
+                                            <th style="width: 50px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="challan-items-body">
+                                        <!-- Rows added by JS -->
+                                    </tbody>
+                                </table>
+                                <button type="button" class="btn-animated-add" onclick="addChallanRow()" style="margin-top: 15px;">
+                                  <span class="add-text">Add Row</span>
+                                  <span class="add-icon-wrap">
+                                    <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                                      <line x1="12" x2="12" y1="5" y2="19"></line>
+                                      <line x1="5" x2="19" y1="12" y2="12"></line>
+                                    </svg>
+                                  </span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-section" style="grid-column: span 3; margin-top: 3rem; display: flex; justify-content: flex-end;">
+                            <div style="width: 350px; background: #fdfdfd; padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border);">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span style="color: var(--text-muted);">Sub Total</span>
+                                    <span id="challan-subtotal">₹0.00</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span style="color: var(--text-muted);">GST Total</span>
+                                    <span id="challan-gst-total">₹0.00</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--border); font-weight: 800; font-size: 1.2rem;">
+                                    <span>Total (₹)</span>
+                                    <span id="challan-grand-total">₹0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section" style="grid-column: span 3; margin-top: 2rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 700;">Customer Notes</label>
+                            <textarea id="challan-notes" rows="3" placeholder="Thanks for your business."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Sticky Footer -->
+                    <div style="position: fixed; bottom: 0; right: 0; left: var(--sidebar-width); background: white; padding: 1rem 2.5rem; border-top: 1px solid var(--border); display: flex; gap: 1rem; z-index: 100;">
+                        <button type="button" class="btn-liquid btn-primary" onclick="saveChallan('Open')">Save and Send</button>
+                        <button type="button" class="btn-liquid btn-secondary" onclick="saveChallan('Draft')">Save as Draft</button>
+                        <button type="button" class="btn-liquid btn-outline" onclick="hideNewChallanForm()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="script.js?v=24"></script>
+    <script>
+        // Challan specific logic
+        let challanItems = [];
+
+        function showNewChallanForm() {
+            document.getElementById('challan-list-view').style.display = 'none';
+            document.getElementById('challan-form-view').style.display = 'block';
+            resetChallanForm();
+        }
+
+        function hideNewChallanForm() {
+            document.getElementById('challan-list-view').style.display = 'block';
+            document.getElementById('challan-form-view').style.display = 'none';
+        }
+
+        function resetChallanForm() {
+            document.getElementById('challan-form').reset();
+            document.getElementById('challan-items-body').innerHTML = '';
+            document.getElementById('challan-number').value = 'DC-' + (Date.now() % 1000000);
+            document.getElementById('challan-date').valueAsDate = new Date();
+            addChallanRow();
+            populateCustomerDropdown();
+        }
+
+        function populateCustomerDropdown() {
+            const customers = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]');
+            const select = document.getElementById('challan-customer');
+            select.innerHTML = '<option value="">Select or add a customer</option>';
+            customers.forEach(c => {
+                let option = document.createElement('option');
+                option.value = c.firmName;
+                option.textContent = c.firmName;
+                select.appendChild(option);
+            });
+        }
+
+        function addChallanRow() {
+            const tbody = document.getElementById('challan-items-body');
+            const rowId = Date.now();
+            const tr = document.createElement('tr');
+            tr.id = `row-${rowId}`;
+            tr.innerHTML = `
+                <td>
+                    <textarea placeholder="Enter item details..." oninput="calculateChallanTotals()" style="resize: vertical; min-height: 40px;"></textarea>
+                </td>
+                <td>
+                    <input type="number" class="qty" value="1" min="0" step="0.001" oninput="calculateChallanTotals()" style="text-align: right;">
+                </td>
+                <td>
+                    <input type="number" class="rate" value="0" min="0" step="0.01" oninput="calculateChallanTotals()" style="text-align: right;">
+                </td>
+                <td>
+                    <input type="number" class="tax" value="0" min="0" step="0.1" oninput="calculateChallanTotals()" style="text-align: right;">
+                </td>
+                <td>
+                    <input type="text" class="amount" value="₹0.00" readonly style="text-align: right; background: #f8f9fa;">
+                </td>
+                <td>
+                    <button type="button" class="btn-remove-sm" onclick="removeChallanRow(${rowId})">✕</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            calculateChallanTotals();
+        }
+
+        function removeChallanRow(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            if (document.querySelectorAll('#challan-items-body tr').length > 1) {
+                row.remove();
+                calculateChallanTotals();
+            }
+        }
+
+        function calculateChallanTotals() {
+            let subtotal = 0;
+            let gstTotal = 0;
+            const rows = document.querySelectorAll('#challan-items-body tr');
+
+            rows.forEach(row => {
+                const qty = parseFloat(row.querySelector('.qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.rate').value) || 0;
+                const taxPercent = parseFloat(row.querySelector('.tax').value) || 0;
+
+                const amount = qty * rate;
+                const taxAmount = (amount * taxPercent) / 100;
+
+                subtotal += amount;
+                gstTotal += taxAmount;
+
+                row.querySelector('.amount').value = '₹' + (amount + taxAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            });
+
+            const grandTotal = subtotal + gstTotal;
+
+            document.getElementById('challan-subtotal').textContent = '₹' + subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            document.getElementById('challan-gst-total').textContent = '₹' + gstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            document.getElementById('challan-grand-total').textContent = '₹' + grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+        }
+
+        function saveChallan(status) {
+            const customer = document.getElementById('challan-customer').value;
+            if (!customer) {
+                alert('Please select a customer.');
+                return;
+            }
+
+            const challan = {
+                id: document.getElementById('challan-number').value,
+                customer: customer,
+                date: document.getElementById('challan-date').value,
+                reference: document.getElementById('challan-reference').value,
+                shipmentDate: document.getElementById('challan-shipment-date').value,
+                deliveryMethod: document.getElementById('challan-delivery-method').value,
+                notes: document.getElementById('challan-notes').value,
+                items: [],
+                subtotal: parseFloat(document.getElementById('challan-subtotal').textContent.replace(/[₹,]/g, '')),
+                gst: parseFloat(document.getElementById('challan-gst-total').textContent.replace(/[₹,]/g, '')),
+                total: parseFloat(document.getElementById('challan-grand-total').textContent.replace(/[₹,]/g, '')),
+                status: status || 'Draft',
+                createdDate: new Date().toISOString()
+            };
+
+            const rows = document.querySelectorAll('#challan-items-body tr');
+            rows.forEach(row => {
+                const details = row.querySelector('textarea').value;
+                if (details.trim()) {
+                    challan.items.push({
+                        details: details,
+                        qty: parseFloat(row.querySelector('.qty').value),
+                        rate: parseFloat(row.querySelector('.rate').value),
+                        tax: parseFloat(row.querySelector('.tax').value)
+                    });
+                }
+            });
+
+            if (challan.items.length === 0) {
+                alert('Please add at least one item.');
+                return;
+            }
+
+            let challans = JSON.parse(localStorage.getItem('manti_delivery_challan_records') || '[]');
+            challans.push(challan);
+            localStorage.setItem('manti_delivery_challan_records', JSON.stringify(challans));
+
+            alert(`Delivery Challan saved as ${challan.status}!`);
+            hideNewChallanForm();
+            renderChallanTable();
+        }
+
+        function renderChallanTable() {
+            const challans = JSON.parse(localStorage.getItem('manti_delivery_challan_records') || '[]');
+            const tbody = document.getElementById('challan-list-body');
+            tbody.innerHTML = '';
+
+            challans.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate)).forEach(c => {
+                const tr = document.createElement('tr');
+                
+                let statusColor = 'var(--text-muted)'; // Draft (gray)
+                let statusBg = '#f1f5f9';
+                
+                if (c.status === 'Open') {
+                    statusColor = 'var(--primary)'; // Open (blue)
+                    statusBg = 'var(--primary-light)';
+                } else if (c.status === 'Delivered') {
+                    statusColor = 'var(--success)'; // Delivered (green)
+                    statusBg = 'var(--success-light)';
+                } else if (c.status === 'Invoiced') {
+                    statusColor = '#8b5cf6'; // Invoiced (purple)
+                    statusBg = '#f5f3ff';
+                }
+
+                let actionHtml = '';
+                if (c.status === 'Draft') {
+                    actionHtml = `<button class="btn-text" onclick="updateChallanStatus('${c.id}', 'Open')" style="font-size: 0.7rem; color: var(--primary);">Mark as Open</button>`;
+                } else if (c.status === 'Open') {
+                    actionHtml = `
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <button class="btn-text" onclick="updateChallanStatus('${c.id}', 'Delivered')" style="font-size: 0.7rem; color: var(--success);">Mark Delivered</button>
+                            <button class="btn-text" onclick="convertToInvoice('${c.id}')" style="font-size: 0.7rem; color: #8b5cf6;">Invoice</button>
+                        </div>
+                    `;
+                } else if (c.status === 'Delivered') {
+                    actionHtml = `<button class="btn-text" onclick="convertToInvoice('${c.id}')" style="font-size: 0.7rem; color: #8b5cf6;">Invoice</button>`;
+                }
+
+                tr.innerHTML = `
+                    <td style="text-align: left; padding-left: 15px;">${new Date(c.date).toLocaleDateString()}</td>
+                    <td style="text-align: left; color: var(--primary); font-weight: 600;">${c.id}</td>
+                    <td style="text-align: left;">${c.customer}</td>
+                    <td style="text-align: left;">${c.reference || '-'}</td>
+                    <td style="text-align: left;">
+                        <span style="background: ${statusBg}; color: ${statusColor}; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">${c.status}</span>
+                    </td>
+                    <td style="text-align: right; padding-right: 15px; font-weight: 700;">₹${c.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td style="text-align: center;">${actionHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateChallanStatus(id, newStatus) {
+            let challans = JSON.parse(localStorage.getItem('manti_delivery_challan_records') || '[]');
+            const index = challans.findIndex(c => c.id === id);
+            if (index !== -1) {
+                challans[index].status = newStatus;
+                localStorage.setItem('manti_delivery_challan_records', JSON.stringify(challans));
+                renderChallanTable();
+                alert(`Challan ${id} marked as ${newStatus}`);
+            }
+        }
+
+        function convertToInvoice(id) {
+            let challans = JSON.parse(localStorage.getItem('manti_delivery_challan_records') || '[]');
+            const challan = challans.find(c => c.id === id);
+            if (challan) {
+                // Logic to transition to 'Invoiced' and potentially save in invoice store
+                challan.status = 'Invoiced';
+                localStorage.setItem('manti_delivery_challan_records', JSON.stringify(challans));
+                
+                // For now, just alert. Integration with create-invoice.html would involve window.location or shared modal state.
+                renderChallanTable();
+                alert(`Challan ${id} converted to Invoice successfully!`);
+            }
+        }
+
+        // Initialize table
+        window.addEventListener('DOMContentLoaded', () => {
+            renderChallanTable();
+        });
+    </script>
+    <script src="liquid-button.js"></script>
+</body>
+
+</html>

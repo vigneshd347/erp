@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Admin Panel</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar / Navigation -->
+                <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="admin.html" class="nav-item">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+
+
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; padding: 2rem;">
+            <header class="generator-header">
+                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                    <a href="index.html">
+                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                    </a>
+                    <div>
+                        <h1>System Settings</h1>
+                        <p>Manage default rates and bank information</p>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button type="button" class="btn-liquid btn-secondary" onclick="window.location.href='index.html'">Back to
+                        Dashboard</button>
+                </div>
+            </header>
+            <div class="module-grid">
+                <!-- Metal Rates Card -->
+                <div class="module-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div class="module-icon" style="margin-bottom: 0;"><i data-lucide="trending-up"></i></div>
+                        <button type="button" class="btn-edit" onclick="openAdminModal('rates-modal')" title="Edit Rates" style="transform: scale(0.85);"><svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg></button>
+                    </div>
+                    <h2 style="margin-bottom: 0.5rem;">Daily Metal Rates</h2>
+                    <p style="margin-bottom: 1rem; font-size: 0.85rem;">Live rates for automatic price calculations.</p>
+                    
+                    <div class="setting-summary" style="margin-top: auto;">
+                        <div class="summary-item">
+                            <span class="summary-label">Pure Gold (24K)</span>
+                            <span class="summary-value" id="disp-pure-gold">₹ --</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Pure Silver</span>
+                            <span class="summary-value" id="disp-pure-silver">₹ --</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bank Details Card -->
+                <div class="module-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div class="module-icon" style="margin-bottom: 0;"><i data-lucide="landmark"></i></div>
+                        <button type="button" class="btn-edit" onclick="openAdminModal('bank-modal')" title="Edit Bank Details" style="transform: scale(0.85);"><svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg></button>
+                    </div>
+                    <h2 style="margin-bottom: 0.5rem;">Our Bank Details</h2>
+                    <p style="margin-bottom: 1rem; font-size: 0.85rem;">Company's bank info for invoices.</p>
+                    
+                    <div class="setting-summary" style="margin-top: auto;">
+                        <div class="summary-item">
+                            <span class="summary-label">Bank Name</span>
+                            <span class="summary-value" id="disp-bank-name">--</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">A/C No</span>
+                            <span class="summary-value" id="disp-bank-acc">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Defaults Card -->
+                <div class="module-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div class="module-icon" style="margin-bottom: 0;"><i data-lucide="file-text"></i></div>
+                        <button type="button" class="btn-edit" onclick="openAdminModal('defaults-modal')" title="Edit Defaults" style="transform: scale(0.85);"><svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg></button>
+                    </div>
+                    <h2 style="margin-bottom: 0.5rem;">Invoice Defaults</h2>
+                    <p style="margin-bottom: 1rem; font-size: 0.85rem;">Standard HSN codes and footer.</p>
+                    
+                    <div class="setting-summary" style="margin-top: auto;">
+                        <div class="summary-item">
+                            <span class="summary-label">Default HSN</span>
+                            <span class="summary-value" id="disp-hsn-code">--</span>
+                        </div>
+                        <div class="summary-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <span class="summary-label">Footer Message</span>
+                            <span class="summary-value" id="disp-footer-text" style="font-size: 0.8rem; text-align: left; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- e-Invoicing & E-Way Bill Card -->
+                <div class="module-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div class="module-icon" style="margin-bottom: 0; background: #e0f2fe; color: #0284c7;"><i data-lucide="zap"></i></div>
+                        <button type="button" class="edit-icon-btn" onclick="openAdminModal('einvoice-modal')" title="Edit e-Invoicing"><i data-lucide="settings-2" style="width: 18px; height: 18px;"></i></button>
+                    </div>
+                    <h2 style="margin-bottom: 0.5rem;">e-Invoicing & E-Way Bill</h2>
+                    <p style="margin-bottom: 1rem; font-size: 0.85rem;">GST Portal GSP credentials and automation.</p>
+                    
+                    <div class="setting-summary" style="margin-top: auto;">
+                        <div class="summary-item">
+                            <span class="summary-label">Status</span>
+                            <span class="summary-value" id="disp-einvoice-status" style="font-weight: 700; color: #6b7280;">Inactive</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">GSP User</span>
+                            <span class="summary-value" id="disp-gsp-user">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Cards -->
+                <a href="vendor-kyc.html" class="module-card" style="text-decoration: none; color: inherit;">
+                    <div class="module-icon"><i data-lucide="users"></i></div>
+                    <h2>Vendor KYC</h2>
+                    <p>Manage your registered vendors and their identity documents.</p>
+                    <span class="btn-text">Open Directory →</span>
+                </a>
+
+                <a href="supplier-kyc.html" class="module-card" style="text-decoration: none; color: inherit;">
+                    <div class="module-icon"><i data-lucide="building-2"></i></div>
+                    <h2>Supplier KYC</h2>
+                    <p>Manage raw material suppliers and their business details.</p>
+                    <span class="btn-text">Open Directory →</span>
+                </a>
+
+                <a href="staff.html" class="module-card" style="text-decoration: none; color: inherit;">
+                    <div class="module-icon"><i data-lucide="hard-hat"></i></div>
+                    <h2>Staff Sheet</h2>
+                    <p>Track employee data, worker assignments, and payroll info.</p>
+                    <span class="btn-text">Open Sheet →</span>
+                </a>
+
+                <a href="stock-adjustment.html" class="module-card" style="text-decoration: none; color: inherit;">
+                    <div class="module-icon"><i data-lucide="scale"></i></div>
+                    <h2>Stock Adjustment</h2>
+                    <p>Manually adjust metal balances and rectify stock discrepancies.</p>
+                    <span class="btn-text">Adjust Stock →</span>
+                </a>
+
+                <!-- Monthly Close Card -->
+                <div class="module-card">
+                    <div class="module-icon"><i data-lucide="lock"></i></div>
+                    <h2>Monthly Close</h2>
+                    <p style="margin-bottom: 1.5rem;">Archive completed orders and job work. Keep incomplete records open.</p>
+                    <button type="button" id="btn-monthly-close" class="btn-liquid btn-danger" style="width: 100%;">Run Monthly Close</button>
+                </div>
+            </div>
+
+            <div id="save-status" class="save-status">Settings saved successfully!</div>
+
+            <!-- Modals -->
+            
+            <!-- e-Invoicing Modal -->
+            <div id="einvoice-modal" class="modal-overlay">
+                <div class="premium-modal" style="max-width: 500px;">
+                    <div class="premium-modal-header">
+                        <h2>e-Invoicing & E-Way Bill</h2>
+                        <button type="button" class="btn-close-modal" onclick="closeAdminModal('einvoice-modal')"><i data-lucide="x" style="width: 20px; height: 20px;"></i></button>
+                    </div>
+                    <div class="premium-modal-body">
+                        <form id="einvoice-form">
+                            <div style="font-size: 0.8rem; font-weight: bold; color: var(--brand-blue); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">GSP Credentials</div>
+                            <div class="field-group" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <input type="text" name="gsp_user" placeholder="GSP Username" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                                <input type="password" name="gsp_pass" placeholder="GSP Password" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                                <input type="text" name="gstin" placeholder="Company GSTIN" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+
+                            <div style="font-size: 0.8rem; font-weight: bold; color: var(--brand-blue); margin: 1.5rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Feature Toggles</div>
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 0.9rem;">
+                                    Enable e-Invoicing
+                                    <input type="checkbox" name="enable_einvoicing" style="width: 18px; height: 18px;">
+                                </label>
+                                <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 0.9rem;">
+                                    Enable E-Way Bill
+                                    <input type="checkbox" name="enable_ewaybill" style="width: 18px; height: 18px;">
+                                </label>
+                                <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 0.9rem;">
+                                    Use Sandbox Mode
+                                    <input type="checkbox" name="use_sandbox" checked style="width: 18px; height: 18px;">
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn-liquid btn-primary w-100" style="margin-top: 1.5rem;">Save Configuration</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metal Rates Modal -->
+            <div id="rates-modal" class="modal-overlay">
+                <div class="premium-modal">
+                    <div class="premium-modal-header">
+                        <h2>Daily Metal Rates</h2>
+                        <button type="button" onclick="closeAdminModal('rates-modal')" class="btn-close-modal"><i data-lucide="x" style="width: 20px; height: 20px;"></i></button>
+                    </div>
+                    <div class="premium-modal-body">
+                        <div class="field-group">
+                            <div class="input-group">
+                                <label for="admin-pure-gold">Pure Gold (24K) per Gram</label>
+                                <div class="input-wrapper">
+                                    <span>₹</span>
+                                    <input type="number" id="admin-pure-gold" placeholder="0.00" step="0.01">
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="admin-pure-silver">Pure Silver per Gram</label>
+                                <div class="input-wrapper">
+                                    <span>₹</span>
+                                    <input type="number" id="admin-pure-silver" placeholder="0.00" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="premium-modal-footer">
+                        <button type="button" onclick="closeAdminModal('rates-modal')" class="btn-liquid btn-secondary">Cancel</button>
+                        <button type="button" onclick="saveMetalRates()" class="btn-liquid btn-primary">Save Rates</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank Details Modal -->
+            <div id="bank-modal" class="modal-overlay">
+                <div class="premium-modal">
+                    <div class="premium-modal-header">
+                        <h2>Our Bank Details</h2>
+                        <button type="button" onclick="closeAdminModal('bank-modal')" class="btn-close-modal"><i data-lucide="x" style="width: 20px; height: 20px;"></i></button>
+                    </div>
+                    <div class="premium-modal-body">
+                        <div class="field-group">
+                            <input type="text" id="admin-bank-name" placeholder="Bank Name">
+                            <input type="text" id="admin-bank-branch" placeholder="Branch">
+                            <input type="text" id="admin-bank-acc" placeholder="Account No">
+                            <input type="text" id="admin-bank-ifsc" placeholder="IFSC Code">
+                            <input type="text" id="admin-bank-upi" placeholder="UPI ID">
+                        </div>
+                    </div>
+                    <div class="premium-modal-footer">
+                        <button type="button" onclick="closeAdminModal('bank-modal')" class="btn-liquid btn-secondary">Cancel</button>
+                        <button type="button" onclick="saveBankDetails()" class="btn-liquid btn-primary">Save Details</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice Defaults Modal -->
+            <div id="defaults-modal" class="modal-overlay">
+                <div class="premium-modal">
+                    <div class="premium-modal-header">
+                        <h2>Invoice Defaults</h2>
+                        <button type="button" onclick="closeAdminModal('defaults-modal')" class="btn-close-modal"><i data-lucide="x" style="width: 20px; height: 20px;"></i></button>
+                    </div>
+                    <div class="premium-modal-body">
+                        <div class="field-group" style="padding-bottom: 60px;"> <!-- Padding for clear inputs -->
+                            <div class="input-group">
+                                <label for="admin-hsn-code">Default HSN Code</label>
+                                <input type="text" id="admin-hsn-code" placeholder="e.g. 7113">
+                            </div>
+                            <div class="input-group">
+                                <label for="admin-footer-text">Invoice Footer Message</label>
+                                <input type="text" id="admin-footer-text" placeholder="e.g. THANK YOU WELCOME AGAIN">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="premium-modal-footer">
+                        <button type="button" onclick="closeAdminModal('defaults-modal')" class="btn-liquid btn-secondary">Cancel</button>
+                        <button type="button" onclick="saveInvoiceDefaults()" class="btn-liquid btn-primary">Save Defaults</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="script.js?v=24"></script>
+    <script>
+        // Admin-specific initialization
+        function loadSettingSummaries() {
+            const savedRates = localStorage.getItem('manti_metal_rates');
+            const savedBank = localStorage.getItem('manti_bank_details');
+            const savedDefaults = localStorage.getItem('manti_invoice_defaults');
+            const savedEInvoice = localStorage.getItem('manti_einvoice_settings');
+
+            if (savedRates) {
+                const rates = JSON.parse(savedRates);
+                document.getElementById('admin-pure-gold').value = rates.pureGold || '';
+                document.getElementById('admin-pure-silver').value = rates.pureSilver || '';
+                
+                document.getElementById('disp-pure-gold').textContent = rates.pureGold ? '₹ ' + rates.pureGold : '₹ --';
+                document.getElementById('disp-pure-silver').textContent = rates.pureSilver ? '₹ ' + rates.pureSilver : '₹ --';
+            }
+
+            if (savedBank) {
+                const bank = JSON.parse(savedBank);
+                document.getElementById('admin-bank-name').value = bank.name || '';
+                document.getElementById('admin-bank-branch').value = bank.branch || '';
+                document.getElementById('admin-bank-acc').value = bank.acc || '';
+                document.getElementById('admin-bank-ifsc').value = bank.ifsc || '';
+                document.getElementById('admin-bank-upi').value = bank.upi || '';
+                
+                document.getElementById('disp-bank-name').textContent = bank.name || '--';
+                // Mask account number to show only last 4 digits if possible, else show full/empty
+                let accDisplay = bank.acc || '--';
+                if(bank.acc && bank.acc.length > 4) {
+                    accDisplay = '...' + bank.acc.slice(-4);
+                }
+                document.getElementById('disp-bank-acc').textContent = accDisplay;
+            }
+
+            // Load invoice defaults
+            const def = savedDefaults ? JSON.parse(savedDefaults) : {};
+            const defHsn = def.hsnCode || '7113';
+            const defFooter = def.footerText || 'THANK YOU WELCOME AGAIN';
+            
+            document.getElementById('admin-hsn-code').value = defHsn;
+            document.getElementById('admin-footer-text').value = defFooter;
+            
+            document.getElementById('disp-hsn-code').textContent = defHsn;
+            document.getElementById('disp-footer-text').textContent = defFooter;
+
+            // Load e-Invoicing settings
+            const eInv = savedEInvoice ? JSON.parse(savedEInvoice) : {};
+            const form = document.getElementById('einvoice-form');
+            if (form) {
+                form.elements['gsp_user'].value = eInv.gsp_user || '';
+                form.elements['gsp_pass'].value = eInv.gsp_pass || '';
+                form.elements['gstin'].value = eInv.gstin || '';
+                form.elements['enable_einvoicing'].checked = eInv.enable_einvoicing || false;
+                form.elements['enable_ewaybill'].checked = eInv.enable_ewaybill || false;
+                form.elements['use_sandbox'].checked = eInv.use_sandbox !== undefined ? eInv.use_sandbox : true;
+            }
+            
+            const statusEl = document.getElementById('disp-einvoice-status');
+            const isActive = eInv.enable_einvoicing || eInv.enable_ewaybill;
+            statusEl.textContent = isActive ? 'Active' : 'Inactive';
+            statusEl.style.color = isActive ? '#16a34a' : '#6b7280';
+            document.getElementById('disp-gsp-user').textContent = eInv.gsp_user || '--';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettingSummaries();
+
+            const eInvForm = document.getElementById('einvoice-form');
+            if (eInvForm) eInvForm.addEventListener('submit', saveEInvoiceSettings);
+        });
+
+        // Admin Modals Logic
+        function openAdminModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+        function closeAdminModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function triggerSaveStatus() {
+            const status = document.getElementById('save-status');
+            status.style.display = 'block';
+            setTimeout(() => status.style.display = 'none', 3000);
+        }
+
+        function saveMetalRates() {
+            const rates = {
+                pureGold: parseFloat(document.getElementById('admin-pure-gold').value) || 0,
+                pureSilver: parseFloat(document.getElementById('admin-pure-silver').value) || 0
+            };
+            localStorage.setItem('manti_metal_rates', JSON.stringify(rates));
+            loadSettingSummaries(); // Update the card display
+            closeAdminModal('rates-modal');
+            triggerSaveStatus();
+        }
+
+        function saveBankDetails() {
+            const bank = {
+                name: document.getElementById('admin-bank-name').value,
+                branch: document.getElementById('admin-bank-branch').value,
+                acc: document.getElementById('admin-bank-acc').value,
+                ifsc: document.getElementById('admin-bank-ifsc').value,
+                upi: document.getElementById('admin-bank-upi').value
+            };
+            localStorage.setItem('manti_bank_details', JSON.stringify(bank));
+            loadSettingSummaries(); // Update the card display
+            closeAdminModal('bank-modal');
+            triggerSaveStatus();
+        }
+
+        function saveInvoiceDefaults() {
+            const invoiceDefaults = {
+                hsnCode: document.getElementById('admin-hsn-code').value.trim() || '7113',
+                footerText: document.getElementById('admin-footer-text').value.trim() || 'THANK YOU WELCOME AGAIN'
+            };
+            localStorage.setItem('manti_invoice_defaults', JSON.stringify(invoiceDefaults));
+            loadSettingSummaries(); // Update the card display
+            closeAdminModal('defaults-modal');
+            triggerSaveStatus();
+        }
+
+        function saveEInvoiceSettings(e) {
+            if (e) e.preventDefault();
+            const form = document.getElementById('einvoice-form');
+            const formData = new FormData(form);
+            const settings = {
+                gsp_user: formData.get('gsp_user'),
+                gsp_pass: formData.get('gsp_pass'),
+                gstin: formData.get('gstin'),
+                enable_einvoicing: form.elements['enable_einvoicing'].checked,
+                enable_ewaybill: form.elements['enable_ewaybill'].checked,
+                use_sandbox: form.elements['use_sandbox'].checked
+            };
+            localStorage.setItem('manti_einvoice_settings', JSON.stringify(settings));
+            loadSettingSummaries();
+            closeAdminModal('einvoice-modal');
+            triggerSaveStatus();
+        }
+
+        // Monthly Close Logic
+        document.getElementById('btn-monthly-close').addEventListener('click', () => {
+            if (!confirm("Are you sure you want to run Monthly Close?\n\nThis will archive all 'Completed' orders and all Job Work records that have reached '5. Despatch'. Unfinished records will remain open.")) {
+                return;
+            }
+
+            // 1. Process Orders
+            let orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+            let orderArchive = JSON.parse(localStorage.getItem('manti_order_archive')) || [];
+            
+            let openOrders = [];
+            let completedOrders = [];
+            
+            orders.forEach(o => {
+                if (o.status === 'Completed') {
+                    completedOrders.push(o);
+                } else {
+                    openOrders.push(o);
+                }
+            });
+
+            // 2. Process Job Work
+            let jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+            let jobArchive = JSON.parse(localStorage.getItem('manti_jobwork_archive')) || [];
+
+            // A job is complete if there's a record for it with process === '5. Despatch'
+            let despatchedJobNums = new Set();
+            jobs.forEach(j => {
+                if (j.process === '5. Despatch') {
+                    despatchedJobNums.add(j.jobnum);
+                }
+            });
+
+            let openJobs = [];
+            let completedJobs = [];
+
+            jobs.forEach(j => {
+                if (despatchedJobNums.has(j.jobnum)) {
+                    completedJobs.push(j);
+                } else {
+                    openJobs.push(j);
+                }
+            });
+
+            // Save back
+            localStorage.setItem('manti_order_records', JSON.stringify(openOrders));
+            localStorage.setItem('manti_order_archive', JSON.stringify(orderArchive.concat(completedOrders)));
+            
+            localStorage.setItem('manti_jobwork_records', JSON.stringify(openJobs));
+            localStorage.setItem('manti_jobwork_archive', JSON.stringify(jobArchive.concat(completedJobs)));
+
+            alert(`Monthly Close Successful!\n\nArchived:\n• ${completedOrders.length} Orders\n• ${completedJobs.length} Job Work records\n\nKept Open:\n• ${openOrders.length} Orders\n• ${openJobs.length} Job Work records`);
+        });
+    </script>
+</body>
+
+</html>

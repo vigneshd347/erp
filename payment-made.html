@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Record Payment Made</title>
+    <link rel="stylesheet" href="style.css?v=18">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .pay-header {
+            background: #f8fafc;
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pay-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            padding: 2rem 30px;
+            background: white;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .pay-input {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-top: 6px;
+            background: #fff;
+        }
+        
+        .pay-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }
+
+        .amount-highlight {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--success);
+            background: var(--success-light);
+            border-color: var(--success);
+        }
+
+        .bills-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .bills-table th {
+            background: #f8fafc;
+            padding: 12px;
+            text-align: left;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .bills-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+        
+        .payment-cell-input {
+            width: 120px;
+            padding: 6px;
+            text-align: right;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .summary-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            width: 350px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+                <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested">Payments Made</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; display: flex; flex-direction: column; background: #f1f5f9;">
+            <div class="pay-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button onclick="window.history.back()" style="background: none; border: none; cursor: pointer; color: var(--text-muted);"><i data-lucide="arrow-left"></i></button>
+                    <h1 style="font-size: 1.5rem; color: #0f172a; margin: 0;">Record Payment</h1>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-liquid btn-secondary" onclick="window.history.back()">Cancel</button>
+                    <button type="button" class="btn-liquid btn-primary" onclick="savePayment()">Save Payment</button>
+                </div>
+            </div>
+
+            <div style="flex: 1; padding: 30px; overflow-y: auto;">
+                <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;">
+                    
+                    <div class="pay-meta-grid">
+                        <!-- Left Column -->
+                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Vendor <span style="color:#ef4444;">*</span></label>
+                                <select id="pay-vendor" class="pay-input" onchange="loadVendorBills()" required>
+                                    <option value="">Select Vendor</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Payment Date <span style="color:#ef4444;">*</span></label>
+                                <input type="date" id="pay-date" class="pay-input" required>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Payment Mode</label>
+                                <select id="pay-mode" class="pay-input">
+                                    <option value="Bank Transfer">Bank Transfer (NEFT/RTGS)</option>
+                                    <option value="UPI">UPI Payment</option>
+                                    <option value="Cheque">Cheque</option>
+                                    <option value="Cash">Cash</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Paid Through <span style="color:#ef4444;">*</span></label>
+                                <select id="pay-account" class="pay-input" required>
+                                    <option value="Bank">Bank Account</option>
+                                    <option value="Cash">Petty Cash</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Amount (₹) <span style="color:#ef4444;">*</span></label>
+                                <input type="number" id="pay-amount" class="pay-input amount-highlight" placeholder="0.00" oninput="autoDistributePayment()" required>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Reference#</label>
+                                <input type="text" id="pay-ref" class="pay-input" placeholder="e.g. Transaction ID / Cheque No">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Notes</label>
+                                <textarea id="pay-notes" class="pay-input" rows="2" placeholder="Internal notes..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bills Section -->
+                    <div style="padding: 2rem 30px;">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: #0f172a;">Unpaid Purchase Orders</h3>
+                        
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                            <table class="bills-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>PO Number</th>
+                                        <th>Bill No.</th>
+                                        <th style="text-align: right;">PO Amount</th>
+                                        <th style="text-align: right;">Amount Due</th>
+                                        <th style="text-align: right; width: 160px;">Payment</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="unpaid-bills-body">
+                                    <tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">Please select a vendor to view unpaid purchase orders.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Summary -->
+                        <div style="display: flex; justify-content: flex-end; margin-top: 2rem;">
+                            <div class="summary-box">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                    <span style="color: #64748b; font-weight: 500;">Amount Received/Entered:</span>
+                                    <span id="sum-entered" style="font-weight: 600; color: #0f172a;">₹ 0.00</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                    <span style="color: #64748b; font-weight: 500;">Amount Used for Payments:</span>
+                                    <span id="sum-applied" style="font-weight: 600; color: #0f172a;">₹ 0.00</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding-top: 15px; border-top: 1px dashed #cbd5e1;">
+                                    <span style="color: #059669; font-weight: 700;">Amount in Excess:</span>
+                                    <span id="sum-excess" style="font-weight: 700; color: #059669;">₹ 0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script>
+        // Data sources
+        const orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+        const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]');
+
+        let currentVendorOrders = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('pay-date').valueAsDate = new Date();
+
+            const vendorSelect = document.getElementById('pay-vendor');
+            if (vendors.length === 0) {
+                vendorSelect.innerHTML = '<option value="">No vendors found</option>';
+            } else {
+                vendors.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = v.id; // Usually vendor KYC id maps to their name
+                    vendorSelect.appendChild(opt);
+                });
+            }
+        });
+
+        function loadVendorBills() {
+            const vendorId = document.getElementById('pay-vendor').value;
+            const tbody = document.getElementById('unpaid-bills-body');
+            
+            if (!vendorId) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">Please select a vendor to view unpaid purchase orders.</td></tr>';
+                currentVendorOrders = [];
+                calculateSummary();
+                return;
+            }
+
+            // Find all POs for this vendor
+            // They must be 'Purchase Order' and amountDue > 0
+            currentVendorOrders = orders.filter(o => {
+                if (o.type !== 'Purchase Order') return false;
+                if (o.vendor !== vendorId) return false;
+                if (o.status === 'Cancelled') return false;
+                
+                const amt = parseFloat(o.amount) || 0;
+                const paid = parseFloat(o.paidAmount) || 0;
+                const due = amt - paid;
+                
+                // Only keep if something is due
+                return due > 0.001;
+            });
+
+            // Sort by Date ascending (FIFO payment matching)
+            currentVendorOrders.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (currentVendorOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">This vendor has no outstanding Purchase Orders.</td></tr>';
+                calculateSummary();
+                return;
+            }
+
+            tbody.innerHTML = '';
+            currentVendorOrders.forEach(o => {
+                const amt = parseFloat(o.amount) || 0;
+                const paid = parseFloat(o.paidAmount) || 0;
+                const due = amt - paid;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${new Date(o.date).toLocaleDateString('en-GB')}</td>
+                    <td style="font-weight: 600; color: var(--primary);">${o.id}</td>
+                    <td>${o.billNo || '-'}</td>
+                    <td style="text-align: right;">${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td style="text-align: right; color: var(--danger); font-weight: 600;">${due.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td style="text-align: right;">
+                        <input type="number" class="payment-cell-input" data-po-id="${o.id}" data-due="${due}" placeholder="0.00" oninput="calculateSummary()">
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            autoDistributePayment();
+        }
+
+        function autoDistributePayment() {
+            const amountEntered = parseFloat(document.getElementById('pay-amount').value) || 0;
+            let remaining = amountEntered;
+
+            const inputs = document.querySelectorAll('.payment-cell-input');
+            
+            inputs.forEach(input => {
+                const due = parseFloat(input.getAttribute('data-due')) || 0;
+                if (remaining > 0) {
+                    if (remaining >= due) {
+                        input.value = due.toFixed(2);
+                        remaining -= due;
+                    } else {
+                        input.value = remaining.toFixed(2);
+                        remaining = 0;
+                    }
+                } else {
+                    input.value = '';
+                }
+            });
+
+            calculateSummary();
+        }
+
+        function calculateSummary() {
+            const amountEntered = parseFloat(document.getElementById('pay-amount').value) || 0;
+            let amountApplied = 0;
+
+            document.querySelectorAll('.payment-cell-input').forEach(input => {
+                let val = parseFloat(input.value) || 0;
+                let due = parseFloat(input.getAttribute('data-due')) || 0;
+
+                // Restrict input from exceeding DUE amount
+                if (val > due) {
+                    input.value = due.toFixed(2);
+                    val = due;
+                }
+
+                amountApplied += val;
+            });
+
+            // Prevent applied being greater than entered (if they manually type large numbers)
+            // Wait, standard Zoho allows modifying inputs, and if applied > entered, it shows a warning.
+            // But we will allow it and define the 'Entered Amount' as whatever they type.
+            
+            const excess = amountEntered - amountApplied;
+
+            document.getElementById('sum-entered').textContent = '₹ ' + amountEntered.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('sum-applied').textContent = '₹ ' + amountApplied.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            
+            const excessEl = document.getElementById('sum-excess');
+            excessEl.textContent = '₹ ' + Math.abs(excess).toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+            if (amountApplied > amountEntered && amountEntered > 0) {
+                excessEl.previousElementSibling.textContent = "Amount Over-Applied:";
+                excessEl.style.color = 'var(--danger)';
+            } else if (excess > 0) {
+                excessEl.previousElementSibling.textContent = "Amount in Excess:";
+                excessEl.style.color = 'var(--success)';
+            } else {
+                excessEl.previousElementSibling.textContent = "Amount in Excess:";
+                excessEl.style.color = 'var(--text-muted)'; // Zero
+            }
+        }
+
+        function savePayment() {
+            const vendor = document.getElementById('pay-vendor').value;
+            const date = document.getElementById('pay-date').value;
+            const account = document.getElementById('pay-account').value;
+            const amountEntered = parseFloat(document.getElementById('pay-amount').value) || 0;
+            const mode = document.getElementById('pay-mode').value;
+            const ref = document.getElementById('pay-ref').value;
+            const notes = document.getElementById('pay-notes').value;
+
+            if (!vendor) return alert("Please select a vendor.");
+            if (!date) return alert("Please select a payment date.");
+            if (amountEntered <= 0) return alert("Please enter a valid amount.");
+
+            let amountApplied = 0;
+            const applications = [];
+
+            document.querySelectorAll('.payment-cell-input').forEach(input => {
+                const val = parseFloat(input.value) || 0;
+                if (val > 0) {
+                    amountApplied += val;
+                    applications.push({
+                        id: input.getAttribute('data-po-id'),
+                        amount: val
+                    });
+                }
+            });
+
+            if (amountApplied > amountEntered) {
+                return alert("You have applied more payment to POs than the total Payment Amount entered.");
+            }
+
+            if (amountApplied === 0 && currentVendorOrders.length > 0) {
+                if (!confirm("No amount has been applied to specific purchase orders. This will be an open advance payment. Continue?")) {
+                    return;
+                }
+            }
+
+            // 1. Update Purchase Orders
+            applications.forEach(app => {
+                const orderIndex = orders.findIndex(o => o.id === app.id);
+                if (orderIndex !== -1) {
+                    const currentPaid = parseFloat(orders[orderIndex].paidAmount) || 0;
+                    orders[orderIndex].paidAmount = currentPaid + app.amount;
+                    
+                    // Optional: If fully paid and status was Open, mark as Completed? 
+                    // Usually receipt of items marks it completed, not just payment. We leave status alone.
+                }
+            });
+            localStorage.setItem('manti_order_records', JSON.stringify(orders));
+
+            // 2. Generate Journal Entry for Banking Ledger
+            const journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+            const nextId = 'PMT-' + String(journals.length + 1).padStart(4, '0');
+
+            const jvLines = [
+                {
+                    account: account, // e.g. "Bank" or "Cash" (Credit decreases asset)
+                    desc: `Payment to ${vendor} via ${mode}`,
+                    contact: vendor,
+                    debit: 0,
+                    credit: amountEntered
+                },
+                {
+                    account: 'Accounts Payable', // Debit decreases liability
+                    desc: `Payment to ${vendor} via ${mode}`,
+                    contact: vendor,
+                    debit: amountEntered,
+                    credit: 0
+                }
+            ];
+
+            journals.push({
+                id: nextId,
+                date: date,
+                reference: ref,
+                notes: notes || `Vendor Payment: ${vendor}`,
+                total: amountEntered,
+                lines: jvLines,
+                timestamp: new Date().toISOString()
+            });
+
+            localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+
+            alert(`Payment of ₹ ${amountEntered.toFixed(2)} recorded successfully.`);
+            window.location.href = 'purchases.html';
+        }
+    </script>
+</body>
+</html>

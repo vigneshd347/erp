@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Debug LocalStorage</title>
+</head>
+
+<body>
+    <textarea id="debug-output" style="width: 100%; height: 500px;"></textarea>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const out = document.getElementById('debug-output');
+            const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+            const jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+            out.value = "ORDERS:\n" + JSON.stringify(orders, null, 2) + "\n\nJOBS:\n" + JSON.stringify(jobs, null, 2);
+        });
+    </script>
+</body>
+
+</html>
