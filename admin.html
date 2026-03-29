@@ -12,6 +12,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase Cloud Sync -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
 </head>
 
 <body>
@@ -246,6 +249,17 @@
                     <h2>Monthly Close</h2>
                     <p style="margin-bottom: 1.5rem;">Archive completed orders and job work. Keep incomplete records open.</p>
                     <button type="button" id="btn-monthly-close" class="btn-liquid btn-danger" style="width: 100%;">Run Monthly Close</button>
+                </div>
+                
+                <!-- Cloud Migration Card -->
+                <div class="module-card">
+                    <div class="module-icon" style="background: #e0e7ff; color: #4f46e5;"><i data-lucide="cloud-upload"></i></div>
+                    <h2 style="display: flex; align-items: center; gap: 8px;">
+                        Cloud Database Sync
+                        <i id="cloud-status-icon" data-lucide="check-circle-2" style="color: #16a34a; width: 18px; display: none;"></i>
+                    </h2>
+                    <p style="margin-bottom: 1.5rem;">Securely push your local ERP data (orders, staff, reports) to your Supabase Cloud Database.</p>
+                    <button type="button" onclick="window.migrateDataToSupabase()" class="btn-liquid btn-primary" style="width: 100%;">Push Data to Cloud</button>
                 </div>
             </div>
 
