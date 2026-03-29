@@ -361,15 +361,38 @@
                     </div>
 
                     <div style="display: flex; gap: 10px; flex: 0 0 auto; justify-content: flex-end; align-items: center; flex-wrap: nowrap; min-width: max-content;">
-                        <select id="report-date-filter" class="input-wrapper" style="width: auto; height: 38px; padding: 0 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px; background: white; outline: none; cursor: pointer; flex: 0 0 auto;" onchange="if(window._currentReportType) loadReport(window._currentReportType)">
-                            <option value="all">All Time</option>
-                            <option value="this_month">This Month</option>
-                            <option value="last_month">Last Month</option>
-                            <option value="this_year">This Year</option>
-                            <option value="2026">2026 Yearly Breakdown</option>
-                            <option value="2025">2025 Yearly Breakdown</option>
-                            <option value="2024">2024 Yearly Breakdown</option>
-                        </select>
+                        <input type="hidden" id="report-date-filter" value="all">
+                        <script>
+                            function updateDateFilter(val) {
+                                document.getElementById('report-date-filter').value = val;
+                                // Need to also sync the active styling for the label manually if desired, but native radio button handles the visual selection tick automatically
+                                if(window._currentReportType) loadReport(window._currentReportType);
+                            }
+                        </script>
+                        <div class="date-radio-group" style="display: flex; gap: 15px; align-items: center; background: white; padding: 6px 20px; border-radius: 30px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); flex: 0 0 auto; flex-wrap: wrap; justify-content: center;">
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
+                                <input type="radio" name="report_date_filter_radio" value="all" checked onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> All Time
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
+                                <input type="radio" name="report_date_filter_radio" value="this_month" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> This Mth
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
+                                <input type="radio" name="report_date_filter_radio" value="last_month" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> Last Mth
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
+                                <input type="radio" name="report_date_filter_radio" value="this_year" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> This Yr
+                            </label>
+                            <div style="width: 1px; height: 16px; background: #cbd5e1; margin: 0 2px;"></div>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
+                                <input type="radio" name="report_date_filter_radio" value="2026" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> 2026
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
+                                <input type="radio" name="report_date_filter_radio" value="2025" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> 2025
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
+                                <input type="radio" name="report_date_filter_radio" value="2024" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> 2024
+                            </label>
+                        </div>
                         <button type="button" class="btn-success" id="btn-save-snapshot" style="display: none; height: 38px; padding: 0 16px; border-radius: 6px; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; white-space: nowrap; flex: 0 0 auto; min-width: max-content;" onclick="saveReportSnapshot()">
                             <i data-lucide="save" style="width: 16px; height: 16px;"></i> <span style="white-space: nowrap;">Save Snapshot</span>
                         </button>
