@@ -278,6 +278,15 @@
                         <div class="report-group-title">Financial Statements</div>
                         <ul class="report-list">
                             <li><a class="report-link" onclick="selectReport('profit-loss', this)" style="font-weight: 700; color: var(--success);">Profit & Loss</a></li>
+                            <li><a class="report-link" onclick="selectReport('overall-valuation', this)" style="font-weight: 700; color: #0284c7;">Overall Valuation</a></li>
+                        </ul>
+                        </ul>
+                    </div>
+                    
+                    <div class="report-group">
+                        <div class="report-group-title">Saved Snapshots <span style="font-size: 0.65rem; background: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 10px; margin-left: 6px;">New</span></div>
+                        <ul class="report-list" id="saved-snapshots-list">
+                            <li><span style="color: #9ca3af; font-size: 0.85rem; font-style: italic;">No snapshots saved yet</span></li>
                         </ul>
                     </div>
                 </div>
@@ -339,28 +348,40 @@
 
                 <!-- Zoho Style Screen Header -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e5e7eb;" class="screen-header">
-                    <div style="flex: 1; padding-top: 5px;">
+                    <div style="flex: 1; min-width: 150px; padding-top: 5px;">
                         <a href="javascript:void(0)" onclick="backToReports()" style="display: inline-flex; align-items: center; gap: 6px; color: var(--primary); text-decoration: none; font-size: 0.95rem; font-weight: 500;">
                             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
                             Back to Reports
                         </a>
                     </div>
                     
-                    <div style="text-align: center; flex: 2;">
+                    <div style="text-align: center; flex: 1;">
                         <h2 id="report-title" style="font-size: 1.45rem; color: #111827; margin: 0 0 4px 0; font-weight: 600;">Report Title</h2>
                         <div id="report-subtitle" style="font-size: 0.9rem; color: #6b7280; font-weight: 500;"></div>
                     </div>
 
-                    <div style="display: flex; gap: 8px; flex: 1; justify-content: flex-end;">
-                        <input type="text" id="search-report" class="input-wrapper" placeholder="Search data..." onkeyup="filterTable('search-report', 'report-table')" style="width: 180px; padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 4px;">
-                        <button type="button" class="btn-outline" style="padding: 6px 12px; border-radius: 4px; display: flex; align-items: center; gap: 6px; font-size: 0.85rem;" id="btn-customize-columns-inner">
-                            <i data-lucide="settings-2" style="width: 14px; height: 14px;"></i> Customize Report
+                    <div style="display: flex; gap: 10px; flex: 0 0 auto; justify-content: flex-end; align-items: center; flex-wrap: nowrap; min-width: max-content;">
+                        <select id="report-date-filter" class="input-wrapper" style="width: auto; height: 38px; padding: 0 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px; background: white; outline: none; cursor: pointer; flex: 0 0 auto;" onchange="if(window._currentReportType) loadReport(window._currentReportType)">
+                            <option value="all">All Time</option>
+                            <option value="this_month">This Month</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="this_year">This Year</option>
+                            <option value="2026">2026 Yearly Breakdown</option>
+                            <option value="2025">2025 Yearly Breakdown</option>
+                            <option value="2024">2024 Yearly Breakdown</option>
+                        </select>
+                        <button type="button" class="btn-success" id="btn-save-snapshot" style="display: none; height: 38px; padding: 0 16px; border-radius: 6px; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; white-space: nowrap; flex: 0 0 auto; min-width: max-content;" onclick="saveReportSnapshot()">
+                            <i data-lucide="save" style="width: 16px; height: 16px;"></i> <span style="white-space: nowrap;">Save Snapshot</span>
                         </button>
-                        <button type="button" class="btn-outline" style="padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center;" onclick="window.print()" title="Print">
-                            <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
+                        <input type="text" id="search-report" class="input-wrapper" placeholder="Search data..." onkeyup="filterTable('search-report', 'report-table')" style="height: 38px; width: 180px; padding: 0 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px; outline: none; flex: 0 0 auto;">
+                        <button type="button" class="btn-outline" style="height: 38px; padding: 0 16px; border-radius: 6px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; white-space: nowrap; background: white; flex: 0 0 auto; min-width: max-content;" id="btn-customize-columns-inner">
+                            <i data-lucide="settings-2" style="width: 16px; height: 16px;"></i> <span style="white-space: nowrap;">Customize Report</span>
                         </button>
-                        <button type="button" class="btn-outline" style="padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center;" onclick="exportTableToExcel('report-table', 'Manti_Report')" title="Export as Excel">
-                            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                        <button type="button" class="btn-outline" style="height: 38px; width: 38px; padding: 0; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: white; flex-shrink: 0;" onclick="window.print()" title="Print">
+                            <i data-lucide="printer" style="width: 18px; height: 18px;"></i>
+                        </button>
+                        <button type="button" class="btn-outline" style="height: 38px; width: 38px; padding: 0; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: white; flex-shrink: 0;" onclick="exportTableToExcel('report-table', 'Manti_Report')" title="Export as Excel">
+                            <i data-lucide="download" style="width: 18px; height: 18px;"></i>
                         </button>
                     </div>
                 </div>
@@ -429,7 +450,138 @@
             window.manti_custom_reports = JSON.parse(localStorage.getItem('manti_custom_reports')) || {};
             let currentActiveView = null; // Stores { name, baseType, columns: [{name, visible}] }
 
+            // Snapshot Logic
+            window.refreshSnapshotsList = function() {
+                const list = document.getElementById('saved-snapshots-list');
+                if (!list) return;
+                
+                const snaps = JSON.parse(localStorage.getItem('manti_report_snapshots')) || [];
+                if (snaps.length === 0) {
+                    list.innerHTML = '<li><span style="color: #9ca3af; font-size: 0.85rem; font-style: italic;">No snapshots saved yet</span></li>';
+                    return;
+                }
+                
+                list.innerHTML = '';
+                snaps.slice().reverse().forEach(snap => {
+                    const d = new Date(snap.date);
+                    const formatted = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    list.innerHTML += `
+                        <li style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <a class="report-link" onclick="loadSnapshot('${snap.id}')" style="font-size: 0.85rem;" title="${snap.title}">
+                                <i data-lucide="file-clock" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> 
+                                ${snap.title} <br><span style="color: #6b7280; font-size: 0.75rem;">${formatted}</span>
+                            </a>
+                            <button onclick="deleteSnapshot('${snap.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 2px;"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
+                        </li>
+                    `;
+                });
+                
+                if (window.lucide) window.lucide.createIcons();
+            };
+            
+            window.saveReportSnapshot = function() {
+                const tableHtml = document.getElementById('report-table').outerHTML;
+                const reportTitleText = document.getElementById('report-title').textContent;
+                
+                const snapshot = {
+                    id: 'snap_' + Date.now(),
+                    title: reportTitleText,
+                    date: new Date().toISOString(),
+                    html: tableHtml,
+                    type: window._currentReportType
+                };
+                
+                const snapshots = JSON.parse(localStorage.getItem('manti_report_snapshots')) || [];
+                snapshots.push(snapshot);
+                localStorage.setItem('manti_report_snapshots', JSON.stringify(snapshots));
+                
+                alert("Report Snapshot Saved Successfully!");
+                refreshSnapshotsList();
+            };
+
+            window.loadSnapshot = function(id) {
+                const snaps = JSON.parse(localStorage.getItem('manti_report_snapshots')) || [];
+                const snap = snaps.find(s => s.id === id);
+                if (!snap) return;
+                
+                document.getElementById('report-title').textContent = snap.title;
+                document.getElementById('report-subtitle').textContent = "Archived Snapshot - Read Only";
+                
+                const tableContainer = document.getElementById('report-container');
+                tableContainer.innerHTML = snap.html;
+                
+                document.querySelector('.report-selector-section').style.display = 'none';
+                document.querySelector('.generator-header').style.display = 'none';
+                document.getElementById('report-container-wrapper').style.display = 'block';
+                document.getElementById('empty-state-greeting').style.display = 'none';
+                
+                document.getElementById('btn-save-snapshot').style.display = 'none';
+                document.getElementById('report-date-filter').style.display = 'none';
+                document.getElementById('search-report').style.display = 'none';
+                document.getElementById('btn-customize-columns-inner').style.display = 'none';
+            };
+            
+            window.deleteSnapshot = function(id) {
+                if(!confirm('Delete this saved snapshot permanently?')) return;
+                let snaps = JSON.parse(localStorage.getItem('manti_report_snapshots')) || [];
+                snaps = snaps.filter(s => s.id !== id);
+                localStorage.setItem('manti_report_snapshots', JSON.stringify(snaps));
+                refreshSnapshotsList();
+            };
+            
+            // Initialization Call
+            refreshSnapshotsList();
+
+            // Date Filter Helper
+            function isWithinDateFilter(dateString) {
+                if (!dateString) return true;
+                const filterVal = document.getElementById('report-date-filter').value;
+                if (filterVal === 'all') return true;
+                
+                const d = new Date(dateString);
+                if (isNaN(d.getTime())) return true;
+                
+                const now = new Date();
+                const thisMonth = now.getMonth();
+                const thisYear = now.getFullYear();
+                
+                if (filterVal === 'this_month') {
+                    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+                }
+                if (filterVal === 'last_month') {
+                    let lastM = thisMonth - 1;
+                    let lastY = thisYear;
+                    if (lastM < 0) { lastM = 11; lastY--; }
+                    return d.getMonth() === lastM && d.getFullYear() === lastY;
+                }
+                if (filterVal === 'this_year') {
+                    return d.getFullYear() === thisYear;
+                }
+                
+                // Specific Year Filter (e.g. 2026, 2025)
+                if (!isNaN(parseInt(filterVal))) {
+                    return d.getFullYear() === parseInt(filterVal);
+                }
+                
+                return true;
+            }
+
             window.loadReport = function(type) {
+                window._currentReportType = type;
+                
+                document.getElementById('report-subtitle').textContent = '';
+                document.getElementById('report-date-filter').style.display = 'block';
+                document.getElementById('search-report').style.display = 'block';
+                document.getElementById('btn-customize-columns-inner').style.display = 'flex';
+                
+                const btnSaveSnapshot = document.getElementById('btn-save-snapshot');
+                if (type === 'overall-valuation' || type === 'inventory' || type === 'profit-loss') {
+                    if (btnSaveSnapshot) btnSaveSnapshot.style.display = 'flex';
+                } else {
+                    if (btnSaveSnapshot) btnSaveSnapshot.style.display = 'none';
+                }
+
                 const searchInput = document.getElementById('search-report');
 
                 // Check if this is a custom report being loaded
@@ -463,26 +615,158 @@
                     const reportName = isSales ? 'Sales' : 'Purchase';
                     reportTitle.textContent = `${reportName} Orders Report (${new Date().toLocaleDateString()})`;
 
-                    reportHead.innerHTML = `
-                        <tr>
-                            <th>Order No.</th>
-                            <th>Date</th>
-                            <th>Due Date</th>
-                            <th>${isSales ? 'Customer' : 'Vendor'}</th>
-                            <th>Product</th>
-                            <th>Weight/Qty</th>
-                            <th>Remark</th>
-                        </tr>
-                    `;
                     const allOrders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
                     const filterType = isSales ? 'Sales Order' : 'Purchase Order';
-                    const orders = allOrders.filter(o => o.type === filterType);
+                    const filterVal = document.getElementById('report-date-filter').value;
+                    const isYearlyMode = !isNaN(parseInt(filterVal));
+                    
+                    const orders = allOrders.filter(o => o.type === filterType && isWithinDateFilter(o.date));
 
                     if (orders.length === 0) {
-                        reportBody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No ${reportName.toLowerCase()} orders found.</td></tr>`;
-                    } else {
+                        reportHead.innerHTML = `<tr><th>Notice</th></tr>`;
+                        reportBody.innerHTML = `<tr><td style="text-align: center;">No ${reportName.toLowerCase()} orders found for this period.</td></tr>`;
+                    } else if (isYearlyMode) {
+                        // --- YEARLY DUAL-VIEW MODE ---
+                        const targetYear = parseInt(filterVal);
+                        reportTitle.textContent = `${targetYear} Yearly ${reportName} Performance`;
+                        
+                        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                        
+                        // Map orders to months
+                        let monthlyData = {};
+                        for (let i = 0; i < 12; i++) {
+                            monthlyData[i] = { orders: [], count: 0, totalQty: 0 };
+                        }
+                        
                         orders.forEach(o => {
-                            reportBody.innerHTML += `
+                            const d = new Date(o.date);
+                            if (isNaN(d.getTime())) return;
+                            const m = d.getMonth();
+                            monthlyData[m].orders.push(o);
+                            monthlyData[m].count++;
+                            monthlyData[m].totalQty += parseFloat(o.qty) || 0;
+                        });
+                        
+                        // 1. Render Monthly Summary Table at the Top
+                        let summaryHtml = `
+                            <div style="margin-bottom: 30px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <h3 style="margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px;">${targetYear} Monthly Summary</h3>
+                                <table width="100%" data-no-filter="true" style="border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                            <th style="padding: 8px;">Month</th>
+                                            <th style="padding: 8px;">Total Orders</th>
+                                            <th style="padding: 8px;">Total Qty (g)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        let totalYearlyOrders = 0;
+                        let totalYearlyQty = 0;
+                        
+                        for (let i = 0; i < 12; i++) {
+                            const data = monthlyData[i];
+                            // Only show completed/active months (where current viewing date >= this month) OR months that have data
+                            // Actually, just show all months that have data, or if it's the current year, up to current month.
+                            // To be safe and clean, we'll just render it if it has data or is past.
+                            const now = new Date();
+                            const isPastOrCurrentMonth = (targetYear < now.getFullYear()) || (targetYear === now.getFullYear() && i <= now.getMonth());
+                            
+                            if (isPastOrCurrentMonth || data.count > 0) {
+                                summaryHtml += `
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 8px; font-weight: 500;">${monthNames[i]}</td>
+                                        <td style="padding: 8px;">${data.count}</td>
+                                        <td style="padding: 8px; font-weight: 600; color: #3b82f6;">${data.totalQty.toFixed(3)}</td>
+                                    </tr>
+                                `;
+                                totalYearlyOrders += data.count;
+                                totalYearlyQty += data.totalQty;
+                            }
+                        }
+                        
+                        summaryHtml += `
+                                    <tr style="background: #e2e8f0; font-weight: bold;">
+                                        <td style="padding: 8px;">YEAR TOTAL</td>
+                                        <td style="padding: 8px;">${totalYearlyOrders}</td>
+                                        <td style="padding: 8px; color: #1d4ed8;">${totalYearlyQty.toFixed(3)}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <h3 style="margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px;">${targetYear} Detailed Transactions</h3>
+                        `;
+                        
+                        reportHead.innerHTML = `<tr><td colspan="7" style="padding: 0;">${summaryHtml}</td></tr>`;
+                        
+                        // 2. Render Grouped Transactions Below
+                        let bodyHtml = '';
+                        for (let i = 0; i < 12; i++) {
+                            const data = monthlyData[i];
+                            if (data.count === 0) continue; // Skip empty months in detailed view
+                            
+                            // Month Header
+                            bodyHtml += `
+                                <tr style="background: #f1f5f9;">
+                                    <td colspan="7" style="padding: 12px 10px; font-weight: bold; color: #0f172a; font-size: 1.05rem; border-left: 4px solid #3b82f6;">
+                                        ${monthNames[i]} ${targetYear}
+                                    </td>
+                                </tr>
+                                <tr style="background: #f8fafc; font-size: 0.85rem; color: #475569; font-weight: 600;">
+                                    <td>Order No.</td>
+                                    <td>Date</td>
+                                    <td>Due Date</td>
+                                    <td>${isSales ? 'Customer' : 'Vendor'}</td>
+                                    <td>Product</td>
+                                    <td>Weight/Qty</td>
+                                    <td>Remark</td>
+                                </tr>
+                            `;
+                            
+                            // Transactions
+                            data.orders.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(o => {
+                                bodyHtml += `
+                                    <tr>
+                                        <td>${o.id}</td>
+                                        <td>${o.date}</td>
+                                        <td>${o.dueDate}</td>
+                                        <td>${o.vendor}</td>
+                                        <td>${o.product}</td>
+                                        <td>${o.qty} ${o.mainMetal || ''}</td>
+                                        <td>${o.remark || '-'}</td>
+                                    </tr>
+                                `;
+                            });
+                            
+                            // Month Footer Total
+                            bodyHtml += `
+                                <tr style="background: #f8fafc; font-weight: bold;">
+                                    <td colspan="5" style="text-align: right; color: #475569;">${monthNames[i]} Total:</td>
+                                    <td colspan="2" style="color: #3b82f6;">${data.totalQty.toFixed(3)}</td>
+                                </tr>
+                            `;
+                        }
+                        
+                        reportBody.innerHTML = bodyHtml;
+
+                    } else {
+                        // --- STANDARD LIST MODE ---
+                        reportHead.innerHTML = `
+                            <tr>
+                                <th>Order No.</th>
+                                <th>Date</th>
+                                <th>Due Date</th>
+                                <th>${isSales ? 'Customer' : 'Vendor'}</th>
+                                <th>Product</th>
+                                <th>Weight/Qty</th>
+                                <th>Remark</th>
+                            </tr>
+                        `;
+                        
+                        let bodyHtml = '';
+                        orders.forEach(o => {
+                            bodyHtml += `
                                 <tr>
                                     <td>${o.id}</td>
                                     <td>${o.date}</td>
@@ -494,6 +778,7 @@
                                 </tr>
                             `;
                         });
+                        reportBody.innerHTML = bodyHtml;
                     }
                 }
                 else if (type === 'jobwork-metal') {
@@ -898,14 +1183,159 @@
                             <th>Invoice</th>
                         </tr>
                     `;
-
                     const jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
-                    const dispatchJobs = jobs.filter(j => j.process === '5. Despatch');
+                    const filterVal = document.getElementById('report-date-filter').value;
+                    const isYearlyMode = !isNaN(parseInt(filterVal));
+                    
+                    const dispatchJobs = jobs.filter(j => j.process === '5. Despatch' && isWithinDateFilter(j.date));
                     const savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
 
                     if (dispatchJobs.length === 0) {
-                        reportBody.innerHTML = `<tr><td colspan="8" style="text-align: center;">No production/dispatch records found.</td></tr>`;
+                        reportHead.innerHTML = `<tr><th>Notice</th></tr>`;
+                        reportBody.innerHTML = `<tr><td style="text-align: center;">No production/dispatch records found for this period.</td></tr>`;
+                    } else if (isYearlyMode) {
+                        // --- YEARLY DUAL-VIEW MODE ---
+                        const targetYear = parseInt(filterVal);
+                        reportTitle.textContent = `${targetYear} Yearly Production Performance`;
+                        
+                        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                        
+                        let monthlyData = {};
+                        for (let i = 0; i < 12; i++) {
+                            monthlyData[i] = { jobs: [], count: 0, totalWeight: 0 };
+                        }
+                        
+                        dispatchJobs.forEach(j => {
+                            const d = new Date(j.date);
+                            if (isNaN(d.getTime())) return;
+                            const m = d.getMonth();
+                            monthlyData[m].jobs.push(j);
+                            monthlyData[m].count++;
+                            const weight = j.status === '1. Issue' ? j.issueWt : j.receiveWt;
+                            monthlyData[m].totalWeight += parseFloat(weight) || 0;
+                        });
+                        
+                        // 1. Render Monthly Summary Table at the Top
+                        let summaryHtml = `
+                            <div style="margin-bottom: 30px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <h3 style="margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px;">${targetYear} Monthly Production Summary</h3>
+                                <table width="100%" data-no-filter="true" style="border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                            <th style="padding: 8px;">Month</th>
+                                            <th style="padding: 8px;">Total Items Dispatched</th>
+                                            <th style="padding: 8px;">Produced Weight (g)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        let totalYearlyCount = 0;
+                        let totalYearlyWt = 0;
+                        
+                        for (let i = 0; i < 12; i++) {
+                            const data = monthlyData[i];
+                            const now = new Date();
+                            const isPastOrCurrentMonth = (targetYear < now.getFullYear()) || (targetYear === now.getFullYear() && i <= now.getMonth());
+                            
+                            if (isPastOrCurrentMonth || data.count > 0) {
+                                summaryHtml += `
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 8px; font-weight: 500;">${monthNames[i]}</td>
+                                        <td style="padding: 8px;">${data.count}</td>
+                                        <td style="padding: 8px; font-weight: 600; color: #3b82f6;">${data.totalWeight.toFixed(3)}</td>
+                                    </tr>
+                                `;
+                                totalYearlyCount += data.count;
+                                totalYearlyWt += data.totalWeight;
+                            }
+                        }
+                        
+                        summaryHtml += `
+                                    <tr style="background: #e2e8f0; font-weight: bold;">
+                                        <td style="padding: 8px;">YEAR TOTAL</td>
+                                        <td style="padding: 8px;">${totalYearlyCount}</td>
+                                        <td style="padding: 8px; color: #1d4ed8;">${totalYearlyWt.toFixed(3)}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <h3 style="margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px;">${targetYear} Detailed Production Dispatches</h3>
+                        `;
+                        
+                        reportHead.innerHTML = `<tr><td colspan="8" style="padding: 0;">${summaryHtml}</td></tr>`;
+                        
+                        let bodyHtml = '';
+                        for (let i = 0; i < 12; i++) {
+                            const data = monthlyData[i];
+                            if (data.count === 0) continue;
+                            
+                            bodyHtml += `
+                                <tr style="background: #f1f5f9;">
+                                    <td colspan="8" style="padding: 12px 10px; font-weight: bold; color: #0f172a; font-size: 1.05rem; border-left: 4px solid #3b82f6;">
+                                        ${monthNames[i]} ${targetYear}
+                                    </td>
+                                </tr>
+                                <tr style="background: #f8fafc; font-size: 0.85rem; color: #475569; font-weight: 600;">
+                                    <td>Date</td>
+                                    <td>Job No.</td>
+                                    <td>Worker</td>
+                                    <td>Item Name</td>
+                                    <td>Weight (g)</td>
+                                    <td>Process</td>
+                                    <td>Status</td>
+                                    <td>Invoice</td>
+                                </tr>
+                            `;
+                            
+                            data.jobs.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(j => {
+                                const weight = j.status === '1. Issue' ? j.issueWt : j.receiveWt;
+                                const statusColor = j.status === '2. Receive' ? '#10b981' : '#3b82f6';
+                                const savedInvoiceData = savedInvoices[j.jobnum];
+                                const invoiceAction = savedInvoiceData
+                                    ? `<a href="create-invoice.html?data=${savedInvoiceData}" target="_blank" class="btn-text" style="font-size: 0.85rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #bae6fd; display: inline-block;">View</a>`
+                                    : '-';
+
+                                bodyHtml += `
+                                    <tr>
+                                        <td>${j.date || '-'}</td>
+                                        <td><strong>${j.jobnum || '-'}</strong></td>
+                                        <td>${j.worker || '-'}</td>
+                                        <td>${j.item || '-'}</td>
+                                        <td style="font-weight: 600;">${parseFloat(weight).toFixed(3)}</td>
+                                        <td>${j.process || '-'}</td>
+                                        <td><span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${j.status}</span></td>
+                                        <td>${invoiceAction}</td>
+                                    </tr>
+                                `;
+                            });
+                            
+                            bodyHtml += `
+                                <tr style="background: #f8fafc; font-weight: bold;">
+                                    <td colspan="4" style="text-align: right; color: #475569;">${monthNames[i]} Total:</td>
+                                    <td colspan="4" style="color: #3b82f6;">${data.totalWeight.toFixed(3)}</td>
+                                </tr>
+                            `;
+                        }
+                        
+                        reportBody.innerHTML = bodyHtml;
+
                     } else {
+                        // --- STANDARD LIST MODE ---
+                        reportHead.innerHTML = `
+                            <tr>
+                                <th>Date</th>
+                                <th>Job No.</th>
+                                <th>Worker</th>
+                                <th>Item Name</th>
+                                <th>Weight (g)</th>
+                                <th>Process</th>
+                                <th>Status</th>
+                                <th>Invoice</th>
+                            </tr>
+                        `;
+                        
+                        let bodyHtml = '';
                         dispatchJobs.forEach(j => {
                             const weight = j.status === '1. Issue' ? j.issueWt : j.receiveWt;
                             const statusColor = j.status === '2. Receive' ? '#10b981' : '#3b82f6';
@@ -914,7 +1344,7 @@
                                 ? `<a href="create-invoice.html?data=${savedInvoiceData}" target="_blank" class="btn-text" style="font-size: 0.85rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #bae6fd; display: inline-block;">View</a>`
                                 : '-';
 
-                            reportBody.innerHTML += `
+                            bodyHtml += `
                                 <tr>
                                     <td>${j.date || '-'}</td>
                                     <td><strong>${j.jobnum || '-'}</strong></td>
@@ -927,6 +1357,7 @@
                                 </tr >
                             `;
                         });
+                        reportBody.innerHTML = bodyHtml;
                     }
                 }
                 else if (type === 'profit-loss') {
@@ -948,13 +1379,14 @@
                     let depreciation = 0;
 
                     orders.forEach(o => {
-                        if (o.status === 'Cancelled') return;
+                        if (o.status === 'Cancelled' || !isWithinDateFilter(o.date)) return;
                         const amt = parseFloat(o.amount) || 0;
                         if (o.type === 'Sales Order') revenue += amt;
                         else if (o.type === 'Purchase Order') cogs += amt;
                     });
 
                     payments.forEach(p => {
+                        if (!isWithinDateFilter(p.date)) return;
                         opExpenses += parseFloat(p.amount) || 0;
                     });
 
@@ -1032,12 +1464,106 @@
                     const searchInput = document.getElementById('search-report');
                     searchInput.style.display = 'none';
                     table.setAttribute('data-no-filter', 'true');
-                } // End if (type === 'production')
+                } // End if (type === 'profit-loss')
+                else if (type === 'overall-valuation') {
+                    reportTitle.textContent = "Overall Business Valuation (" + new Date().toLocaleDateString() + ")";
+                    reportHead.innerHTML = `
+                        <tr>
+                            <th style="width: 70%;">Asset Category</th>
+                            <th style="text-align: right; width: 30%;">Current Value (₹)</th>
+                        </tr>
+                    `;
+
+                    // 1. Bank Balances
+                    const banks = JSON.parse(localStorage.getItem('manti_bank_accounts')) || [];
+                    let totalBank = 0;
+                    banks.forEach(b => totalBank += (parseFloat(b.balance) || 0));
+
+                    // 2. Fixed Assets
+                    const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                    let totalAssets = 0;
+                    assets.forEach(ast => {
+                        if (ast.status === 'Active' && ast.value) {
+                            let val = parseFloat(ast.value) || 0;
+                            if (ast.depreciation && ast.date) {
+                                const years = (new Date() - new Date(ast.date)) / (1000 * 60 * 60 * 24 * 365.25);
+                                if (years > 0) val = val * Math.pow((1 - parseFloat(ast.depreciation)/100), years);
+                            }
+                            totalAssets += val;
+                        }
+                    });
+
+                    // 3. Inventory Value
+                    const inv = JSON.parse(localStorage.getItem('manti_inventory')) || {};
+                    const rates = JSON.parse(localStorage.getItem('manti_rates')) || {gold: 0, silver: 0};
+                    let totalInv = 0;
+                    for (const [metal, typesObj] of Object.entries(inv)) {
+                        for (const [type, data] of Object.entries(typesObj)) {
+                            let available = data.inflow - data.outflow;
+                            if (available > 0) {
+                                let rate = metal.toLowerCase().includes('gold') ? parseFloat(rates.gold) : parseFloat(rates.silver);
+                                if (!rate) rate = 0;
+                                totalInv += (available * rate);
+                            }
+                        }
+                    }
+
+                    // 4. Accounts Receivable (Unpaid Invoices)
+                    const invoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
+                    let totalReceivables = 0;
+                    Object.values(invoices).forEach(inv => {
+                        if (inv.paymentStatus !== 'Paid') {
+                            const total = parseFloat(inv.grandTotal) || 0;
+                            const paid = parseFloat(inv.amountPaid) || 0;
+                            totalReceivables += (total - paid);
+                        }
+                    });
+
+                    const grandTotal = totalBank + totalAssets + totalInv + totalReceivables;
+
+                    reportBody.innerHTML = `
+                        <tr style="background: #f8fafc; font-weight: 700;">
+                            <td colspan="2">CURRENT ASSETS</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left: 30px;">Cash & Bank Balances</td>
+                            <td style="text-align: right;">${totalBank.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left: 30px;">Inventory Valuation (Live Rates)</td>
+                            <td style="text-align: right;">${totalInv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left: 30px;">Accounts Receivable (Unpaid Invoices)</td>
+                            <td style="text-align: right;">${totalReceivables.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        
+                        <tr style="background: #f8fafc; font-weight: 700; margin-top: 10px;">
+                            <td colspan="2">FIXED ASSETS</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left: 30px;">Machinery & Equipment (Depreciated)</td>
+                            <td style="text-align: right;">${totalAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+
+                        <tr style="background: #e0f2fe; color: #0284c7; font-weight: 800; font-size: 1.1rem; border-top: 3px double #0284c7;">
+                            <td>TOTAL BUSINESS VALUATION</td>
+                            <td style="text-align: right;">${grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+
+                    // Hide search and filters for summary
+                    const table = document.getElementById('report-table');
+                    const searchInput = document.getElementById('search-report');
+                    if (searchInput) searchInput.style.display = 'none';
+                    table.setAttribute('data-no-filter', 'true');
+                }
                 
                 let genericTitle = 'Report';
                 if(type === 'sales-orders') genericTitle = 'Sales Orders Report';
                 if(type === 'purchase-orders') genericTitle = 'Purchase Orders Report';
                 if(type === 'jobwork-jobno') genericTitle = 'Job Work - Job No. Wise';
+                if(type === 'overall-valuation') genericTitle = 'Overall Business Valuation';
                 if(type === 'jobwork-process') genericTitle = 'Job Work - Process Wise';
                 if(type === 'jobwork-worker') genericTitle = 'Job Work - Worker Wise';
                 if(type === 'jobwork-wastage') genericTitle = 'Job Work - Wastage Wise';
