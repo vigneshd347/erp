@@ -361,38 +361,53 @@
                     </div>
 
                     <div style="display: flex; gap: 10px; flex: 0 0 auto; justify-content: flex-end; align-items: center; flex-wrap: nowrap; min-width: max-content;">
-                        <input type="hidden" id="report-date-filter" value="all">
+                        <select id="report-year-filter" class="input-wrapper" style="width: auto; height: 38px; padding: 0 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px; background: white; outline: none; cursor: pointer; flex: 0 0 auto;" onchange="updateMonthDropdown(); if(window._currentReportType) loadReport(window._currentReportType)">
+                            <option value="all">All Years</option>
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
+                        <select id="report-month-filter" class="input-wrapper" style="width: auto; height: 38px; padding: 0 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px; background: white; outline: none; cursor: pointer; flex: 0 0 auto;" onchange="if(window._currentReportType) loadReport(window._currentReportType)">
+                            <option value="all">All Months</option>
+                        </select>
+                        
                         <script>
-                            function updateDateFilter(val) {
-                                document.getElementById('report-date-filter').value = val;
-                                // Need to also sync the active styling for the label manually if desired, but native radio button handles the visual selection tick automatically
-                                if(window._currentReportType) loadReport(window._currentReportType);
+                            function updateMonthDropdown() {
+                                const yearSelect = document.getElementById('report-year-filter');
+                                const monthSelect = document.getElementById('report-month-filter');
+                                const year = parseInt(yearSelect.value);
+                                
+                                monthSelect.innerHTML = '<option value="all">All Months</option>';
+                                
+                                if (isNaN(year)) {
+                                    monthSelect.disabled = true;
+                                    return;
+                                }
+                                monthSelect.disabled = false;
+                                
+                                const now = new Date();
+                                const currentYear = now.getFullYear();
+                                const currentMonth = now.getMonth();
+                                
+                                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                                
+                                let maxMonth = 11;
+                                if (year === currentYear) {
+                                    maxMonth = currentMonth; 
+                                } else if (year > currentYear) {
+                                    maxMonth = -1;
+                                }
+                                
+                                for (let i = 0; i <= maxMonth; i++) {
+                                    const opt = document.createElement('option');
+                                    opt.value = i;
+                                    opt.textContent = monthNames[i];
+                                    monthSelect.appendChild(opt);
+                                }
                             }
+                            // Initialize on load just in case
+                            setTimeout(updateMonthDropdown, 100);
                         </script>
-                        <div class="date-radio-group" style="display: flex; gap: 15px; align-items: center; background: white; padding: 6px 20px; border-radius: 30px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); flex: 0 0 auto; flex-wrap: wrap; justify-content: center;">
-                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
-                                <input type="radio" name="report_date_filter_radio" value="all" checked onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> All Time
-                            </label>
-                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
-                                <input type="radio" name="report_date_filter_radio" value="this_month" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> This Mth
-                            </label>
-                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
-                                <input type="radio" name="report_date_filter_radio" value="last_month" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> Last Mth
-                            </label>
-                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
-                                <input type="radio" name="report_date_filter_radio" value="this_year" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> This Yr
-                            </label>
-                            <div style="width: 1px; height: 16px; background: #cbd5e1; margin: 0 2px;"></div>
-                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
-                                <input type="radio" name="report_date_filter_radio" value="2026" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> 2026
-                            </label>
-                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
-                                <input type="radio" name="report_date_filter_radio" value="2025" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> 2025
-                            </label>
-                            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; transition: color 0.2s;">
-                                <input type="radio" name="report_date_filter_radio" value="2024" onchange="updateDateFilter(this.value)" style="margin: 0; cursor: pointer; accent-color: var(--primary); width: 14px; height: 14px;"> 2024
-                            </label>
-                        </div>
                         <button type="button" class="btn-success" id="btn-save-snapshot" style="display: none; height: 38px; padding: 0 16px; border-radius: 6px; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; white-space: nowrap; flex: 0 0 auto; min-width: max-content;" onclick="saveReportSnapshot()">
                             <i data-lucide="save" style="width: 16px; height: 16px;"></i> <span style="white-space: nowrap;">Save Snapshot</span>
                         </button>
@@ -540,7 +555,8 @@
                 document.getElementById('empty-state-greeting').style.display = 'none';
                 
                 document.getElementById('btn-save-snapshot').style.display = 'none';
-                document.getElementById('report-date-filter').style.display = 'none';
+                document.getElementById('report-year-filter').style.display = 'none';
+                document.getElementById('report-month-filter').style.display = 'none';
                 document.getElementById('search-report').style.display = 'none';
                 document.getElementById('btn-customize-columns-inner').style.display = 'none';
             };
@@ -559,32 +575,26 @@
             // Date Filter Helper
             function isWithinDateFilter(dateString) {
                 if (!dateString) return true;
-                const filterVal = document.getElementById('report-date-filter').value;
-                if (filterVal === 'all') return true;
+                const yearVal = document.getElementById('report-year-filter').value;
+                const monthVal = document.getElementById('report-month-filter').value;
+                
+                if (yearVal === 'all') return true;
                 
                 const d = new Date(dateString);
                 if (isNaN(d.getTime())) return true;
                 
+                const dYear = d.getFullYear();
+                const dMonth = d.getMonth();
                 const now = new Date();
-                const thisMonth = now.getMonth();
-                const thisYear = now.getFullYear();
                 
-                if (filterVal === 'this_month') {
-                    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-                }
-                if (filterVal === 'last_month') {
-                    let lastM = thisMonth - 1;
-                    let lastY = thisYear;
-                    if (lastM < 0) { lastM = 11; lastY--; }
-                    return d.getMonth() === lastM && d.getFullYear() === lastY;
-                }
-                if (filterVal === 'this_year') {
-                    return d.getFullYear() === thisYear;
+                if (yearVal === 'this_year') {
+                    if (dYear !== now.getFullYear()) return false;
+                } else if (!isNaN(parseInt(yearVal))) {
+                    if (dYear !== parseInt(yearVal)) return false;
                 }
                 
-                // Specific Year Filter (e.g. 2026, 2025)
-                if (!isNaN(parseInt(filterVal))) {
-                    return d.getFullYear() === parseInt(filterVal);
+                if (monthVal !== 'all') {
+                    if (dMonth !== parseInt(monthVal)) return false;
                 }
                 
                 return true;
@@ -594,7 +604,8 @@
                 window._currentReportType = type;
                 
                 document.getElementById('report-subtitle').textContent = '';
-                document.getElementById('report-date-filter').style.display = 'block';
+                document.getElementById('report-year-filter').style.display = 'block';
+                document.getElementById('report-month-filter').style.display = 'block';
                 document.getElementById('search-report').style.display = 'block';
                 document.getElementById('btn-customize-columns-inner').style.display = 'flex';
                 
@@ -640,8 +651,9 @@
 
                     const allOrders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
                     const filterType = isSales ? 'Sales Order' : 'Purchase Order';
-                    const filterVal = document.getElementById('report-date-filter').value;
-                    const isYearlyMode = !isNaN(parseInt(filterVal));
+                    const filterYear = document.getElementById('report-year-filter').value;
+                    const filterMonth = document.getElementById('report-month-filter').value;
+                    const isYearlyMode = !isNaN(parseInt(filterYear)) && filterMonth === 'all';
                     
                     const orders = allOrders.filter(o => o.type === filterType && isWithinDateFilter(o.date));
 
@@ -650,7 +662,7 @@
                         reportBody.innerHTML = `<tr><td style="text-align: center;">No ${reportName.toLowerCase()} orders found for this period.</td></tr>`;
                     } else if (isYearlyMode) {
                         // --- YEARLY DUAL-VIEW MODE ---
-                        const targetYear = parseInt(filterVal);
+                        const targetYear = parseInt(filterYear);
                         reportTitle.textContent = `${targetYear} Yearly ${reportName} Performance`;
                         
                         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -1207,8 +1219,9 @@
                         </tr>
                     `;
                     const jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
-                    const filterVal = document.getElementById('report-date-filter').value;
-                    const isYearlyMode = !isNaN(parseInt(filterVal));
+                    const filterYear = document.getElementById('report-year-filter').value;
+                    const filterMonth = document.getElementById('report-month-filter').value;
+                    const isYearlyMode = !isNaN(parseInt(filterYear)) && filterMonth === 'all';
                     
                     const dispatchJobs = jobs.filter(j => j.process === '5. Despatch' && isWithinDateFilter(j.date));
                     const savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
@@ -1218,7 +1231,7 @@
                         reportBody.innerHTML = `<tr><td style="text-align: center;">No production/dispatch records found for this period.</td></tr>`;
                     } else if (isYearlyMode) {
                         // --- YEARLY DUAL-VIEW MODE ---
-                        const targetYear = parseInt(filterVal);
+                        const targetYear = parseInt(filterYear);
                         reportTitle.textContent = `${targetYear} Yearly Production Performance`;
                         
                         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
