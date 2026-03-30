@@ -1584,3 +1584,24 @@ window.toggleNavGroup = function(element) {
     });
 })();
 
+
+// Mobile View: Close active nav groups when clicking outside
+document.addEventListener('click', function(e) {
+    if (window.innerWidth <= 768) {
+        const activeGroup = document.querySelector('.nav-group.active');
+        // If clicking outside an active nav group, close it
+        if (activeGroup && !activeGroup.contains(e.target)) {
+            activeGroup.classList.remove('active');
+        }
+        
+        // If clicking another nav group header, close other active ones
+        if (e.target.closest('.nav-group-header')) {
+            const clickedGroup = e.target.closest('.nav-group');
+            document.querySelectorAll('.nav-group.active').forEach(group => {
+                if (group !== clickedGroup) {
+                    group.classList.remove('active');
+                }
+            });
+        }
+    }
+});
