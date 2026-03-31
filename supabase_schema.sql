@@ -130,3 +130,100 @@ CREATE POLICY "Enable all for anon" ON public.vendor_kyc FOR ALL USING (true) WI
 
 ALTER TABLE public.supplier_kyc ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable all for anon" ON public.supplier_kyc FOR ALL USING (true) WITH CHECK (true);
+
+-- 8. Create Delivery Challans table
+CREATE TABLE IF NOT EXISTS public.delivery_challans (
+    id TEXT PRIMARY KEY,
+    date DATE NOT NULL,
+    customer_name TEXT NOT NULL,
+    status TEXT NOT NULL,
+    total_amount NUMERIC NOT NULL,
+    items JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 9. Create Staff Records table
+CREATE TABLE IF NOT EXISTS public.staff_records (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    mobile TEXT,
+    email TEXT,
+    data JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 10. Create Assets table
+CREATE TABLE IF NOT EXISTS public.assets (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT,
+    purchase_date DATE,
+    value NUMERIC,
+    status TEXT,
+    data JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 11. Create Payments Made table
+CREATE TABLE IF NOT EXISTS public.payments_made (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vendor TEXT NOT NULL,
+    date DATE NOT NULL,
+    amount NUMERIC NOT NULL,
+    mode TEXT NOT NULL,
+    reference TEXT,
+    applications JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 12. Create Journal Entries table
+CREATE TABLE IF NOT EXISTS public.journal_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    date DATE NOT NULL,
+    amount NUMERIC NOT NULL,
+    description TEXT,
+    lines JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 13. Create Bank Accounts table
+CREATE TABLE IF NOT EXISTS public.bank_accounts (
+    account_name TEXT PRIMARY KEY,
+    opening_balance NUMERIC NOT NULL,
+    opening_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 14. Create Stock History table
+CREATE TABLE IF NOT EXISTS public.stock_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    date TIMESTAMP WITH TIME ZONE NOT NULL,
+    type TEXT NOT NULL,
+    details TEXT,
+    qty NUMERIC NOT NULL,
+    weight NUMERIC NOT NULL,
+    metal_type TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.delivery_challans ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for anon" ON public.delivery_challans FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.staff_records ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for anon" ON public.staff_records FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for anon" ON public.assets FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.payments_made ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for anon" ON public.payments_made FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.journal_entries ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for anon" ON public.journal_entries FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.bank_accounts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for anon" ON public.bank_accounts FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.stock_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for anon" ON public.stock_history FOR ALL USING (true) WITH CHECK (true);

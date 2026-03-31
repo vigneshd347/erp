@@ -174,6 +174,55 @@ async function syncKeyToSupabase(key, data) {
                 bank_branch: v.bankBranch || null, bank_acc: v.bankAcc || null, bank_ifsc: v.bankIfsc || null, bank_upi: v.bankUpi || null
             }));
             if (dbSuppliers.length > 0) await supabase.from('supplier_kyc').upsert(dbSuppliers, { onConflict: 'id' });
+        } else if (key === 'manti_staff_records') {
+            const dbStaff = data.map(s => ({
+                id: s.id, name: s.name || '', type: s.type || '', mobile: s.mobile || null,
+                email: s.email || null, data: s
+            }));
+            if (dbStaff.length > 0) await supabase.from('staff_records').upsert(dbStaff, { onConflict: 'id' });
+        } else if (key === 'manti_assets') {
+            const dbAssets = data.map(a => ({
+                id: a.id, name: a.name || '', category: a.category || '', purchase_date: a.purchaseDate || null,
+                value: parseFloat(a.value) || 0, status: a.status || '', data: a
+            }));
+            if (dbAssets.length > 0) await supabase.from('assets').upsert(dbAssets, { onConflict: 'id' });
+        } else if (key === 'manti_delivery_challan_records') {
+            const dbChallans = data.map(c => ({
+                id: c.id, date: c.date, customer_name: c.customer || '', status: c.status || 'Draft',
+                total_amount: parseFloat(c.total) || 0, items: c.items || []
+            }));
+            if (dbChallans.length > 0) await supabase.from('delivery_challans').upsert(dbChallans, { onConflict: 'id' });
+        } else if (key === 'manti_payments_made') {
+            const dbPayments = data.map(p => ({
+                vendor: p.vendor || '', date: p.date, amount: parseFloat(p.amount) || 0,
+                mode: p.mode || '', reference: p.reference || '', applications: p.applications || []
+            }));
+            if (dbPayments.length > 0) {
+                await supabase.from('payments_made').delete().neq('vendor', 'NON_EXISTENT');
+                await supabase.from('payments_made').insert(dbPayments);
+            }
+        } else if (key === 'manti_journal_entries') {
+            const dbJournals = data.map(j => ({
+                date: j.date, amount: parseFloat(j.amount) || 0, description: j.description || '', lines: j.lines || []
+            }));
+            if (dbJournals.length > 0) {
+                await supabase.from('journal_entries').delete().neq('date', '1900-01-01');
+                await supabase.from('journal_entries').insert(dbJournals);
+            }
+        } else if (key === 'manti_bank_accounts') {
+            const dbAccounts = data.map(a => ({
+                account_name: a.name, opening_balance: parseFloat(a.openingBalance) || 0, opening_date: a.openingDate || null
+            }));
+            if (dbAccounts.length > 0) await supabase.from('bank_accounts').upsert(dbAccounts, { onConflict: 'account_name' });
+        } else if (key === 'manti_stock_history') {
+            const dbStock = data.map(s => ({
+                date: s.date, type: s.type || '', details: s.details || '', qty: parseFloat(s.qty) || 0,
+                weight: parseFloat(s.weight) || 0, metal_type: s.metal || ''
+            }));
+            if (dbStock.length > 0) {
+                await supabase.from('stock_history').delete().neq('type', 'NON_EXISTENT');
+                await supabase.from('stock_history').insert(dbStock);
+            }
         } else {
             await supabase.from('settings').upsert({
                 setting_key: key, setting_value: data, updated_at: new Date().toISOString()
@@ -252,12 +301,76 @@ window.fetchEverythingFromCloud = async function() {
             window.ERP_MEMORY.set('manti_supplier_kyc_records', JSON.stringify(mappedSuppliers));
         }
 
-        // 6. Fetch Settings (Assets, Rules, etc)
+        // 6. Fetch Staff Records
+        const { data: staffData } = await supabase.from('staff_records').select('*');
+        if (staffData && staffData.length > 0) {
+            window.ERP_MEMORY.set('manti_staff_records', JSON.stringify(staffData.map(s => s.data)));
+        }
+
+        // 7. Fetch Assets
+        const { data: assetsData } = await supabase.from('assets').select('*');
+        if (assetsData && assetsData.length > 0) {
+            window.ERP_MEMORY.set('manti_assets', JSON.stringify(assetsData.map(a => a.data)));
+        }
+
+        // 8. Fetch Delivery Challans
+        const { data: challansData } = await supabase.from('delivery_challans').select('*');
+        if (challansData && challansData.length > 0) {
+            const mappedChallans = challansData.map(c => ({
+                id: c.id, date: c.date, customer: c.customer_name, status: c.status,
+                total: c.total_amount, items: c.items
+            }));
+            window.ERP_MEMORY.set('manti_delivery_challan_records', JSON.stringify(mappedChallans));
+        }
+
+        // 9. Fetch Payments Made
+        const { data: paymentsData } = await supabase.from('payments_made').select('*');
+        if (paymentsData && paymentsData.length > 0) {
+            const mappedPayments = paymentsData.map(p => ({
+                vendor: p.vendor, date: p.date, amount: p.amount, mode: p.mode,
+                reference: p.reference, applications: p.applications
+            }));
+            window.ERP_MEMORY.set('manti_payments_made', JSON.stringify(mappedPayments));
+        }
+
+        // 10. Fetch Journal Entries
+        const { data: journalsData } = await supabase.from('journal_entries').select('*');
+        if (journalsData && journalsData.length > 0) {
+            const mappedJournals = journalsData.map(j => ({
+                date: j.date, amount: j.amount, description: j.description, lines: j.lines
+            }));
+            window.ERP_MEMORY.set('manti_journal_entries', JSON.stringify(mappedJournals));
+        }
+
+        // 11. Fetch Bank Accounts
+        const { data: bankAccountsData } = await supabase.from('bank_accounts').select('*');
+        if (bankAccountsData && bankAccountsData.length > 0) {
+            const mappedAccounts = bankAccountsData.map(a => ({
+                name: a.account_name, openingBalance: a.opening_balance, openingDate: a.opening_date
+            }));
+            window.ERP_MEMORY.set('manti_bank_accounts', JSON.stringify(mappedAccounts));
+        }
+
+        // 12. Fetch Stock History
+        const { data: stockHistoryData } = await supabase.from('stock_history').select('*');
+        if (stockHistoryData && stockHistoryData.length > 0) {
+            const mappedStock = stockHistoryData.map(s => ({
+                date: s.date, type: s.type, details: s.details, qty: s.qty, weight: s.weight, metal: s.metal_type
+            }));
+            window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(mappedStock));
+        }
+
+        // 13. Fetch Settings (Generic Rules, Custom DBs)
         const { data: settingsData } = await supabase.from('settings').select('*');
         if (settingsData) {
+            const ignoredKeys = [
+                'manti_vendor_kyc_records', 'manti_supplier_kyc_records', 'manti_staff_records',
+                'manti_assets', 'manti_delivery_challan_records', 'manti_payments_made',
+                'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history'
+            ];
             settingsData.forEach(s => {
-                // To avoid overwriting dedicated fetches if they accidentally saved in settings
-                if (s.setting_key !== 'manti_vendor_kyc_records' && s.setting_key !== 'manti_supplier_kyc_records') {
+                // To avoid overwriting dedicated fetches if they accidentally saved in settings earlier
+                if (!ignoredKeys.includes(s.setting_key)) {
                     window.ERP_MEMORY.set(s.setting_key, JSON.stringify(s.setting_value));
                 }
             });
