@@ -7,37 +7,54 @@ window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 console.log("Supabase Client Initialized Successfully!");
 
-// --- MANUAL CLOUD BACKUP UTILITY ---
-// Used to backup the ENTIRE localStorage state to the Supabase snapshots table
+// --- DATA MIGRATION UTILITY ---
+// Used once to migrate existing localStorage data to Supabase
 window.migrateDataToSupabase = async function() {
-    console.log("Starting Full Database Backup to Cloud...");
+    console.log("Starting Data Migration to Supabase...");
+    let successCount = 0;
     
-    let allData = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('manti_')) {
-            let val = localStorage.getItem(key);
-            try { allData[key] = JSON.parse(val); } 
-            catch(e) { allData[key] = val; }
-        }
+    // 1. Migrate Orders
+    const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+    if (orders.length > 0) {
+        // Map local format to DB format
+        const dbOrders = orders.map(o => ({
+            order_number: o.id,
+            type: o.type,
+            date: o.date,
+            customer_name: o.customer,
+            product_name: o.product,
+            total_weight: parseFloat(o.weight),
+            weight_unit: o.unit || 'g',
+            remark: o.remark || '-'
+        }));
+        const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
+        if(error) console.error("Error migrating orders:", error);
+        else successCount++;
     }
 
-    // Store as a single text payload in the snapshots table
-    const snapshot = {
-        title: `Manual Cloud Backup - ${new Date().toLocaleDateString('en-IN')}`,
-        date: new Date().toISOString(),
-        html: JSON.stringify(allData),  // Payload stored in the generic 'html' text column
-        type: 'Full System Backup'
-    };
-
-    const { error } = await supabase.from('snapshots').insert([snapshot]);
-    
-    if (error) {
-        console.error("Backup Failed:", error);
-        alert("Cloud Backup Failed. Please check console for details.");
-    } else {
-        alert("Success! Your entire database has been backed up to the cloud securely in a single move. You can verify this backup on Supabase any time in the future.");
+    // 2. Migrate Job Works
+    const jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+    if (jobs.length > 0) {
+        const dbJobs = jobs.map(j => ({
+            job_no: j.jobNo,
+            date: j.date,
+            worker_id: j.workerId,
+            worker_name: j.workerName,
+            item_name: j.itemName,
+            process: j.process,
+            issue_wt: parseFloat(j.issueWt) || null,
+            receive_wt: parseFloat(j.receiveWt) || null
+        }));
+        await supabase.from('job_works').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // delete all
+        const { error } = await supabase.from('job_works').insert(dbJobs);
+        if(error) console.error("Error migrating job works:", error);
+        else successCount++;
     }
+    
+    // Set migration flag so sync down knows it's safe to load empty cloud data
+    localStorage.setItem('manti_cloud_migrated', 'true');
+
+    alert("Migration complete! " + successCount + " collections migrated to Supabase. Your database is now leading.");
 };
 
 // --- OFFLINE-FIRST SYNC LAYER ---
@@ -75,11 +92,10 @@ window.syncDownFromSupabase = async function() {
             }
         }
 
-        // 3. Sync Settings and Universal Key-Value Store
+        // 3. Sync Settings
         const { data: settingsData, error: setsErr } = await supabase.from('settings').select('*');
         if (!setsErr && settingsData) {
             settingsData.forEach(s => {
-                // Safely update localStorage from the cloud backup
                 localStorage.setItem(s.setting_key, JSON.stringify(s.setting_value));
             });
         }
@@ -112,61 +128,129 @@ window.syncDownFromSupabase = async function() {
     }
 };
 
-// --- AUTOMATED UNIVERSAL CLOUD SYNC INTERCEPTOR ---
-// Overrides localStorage.setItem to push ALL data into Supabase's `settings` table as JSON live
-const originalSetItem = localStorage.setItem;
+// --- AUTOMATED CLOUD SYNC INTERCEPTOR (RESTORED & FIXED) ---
+// The user requested to reinstate automated cloud database sync into SQL tables.
+// This intercepts any save to localStorage and queues it for Supabase upload.
+
 window.mantiSyncPromises = [];
 
+const originalSetItem = localStorage.setItem;
+
 localStorage.setItem = function(key, value) {
-    // 1. Immediately save locally for a fast UI
+    // 1. ALWAYS save locally first (Offline-first commitment)
     originalSetItem.apply(this, arguments);
 
-    // 2. Only sync our app's actual data state keys
-    if (key.startsWith('manti_') && key !== 'manti_cloud_migrated') {
-        let parsedVal;
+    // 2. Queue the cloud sync
+    if (key !== 'manti_cloud_migrated' && !key.startsWith('manti_scroll_') && !key.startsWith('manti_val_')) {
         try {
-            parsedVal = JSON.parse(value);
-        } catch(e) {
-            parsedVal = value; // String fallbacks
+            const parsedData = JSON.parse(value);
+            const promise = syncKeyToSupabase(key, parsedData);
+            window.mantiSyncPromises.push(promise);
+            
+            promise.finally(() => {
+                // Remove from queue when done
+                window.mantiSyncPromises = window.mantiSyncPromises.filter(p => p !== promise);
+            });
+        } catch (e) {
+            console.error("Non-JSON data passed to sync, skipping cloud upload.", e);
         }
-
-        // Fire and forget upload to the universal Key-Value store
-        const syncPromise = window.supabase.from('settings').upsert(
-            { setting_key: key, setting_value: parsedVal, updated_at: new Date().toISOString() },
-            { onConflict: 'setting_key' }
-        ).then(({error}) => {
-            if (error) console.error("Universal Cloud Sync Error for key:", key, error);
-            else console.log(`✓ Live Sync: Saved ${key} to Supabase`);
-        });
-
-        window.mantiSyncPromises.push(syncPromise);
     }
 };
 
 window.awaitPendingSyncs = async function() {
     if (window.mantiSyncPromises.length > 0) {
-        console.log(`Waiting for ${window.mantiSyncPromises.length} cloud syncs to finish...`);
+        console.log(`Waiting for ${window.mantiSyncPromises.length} background syncs to complete...`);
         try {
-            await Promise.all(window.mantiSyncPromises);
+            await Promise.allSettled(window.mantiSyncPromises);
         } catch (e) {
-            console.error("Some syncs failed:", e);
+            console.warn("Some syncs failed, but ignoring to allow navigation.");
         }
-        window.mantiSyncPromises = [];
     }
 };
 
 window.navigateAfterSync = async function(url) {
-    if (window.mantiSyncPromises.length > 0) {
-        document.body.style.opacity = '0.7';
-        document.body.style.pointerEvents = 'none';
-        let loadingEl = document.createElement('div');
-        loadingEl.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#5454d4;color:white;padding:10px 20px;border-radius:20px;z-index:99999;font-weight:600;font-size:0.85rem;';
-        loadingEl.textContent = 'Syncing to Cloud...';
-        document.body.appendChild(loadingEl);
-        await window.awaitPendingSyncs();
+    const btn = document.activeElement;
+    const originalText = btn ? btn.innerText : '';
+    if (btn && btn.tagName === 'BUTTON') {
+        btn.disabled = true;
+        btn.innerText = 'Syncing...';
     }
+    
+    // Fallback timeout in case fetch hangs
+    const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+    await Promise.race([window.awaitPendingSyncs(), timeoutPromise]);
+    
     window.location.href = url;
 };
+
+// Map Local Data to SQL Schema and Upload
+async function syncKeyToSupabase(key, data) {
+    if (!data) return;
+
+    try {
+        if (key === 'manti_order_records') {
+            const dbOrders = data.map(o => ({
+                order_number: o.id,
+                type: o.type,
+                date: o.date,
+                due_date: o.dueDate || null,
+                customer_name: o.vendor || o.customer || '',
+                product_name: o.product || '',
+                total_weight: parseFloat(o.qty || o.weight) || 0,
+                weight_unit: 'g',
+                remark: o.remark || '-'
+            }));
+            if (dbOrders.length > 0) {
+                await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
+            }
+
+        } else if (key === 'manti_jobwork_records') {
+            const dbJobs = data.map(j => ({
+                job_no: j.jobNo || j.jobnum,
+                date: j.date,
+                worker_id: j.workerId || '',
+                worker_name: j.workerName || '',
+                item_name: j.itemName || j.product || '',
+                process: j.process,
+                issue_wt: parseFloat(j.issueWt) || null,
+                receive_wt: parseFloat(j.receiveWt) || null
+            }));
+            if (dbJobs.length > 0) {
+                // Since JobWorks don't have a unique primary key besides UUID in our current flat structure,
+                // the safest way to sync without massive duplication is sweeping replace or relying on a unique constraint.
+                // For simplicity and matching user's previous schema mapping:
+                await supabase.from('job_works').delete().neq('worker_id', 'NON_EXISTENT_MAGIC_STRING'); 
+                await supabase.from('job_works').insert(dbJobs);
+            }
+
+        } else if (key === 'manti_saved_invoices') {
+            // Data is a map: { "INV-1001": {...} }
+            const dbInvoices = Object.values(data).map(inv => ({
+                invoice_number: inv.invoiceData.invoiceNum,
+                date: inv.invoiceData.date,
+                customer_data: inv.customerData || {},
+                items: inv.items || [],
+                subtotal: parseFloat(inv.totals?.subtotal?.replace(/[^0-9.-]+/g,"")) || 0,
+                tax_rate: parseFloat(inv.totals?.taxRate) || 0,
+                total_amount: parseFloat(inv.totals?.grandTotal?.replace(/[^0-9.-]+/g,"")) || 0,
+                payment_status: inv.paymentStatus || 'Unpaid'
+            }));
+            if (dbInvoices.length > 0) {
+                await supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' });
+            }
+
+        } else {
+            // Everything else (Inventory, KYC, Assets, Bank Details) goes to settings table as JSONB
+            await supabase.from('settings').upsert({
+                setting_key: key,
+                setting_value: data,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'setting_key' });
+        }
+    } catch (e) {
+        console.error(`Failed to sync ${key} to Supabase:`, e);
+    }
+}
 
 // Initial sync on page load
 document.addEventListener('DOMContentLoaded', () => {

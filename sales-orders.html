@@ -178,64 +178,49 @@
                     </section>
 
                     <section class="form-section">
-                        <h3>Customer Information</h3>
+                        <h3>Customer & Product</h3>
                         <div class="field-group">
-                            <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Customer Name <span style="color:#ef4444;">*</span></label>
-                            <select id="ord-vendor" class="input-wrapper" required style="width: 100%; border-color: #d1d5db;">
+                            <select id="ord-vendor" class="input-wrapper" required>
                                 <option value="" disabled selected>Select Customer</option>
                                 <!-- Dynamic options -->
                             </select>
+                            <input type="text" id="ord-product" placeholder="Product / Description" required>
                             
-                            <label id="sales-fixed-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--primary); margin-top: 10px;">
+                            <div id="ord-metal-type-container">
+                                <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Metal Type</label>
+                                <select id="ord-main-metal-type" class="input-wrapper" required>
+                                    <option value="" disabled selected>Select Metal Type</option>
+                                    <option value="Gold">1. Gold</option>
+                                    <option value="Silver">2. Silver</option>
+                                    <option value="Others">3. others</option>
+                                </select>
+                            </div>
+                            <input type="number" step="0.001" id="ord-qty" placeholder="Weight (g)" required>
+                        </div>
+                    </section>
+
+                    <section class="form-section">
+                        <h3>Pricing & Commitment</h3>
+                        <div class="field-group">
+                            <div id="sales-pricing-container" class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <input type="number" step="0.01" id="ord-mc-percent" placeholder="MC (%)">
+                                <input type="number" step="0.01" id="ord-mc-amount" placeholder="MC Amount (₹)">
+                            </div>
+                            
+                            <div style="position: relative;">
+                                <input type="number" step="0.01" id="ord-amount" placeholder="Final Amount (₹)" style="width: 100%; padding-right: 70px;">
+                                <span id="ord-amount-label" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: #6b7280; pointer-events: none; font-weight: 600;">(Optional)</span>
+                            </div>
+
+                            <label id="sales-fixed-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--primary);">
                                 <input type="checkbox" id="ord-is-fixed" style="width: 16px; height: 16px; cursor: pointer;">
                                 <strong>Fixed Order (Fixed Rate Commitment)</strong>
                             </label>
 
-                            <input type="text" id="ord-remark" placeholder="Remark / Notes" style="margin-top: 10px;">
+                            <input type="text" id="ord-remark" placeholder="Remark / Notes">
                         </div>
                     </section>
                 </div>
-
-                <div style="margin-top: 2rem;">
-                    <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-                        <thead style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
-                            <tr>
-                                <th style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Item Details</th>
-                                <th style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Metal Type</th>
-                                <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Weight (g)</th>
-                                <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Rate</th>
-                                <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">MC (%)</th>
-                                <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Amount</th>
-                                <th style="padding: 12px; width: 40px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="so-items-body">
-                            <!-- Dynamic Rows -->
-                        </tbody>
-                    </table>
-                    <button type="button" id="add-so-item" class="btn-animated-add" style="margin-top: 15px;">
-                      <span class="add-text">Add New Row</span>
-                      <span class="add-icon-wrap">
-                        <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-                          <line x1="12" x2="12" y1="5" y2="19"></line>
-                          <line x1="5" x2="19" y1="12" y2="12"></line>
-                        </svg>
-                      </span>
-                    </button>
-
-                    <!-- Totals Block -->
-                    <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px 20px; width: 300px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; color: #374151;">
-                                <span>Total Weight:</span>
-                                <strong id="so-total-weight">0.000</strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 1.1rem; color: #111827; border-top: 1px solid #e5e7eb; padding-top: 10px;">
-                                <strong>Grand Total:</strong>
-                                <strong style="color: var(--primary);">₹ <span id="so-grand-total">0.00</span></strong>
-                            </div>
-                        </div>
-                    </div>
 
                 <div style="text-align: right; margin-top: 1.5rem; display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="btn-liquid btn-outline" id="cancel-order">Cancel</button>
@@ -361,93 +346,52 @@
                 return prefix + (maxId + 1);
             }
 
-            function addSORow(itemData = {}) {
-                const tr = document.createElement('tr');
-                tr.classList.add('so-item-row');
-                
-                tr.innerHTML = `
-                    <td style="padding: 12px; vertical-align: top;">
-                        <textarea class="so-desc input-wrapper" placeholder="Product / Description" required style="width: 100%; border: none; resize: none; background: transparent; padding: 0; min-height: 40px; font-size: 0.9rem;">${itemData.desc || ''}</textarea>
-                    </td>
-                    <td style="padding: 12px; vertical-align: top;">
-                        <select class="so-metal-type input-wrapper" required style="width: 100%; border: none; background: transparent; padding: 0;">
-                            <option value="Gold" ${itemData.metalType === 'Gold' ? 'selected' : ''}>Gold</option>
-                            <option value="Silver" ${itemData.metalType === 'Silver' ? 'selected' : ''}>Silver</option>
-                            <option value="Others" ${!itemData.metalType || itemData.metalType === 'Others' ? 'selected' : ''}>Others</option>
-                        </select>
-                    </td>
-                    <td style="padding: 12px; vertical-align: top;">
-                        <input type="number" step="0.001" class="so-qty input-wrapper" placeholder="0.000" required value="${itemData.qty || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0;">
-                    </td>
-                    <td style="padding: 12px; vertical-align: top;">
-                        <input type="number" step="0.01" class="so-rate input-wrapper" placeholder="0.00" value="${itemData.rate || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0;">
-                    </td>
-                    <td style="padding: 12px; vertical-align: top;">
-                        <input type="number" step="0.01" class="so-mc input-wrapper" placeholder="MC %" value="${itemData.mcPercent || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0;">
-                    </td>
-                    <td style="padding: 12px; vertical-align: top;">
-                        <input type="text" class="so-row-amount input-wrapper" placeholder="0.00" readonly style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; font-weight: 600;">
-                    </td>
-                    <td style="padding: 12px; vertical-align: top; text-align: center;">
-                        <button type="button" class="btn-remove-sm" onclick="this.closest('tr').remove(); calculateSOTotals();">×</button>
-                    </td>
-                `;
-                
-                document.getElementById('so-items-body').appendChild(tr);
-                
-                tr.querySelectorAll('input, select, textarea').forEach(input => {
-                    input.addEventListener('input', calculateSOTotals);
-                    input.addEventListener('change', calculateSOTotals);
-                });
-                
-                calculateSOTotals();
-            }
-
-            function calculateSOTotals() {
-                let grandTotal = 0;
-                let totalWeight = 0;
+            function calculateFixedAmount() {
                 const isFixed = document.getElementById('ord-is-fixed').checked;
+                const amtInput = document.getElementById('ord-amount');
+                const amtLabel = document.getElementById('ord-amount-label');
+                
+                if (!isFixed) {
+                    amtInput.required = false;
+                    if (amtLabel) { amtLabel.textContent = "(Optional)"; amtLabel.style.color = "#6b7280"; }
+                    return;
+                }
+
+                amtInput.required = true;
+                if (amtLabel) { amtLabel.textContent = "(Required)"; amtLabel.style.color = "#ef4444"; }
+
+                const qty = parseFloat(document.getElementById('ord-qty').value) || 0;
+                const metalType = document.getElementById('ord-main-metal-type').value;
+                if (qty <= 0 || !metalType) return;
+
                 const rates = JSON.parse(localStorage.getItem('manti_metal_rates') || '{}');
-                
-                const rows = document.querySelectorAll('.so-item-row');
-                rows.forEach(row => {
-                    const qty = parseFloat(row.querySelector('.so-qty').value) || 0;
-                    const metalType = row.querySelector('.so-metal-type').value;
-                    const mcPercent = parseFloat(row.querySelector('.so-mc').value) || 0;
-                    const rateInput = row.querySelector('.so-rate');
-                    
-                    let rate = parseFloat(rateInput.value) || 0;
-                    
-                    if (isFixed) {
-                        rateInput.readOnly = true;
-                        rateInput.style.backgroundColor = '#f3f4f6';
-                        if (metalType === 'Gold') rate = rates.gold22k || ((rates.pureGold || 0) / 24 * 22);
-                        else if (metalType === 'Silver') rate = rates.silver925 || ((rates.pureSilver || 0) * 0.925);
-                        rateInput.value = rate.toFixed(2);
-                    } else {
-                        rateInput.readOnly = false;
-                        rateInput.style.backgroundColor = 'transparent';
-                    }
-                    
-                    const baseAmount = qty * rate;
-                    const mcAmt = baseAmount * (mcPercent / 100);
-                    const rowTotal = baseAmount + mcAmt;
-                    
-                    row.querySelector('.so-row-amount').value = rowTotal.toFixed(2);
-                    
-                    totalWeight += qty;
-                    grandTotal += rowTotal;
-                });
-                
-                document.getElementById('so-total-weight').textContent = totalWeight.toFixed(3);
-                document.getElementById('so-grand-total').textContent = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                let rate = 0;
+                if (metalType === 'Gold') rate = rates.gold22k || ((rates.pureGold || 0) / 24 * 22);
+                else if (metalType === 'Silver') rate = rates.silver925 || ((rates.pureSilver || 0) * 0.925);
+
+                let baseAmount = qty * rate;
+                let mcAmt = 0;
+                const mcPercent = parseFloat(document.getElementById('ord-mc-percent').value) || 0;
+                const mcFixed = parseFloat(document.getElementById('ord-mc-amount').value) || 0;
+
+                if (mcPercent > 0) mcAmt = baseAmount * (mcPercent / 100);
+                else mcAmt = mcFixed;
+
+                amtInput.value = (baseAmount + mcAmt).toFixed(2);
             }
 
-            document.getElementById('ord-is-fixed').addEventListener('change', calculateSOTotals);
-
-            if (document.getElementById('add-so-item')) {
-                document.getElementById('add-so-item').addEventListener('click', () => addSORow());
-            }
+            // Sync MC inputs
+            document.getElementById('ord-mc-percent').addEventListener('input', () => {
+                if (document.getElementById('ord-mc-percent').value) document.getElementById('ord-mc-amount').value = '';
+                calculateFixedAmount();
+            });
+            document.getElementById('ord-mc-amount').addEventListener('input', () => {
+                if (document.getElementById('ord-mc-amount').value) document.getElementById('ord-mc-percent').value = '';
+                calculateFixedAmount();
+            });
+            ['ord-qty', 'ord-main-metal-type', 'ord-is-fixed'].forEach(id => {
+                document.getElementById(id).addEventListener('input', calculateFixedAmount);
+            });
 
             let currentSOFilter = 'All';
 
@@ -486,7 +430,6 @@
                 const tableEl = document.getElementById('orders-table');
 
                 const filtered = records.filter(rec => {
-                    if (!rec || typeof rec !== 'object') return false;
                     if (rec.type !== 'Sales Order') return false;
                     const status = rec.status || 'Open';
                     if (currentSOFilter !== 'All' && status !== currentSOFilter) return false;
@@ -524,17 +467,6 @@
                     if (rec.mainMetalType) catBadge += `<span style="font-size:0.7rem;background:#fef3c7;color:#d97706;padding:1px 6px;border-radius:4px;font-weight:700;margin-right:4px;">${rec.mainMetalType}</span>`;
                     if (rec.isFixed) catBadge += `<span style="font-size:0.7rem;background:#fce7f3;color:#be185d;padding:1px 6px;border-radius:4px;font-weight:700;">Fixed Rate</span>`;
 
-                    // Items summary
-                    let itemsSummary = '', totalQty = 0;
-                    if (Array.isArray(rec.items) && rec.items.length > 0) {
-                        itemsSummary = rec.items.map(it => it.desc).filter(Boolean).join(' · ');
-                        if (itemsSummary.length > 45) itemsSummary = itemsSummary.substring(0, 42) + '…';
-                        totalQty = rec.items.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
-                    } else {
-                        itemsSummary = rec.product || '—';
-                        totalQty = parseFloat(rec.qty) || 0;
-                    }
-
                     const amt = parseFloat(rec.amount || 0);
 
                     const tr = document.createElement('tr');
@@ -550,11 +482,12 @@
                             <div style="font-weight:600;color:#1f2937;font-size:0.9rem;">${rec.vendor || '—'}</div>
                         </td>
                         <td style="padding:13px 16px;max-width:220px;">
-                            <div style="font-size:0.85rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemsSummary}</div>
+                            <div style="font-size:0.85rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${rec.product || '—'}</div>
                             <div style="margin-top:4px;">${catBadge}</div>
                         </td>
                         <td style="padding:13px 16px;text-align:right;">
-                            <div style="font-weight:700;color:#111827;font-size:0.9rem;">${totalQty > 0 ? totalQty.toFixed(3) : '—'}</div>
+                            <div style="font-weight:700;color:#111827;font-size:0.9rem;">${parseFloat(rec.qty || 0).toFixed(3)}</div>
+                            <div style="font-size:0.72rem;color:#6b7280;margin-top:2px;">MC: ${rec.mcPercent ? rec.mcPercent + '%' : '₹' + (rec.mcAmount || 0)}</div>
                         </td>
                         <td style="padding:13px 16px;text-align:right;">
                             <div style="font-weight:700;color:#059669;font-size:0.9rem;">${amt > 0 ? '₹' + amt.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</div>
@@ -588,26 +521,19 @@
                 const rec = records[idx];
                 document.getElementById('ord-id').value = rec.id;
                 document.getElementById('ord-date').value = rec.date;
-                document.getElementById('ord-due-date').value = rec.dueDate || '';
+                document.getElementById('ord-due-date').value = rec.dueDate;
                 document.getElementById('ord-vendor').value = rec.vendor;
+                document.getElementById('ord-product').value = rec.product;
+                document.getElementById('ord-main-metal-type').value = rec.mainMetalType || '';
+                document.getElementById('ord-qty').value = rec.qty;
+                document.getElementById('ord-mc-percent').value = rec.mcPercent || '';
+                document.getElementById('ord-mc-amount').value = rec.mcAmount || '';
+                document.getElementById('ord-amount').value = rec.amount || '';
                 document.getElementById('ord-remark').value = rec.remark || '';
                 document.getElementById('ord-is-fixed').checked = rec.isFixed || false;
                 
-                document.getElementById('so-items-body').innerHTML = '';
-                if (rec.items && rec.items.length > 0) {
-                    rec.items.forEach(it => addSORow(it));
-                } else {
-                    addSORow({
-                        desc: rec.product,
-                        metalType: rec.mainMetalType,
-                        qty: rec.qty,
-                        rate: (parseFloat(rec.amount) / parseFloat(rec.qty)) || 0,
-                        mcPercent: rec.mcPercent
-                    });
-                }
-                
                 form.style.display = 'block';
-                calculateSOTotals();
+                calculateFixedAmount();
             };
 
             window.deleteRecord = function(idx) {
@@ -621,8 +547,6 @@
             toggleBtn.addEventListener('click', () => {
                 form.reset();
                 editIndex = -1;
-                document.getElementById('so-items-body').innerHTML = '';
-                addSORow();
                 document.getElementById('ord-id').value = generateOrderId();
                 document.getElementById('ord-date').valueAsDate = new Date();
                 form.style.display = form.style.display === 'none' ? 'block' : 'none';
@@ -635,45 +559,20 @@
 
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
-                
-                const items = [];
-                let totalAmount = 0;
-                let totalQty = 0;
-                let firstMetalType = '';
-                
-                const rows = document.querySelectorAll('.so-item-row');
-                rows.forEach(row => {
-                    const it = {
-                        desc: row.querySelector('.so-desc').value,
-                        metalType: row.querySelector('.so-metal-type').value,
-                        qty: row.querySelector('.so-qty').value,
-                        rate: row.querySelector('.so-rate').value,
-                        mcPercent: row.querySelector('.so-mc').value,
-                        total: row.querySelector('.so-row-amount').value
-                    };
-                    items.push(it);
-                    totalAmount += parseFloat(it.total) || 0;
-                    totalQty += parseFloat(it.qty) || 0;
-                    if (!firstMetalType) firstMetalType = it.metalType;
-                });
-
-                if (items.length === 0) {
-                    alert('Please add at least one item to the order.');
-                    return;
-                }
-
                 const rec = {
                     id: document.getElementById('ord-id').value,
                     type: 'Sales Order',
                     date: document.getElementById('ord-date').value,
                     dueDate: document.getElementById('ord-due-date').value,
                     vendor: document.getElementById('ord-vendor').value,
-                    items: items,
-                    qty: totalQty.toString(),
-                    amount: totalAmount.toFixed(2),
+                    product: document.getElementById('ord-product').value,
+                    mainMetalType: document.getElementById('ord-main-metal-type').value,
+                    qty: document.getElementById('ord-qty').value,
+                    mcPercent: document.getElementById('ord-mc-percent').value,
+                    mcAmount: document.getElementById('ord-mc-amount').value,
+                    amount: document.getElementById('ord-amount').value,
                     remark: document.getElementById('ord-remark').value,
                     isFixed: document.getElementById('ord-is-fixed').checked,
-                    mainMetalType: firstMetalType,
                     status: 'Open'
                 };
 
