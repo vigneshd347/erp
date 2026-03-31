@@ -7,54 +7,37 @@ window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 console.log("Supabase Client Initialized Successfully!");
 
-// --- DATA MIGRATION UTILITY ---
-// Used once to migrate existing localStorage data to Supabase
+// --- MANUAL CLOUD BACKUP UTILITY ---
+// Used to backup the ENTIRE localStorage state to the Supabase snapshots table
 window.migrateDataToSupabase = async function() {
-    console.log("Starting Data Migration to Supabase...");
-    let successCount = 0;
+    console.log("Starting Full Database Backup to Cloud...");
     
-    // 1. Migrate Orders
-    const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
-    if (orders.length > 0) {
-        // Map local format to DB format
-        const dbOrders = orders.map(o => ({
-            order_number: o.id,
-            type: o.type,
-            date: o.date,
-            customer_name: o.customer,
-            product_name: o.product,
-            total_weight: parseFloat(o.weight),
-            weight_unit: o.unit || 'g',
-            remark: o.remark || '-'
-        }));
-        const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
-        if(error) console.error("Error migrating orders:", error);
-        else successCount++;
+    let allData = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('manti_')) {
+            let val = localStorage.getItem(key);
+            try { allData[key] = JSON.parse(val); } 
+            catch(e) { allData[key] = val; }
+        }
     }
 
-    // 2. Migrate Job Works
-    const jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
-    if (jobs.length > 0) {
-        const dbJobs = jobs.map(j => ({
-            job_no: j.jobNo,
-            date: j.date,
-            worker_id: j.workerId,
-            worker_name: j.workerName,
-            item_name: j.itemName,
-            process: j.process,
-            issue_wt: parseFloat(j.issueWt) || null,
-            receive_wt: parseFloat(j.receiveWt) || null
-        }));
-        await supabase.from('job_works').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // delete all
-        const { error } = await supabase.from('job_works').insert(dbJobs);
-        if(error) console.error("Error migrating job works:", error);
-        else successCount++;
-    }
-    
-    // Set migration flag so sync down knows it's safe to load empty cloud data
-    localStorage.setItem('manti_cloud_migrated', 'true');
+    // Store as a single text payload in the snapshots table
+    const snapshot = {
+        title: `Manual Cloud Backup - ${new Date().toLocaleDateString('en-IN')}`,
+        date: new Date().toISOString(),
+        html: JSON.stringify(allData),  // Payload stored in the generic 'html' text column
+        type: 'Full System Backup'
+    };
 
-    alert("Migration complete! " + successCount + " collections migrated to Supabase. Your database is now leading.");
+    const { error } = await supabase.from('snapshots').insert([snapshot]);
+    
+    if (error) {
+        console.error("Backup Failed:", error);
+        alert("Cloud Backup Failed. Please check console for details.");
+    } else {
+        alert("Success! Your entire database has been backed up to the cloud securely in a single move. You can verify this backup on Supabase any time in the future.");
+    }
 };
 
 // --- OFFLINE-FIRST SYNC LAYER ---
@@ -96,8 +79,8 @@ window.syncDownFromSupabase = async function() {
         const { data: settingsData, error: setsErr } = await supabase.from('settings').select('*');
         if (!setsErr && settingsData) {
             settingsData.forEach(s => {
-                // Use originalSetItem so it doesn't trigger an infinite upload loop
-                originalSetItem.call(localStorage, s.setting_key, JSON.stringify(s.setting_value));
+                // Safely update localStorage from the cloud backup
+                localStorage.setItem(s.setting_key, JSON.stringify(s.setting_value));
             });
         }
         
@@ -129,61 +112,16 @@ window.syncDownFromSupabase = async function() {
     }
 };
 
-// --- AUTOMATED UNIVERSAL CLOUD SYNC INTERCEPTOR ---
-// Overrides localStorage.setItem to push ALL data into Supabase's `settings` table as JSON
-const originalSetItem = localStorage.setItem;
+// --- AUTOMATED UNIVERSAL CLOUD SYNC INTERCEPTOR (DISABLED) ---
+// User requested manual single-move backup instead of real-time syncing.
+
 window.mantiSyncPromises = [];
 
-localStorage.setItem = function(key, value) {
-    // 1. Immediately save locally for a fast UI
-    originalSetItem.apply(this, arguments);
-
-    // 2. Only sync our app's actual data state keys
-    if (key.startsWith('manti_') && key !== 'manti_cloud_migrated') {
-        let parsedVal;
-        try {
-            parsedVal = JSON.parse(value);
-        } catch(e) {
-            parsedVal = value; // String fallbacks
-        }
-
-        // Fire and forget upload to the universal Key-Value store
-        const syncPromise = window.supabase.from('settings').upsert(
-            { setting_key: key, setting_value: parsedVal, updated_at: new Date().toISOString() },
-            { onConflict: 'setting_key' }
-        ).then(({error}) => {
-            if (error) console.error("Universal Cloud Sync Error for key:", key, error);
-            else console.log(`✓ Real-time Sync: Saved ${key} to Supabase Cloud`);
-        });
-
-        window.mantiSyncPromises.push(syncPromise);
-    }
-};
-
 window.awaitPendingSyncs = async function() {
-    if (window.mantiSyncPromises.length > 0) {
-        console.log(`Waiting for ${window.mantiSyncPromises.length} cloud syncs to finish...`);
-        try {
-            await Promise.all(window.mantiSyncPromises);
-        } catch (e) {
-            console.error("Some syncs failed:", e);
-        }
-        window.mantiSyncPromises = [];
-    }
+    // No-op
 };
 
 window.navigateAfterSync = async function(url) {
-    if (window.mantiSyncPromises.length > 0) {
-        document.body.style.opacity = '0.7';
-        document.body.style.pointerEvents = 'none';
-        
-        let loadingEl = document.createElement('div');
-        loadingEl.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#5454d4;color:white;padding:10px 20px;border-radius:20px;z-index:99999;font-weight:600;font-size:0.85rem;';
-        loadingEl.textContent = 'Syncing to Cloud...';
-        document.body.appendChild(loadingEl);
-        
-        await window.awaitPendingSyncs();
-    }
     window.location.href = url;
 };
 

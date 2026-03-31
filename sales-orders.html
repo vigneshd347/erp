@@ -486,6 +486,7 @@
                 const tableEl = document.getElementById('orders-table');
 
                 const filtered = records.filter(rec => {
+                    if (!rec || typeof rec !== 'object') return false;
                     if (rec.type !== 'Sales Order') return false;
                     const status = rec.status || 'Open';
                     if (currentSOFilter !== 'All' && status !== currentSOFilter) return false;
@@ -525,7 +526,7 @@
 
                     // Items summary
                     let itemsSummary = '', totalQty = 0;
-                    if (rec.items && rec.items.length > 0) {
+                    if (Array.isArray(rec.items) && rec.items.length > 0) {
                         itemsSummary = rec.items.map(it => it.desc).filter(Boolean).join(' · ');
                         if (itemsSummary.length > 45) itemsSummary = itemsSummary.substring(0, 42) + '…';
                         totalQty = rec.items.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
