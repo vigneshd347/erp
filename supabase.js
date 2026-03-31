@@ -128,80 +128,22 @@ window.syncDownFromSupabase = async function() {
     }
 };
 
-// --- AUTOMATED CLOUD SYNC INTERCEPTOR ---
-// We proxy localStorage.setItem so that every time the app saves data locally,
-// it automatically fires off an asynchronous upsert to Supabase in the background!
-const originalSetItem = localStorage.setItem;
+// --- AUTOMATED CLOUD SYNC INTERCEPTOR (DISABLED) ---
+// The user requested to remove automatic cloud database sync.
+// We no longer proxy localStorage.setItem.
 
-localStorage.setItem = function(key, value) {
-    // 1. Execute standard local storage save synchronously (maintaining instant UI feel)
-    originalSetItem.apply(this, arguments);
-    
-    // 2. Fire and forget to Supabase
-    try {
-        if (typeof value === 'string' && value.startsWith('[')) {
-            const arrayData = JSON.parse(value);
-            
-            if (key === 'manti_order_records') {
-                const dbOrders = arrayData.map(o => ({
-                    order_number: o.id, type: o.type, date: o.date, due_date: o.dueDate,
-                    customer_name: o.customer, product_name: o.product, total_weight: parseFloat(o.weight)||0,
-                    weight_unit: o.unit || 'g', remark: o.remark || '-'
-                }));
-                if(dbOrders.length > 0 && window.supabase) supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' }).then(res => { if(res.error) console.error("Sync Up Error Orders:", res.error); });
-            } 
-            else if (key === 'manti_jobwork_records') {
-                const dbJobs = arrayData.map(j => ({
-                    job_no: j.jobNo, date: j.date, worker_id: j.workerId, worker_name: j.workerName,
-                    item_name: j.itemName, process: j.process, issue_wt: parseFloat(j.issueWt) || null, receive_wt: parseFloat(j.receiveWt) || null
-                }));
-                if(dbJobs.length > 0 && window.supabase) {
-                    // Safe bulk update for append-only logs without PKs
-                    supabase.from('job_works').delete().neq('id', '00000000-0000-0000-0000-000000000000').then(() => {
-                        supabase.from('job_works').insert(dbJobs).then(res => { if(res.error) console.error("Sync Up Error Jobs:", res.error); });
-                    });
-                }
-            }
-            else {
-                // Catch-all array sync
-                if (!key.startsWith('manti_scroll_') && !key.startsWith('manti_val_') && !key.startsWith('manti_last_')) {
-                    if(window.supabase) supabase.from('settings').upsert({ setting_key: key, setting_value: arrayData }, { onConflict: 'setting_key' }).then(res => { if(res.error) console.error("Sync Up Catch-All Array Error:", res.error, key); });
-                }
-            }
-        } 
-        else if (typeof value === 'string' && value.startsWith('{')) {
-            const parsedData = JSON.parse(value);
-            
-            // Check for explicit object tables first
-            if (key === 'manti_saved_invoices') {
-                const dbInvoices = Object.values(parsedData).map(inv => ({
-                    invoice_number: inv.invoiceData?.invoiceNum || 'UNKNOWN',
-                    date: inv.invoiceData?.date || new Date().toISOString(),
-                    customer_data: inv.customerData || {},
-                    items: inv.items || [],
-                    subtotal: parseFloat(inv.totals?.subtotal) || 0,
-                    tax_rate: parseFloat(inv.totals?.taxRate) || 0,
-                    total_amount: parseFloat(inv.totals?.grandTotal) || 0,
-                    payment_status: 'Unpaid'
-                }));
-                if(dbInvoices.length > 0 && window.supabase) {
-                    supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' }).then(res => { if(res.error) console.error("Sync Up Error Invoices:", res.error); });
-                }
-            } 
-            else {
-                // CATCH-ALL CLOUD STATE SYNC
-                // For *any* other structured data (staff, journals, custom reports, bank details),
-                // we store the JSON payload completely transparently in the generic `settings` table!
-                // Exclude transient UI states:
-                if (!key.startsWith('manti_scroll_') && !key.startsWith('manti_val_') && !key.startsWith('manti_last_')) {
-                    if(window.supabase) supabase.from('settings').upsert({ setting_key: key, setting_value: parsedData }, { onConflict: 'setting_key' }).then(res => { if(res.error) console.error("Sync Up Catch-All Error:", res.error, key); });
-                }
-            }
-        }
-    } catch(e) {
-        // Ignore JSON parse errors for regular strings (e.g. scroll positions)
-    }
+window.mantiSyncPromises = [];
+
+window.awaitPendingSyncs = async function() {
+    // No-op
 };
+
+window.navigateAfterSync = async function(url) {
+    // Auto-sync is removed, simply navigate immediately
+    window.location.href = url;
+};
+
+// Removed originalSetItem override to stop automatic syncing.
 
 // Initial sync on page load
 document.addEventListener('DOMContentLoaded', () => {

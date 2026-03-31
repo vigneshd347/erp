@@ -452,7 +452,7 @@
             btn.style.borderColor = 'var(--success)';
             
             setTimeout(() => {
-                window.location.href = 'banking.html';
+                if (window.navigateAfterSync) window.navigateAfterSync('banking.html'); else window.location.href = 'banking.html';
             }, 800);
         }
     </script>

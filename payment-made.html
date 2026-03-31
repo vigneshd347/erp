@@ -536,7 +536,7 @@
             localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
 
             alert(`Payment of ₹ ${amountEntered.toFixed(2)} recorded successfully.`);
-            window.location.href = 'purchases.html';
+            if (window.navigateAfterSync) window.navigateAfterSync('purchases.html'); else window.location.href = 'purchases.html';
         }
     </script>
 </body>

@@ -970,7 +970,7 @@
                     };
                     localStorage.setItem('manti_pending_despatch', JSON.stringify(despatchData));
                     alert('✅ Despatch saved! Redirecting to Tax Invoice...');
-                    window.location.href = 'create-invoice.html';
+                    if (window.navigateAfterSync) window.navigateAfterSync('create-invoice.html'); else window.location.href = 'create-invoice.html';
                     return;
                 }
 
