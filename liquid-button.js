@@ -1,5 +1,5 @@
 // Vanilla JS adaptation of canvas-based Liquid Button
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('CloudDataLoaded', () => {
     
     // Global mouse tracking
     let mouseX = 0, mouseY = 0;

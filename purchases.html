@@ -378,7 +378,7 @@
     <script>
         let records = JSON.parse(localStorage.getItem('manti_order_records')) || [];
         
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('CloudDataLoaded', () => {
             // Load rates
             const savedRates = localStorage.getItem('manti_metal_rates');
             if (savedRates) {

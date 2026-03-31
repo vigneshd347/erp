@@ -478,7 +478,7 @@
     <script src="liquid-button.js"></script>
     <script src="script.js?v=24"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('CloudDataLoaded', () => {
             // Initialize Lucide icons immediately on page load (fixes sidebar icons)
             if (window.lucide) window.lucide.createIcons();
             
@@ -2012,7 +2012,7 @@
             // Generate custom view optgroup on initial load
             refreshCustomViewsDropdown();
 
-            // Resolve any pending report triggered by a card click before DOMContentLoaded
+            // Resolve any pending report triggered by a card click before CloudDataLoaded
             if (window._pendingReport) {
                 loadReport(window._pendingReport);
                 window._pendingReport = null;

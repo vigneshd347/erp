@@ -211,7 +211,7 @@ function attachExcelFilters() {
 }
 
 // Observe dynamic table rebuilds (like on Reports page)
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('CloudDataLoaded', () => {
     attachExcelFilters();
 
     const observer = new MutationObserver((mutations) => {
@@ -244,7 +244,7 @@ const invoiceForm = document.getElementById('invoice-form');
 const currentDateInput = document.getElementById('current-date');
 
 // Initialization
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('CloudDataLoaded', () => {
     // Check if handling a shared link
     const urlParams = new URLSearchParams(window.location.search);
     const sharedData = urlParams.get('data');
@@ -1521,7 +1521,7 @@ if (resetBtn) {
     });
 
     // 3. Persist Shared Global IDs (Search Bars)
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('CloudDataLoaded', () => {
         const persistIds = ['search-report', 'search-jobwork', 'search-inventory', 'search-staff', 
                             'search-orders', 'search-customer', 'search-vendor'];
         

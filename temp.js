@@ -7,7 +7,7 @@
                     document.getElementById('kpi-so-fixed').textContent = sos.filter(o => o.isFixed).length;
                 })();
         lucide.createIcons();
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('CloudDataLoaded', () => {
             // Load rates for Fixed logic
             const savedRates = localStorage.getItem('manti_metal_rates');
             if (savedRates) {
