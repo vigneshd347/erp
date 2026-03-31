@@ -112,16 +112,59 @@ window.syncDownFromSupabase = async function() {
     }
 };
 
-// --- AUTOMATED UNIVERSAL CLOUD SYNC INTERCEPTOR (DISABLED) ---
-// User requested manual single-move backup instead of real-time syncing.
-
+// --- AUTOMATED UNIVERSAL CLOUD SYNC INTERCEPTOR ---
+// Overrides localStorage.setItem to push ALL data into Supabase's `settings` table as JSON live
+const originalSetItem = localStorage.setItem;
 window.mantiSyncPromises = [];
 
+localStorage.setItem = function(key, value) {
+    // 1. Immediately save locally for a fast UI
+    originalSetItem.apply(this, arguments);
+
+    // 2. Only sync our app's actual data state keys
+    if (key.startsWith('manti_') && key !== 'manti_cloud_migrated') {
+        let parsedVal;
+        try {
+            parsedVal = JSON.parse(value);
+        } catch(e) {
+            parsedVal = value; // String fallbacks
+        }
+
+        // Fire and forget upload to the universal Key-Value store
+        const syncPromise = window.supabase.from('settings').upsert(
+            { setting_key: key, setting_value: parsedVal, updated_at: new Date().toISOString() },
+            { onConflict: 'setting_key' }
+        ).then(({error}) => {
+            if (error) console.error("Universal Cloud Sync Error for key:", key, error);
+            else console.log(`✓ Live Sync: Saved ${key} to Supabase`);
+        });
+
+        window.mantiSyncPromises.push(syncPromise);
+    }
+};
+
 window.awaitPendingSyncs = async function() {
-    // No-op
+    if (window.mantiSyncPromises.length > 0) {
+        console.log(`Waiting for ${window.mantiSyncPromises.length} cloud syncs to finish...`);
+        try {
+            await Promise.all(window.mantiSyncPromises);
+        } catch (e) {
+            console.error("Some syncs failed:", e);
+        }
+        window.mantiSyncPromises = [];
+    }
 };
 
 window.navigateAfterSync = async function(url) {
+    if (window.mantiSyncPromises.length > 0) {
+        document.body.style.opacity = '0.7';
+        document.body.style.pointerEvents = 'none';
+        let loadingEl = document.createElement('div');
+        loadingEl.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#5454d4;color:white;padding:10px 20px;border-radius:20px;z-index:99999;font-weight:600;font-size:0.85rem;';
+        loadingEl.textContent = 'Syncing to Cloud...';
+        document.body.appendChild(loadingEl);
+        await window.awaitPendingSyncs();
+    }
     window.location.href = url;
 };
 
