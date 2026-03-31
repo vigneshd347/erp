@@ -62,6 +62,52 @@ CREATE TABLE IF NOT EXISTS public.snapshots (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 6. Create Vendor KYC table
+CREATE TABLE IF NOT EXISTS public.vendor_kyc (
+    id TEXT PRIMARY KEY,
+    date DATE,
+    name TEXT NOT NULL,
+    mobile TEXT NOT NULL,
+    email TEXT,
+    company_type TEXT,
+    address TEXT,
+    city TEXT,
+    state TEXT,
+    pin TEXT,
+    gst TEXT,
+    pan TEXT,
+    msme TEXT,
+    bank_name TEXT,
+    bank_branch TEXT,
+    bank_acc TEXT,
+    bank_ifsc TEXT,
+    bank_upi TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 7. Create Supplier KYC table
+CREATE TABLE IF NOT EXISTS public.supplier_kyc (
+    id TEXT PRIMARY KEY,
+    date DATE,
+    name TEXT NOT NULL,
+    mobile TEXT NOT NULL,
+    email TEXT,
+    company_type TEXT,
+    address TEXT,
+    city TEXT,
+    state TEXT,
+    pin TEXT,
+    gst TEXT,
+    pan TEXT,
+    msme TEXT,
+    bank_name TEXT,
+    bank_branch TEXT,
+    bank_acc TEXT,
+    bank_ifsc TEXT,
+    bank_upi TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Turn on Row Level Security (RLS) and create permissive policies for initial development
 -- Note: In a true production app with user auth, these policies should be restricted!
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
@@ -78,3 +124,9 @@ CREATE POLICY "Enable all for anon" ON public.settings FOR ALL USING (true) WITH
 
 ALTER TABLE public.snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable all for anon" ON public.snapshots FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.vendor_kyc ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for anon" ON public.vendor_kyc FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.supplier_kyc ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for anon" ON public.supplier_kyc FOR ALL USING (true) WITH CHECK (true);

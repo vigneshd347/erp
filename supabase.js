@@ -158,6 +158,22 @@ async function syncKeyToSupabase(key, data) {
                 payment_status: inv.paymentStatus || 'Unpaid'
             }));
             if (dbInvoices.length > 0) await supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' });
+        } else if (key === 'manti_vendor_kyc_records') {
+            const dbVendors = data.map(v => ({
+                id: v.id, date: v.date || null, name: v.name || '', mobile: v.mobile || '', email: v.email || null,
+                company_type: v.type || null, address: v.address || null, city: v.city || null, state: v.state || null,
+                pin: v.pin || null, gst: v.gst || null, pan: v.pan || null, msme: v.msme || null, bank_name: v.bankName || null,
+                bank_branch: v.bankBranch || null, bank_acc: v.bankAcc || null, bank_ifsc: v.bankIfsc || null, bank_upi: v.bankUpi || null
+            }));
+            if (dbVendors.length > 0) await supabase.from('vendor_kyc').upsert(dbVendors, { onConflict: 'id' });
+        } else if (key === 'manti_supplier_kyc_records') {
+            const dbSuppliers = data.map(v => ({
+                id: v.id, date: v.date || null, name: v.name || '', mobile: v.mobile || '', email: v.email || null,
+                company_type: v.type || null, address: v.address || null, city: v.city || null, state: v.state || null,
+                pin: v.pin || null, gst: v.gst || null, pan: v.pan || null, msme: v.msme || null, bank_name: v.bankName || null,
+                bank_branch: v.bankBranch || null, bank_acc: v.bankAcc || null, bank_ifsc: v.bankIfsc || null, bank_upi: v.bankUpi || null
+            }));
+            if (dbSuppliers.length > 0) await supabase.from('supplier_kyc').upsert(dbSuppliers, { onConflict: 'id' });
         } else {
             await supabase.from('settings').upsert({
                 setting_key: key, setting_value: data, updated_at: new Date().toISOString()
@@ -214,11 +230,36 @@ window.fetchEverythingFromCloud = async function() {
             window.ERP_MEMORY.set('manti_saved_invoices', JSON.stringify(invoiceMap));
         }
 
-        // 4. Fetch Settings (KYC, Inventory, Assets, Rules)
+        // 4. Fetch Vendor KYC
+        const { data: vendorData } = await supabase.from('vendor_kyc').select('*');
+        if (vendorData && vendorData.length > 0) {
+            const mappedVendors = vendorData.map(v => ({
+                id: v.id, date: v.date, name: v.name, mobile: v.mobile, email: v.email, type: v.company_type,
+                address: v.address, city: v.city, state: v.state, pin: v.pin, gst: v.gst, pan: v.pan, msme: v.msme,
+                bankName: v.bank_name, bankBranch: v.bank_branch, bankAcc: v.bank_acc, bankIfsc: v.bank_ifsc, bankUpi: v.bank_upi
+            }));
+            window.ERP_MEMORY.set('manti_vendor_kyc_records', JSON.stringify(mappedVendors));
+        }
+
+        // 5. Fetch Supplier KYC
+        const { data: supplierData } = await supabase.from('supplier_kyc').select('*');
+        if (supplierData && supplierData.length > 0) {
+            const mappedSuppliers = supplierData.map(v => ({
+                id: v.id, date: v.date, name: v.name, mobile: v.mobile, email: v.email, type: v.company_type,
+                address: v.address, city: v.city, state: v.state, pin: v.pin, gst: v.gst, pan: v.pan, msme: v.msme,
+                bankName: v.bank_name, bankBranch: v.bank_branch, bankAcc: v.bank_acc, bankIfsc: v.bank_ifsc, bankUpi: v.bank_upi
+            }));
+            window.ERP_MEMORY.set('manti_supplier_kyc_records', JSON.stringify(mappedSuppliers));
+        }
+
+        // 6. Fetch Settings (Assets, Rules, etc)
         const { data: settingsData } = await supabase.from('settings').select('*');
         if (settingsData) {
             settingsData.forEach(s => {
-                window.ERP_MEMORY.set(s.setting_key, JSON.stringify(s.setting_value));
+                // To avoid overwriting dedicated fetches if they accidentally saved in settings
+                if (s.setting_key !== 'manti_vendor_kyc_records' && s.setting_key !== 'manti_supplier_kyc_records') {
+                    window.ERP_MEMORY.set(s.setting_key, JSON.stringify(s.setting_value));
+                }
             });
         }
     } catch(e) {
