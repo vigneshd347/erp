@@ -267,7 +267,7 @@
             // Populate contacts
             const contactList = document.getElementById('contact-list');
             try {
-                const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]');
+                const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]').concat(JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]'));
                 vendors.forEach(v => {
                     const opt = document.createElement('option');
                     opt.value = v.name;

@@ -162,12 +162,12 @@
 
                     <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
                         <section class="form-section">
-                            <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Vendor Information</h3>
+                            <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Supplier Information</h3>
                             <div class="field-group">
                                 <div style="margin-bottom: 1rem;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Vendor Name <span style="color:#ef4444;">*</span></label>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Supplier Name <span style="color:#ef4444;">*</span></label>
                                     <select id="ord-vendor" class="input-wrapper" required style="width: 100%; border-color: #d1d5db;">
-                                        <option value="" disabled selected>Select Vendor</option>
+                                        <option value="" disabled selected>Select Supplier</option>
                                         <!-- Dynamic options -->
                                     </select>
                                 </div>
@@ -316,7 +316,7 @@
                     <div style="display:flex; align-items:center; gap:12px; flex:1; justify-content:flex-end;">
                         <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:7px 12px; max-width:280px; width:100%;">
                             <i data-lucide="search" style="width:15px;height:15px;color:#9ca3af;flex-shrink:0;"></i>
-                            <input type="text" id="search-purchases" placeholder="Search orders, vendors..." 
+                            <input type="text" id="search-purchases" placeholder="Search orders, suppliers..." 
                                 oninput="filterPOTable()"
                                 style="border:none; background:transparent; outline:none; font-size:0.84rem; color:#374151; width:100%;">
                         </div>
@@ -338,7 +338,7 @@
                         <tr style="background:#f8fafc;">
                             <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">PO #</th>
                             <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Date</th>
-                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Vendor</th>
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Supplier</th>
                             <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Items</th>
                             <th style="padding:11px 16px; text-align:right; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Qty</th>
                             <th style="padding:11px 16px; text-align:right; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Amount</th>
@@ -395,13 +395,13 @@
             const typeSelect = document.getElementById('ord-type');
             const qtyInput = document.getElementById('ord-qty');
 
-            // Load Vendors for Dropdown
+            // Load Suppliers for Dropdown
             const vendorSelect = document.getElementById('ord-vendor');
-            const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records')) || [];
+            const vendors = JSON.parse(localStorage.getItem('manti_supplier_kyc_records')) || [];
             if (vendors.length === 0) {
                 const opt = document.createElement('option');
                 opt.value = "";
-                opt.textContent = "No vendors found. Please add in KYC.";
+                opt.textContent = "No suppliers found. Please add in KYC.";
                 opt.disabled = true;
                 vendorSelect.appendChild(opt);
             } else {

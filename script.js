@@ -1554,6 +1554,9 @@ window.toggleNavGroup = function(element) {
     const currentGroup = element.closest('.nav-group');
     if (currentGroup) {
         currentGroup.classList.toggle('expanded');
+        if (window.innerWidth <= 768) {
+            currentGroup.classList.toggle('active');
+        }
     }
 };
 

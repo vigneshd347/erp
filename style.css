@@ -2114,8 +2114,20 @@ td {
         width: calc(100% + 2rem);
     }
 
-    table {
-        min-width: 600px;
+    /* Force all tables to scroll horizontally if they exceed screen width */
+    table:not(.print-page table) {
+        display: block !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        white-space: nowrap !important;
+        width: 100% !important;
+        min-width: unset !important;
+    }
+    
+    table:not(.print-page table) tbody {
+        display: table !important;
+        width: 100% !important;
+        min-width: 600px !important;
     }
 
     /* Modals */
