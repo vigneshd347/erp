@@ -111,24 +111,31 @@ CREATE TABLE IF NOT EXISTS public.supplier_kyc (
 -- Turn on Row Level Security (RLS) and create permissive policies for initial development
 -- Note: In a true production app with user auth, these policies should be restricted!
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.orders;
 CREATE POLICY "Enable all for anon" ON public.orders FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.job_works ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.job_works;
 CREATE POLICY "Enable all for anon" ON public.job_works FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.invoices;
 CREATE POLICY "Enable all for anon" ON public.invoices FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.settings;
 CREATE POLICY "Enable all for anon" ON public.settings FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.snapshots ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.snapshots;
 CREATE POLICY "Enable all for anon" ON public.snapshots FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.vendor_kyc ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.vendor_kyc;
 CREATE POLICY "Enable all for anon" ON public.vendor_kyc FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.supplier_kyc ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.supplier_kyc;
 CREATE POLICY "Enable all for anon" ON public.supplier_kyc FOR ALL USING (true) WITH CHECK (true);
 
 -- 8. Create Delivery Challans table
@@ -208,22 +215,29 @@ CREATE TABLE IF NOT EXISTS public.stock_history (
 );
 
 ALTER TABLE public.delivery_challans ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.delivery_challans;
 CREATE POLICY "Enable all for anon" ON public.delivery_challans FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.staff_records ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.staff_records;
 CREATE POLICY "Enable all for anon" ON public.staff_records FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.assets;
 CREATE POLICY "Enable all for anon" ON public.assets FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.payments_made ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.payments_made;
 CREATE POLICY "Enable all for anon" ON public.payments_made FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.journal_entries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.journal_entries;
 CREATE POLICY "Enable all for anon" ON public.journal_entries FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.bank_accounts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.bank_accounts;
 CREATE POLICY "Enable all for anon" ON public.bank_accounts FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE public.stock_history ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.stock_history;
 CREATE POLICY "Enable all for anon" ON public.stock_history FOR ALL USING (true) WITH CHECK (true);
