@@ -241,9 +241,13 @@
                         <!-- Right Column -->
                         <div style="display: flex; flex-direction: column; gap: 1.2rem;">
                             <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Vendor <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
-                                <input type="text" id="exp-vendor" class="pay-input" list="supplier-list" placeholder="Select or type vendor name" autocomplete="off">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Name / Business Name <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
+                                <input type="text" id="exp-vendor" class="pay-input" list="supplier-list" placeholder="Select or type name / business" autocomplete="off">
                                 <datalist id="supplier-list"></datalist>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">GST Number <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
+                                <input type="text" id="exp-gst" class="pay-input" placeholder="e.g. 22AAAAA0000A1Z5" maxlength="15" style="text-transform: uppercase;">
                             </div>
                             <div>
                                 <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Reference#</label>
@@ -251,7 +255,11 @@
                             </div>
                             <div>
                                 <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Notes</label>
-                                <textarea id="exp-notes" class="pay-input" rows="4" placeholder="Description of the expense..."></textarea>
+                                <textarea id="exp-notes" class="pay-input" rows="3" placeholder="Description of the expense..."></textarea>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;"><i data-lucide="paperclip" style="width: 14px; margin-right: 4px; vertical-align: middle;"></i> Attach Bill <span style="font-weight: 400; color: #94a3b8;">(Optional)</span></label>
+                                <input type="file" id="exp-bill" class="pay-input" accept="image/*,.pdf" style="padding: 6px;">
                             </div>
                         </div>
                     </form>
@@ -264,7 +272,8 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Expense Account</th>
-                                <th>Vendor</th>
+                                <th>Name / Business</th>
+                                <th>GST No.</th>
                                 <th>Reference#</th>
                                 <th style="text-align: right;">Amount</th>
                                 <th style="width: 80px; text-align: center;">Action</th>
@@ -313,7 +322,7 @@
             tbody.innerHTML = '';
             
             if (expenses.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">No expenses recorded yet.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 2rem;">No expenses recorded yet.</td></tr>';
                 return;
             }
 
@@ -322,13 +331,17 @@
 
             sorted.forEach(exp => {
                 const tr = document.createElement('tr');
+                const attachmentHtml = exp.billUrl ? `<a href="${exp.billUrl}" target="_blank" title="View Attachment"><i data-lucide="external-link" style="width: 16px; height: 16px; color: #3b82f6;"></i></a>` : '';
+                const gstHtml = exp.gstNumber ? `<span style="font-size:0.78rem; font-family: monospace; color:#475569; background:#f1f5f9; padding: 2px 6px; border-radius:4px;">${exp.gstNumber}</span>` : '-';
                 tr.innerHTML = `
                     <td>${new Date(exp.date).toLocaleDateString('en-GB')}</td>
                     <td style="font-weight: 500;">${exp.account}</td>
                     <td>${exp.vendor || '-'}</td>
+                    <td>${gstHtml}</td>
                     <td>${exp.reference || '-'}</td>
                     <td style="text-align: right; font-weight: 700; color: var(--danger);">₹ ${exp.amount.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
-                    <td style="text-align: center;">
+                    <td style="text-align: center; display: flex; justify-content: center; gap: 8px;">
+                        ${attachmentHtml}
                         <button onclick="deleteExpense('${exp.id}')" class="btn-remove" title="Delete Expense">
                             <i data-lucide="trash-2" style="width: 16px; height: 16px; color: var(--danger);"></i>
                         </button>
@@ -339,20 +352,52 @@
             lucide.createIcons();
         }
 
-        function saveExpense() {
+        async function saveExpense() {
             const date = document.getElementById('exp-date').value;
             const account = document.getElementById('exp-account').value;
             const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
             const paidThrough = document.getElementById('exp-paidthrough').value;
-            const vendor = document.getElementById('exp-vendor').value;
+            const vendor = document.getElementById('exp-vendor').value.trim();
+            const gstNumber = document.getElementById('exp-gst').value.trim().toUpperCase();
             const ref = document.getElementById('exp-ref').value;
             const notes = document.getElementById('exp-notes').value;
+            const fileInput = document.getElementById('exp-bill');
 
             if (!date || !account || amount <= 0) {
                 return alert("Please fill the required fields: Date, Expense Account, and a valid Amount.");
             }
 
+            // Optional GST format validation (15-char alphanumeric)
+            if (gstNumber && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstNumber)) {
+                return alert("GST Number format is invalid. It should be 15 characters (e.g. 22AAAAA0000A1Z5). Leave blank if not applicable.");
+            }
+
             const expId = 'EXP-' + String(Date.now()).slice(-8);
+
+            // Handle Supabase Bucket File Upload if any
+            let billPubUrl = null;
+            if (fileInput.files.length > 0) {
+                const saveBtn = document.querySelector('button[onclick="saveExpense()"]');
+                const prevText = saveBtn.innerText;
+                saveBtn.innerText = "Uploading..."; saveBtn.disabled = true;
+
+                try {
+                    const file = fileInput.files[0];
+                    const safeName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.-]/g, '');
+                    const { data, error } = await window.supabase.storage.from('bills').upload(safeName, file);
+                    if (error) {
+                        alert("File sync failed: " + error.message);
+                        saveBtn.innerText = prevText; saveBtn.disabled = false;
+                        return;
+                    }
+                    const urlData = window.supabase.storage.from('bills').getPublicUrl(safeName);
+                    billPubUrl = urlData.data.publicUrl;
+                } catch(err) {
+                    console.error("Upload crash:", err);
+                }
+
+                saveBtn.innerText = prevText; saveBtn.disabled = false;
+            }
 
             // Record Expense
             expenses.unshift({
@@ -362,8 +407,10 @@
                 amount: amount,
                 paidThrough: paidThrough,
                 vendor: vendor,
+                gstNumber: gstNumber || null,
                 reference: ref,
-                notes: notes
+                notes: notes,
+                billUrl: billPubUrl
             });
             localStorage.setItem('manti_expenses', JSON.stringify(expenses));
 
@@ -373,7 +420,7 @@
                 id: 'JV-' + expId,
                 date: date,
                 reference: ref || expId,
-                notes: notes || `Expense: ${account} ${vendor ? ' - ' + vendor : ''}`,
+                notes: notes || `Expense: ${account}${vendor ? ' - ' + vendor : ''}${gstNumber ? ' (GST: ' + gstNumber + ')' : ''}`,
                 total: amount,
                 lines: [
                     { account: account, desc: notes, contact: vendor, debit: amount, credit: 0 },

@@ -253,7 +253,7 @@ async function syncKeyToSupabase(key, data) {
         } else if (key === 'manti_payments_made') {
             const dbPayments = data.map(p => ({
                 vendor: p.vendor || '', date: p.date, amount: parseFloat(p.amount) || 0,
-                mode: p.mode || '', reference: p.reference || '', applications: p.applications || []
+                mode: p.mode || '', reference: p.reference || '', applications: p.applications || [], bill_url: p.billUrl || null
             }));
             if (dbPayments.length > 0) {
                 const { error: delErr } = await supabase.from('payments_made').delete().neq('vendor', 'NON_EXISTENT');
@@ -264,7 +264,8 @@ async function syncKeyToSupabase(key, data) {
         } else if (key === 'manti_expenses') {
             const dbExpenses = data.map(e => ({
                 id: e.id, date: e.date, expense_account: e.account || '', amount: parseFloat(e.amount) || 0,
-                paid_through: e.paidThrough || '', vendor: e.vendor || null, reference: e.reference || '', notes: e.notes || ''
+                paid_through: e.paidThrough || '', vendor: e.vendor || null, gst_number: e.gstNumber || null,
+                reference: e.reference || '', notes: e.notes || '', bill_url: e.billUrl || null
             }));
             if (dbExpenses.length > 0) {
                 const { error } = await supabase.from('expenses').upsert(dbExpenses, { onConflict: 'id' });
@@ -412,7 +413,7 @@ window.fetchEverythingFromCloud = async function () {
         if (paymentsData && paymentsData.length > 0) {
             const mappedPayments = paymentsData.map(p => ({
                 vendor: p.vendor, date: p.date, amount: p.amount, mode: p.mode,
-                reference: p.reference, applications: p.applications
+                reference: p.reference, applications: p.applications, billUrl: p.bill_url
             }));
             window.ERP_MEMORY.set('manti_payments_made', JSON.stringify(mappedPayments));
         }
@@ -423,7 +424,8 @@ window.fetchEverythingFromCloud = async function () {
             if (expensesData && expensesData.length > 0) {
                 const mappedExpenses = expensesData.map(e => ({
                     id: e.id, date: e.date, account: e.expense_account, amount: e.amount,
-                    paidThrough: e.paid_through, vendor: e.vendor, reference: e.reference, notes: e.notes
+                    paidThrough: e.paid_through, vendor: e.vendor, gstNumber: e.gst_number || null,
+                    reference: e.reference, notes: e.notes, billUrl: e.bill_url
                 }));
                 window.ERP_MEMORY.set('manti_expenses', JSON.stringify(mappedExpenses));
             }
