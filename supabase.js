@@ -166,8 +166,10 @@ async function syncKeyToSupabase(key, data) {
         if (key === 'manti_order_records') {
             const dbOrders = data.map(o => ({
                 order_number: o.id, type: o.type, date: o.date, due_date: o.dueDate || null,
-                customer_name: o.vendor || o.customer || '', product_name: o.product || '',
-                total_weight: parseFloat(o.qty || o.weight) || 0, weight_unit: 'g', remark: o.remark || '-'
+                customer_name: o.customer || '', vendor_id: o.vendor || '', product_name: o.product || '',
+                total_weight: parseFloat(o.qty || o.weight) || 0, weight_unit: 'g', remark: o.remark || '-',
+                total_amount: parseFloat(o.amount) || 0, paid_amount: parseFloat(o.paidAmount) || 0,
+                status: o.status || 'Draft'
             }));
             if (dbOrders.length > 0) {
                 const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
@@ -321,7 +323,8 @@ window.fetchEverythingFromCloud = async function () {
         if (ordersData) {
             const mappedOrders = ordersData.map(o => ({
                 id: o.order_number, type: o.type, date: o.date, dueDate: o.due_date,
-                customer: o.customer_name, product: o.product_name, weight: o.total_weight,
+                customer: o.customer_name, vendor: o.vendor_id, product: o.product_name, weight: o.total_weight,
+                amount: o.total_amount, paidAmount: o.paid_amount, status: o.status,
                 unit: o.weight_unit, remark: o.remark, timestamp: o.created_at
             }));
             window.ERP_MEMORY.set('manti_order_records', JSON.stringify(mappedOrders));
@@ -407,14 +410,16 @@ window.fetchEverythingFromCloud = async function () {
         }
 
         // 10. Fetch Expenses
-        const { data: expensesData } = await supabase.from('expenses').select('*');
-        if (expensesData && expensesData.length > 0) {
-            const mappedExpenses = expensesData.map(e => ({
-                id: e.id, date: e.date, account: e.expense_account, amount: e.amount,
-                paidThrough: e.paid_through, vendor: e.vendor, reference: e.reference, notes: e.notes
-            }));
-            window.ERP_MEMORY.set('manti_expenses', JSON.stringify(mappedExpenses));
-        }
+        try {
+            const { data: expensesData } = await supabase.from('expenses').select('*');
+            if (expensesData && expensesData.length > 0) {
+                const mappedExpenses = expensesData.map(e => ({
+                    id: e.id, date: e.date, account: e.expense_account, amount: e.amount,
+                    paidThrough: e.paid_through, vendor: e.vendor, reference: e.reference, notes: e.notes
+                }));
+                window.ERP_MEMORY.set('manti_expenses', JSON.stringify(mappedExpenses));
+            }
+        } catch(e) { console.warn("Supabase expenses table missing. Skipping..."); }
 
         // 11. Fetch Journal Entries
         const { data: journalsData } = await supabase.from('journal_entries').select('*');
