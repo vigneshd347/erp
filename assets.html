@@ -153,6 +153,7 @@
                 <table id="assets-table">
                     <thead>
                         <tr>
+                            <th width="40" style="text-align: center;"><input type="checkbox" id="select-all-pending" onchange="toggleSelectAllPending(this)"></th>
                             <th width="50">Sr</th>
                             <th width="150">Purchase Date</th>
                             <th>Asset Name / Description</th>
@@ -319,8 +320,11 @@
                         displayCurrentValue = '₹ ' + (curVal > 0 ? curVal.toFixed(2) : '0.00');
                     }
 
+                    const hasCheckbox = a.status === 'Pending Approval' ? `<input type="checkbox" class="asset-select-cb" value="${a.id}" onchange="updateBulkApproveBtn()">` : '';
+
                     tbody.innerHTML += `
                         <tr>
+                            <td style="text-align: center;">${hasCheckbox}</td>
                             <td>${index + 1}</td>
                             <td>${a.date}</td>
                             <td style="text-align: left; padding-left: 15px;"><strong>${a.name}</strong><br><span style="font-size:0.75rem; color:#666;">ID: ${a.id}</span></td>
@@ -381,23 +385,69 @@
                     }
                 };
 
+                // Select All Checkbox logic
+                window.toggleSelectAllPending = function(source) {
+                    const checkboxes = document.querySelectorAll('.asset-select-cb');
+                    checkboxes.forEach(cb => {
+                        cb.checked = source.checked;
+                    });
+                    updateBulkApproveBtn();
+                };
+
+                // Update bulk approve button text / visibility
+                window.updateBulkApproveBtn = function() {
+                    const selectedCount = document.querySelectorAll('.asset-select-cb:checked').length;
+                    const pendingCount = document.querySelectorAll('.asset-select-cb').length; // Total pending shown
+                    const bulkBtn = document.getElementById('bulk-approve-btn');
+                    
+                    if (bulkBtn) {
+                        if (pendingCount > 0) {
+                            bulkBtn.style.display = 'inline-block';
+                            bulkBtn.innerHTML = selectedCount > 0 ? `Approve Selected (${selectedCount})` : `Approve All Pending (${pendingCount})`;
+                        } else {
+                            bulkBtn.style.display = 'none';
+                        }
+                    }
+                };
+
                 window.bulkApproveAssets = function() {
                     let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
-                    const pendingCount = assets.filter(a => a.status === 'Pending Approval').length;
+                    const selectedCheckboxes = document.querySelectorAll('.asset-select-cb:checked');
                     
-                    if (pendingCount === 0) return;
-                    
-                    if(confirm(`Are you sure you want to approve all ${pendingCount} pending assets?`)) {
-                        assets.forEach(a => {
-                            if (a.status === 'Pending Approval') {
-                                a.status = 'Active';
+                    if (selectedCheckboxes.length > 0) {
+                        // User selected specific assets
+                        if(confirm(`Are you sure you want to approve ${selectedCheckboxes.length} selected asset(s)?`)) {
+                            const idsToApprove = Array.from(selectedCheckboxes).map(cb => cb.value);
+                            assets.forEach(a => {
+                                if (idsToApprove.includes(a.id) && a.status === 'Pending Approval') {
+                                    a.status = 'Active';
+                                }
+                            });
+                            localStorage.setItem('manti_assets', JSON.stringify(assets));
+                            if(window.supabase && window.syncKeyToSupabase) {
+                                window.syncKeyToSupabase('manti_assets', assets);
                             }
-                        });
-                        localStorage.setItem('manti_assets', JSON.stringify(assets));
-                        if(window.supabase && window.syncKeyToSupabase) {
-                            window.syncKeyToSupabase('manti_assets', assets);
+                            document.getElementById('select-all-pending').checked = false;
+                            loadAssets();
                         }
-                        loadAssets();
+                    } else {
+                        // User clicked it when nothing was selected (Approve All)
+                        const pendingCount = assets.filter(a => a.status === 'Pending Approval').length;
+                        if (pendingCount === 0) return;
+                        
+                        if(confirm(`No specific items selected. Are you sure you want to approve ALL ${pendingCount} pending assets?`)) {
+                            assets.forEach(a => {
+                                if (a.status === 'Pending Approval') {
+                                    a.status = 'Active';
+                                }
+                            });
+                            localStorage.setItem('manti_assets', JSON.stringify(assets));
+                            if(window.supabase && window.syncKeyToSupabase) {
+                                window.syncKeyToSupabase('manti_assets', assets);
+                            }
+                            document.getElementById('select-all-pending').checked = false;
+                            loadAssets();
+                        }
                     }
                 };
 
