@@ -589,6 +589,23 @@
             });
 
             renderTable();
+
+            // Handle Sell Asset via URL
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'sellAsset') {
+                const assetId = params.get('id');
+                const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                const asset = assets.find(a => a.id === assetId);
+                if (asset) {
+                    toggleBtn.click(); // Open form
+                    document.getElementById('ord-product').value = `Selling Asset: ${asset.name} (${asset.id})`;
+                    document.getElementById('ord-qty').value = 1;
+                    document.getElementById('ord-amount').value = asset.scrapValue || asset.value || '';
+                    document.getElementById('ord-main-metal-type').value = 'Others';
+                    document.getElementById('ord-remark').value = 'Sale of existing corporate asset';
+                    window.history.replaceState({}, document.title, "sales-orders.html");
+                }
+            }
         });
     </script>
     <script src="liquid-button.js"></script>

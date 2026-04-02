@@ -489,6 +489,28 @@
         // Initialize table
         window.addEventListener('CloudDataLoaded', () => {
             renderChallanTable();
+
+            // Handle Service Asset via URL
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'serviceAsset') {
+                const assetId = params.get('id');
+                const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                const asset = assets.find(a => a.id === assetId);
+                if (asset) {
+                    showNewChallanForm();
+                    setTimeout(() => {
+                        const firstRowTextarea = document.querySelector('#challan-items-body tr textarea');
+                        if (firstRowTextarea) {
+                            firstRowTextarea.value = `Asset for Service (Returnable): ${asset.name} (${asset.id})`;
+                        }
+                        const notes = document.getElementById('challan-notes');
+                        if (notes) {
+                            notes.value = "RETURNABLE GATE PASS\nMaterial sent for servicing/repair. Expected to be returned.";
+                        }
+                    }, 50);
+                    window.history.replaceState({}, document.title, "delivery-challans.html");
+                }
+            }
         });
     </script>
     <script src="liquid-button.js"></script>

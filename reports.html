@@ -1464,6 +1464,7 @@
                             <th>Purchase Date</th>
                             <th style="text-align: right;">Purchase Value (₹)</th>
                             <th style="text-align: right;">Current Book Value (₹)</th>
+                            <th style="text-align: right;">Scrap Val (₹)</th>
                             <th style="text-align: center;">Status</th>
                         </tr>
                     `;
@@ -1478,7 +1479,11 @@
                             
                             // Calculation logic from assets.html
                             let currentVal = val;
-                            if (ast.depreciation && ast.date) {
+                            let scrapValDisplay = '-';
+                            if (ast.status === 'Scrapped') {
+                                currentVal = 0; // Scrapped assets don't hold active book value
+                                scrapValDisplay = '₹' + (parseFloat(ast.scrapValue) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2});
+                            } else if (ast.depreciation && ast.date) {
                                 const purchaseDate = new Date(ast.date);
                                 const today = new Date();
                                 const years = (today - purchaseDate) / (1000 * 60 * 60 * 24 * 365.25);
@@ -1489,6 +1494,11 @@
                             }
                             
                             totalValue += currentVal;
+                            
+                            let statusBadge = `background:#fef9c3; color:#ca8a04;`; // Default Pending
+                            if (ast.status === 'Active') statusBadge = `background:#dcfce7; color:#16a34a;`;
+                            else if (ast.status === 'Scrapped') statusBadge = `background:#fee2e2; color:#ef4444;`;
+                            else if (ast.status === 'Sold') statusBadge = `background:#dbeafe; color:#3b82f6;`;
 
                             reportBody.innerHTML += `
                                 <tr>
@@ -1497,10 +1507,10 @@
                                     <td><span style="background:#f3f4f6; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">${ast.category || 'Other'}</span></td>
                                     <td>${ast.date || '-'}</td>
                                     <td style="text-align: right;">₹${val.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                                    <td style="text-align: right; font-weight: 700; color: #16a34a;">₹${currentVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    <td style="text-align: right; font-weight: 700; color: #16a34a;">${currentVal > 0 ? '₹' + currentVal.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '-'}</td>
+                                    <td style="text-align: right; font-weight: 600; color: #ef4444;">${scrapValDisplay}</td>
                                     <td style="text-align: center;">
-                                        <span style="font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; 
-                                              ${ast.status === 'Active' ? 'background:#dcfce7; color:#16a34a;' : 'background:#fef9c3; color:#ca8a04;'}">
+                                        <span style="font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; ${statusBadge}">
                                             ${ast.status}
                                         </span>
                                     </td>
@@ -1511,8 +1521,9 @@
                         // Summary Row
                         reportBody.innerHTML += `
                             <tr style="background: #f9fafb; font-weight: 700;">
-                                <td colspan="5" style="text-align: right;">Total Asset Valuation:</td>
+                                <td colspan="5" style="text-align: right;">Total Active Asset Valuation:</td>
                                 <td style="text-align: right; color: #16a34a; font-size: 1rem;">₹${totalValue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                <td></td>
                                 <td></td>
                             </tr>
                         `;
@@ -1727,6 +1738,7 @@
                     let cogs = 0;
                     let opExpenses = 0;
                     let depreciation = 0;
+                    let scrapRevenue = 0;
 
                     orders.forEach(o => {
                         if (o.status === 'Cancelled' || !isWithinDateFilter(o.date)) return;
@@ -1751,12 +1763,23 @@
                                 const currentVal = val * Math.pow((1 - rate), years);
                                 depreciation += (val - currentVal); // Total depreciation since purchase
                             }
+                        } else if (ast.status === 'Scrapped' && ast.scrapValue) {
+                            scrapRevenue += parseFloat(ast.scrapValue) || 0;
                         }
                     });
 
-                    const grossProfit = revenue - cogs;
+                    const grossProfit = (revenue + scrapRevenue) - cogs;
                     const totalExpenses = opExpenses + depreciation;
                     const netProfit = grossProfit - totalExpenses;
+
+                    let scrapHtml = '';
+                    if (scrapRevenue > 0) {
+                        scrapHtml = `
+                        <tr>
+                            <td style="padding-left: 30px;">Asset Scrap Realization</td>
+                            <td style="text-align: right;">${scrapRevenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>`;
+                    }
 
                     reportBody.innerHTML = `
                         <tr style="background: #f8fafc; font-weight: 700;">
@@ -1766,9 +1789,10 @@
                             <td style="padding-left: 30px;">Sales Revenue (Sales Orders)</td>
                             <td style="text-align: right;">${revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
+                        ${scrapHtml}
                         <tr style="border-top: 2px solid #e5e7eb; font-weight: 700; background: #f1f5f9;">
                             <td>Total Income (A)</td>
-                            <td style="text-align: right;">${revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            <td style="text-align: right;">${(revenue + scrapRevenue).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
 
                         <tr style="background: #f8fafc; font-weight: 700; margin-top: 10px;">

@@ -108,6 +108,7 @@
                             <th width="150">Metal Type</th>
                             <th width="100">Weight (g)</th>
                             <th>Remarks</th>
+                            <th width="80" style="text-align: center;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="stock-body">
@@ -159,6 +160,8 @@
                         silver_925: 'Silver (925)'
                     };
 
+                    const indexToDelete = history.indexOf(rec);
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${rec.date}</td>
@@ -166,10 +169,29 @@
                         <td style="font-weight: 600;">${metalMap[rec.metal] || rec.metal}</td>
                         <td style="color: ${color}; font-weight: 700;">${parseFloat(rec.weight).toFixed(3)}</td>
                         <td>${rec.note || '-'}</td>
+                        <td style="text-align: center;">
+                            <button type="button" class="btn-remove-sm" onclick="deleteAdjustment(${indexToDelete})" title="Delete Record" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;padding:4px;">✕</button>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 });
             }
+
+            window.deleteAdjustment = function(index) {
+                if (confirm("Are you sure you want to delete this stock adjustment? This will revert the metal balance.")) {
+                    const rec = history[index];
+                    const metal = rec.metal;
+                    const weight = parseFloat(rec.weight) || 0;
+                    
+                    balances[metal] = (balances[metal] || 0) - weight;
+                    history.splice(index, 1);
+                    
+                    localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+                    localStorage.setItem('manti_stock_history', JSON.stringify(history));
+                    
+                    renderData();
+                }
+            };
 
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
