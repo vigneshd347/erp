@@ -11,6 +11,10 @@ CREATE TABLE IF NOT EXISTS public.orders (
     customer_name TEXT NOT NULL,
     product_name TEXT NOT NULL,
     total_weight NUMERIC NOT NULL,
+    total_amount NUMERIC DEFAULT 0,
+    paid_amount NUMERIC DEFAULT 0,
+    status TEXT DEFAULT 'Open',
+    vendor_id TEXT,
     weight_unit TEXT NOT NULL,
     remark TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -258,3 +262,10 @@ CREATE TABLE IF NOT EXISTS public.expenses (
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Enable all for anon" ON public.expenses;
 CREATE POLICY "Enable all for anon" ON public.expenses FOR ALL USING (true) WITH CHECK (true);
+
+-- FIX: Orders table missing financial columns for Dashboard Charts
+ALTER TABLE public.orders 
+ADD COLUMN IF NOT EXISTS total_amount NUMERIC DEFAULT 0,
+ADD COLUMN IF NOT EXISTS paid_amount NUMERIC DEFAULT 0,
+ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Open',
+ADD COLUMN IF NOT EXISTS vendor_id TEXT;
