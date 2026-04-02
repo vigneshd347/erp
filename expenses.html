@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Record Expense</title>
+    <link rel="stylesheet" href="style.css?v=20">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .pay-header {
+            background: #f8fafc;
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pay-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            padding: 2rem 30px;
+            background: white;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .pay-input {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-top: 6px;
+            background: #fff;
+        }
+        
+        .pay-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }
+
+        .amount-highlight {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--danger);
+            background: #fef2f2;
+            border-color: var(--danger);
+        }
+
+        .table-container {
+            padding: 2rem 30px;
+        }
+        
+        .expenses-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .expenses-table th {
+            background: #f8fafc;
+            padding: 12px;
+            text-align: left;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .expenses-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+    </style>
+    <!-- Supabase Cloud Sync -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group open">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested">Payments Made</a>
+                        <a href="expenses.html" class="nav-item nested active">Expenses</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; display: flex; flex-direction: column; background: #f1f5f9;">
+            <div class="pay-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="background: var(--danger-light); color: var(--danger); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="receipt"></i>
+                    </div>
+                    <h1 style="font-size: 1.5rem; color: #0f172a; margin: 0;">Record Expense</h1>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-liquid btn-secondary" onclick="document.getElementById('expense-form').reset()">Clear</button>
+                    <button type="button" class="btn-liquid btn-primary" onclick="saveExpense()">Save Expense</button>
+                </div>
+            </div>
+
+            <div style="flex: 1; padding: 30px; overflow-y: auto;">
+                <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; margin-bottom: 2rem;">
+                    
+                    <form id="expense-form" class="pay-meta-grid">
+                        <!-- Left Column -->
+                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Date <span style="color:#ef4444;">*</span></label>
+                                <input type="date" id="exp-date" class="pay-input" required>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Expense Account <span style="color:#ef4444;">*</span></label>
+                                <select id="exp-account" class="pay-input" required>
+                                    <option value="">Select Category...</option>
+                                    <optgroup label="Operating Expenses">
+                                        <option value="Meals and Entertainment">Meals and Entertainment</option>
+                                        <option value="Travel Expense">Travel Expense</option>
+                                        <option value="Office Supplies">Office Supplies</option>
+                                        <option value="Utilities">Utilities</option>
+                                        <option value="Rent Expense">Rent Expense</option>
+                                        <option value="Telephone & Internet">Telephone & Internet</option>
+                                        <option value="Advertising">Advertising</option>
+                                        <option value="Repairs and Maintenance">Repairs and Maintenance</option>
+                                    </optgroup>
+                                    <optgroup label="Cost of Goods Sold">
+                                        <option value="Cost of Goods Sold">Cost of Goods Sold</option>
+                                        <option value="Materials">Materials / Consumables</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Amount (₹) <span style="color:#ef4444;">*</span></label>
+                                <input type="number" id="exp-amount" class="pay-input amount-highlight" placeholder="0.00" required>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Paid Through <span style="color:#ef4444;">*</span></label>
+                                <select id="exp-paidthrough" class="pay-input" required>
+                                    <option value="Petty Cash">Cash / Petty Cash</option>
+                                    <option value="Bank Account">Bank Account</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Vendor <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
+                                <input type="text" id="exp-vendor" class="pay-input" list="supplier-list" placeholder="Select or type vendor name" autocomplete="off">
+                                <datalist id="supplier-list"></datalist>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Reference#</label>
+                                <input type="text" id="exp-ref" class="pay-input" placeholder="e.g. Receipt No. or Invoice No.">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Notes</label>
+                                <textarea id="exp-notes" class="pay-input" rows="4" placeholder="Description of the expense..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <h2 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 1rem;">Recent Expenses</h2>
+                <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;">
+                    <table class="expenses-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Expense Account</th>
+                                <th>Vendor</th>
+                                <th>Reference#</th>
+                                <th style="text-align: right;">Amount</th>
+                                <th style="width: 80px; text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-body">
+                            <!-- Rows generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script src="script.js?v=25"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script>
+        let expenses = [];
+
+        document.addEventListener('CloudDataLoaded', () => {
+            document.getElementById('exp-date').valueAsDate = new Date();
+            expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+            
+            // Populate Supplier list for optional vendor reference
+            const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+            const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]');
+            const allContacts = suppliers.concat(vendors);
+            
+            const datalist = document.getElementById('supplier-list');
+            allContacts.forEach(v => {
+                if (v.name) {
+                    const opt = document.createElement('option');
+                    opt.value = v.id ? `${v.name} (${v.id})` : v.name;
+                    datalist.appendChild(opt);
+                }
+            });
+
+            renderExpensesTable();
+        });
+
+        function renderExpensesTable() {
+            const tbody = document.getElementById('expenses-body');
+            tbody.innerHTML = '';
+            
+            if (expenses.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">No expenses recorded yet.</td></tr>';
+                return;
+            }
+
+            // Sort by date descending
+            const sorted = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            sorted.forEach(exp => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${new Date(exp.date).toLocaleDateString('en-GB')}</td>
+                    <td style="font-weight: 500;">${exp.account}</td>
+                    <td>${exp.vendor || '-'}</td>
+                    <td>${exp.reference || '-'}</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--danger);">₹ ${exp.amount.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                    <td style="text-align: center;">
+                        <button onclick="deleteExpense('${exp.id}')" class="btn-remove" title="Delete Expense">
+                            <i data-lucide="trash-2" style="width: 16px; height: 16px; color: var(--danger);"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function saveExpense() {
+            const date = document.getElementById('exp-date').value;
+            const account = document.getElementById('exp-account').value;
+            const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
+            const paidThrough = document.getElementById('exp-paidthrough').value;
+            const vendor = document.getElementById('exp-vendor').value;
+            const ref = document.getElementById('exp-ref').value;
+            const notes = document.getElementById('exp-notes').value;
+
+            if (!date || !account || amount <= 0) {
+                return alert("Please fill the required fields: Date, Expense Account, and a valid Amount.");
+            }
+
+            const expId = 'EXP-' + String(Date.now()).slice(-8);
+
+            // Record Expense
+            expenses.unshift({
+                id: expId,
+                date: date,
+                account: account,
+                amount: amount,
+                paidThrough: paidThrough,
+                vendor: vendor,
+                reference: ref,
+                notes: notes
+            });
+            localStorage.setItem('manti_expenses', JSON.stringify(expenses));
+
+            // Record double-entry Journal
+            const journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+            journals.push({
+                id: 'JV-' + expId,
+                date: date,
+                reference: ref || expId,
+                notes: notes || `Expense: ${account} ${vendor ? ' - ' + vendor : ''}`,
+                total: amount,
+                lines: [
+                    { account: account, desc: notes, contact: vendor, debit: amount, credit: 0 },
+                    { account: paidThrough, desc: notes, contact: vendor, debit: 0, credit: amount }
+                ],
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+
+            alert(`Expense of ₹ ${amount.toFixed(2)} recorded successfully.`);
+            document.getElementById('expense-form').reset();
+            document.getElementById('exp-date').valueAsDate = new Date();
+            renderExpensesTable();
+        }
+
+        window.deleteExpense = function (id) {
+            if (confirm("Are you sure you want to delete this expense? This will NOT delete the generated journal entry automatically.")) {
+                expenses = expenses.filter(e => e.id !== id);
+                localStorage.setItem('manti_expenses', JSON.stringify(expenses));
+                renderExpensesTable();
+            }
+        };
+    </script>
+</body>
+</html>

@@ -241,3 +241,20 @@ CREATE POLICY "Enable all for anon" ON public.bank_accounts FOR ALL USING (true)
 ALTER TABLE public.stock_history ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Enable all for anon" ON public.stock_history;
 CREATE POLICY "Enable all for anon" ON public.stock_history FOR ALL USING (true) WITH CHECK (true);
+
+-- 15. Create Expenses table
+CREATE TABLE IF NOT EXISTS public.expenses (
+    id TEXT PRIMARY KEY,
+    date DATE NOT NULL,
+    expense_account TEXT NOT NULL,
+    amount DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+    paid_through TEXT NOT NULL,
+    vendor TEXT,
+    reference TEXT,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.expenses;
+CREATE POLICY "Enable all for anon" ON public.expenses FOR ALL USING (true) WITH CHECK (true);

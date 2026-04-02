@@ -259,6 +259,15 @@ async function syncKeyToSupabase(key, data) {
                 const { error } = await supabase.from('payments_made').insert(dbPayments);
                 if (error) { console.error("Payments Sync Error:", error); alert("Failed to save Payments to Cloud: " + error.message); }
             }
+        } else if (key === 'manti_expenses') {
+            const dbExpenses = data.map(e => ({
+                id: e.id, date: e.date, expense_account: e.account || '', amount: parseFloat(e.amount) || 0,
+                paid_through: e.paidThrough || '', vendor: e.vendor || null, reference: e.reference || '', notes: e.notes || ''
+            }));
+            if (dbExpenses.length > 0) {
+                const { error } = await supabase.from('expenses').upsert(dbExpenses, { onConflict: 'id' });
+                if (error) { console.error("Expenses Sync Error:", error); alert("Failed to save Expenses to Cloud: " + error.message); }
+            }
         } else if (key === 'manti_journal_entries') {
             const dbJournals = data.map(j => ({
                 date: j.date, amount: parseFloat(j.amount) || 0, description: j.description || '', lines: j.lines || []
@@ -397,7 +406,17 @@ window.fetchEverythingFromCloud = async function () {
             window.ERP_MEMORY.set('manti_payments_made', JSON.stringify(mappedPayments));
         }
 
-        // 10. Fetch Journal Entries
+        // 10. Fetch Expenses
+        const { data: expensesData } = await supabase.from('expenses').select('*');
+        if (expensesData && expensesData.length > 0) {
+            const mappedExpenses = expensesData.map(e => ({
+                id: e.id, date: e.date, account: e.expense_account, amount: e.amount,
+                paidThrough: e.paid_through, vendor: e.vendor, reference: e.reference, notes: e.notes
+            }));
+            window.ERP_MEMORY.set('manti_expenses', JSON.stringify(mappedExpenses));
+        }
+
+        // 11. Fetch Journal Entries
         const { data: journalsData } = await supabase.from('journal_entries').select('*');
         if (journalsData && journalsData.length > 0) {
             const mappedJournals = journalsData.map(j => ({
@@ -430,7 +449,7 @@ window.fetchEverythingFromCloud = async function () {
             const ignoredKeys = [
                 'manti_vendor_kyc_records', 'manti_supplier_kyc_records', 'manti_staff_records',
                 'manti_assets', 'manti_delivery_challan_records', 'manti_payments_made',
-                'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history'
+                'manti_expenses', 'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history'
             ];
             settingsData.forEach(s => {
                 // To avoid overwriting dedicated fetches if they accidentally saved in settings earlier
