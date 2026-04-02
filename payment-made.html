@@ -213,10 +213,9 @@
                         <!-- Left Column -->
                         <div style="display: flex; flex-direction: column; gap: 1.2rem;">
                             <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Vendor <span style="color:#ef4444;">*</span></label>
-                                <select id="pay-vendor" class="pay-input" onchange="loadVendorBills()" required>
-                                    <option value="">Select Vendor</option>
-                                </select>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Supplier Name <span style="color:#ef4444;">*</span></label>
+                                <input type="text" id="pay-vendor" list="supplier-kyc-list" class="pay-input" placeholder="Select or Type Supplier Name" onchange="loadVendorBills()" required>
+                                <datalist id="supplier-kyc-list"></datalist>
                             </div>
                             <div>
                                 <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Payment Date <span style="color:#ef4444;">*</span></label>
@@ -274,7 +273,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="unpaid-bills-body">
-                                    <tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">Please select a vendor to view unpaid purchase orders.</td></tr>
+                                    <tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">Please select a supplier to view unpaid purchase orders.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -318,28 +317,34 @@
         document.addEventListener('CloudDataLoaded', () => {
             document.getElementById('pay-date').valueAsDate = new Date();
 
-            const vendorSelect = document.getElementById('pay-vendor');
-            if (vendors.length === 0) {
-                vendorSelect.innerHTML = '<option value="">No vendors found</option>';
-            } else {
+            const vendorList = document.getElementById('supplier-kyc-list');
+            if (vendors.length > 0) {
                 vendors.forEach(v => {
                     const opt = document.createElement('option');
-                    opt.value = v.id;
-                    opt.textContent = v.name ? `${v.name} (${v.id})` : v.id;
-                    vendorSelect.appendChild(opt);
+                    opt.value = v.name ? `${v.name} (${v.id})` : v.id;
+                    vendorList.appendChild(opt);
                 });
             }
         });
 
         function loadVendorBills() {
-            const vendorId = document.getElementById('pay-vendor').value;
+            let rawVendor = document.getElementById('pay-vendor').value.trim();
             const tbody = document.getElementById('unpaid-bills-body');
             
-            if (!vendorId) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">Please select a vendor to view unpaid purchase orders.</td></tr>';
+            if (!rawVendor) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">Please select a supplier to view unpaid purchase orders.</td></tr>';
                 currentVendorOrders = [];
                 calculateSummary();
                 return;
+            }
+
+            let vendorId = rawVendor;
+            const match = rawVendor.match(/\(([^)]+)\)$/);
+            if (match) {
+                vendorId = match[1];
+            } else {
+                const found = vendors.find(v => v.name && v.name.toLowerCase() === rawVendor.toLowerCase());
+                if (found) vendorId = found.id;
             }
 
             // Find all POs for this vendor
@@ -455,7 +460,18 @@
         }
 
         function savePayment() {
-            const vendor = document.getElementById('pay-vendor').value;
+            let rawVendor = document.getElementById('pay-vendor').value.trim();
+            if (!rawVendor) return alert("Please select a supplier.");
+            
+            let vendorId = rawVendor;
+            const match = rawVendor.match(/\(([^)]+)\)$/);
+            if (match) {
+                vendorId = match[1];
+            } else {
+                const found = vendors.find(v => v.name && v.name.toLowerCase() === rawVendor.toLowerCase());
+                if (found) vendorId = found.id;
+            }
+
             const date = document.getElementById('pay-date').value;
             const account = document.getElementById('pay-account').value;
             const amountEntered = parseFloat(document.getElementById('pay-amount').value) || 0;
@@ -463,7 +479,6 @@
             const ref = document.getElementById('pay-ref').value;
             const notes = document.getElementById('pay-notes').value;
 
-            if (!vendor) return alert("Please select a vendor.");
             if (!date) return alert("Please select a payment date.");
             if (amountEntered <= 0) return alert("Please enter a valid amount.");
 
@@ -511,15 +526,15 @@
             const jvLines = [
                 {
                     account: account, // e.g. "Bank" or "Cash" (Credit decreases asset)
-                    desc: `Payment to ${vendor} via ${mode}`,
-                    contact: vendor,
+                    desc: `Payment to ${rawVendor} via ${mode}`,
+                    contact: vendorId,
                     debit: 0,
                     credit: amountEntered
                 },
                 {
                     account: 'Accounts Payable', // Debit decreases liability
-                    desc: `Payment to ${vendor} via ${mode}`,
-                    contact: vendor,
+                    desc: `Payment to ${rawVendor} via ${mode}`,
+                    contact: vendorId,
                     debit: amountEntered,
                     credit: 0
                 }
@@ -539,9 +554,9 @@
 
             // 3. Record Payment Made
             const payments = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
-            payments.push({
-                id: 'PMT-' + Date.now(),
-                vendor: vendor,
+            const paymentObj = {
+                id: 'PAY-' + Date.now().toString().slice(-6),
+                vendor: vendorId,
                 date: date,
                 amount: amountEntered,
                 mode: mode,
@@ -549,7 +564,8 @@
                 applications: applications,
                 account: account,
                 notes: notes
-            });
+            };
+            payments.push(paymentObj);
             localStorage.setItem('manti_payments_made', JSON.stringify(payments));
 
             alert(`Payment of ₹ ${amountEntered.toFixed(2)} recorded successfully.`);
