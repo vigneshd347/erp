@@ -230,7 +230,7 @@
                     <a href="purchases.html" class="quick-btn" style="background: var(--accent-light); color: var(--accent); border:none; padding:10px 16px;"><i data-lucide="shopping-cart" style="width:16px;height:16px;"></i> New PO</a>
                     <a href="sales-orders.html" class="quick-btn" style="background: var(--accent-light); color: var(--accent); border:none; padding:10px 16px;"><i data-lucide="shopping-bag" style="width:16px;height:16px;"></i> New SO</a>
                     <a href="payment-made.html" class="quick-btn" style="background: var(--accent-light); color: var(--accent); border:none; padding:10px 16px;"><i data-lucide="credit-card" style="width:16px;height:16px;"></i> Record Payment</a>
-                        <a href="expenses.html" class="nav-item nested ">Expenses</a>
+                        <a href="expenses.html" class="quick-btn" style="background: var(--accent-light); color: var(--accent); border:none; padding:10px 16px;"><i data-lucide="receipt" style="width:16px;height:16px;"></i> Add Expense</a>
                     <a href="journal-entry.html" class="quick-btn" style="background: var(--accent-light); color: var(--accent); border:none; padding:10px 16px;"><i data-lucide="book-open" style="width:16px;height:16px;"></i> Manual Journal</a>
                 </div>
             </div>
@@ -362,6 +362,13 @@
                 dateEl.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             }
 
+            // Load KYC Maps for Readable Names
+            const customerRecords = JSON.parse(localStorage.getItem('manti_customer_kyc_records') || '[]');
+            const supplierRecords = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+            const kycMap = {};
+            customerRecords.forEach(c => kycMap[c.id] = c.name);
+            supplierRecords.forEach(s => kycMap[s.id] = s.name);
+
             // Load orders data
             const orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
             const salesOrders = orders.filter(o => o.type === 'Sales Order');
@@ -408,11 +415,16 @@
                         daysStr = diffDays >= 0 ? `${diffDays} days` : 'Future';
                     }
                     
+                    let readableName = o.vendor;
+                    if (o.vendor && kycMap[o.vendor]) {
+                        readableName = `${kycMap[o.vendor]} (${o.vendor})`;
+                    }
+
                     tbody.innerHTML += `
                         <tr>
                             <td><strong>${o.id || '—'}</strong></td>
                             <td><span style="font-size:0.75rem;background:#f3f4f6;padding:2px 8px;border-radius:4px;">${o.type || '—'}</span></td>
-                            <td>${o.vendor || '—'}</td>
+                            <td>${readableName || '—'}</td>
                             <td style="font-weight:600;">${amountStr}</td>
                             <td><span class="status-pill" style="background:#fee2e2;color:#dc2626;white-space:nowrap;">Unpaid • ${daysStr}</span></td>
                         </tr>`;
@@ -450,7 +462,9 @@
             const customerTotals = {};
             salesOrders.forEach(o => {
                 if (!o.vendor || !o.amount || o.status === 'Cancelled') return;
-                customerTotals[o.vendor] = (customerTotals[o.vendor] || 0) + (parseFloat(o.amount) || 0);
+                let cName = o.vendor;
+                if (kycMap[o.vendor]) cName = kycMap[o.vendor];
+                customerTotals[cName] = (customerTotals[cName] || 0) + (parseFloat(o.amount) || 0);
             });
             const topCustomers = Object.entries(customerTotals).sort((a,b) => b[1] - a[1]).slice(0, 5);
 
