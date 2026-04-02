@@ -199,7 +199,28 @@
                 <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; margin-bottom: 2rem;">
                     
                     <form id="expense-form" class="pay-meta-grid">
-                        <!-- Left Column -->
+                        <!-- Left Column: Vendor & Meta -->
+                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Name / Business Name <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
+                                <input type="text" id="exp-vendor" class="pay-input" list="supplier-list" placeholder="Select or type name / business" autocomplete="off">
+                                <datalist id="supplier-list"></datalist>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Reference#</label>
+                                <input type="text" id="exp-ref" class="pay-input" placeholder="e.g. Receipt No. or Invoice No.">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Notes</label>
+                                <textarea id="exp-notes" class="pay-input" rows="3" placeholder="Description of the expense..."></textarea>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;"><i data-lucide="paperclip" style="width: 14px; margin-right: 4px; vertical-align: middle;"></i> Attach Bill <span style="font-weight: 400; color: #94a3b8;">(Optional)</span></label>
+                                <input type="file" id="exp-bill" class="pay-input" accept="image/*,.pdf" style="padding: 6px;">
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Core Logistics -->
                         <div style="display: flex; flex-direction: column; gap: 1.2rem;">
                             <div>
                                 <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Date <span style="color:#ef4444;">*</span></label>
@@ -231,34 +252,6 @@
                                     <option value="">Loading accounts...</option>
                                 </select>
                                 <span style="font-size:0.75rem; color:#94a3b8; margin-top:4px; display:block;">Add accounts in <a href="banking.html" style="color:var(--primary);">Banking</a></span>
-                            </div>
-                        </div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Paid Through <span style="color:#ef4444;">*</span></label>
-                                <select id="exp-paidthrough" class="pay-input" required>
-                                    <option value="">Loading accounts...</option>
-                                </select>
-                                <span style="font-size:0.75rem; color:#94a3b8; margin-top:4px; display:block;">Add accounts in <a href="banking.html" style="color:var(--primary);">Banking</a></span>
-                            </div>
-                        </div>
-
-                        <!-- Right Column -->
-                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Name / Business Name <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
-                                <input type="text" id="exp-vendor" class="pay-input" list="supplier-list" placeholder="Select or type name / business" autocomplete="off">
-                                <datalist id="supplier-list"></datalist>
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Reference#</label>
-                                <input type="text" id="exp-ref" class="pay-input" placeholder="e.g. Receipt No. or Invoice No.">
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Notes</label>
-                                <textarea id="exp-notes" class="pay-input" rows="3" placeholder="Description of the expense..."></textarea>
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;"><i data-lucide="paperclip" style="width: 14px; margin-right: 4px; vertical-align: middle;"></i> Attach Bill <span style="font-weight: 400; color: #94a3b8;">(Optional)</span></label>
-                                <input type="file" id="exp-bill" class="pay-input" accept="image/*,.pdf" style="padding: 6px;">
                             </div>
                         </div>
                     </form>
