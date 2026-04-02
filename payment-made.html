@@ -325,7 +325,7 @@
                 vendors.forEach(v => {
                     const opt = document.createElement('option');
                     opt.value = v.id;
-                    opt.textContent = v.id; // Usually vendor KYC id maps to their name
+                    opt.textContent = v.name ? `${v.name} (${v.id})` : v.id;
                     vendorSelect.appendChild(opt);
                 });
             }

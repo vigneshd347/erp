@@ -324,7 +324,7 @@
             vendors.forEach(v => {
                 const opt = document.createElement('option');
                 opt.value = v.id;
-                opt.textContent = v.id;
+                opt.textContent = v.name ? `${v.name} (${v.id})` : v.id;
                 vendorSelect.appendChild(opt);
             });
 
@@ -429,6 +429,9 @@
                 const search = (document.getElementById('search-orders')?.value || '').toLowerCase();
                 const emptyState = document.getElementById('so-empty-state');
                 const tableEl = document.getElementById('orders-table');
+                
+                const vendorMap = {};
+                vendors.forEach(v => vendorMap[v.id] = v.name);
 
                 const filtered = records.filter(rec => {
                     if (rec.type !== 'Sales Order') return false;
@@ -480,7 +483,7 @@
                             ${rec.dueDate ? `<div style="font-size:0.72rem;color:#ef4444;margin-top:2px;font-weight:600;">Due: ${rec.dueDate}</div>` : ''}
                         </td>
                         <td style="padding:13px 16px;">
-                            <div style="font-weight:600;color:#1f2937;font-size:0.9rem;">${rec.vendor || '—'}</div>
+                            <div style="font-weight:600;color:#1f2937;font-size:0.9rem;">${vendorMap[rec.vendor] || rec.vendor || '—'}</div>
                         </td>
                         <td style="padding:13px 16px;max-width:220px;">
                             <div style="font-size:0.85rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${rec.product || '—'}</div>
