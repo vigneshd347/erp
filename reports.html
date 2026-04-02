@@ -1377,11 +1377,17 @@
                     });
 
                     history.forEach(h => {
-                        const wt = Math.abs(parseFloat(h.weight) || 0);
-                        if (h.weight < 0) { 
-                            const m = (h.metal.includes('gold') ? 'Gold' : (h.metal.includes('silver') ? 'Silver' : 'Unknown'));
+                        const wt = parseFloat(h.weight) || 0;
+                        if (wt !== 0) {
+                            const metalStr = (h.metal || '').toLowerCase();
+                            const m = metalStr.includes('gold') ? 'Gold' : (metalStr.includes('silver') ? 'Silver' : 'Unknown');
                             initType(m, 'Metal');
-                            inventoryData[m]['Metal'].outflow += wt;
+                            
+                            if (wt < 0) {
+                                inventoryData[m]['Metal'].outflow += Math.abs(wt);
+                            } else {
+                                inventoryData[m]['Metal'].inflow += wt;
+                            }
                         }
                     });
 
