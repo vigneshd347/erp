@@ -164,13 +164,25 @@ async function syncKeyToSupabase(key, data) {
     if (!data) return;
     try {
         if (key === 'manti_order_records') {
-            const dbOrders = data.map(o => ({
-                order_number: o.id, type: o.type, date: o.date, due_date: o.dueDate || null,
-                customer_name: o.customer || '', vendor_id: o.vendor || '', product_name: o.product || '',
-                total_weight: parseFloat(o.qty || o.weight) || 0, weight_unit: 'g', remark: o.remark || '-',
-                total_amount: parseFloat(o.amount) || 0, paid_amount: parseFloat(o.paidAmount) || 0,
-                status: o.status || 'Draft'
-            }));
+            const dbOrders = data.map(o => {
+                const extendedData = {
+                    items: o.items || [],
+                    category: o.category || '',
+                    assetType: o.assetType || '',
+                    mainMetalType: o.mainMetalType || '',
+                    billNo: o.billNo || '',
+                    mcPercent: o.mcPercent || '',
+                    mcAmount: o.mcAmount || '',
+                    remark: o.remark || '-'
+                };
+                return {
+                    order_number: o.id, type: o.type, date: o.date, due_date: o.dueDate || null,
+                    customer_name: o.customer || '', vendor_id: o.vendor || '', product_name: o.product || '',
+                    total_weight: parseFloat(o.qty || o.weight) || 0, weight_unit: 'g', remark: JSON.stringify(extendedData),
+                    total_amount: parseFloat(o.amount) || 0, paid_amount: parseFloat(o.paidAmount) || 0,
+                    status: o.status || 'Draft'
+                };
+            });
             if (dbOrders.length > 0) {
                 const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
                 if (error) { console.error("Orders Sync Error:", error); alert("Failed to save Orders to Cloud: " + error.message); }
@@ -331,12 +343,31 @@ window.fetchEverythingFromCloud = async function () {
         // 1. Fetch Orders
         const { data: ordersData } = await supabase.from('orders').select('*');
         if (ordersData) {
-            const mappedOrders = ordersData.map(o => ({
-                id: o.order_number, type: o.type, date: o.date, dueDate: o.due_date,
-                customer: o.customer_name, vendor: o.vendor_id, product: o.product_name, weight: o.total_weight,
-                amount: o.total_amount, paidAmount: o.paid_amount, status: o.status,
-                unit: o.weight_unit, remark: o.remark, timestamp: o.created_at
-            }));
+            const mappedOrders = ordersData.map(o => {
+                let extended = {};
+                let remark = o.remark;
+                if (o.remark && o.remark.startsWith('{')) {
+                    try {
+                        extended = JSON.parse(o.remark);
+                        remark = extended.remark || '-';
+                    } catch(e) {}
+                }
+                
+                return {
+                    id: o.order_number, type: o.type, date: o.date, dueDate: o.due_date,
+                    customer: o.customer_name, vendor: o.vendor_id, product: o.product_name, 
+                    weight: o.total_weight, qty: o.total_weight,
+                    amount: o.total_amount, paidAmount: o.paid_amount, status: o.status,
+                    unit: o.weight_unit, remark: remark, timestamp: o.created_at,
+                    items: extended.items || [],
+                    category: extended.category || '',
+                    assetType: extended.assetType || '',
+                    mainMetalType: extended.mainMetalType || '',
+                    billNo: extended.billNo || '',
+                    mcPercent: extended.mcPercent || '',
+                    mcAmount: extended.mcAmount || ''
+                };
+            });
             window.ERP_MEMORY.set('manti_order_records', JSON.stringify(mappedOrders));
         }
 

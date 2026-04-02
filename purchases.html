@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js"></script>
+    <script src="supabase.js?v=2"></script>
 </head>
 
 <body>
@@ -729,6 +729,11 @@
 
             window.deleteRecord = function (index) {
                 if (confirm("Delete this order?")) {
+                    const rec = records[index];
+                    if (rec && rec.id && window.supabase) {
+                        window.supabase.from('orders').delete().match({ order_number: rec.id })
+                            .then(({error}) => { if (error) console.error("Cloud delete error", error); });
+                    }
                     records.splice(index, 1);
                     localStorage.setItem('manti_order_records', JSON.stringify(records));
                     renderTable();
@@ -773,6 +778,29 @@
                         if (addedCount > 0) {
                             localStorage.setItem('manti_assets', JSON.stringify(assets));
                             alert(`${addedCount} new Asset(s) successfully routed to Asset Management for Approval!`);
+                        }
+                    } else if (rec.type === 'Purchase Order' && rec.category === 'Stock') {
+                        const mainMetal = rec.mainMetalType || 'Gold';
+                        const mappedMetal = mainMetal === 'Silver' ? 'silver_925' : 'gold_22k';
+                        
+                        const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+                        const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {
+                            pure_gold: 0, gold_22k: 0, pure_silver: 0, silver_925: 0
+                        };
+
+                        const weightToAdd = parseFloat(rec.qty) || 0;
+                        if (weightToAdd > 0) {
+                            balances[mappedMetal] = (balances[mappedMetal] || 0) + weightToAdd;
+                            history.push({
+                                date: new Date().toISOString().split('T')[0],
+                                type: 'Buy',
+                                metal: mappedMetal,
+                                weight: weightToAdd,
+                                note: 'Auto PO: ' + rec.id
+                            });
+                            localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+                            localStorage.setItem('manti_stock_history', JSON.stringify(history));
+                            alert(`${weightToAdd}g added to ${mappedMetal.replace('_', ' ').toUpperCase()} Stock automatically.`);
                         }
                     }
 
