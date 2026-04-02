@@ -227,14 +227,14 @@
                             </div>
                             <div>
                                 <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Amount (₹) <span style="color:#ef4444;">*</span></label>
-                                <input type="number" id="exp-amount" class="pay-input amount-highlight" placeholder="0.00" required>
+                                <input type="number" id="exp-amount" class="pay-input amount-highlight" placeholder="0.00" required oninput="calcGST()">
                             </div>
                             <div>
                                 <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Paid Through <span style="color:#ef4444;">*</span></label>
                                 <select id="exp-paidthrough" class="pay-input" required>
-                                    <option value="Petty Cash">Cash / Petty Cash</option>
-                                    <option value="Bank Account">Bank Account</option>
+                                    <option value="">Loading accounts...</option>
                                 </select>
+                                <span style="font-size:0.75rem; color:#94a3b8; margin-top:4px; display:block;">Add accounts in <a href="banking.html" style="color:var(--primary);">Banking</a></span>
                             </div>
                         </div>
 
@@ -307,7 +307,22 @@
             document.getElementById('exp-date').valueAsDate = new Date();
             expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
             
-            // Populate Supplier list for optional vendor reference
+            // Populate Paid Through from actual bank accounts
+            const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
+            const paidThroughSelect = document.getElementById('exp-paidthrough');
+            paidThroughSelect.innerHTML = '';
+            if (bankAccounts.length === 0) {
+                paidThroughSelect.innerHTML = '<option value="Petty Cash">Cash / Petty Cash (default)</option><option value="Bank Account">Bank Account</option>';
+            } else {
+                bankAccounts.forEach(acc => {
+                    const opt = document.createElement('option');
+                    opt.value = acc.name;
+                    opt.textContent = `${acc.name}${acc.type ? ' (' + acc.type + ')' : ''}`;
+                    paidThroughSelect.appendChild(opt);
+                });
+            }
+
+            // Populate Name/Business list from KYC records
             const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
             const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]');
             const allContacts = suppliers.concat(vendors);
