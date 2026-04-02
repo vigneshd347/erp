@@ -271,6 +271,18 @@
                 lucide.createIcons();
             });
 
+            // GST -> PAN Auto Extraction
+            document.getElementById('v-gst').addEventListener('input', function(e) {
+                let val = e.target.value.trim().toUpperCase();
+                e.target.value = val;
+                if (val.length === 15) {
+                    let panField = document.getElementById('v-pan');
+                    if (!panField.value.trim()) {
+                        panField.value = val.substring(2, 12);
+                    }
+                }
+            });
+
             renderTable();
             lucide.createIcons();
         });
