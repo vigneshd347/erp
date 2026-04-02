@@ -264,7 +264,10 @@ async function syncKeyToSupabase(key, data) {
                 setting_key: key, setting_value: data, updated_at: new Date().toISOString()
             }, { onConflict: 'setting_key' });
         }
-    } catch (e) { console.error(`Failed to sync ${key}:`, e); }
+    } catch (e) { 
+        console.error(`Failed to sync ${key}:`, e); 
+        alert(`Cloud Sync Error for ${key}: ` + e.message + ".\nPlease ensure internet stability or check database configuration.");
+    }
 }
 
 // Global Cloud Fetcher
