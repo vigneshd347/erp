@@ -740,6 +740,66 @@
                 }
             };
 
+            function syncCompletedPO(rec) {
+                if (rec.status !== 'Completed') return;
+
+                if (rec.category === 'Assets' && rec.items && rec.items.length > 0) {
+                    let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                    let addedCount = 0;
+                    
+                    rec.items.forEach((it, i) => {
+                        const totalVal = parseFloat(it.total) || 0;
+                        const noteStr = 'Auto-added from PO: ' + rec.id;
+                        if (totalVal > 0 && !assets.some(a => a.notes && a.notes.includes(noteStr))) {
+                            assets.push({
+                                id: 'AST-' + Date.now().toString().slice(-6) + i,
+                                name: it.desc + (it.qty > 1 ? ` (Qty: ${it.qty})` : ''),
+                                category: rec.assetType || 'Other',     
+                                status: 'Pending Approval',
+                                date: rec.date,
+                                value: totalVal.toString(),
+                                notes: noteStr
+                            });
+                            addedCount++;
+                        }
+                    });
+                    
+                    if (addedCount > 0) {
+                        localStorage.setItem('manti_assets', JSON.stringify(assets));
+                        alert(`${addedCount} new Asset(s) routed to Asset Management for Approval!`);
+                    }
+                } else if (rec.category === 'Stock') {
+                    const mainMetal = rec.mainMetalType || 'Gold';
+                    const mappedMetal = mainMetal === 'Silver' ? 'silver_925' : 'gold_22k';
+                    
+                    const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+                    const noteStr = 'Auto PO: ' + rec.id;
+                    
+                    // Prevent duplicate stock addition
+                    if (!history.some(h => (h.note && h.note.includes(rec.id)) || (h.details && h.details.includes(rec.id)))) {
+                        const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {
+                            pure_gold: 0, gold_22k: 0, pure_silver: 0, silver_925: 0
+                        };
+
+                        const weightToAdd = parseFloat(rec.qty) || 0;
+                        if (weightToAdd > 0) {
+                            balances[mappedMetal] = (balances[mappedMetal] || 0) + weightToAdd;
+                            history.push({
+                                date: new Date().toISOString().split('T')[0],
+                                type: 'Buy',
+                                metal: mappedMetal,
+                                weight: weightToAdd,
+                                details: noteStr,
+                                note: noteStr
+                            });
+                            localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+                            localStorage.setItem('manti_stock_history', JSON.stringify(history));
+                            alert(`${weightToAdd}g added to ${mappedMetal.replace('_', ' ').toUpperCase()} Stock automatically.`);
+                        }
+                    }
+                }
+            }
+
             window.receiveOrder = function (index) {
                 const rec = records[index];
                 if (rec.type === 'Purchase Order' && !rec.billNo) {
@@ -753,56 +813,8 @@
 
                 if (confirm("Mark this order as Received / Completed? This will add the items to your Assets/Inventory if applicable.")) {
                     records[index].status = 'Completed';
-                    // Auto-Add to Assets if category is Assets
-                    if ((rec.type === 'Purchase Order' || rec.category === 'Assets') && rec.category === 'Assets' && rec.items && rec.items.length > 0) {
-                        let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
-                        let addedCount = 0;
-                        
-                        rec.items.forEach((it, i) => {
-                            const totalVal = parseFloat(it.total) || 0;
-                            const noteStr = 'Auto-added from PO: ' + rec.id;
-                            if (totalVal > 0 && !assets.some(a => a.notes && a.notes.includes(noteStr))) {
-                                assets.push({
-                                    id: 'AST-' + Date.now().toString().slice(-6) + i,
-                                    name: it.desc + (it.qty > 1 ? ` (Qty: ${it.qty})` : ''),
-                                    category: rec.assetType || 'Other',     
-                                    status: 'Pending Approval',
-                                    date: rec.date,
-                                    value: totalVal.toString(),
-                                    notes: noteStr
-                                });
-                                addedCount++;
-                            }
-                        });
-                        
-                        if (addedCount > 0) {
-                            localStorage.setItem('manti_assets', JSON.stringify(assets));
-                            alert(`${addedCount} new Asset(s) successfully routed to Asset Management for Approval!`);
-                        }
-                    } else if (rec.type === 'Purchase Order' && rec.category === 'Stock') {
-                        const mainMetal = rec.mainMetalType || 'Gold';
-                        const mappedMetal = mainMetal === 'Silver' ? 'silver_925' : 'gold_22k';
-                        
-                        const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
-                        const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {
-                            pure_gold: 0, gold_22k: 0, pure_silver: 0, silver_925: 0
-                        };
-
-                        const weightToAdd = parseFloat(rec.qty) || 0;
-                        if (weightToAdd > 0) {
-                            balances[mappedMetal] = (balances[mappedMetal] || 0) + weightToAdd;
-                            history.push({
-                                date: new Date().toISOString().split('T')[0],
-                                type: 'Buy',
-                                metal: mappedMetal,
-                                weight: weightToAdd,
-                                note: 'Auto PO: ' + rec.id
-                            });
-                            localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
-                            localStorage.setItem('manti_stock_history', JSON.stringify(history));
-                            alert(`${weightToAdd}g added to ${mappedMetal.replace('_', ' ').toUpperCase()} Stock automatically.`);
-                        }
-                    }
+                    // Auto-Add to Assets/Stock
+                    syncCompletedPO(records[index]);
 
                     localStorage.setItem('manti_order_records', JSON.stringify(records));
                     renderTable();
@@ -914,7 +926,7 @@
                     amount: totalAmount.toFixed(2),
                     remark: document.getElementById('ord-remark').value,
                     mainMetalType: mainMetal,
-                                        status: ordStatus
+                    status: ordStatus
                 };
 
                 if (editIndex >= 0) {
@@ -923,33 +935,8 @@
                     records.unshift(rec);
                 }
 
-                // Check and add assets safely without duplicates
-                if (rec.category === 'Assets' && rec.items && rec.items.length > 0) {
-                    let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
-                    let addedCount = 0;
-                    
-                    rec.items.forEach((it, i) => {
-                        const totalVal = parseFloat(it.total) || 0;
-                        const noteStr = 'Auto-added from PO: ' + rec.id;
-                        if (totalVal > 0 && !assets.some(a => a.notes && a.notes.includes(noteStr))) {
-                            assets.push({
-                                id: 'AST-' + Date.now().toString().slice(-6) + i,
-                                name: it.desc + (it.qty > 1 ? ` (Qty: ${it.qty})` : ''),
-                                category: rec.assetType || 'Other',     
-                                status: 'Pending Approval',
-                                date: rec.date,
-                                value: totalVal.toString(),
-                                notes: noteStr
-                            });
-                            addedCount++;
-                        }
-                    });
-                    
-                    if (addedCount > 0) {
-                        localStorage.setItem('manti_assets', JSON.stringify(assets));
-                        alert(`${addedCount} new Asset(s) routed to Asset Management for Approval!`);
-                    }
-                }
+                // Safe check & add for assets/stocks on save
+                syncCompletedPO(rec);
 
                 localStorage.setItem('manti_order_records', JSON.stringify(records));
                 form.style.display = 'none';
