@@ -512,17 +512,27 @@
                 <form id="add-account-form">
                     <input type="hidden" id="acc-type" value="Bank">
                     <div class="form-field">
-                        <label>Account Name <span style="color:#ef4444;">*</span></label>
+                        <label for="acc-name">Account Name <span style="color:#ef4444;">*</span></label>
                         <input type="text" id="acc-name" placeholder="E.g. HDFC Current Account" required>
                     </div>
                     <div class="form-row">
-                        <div class="form-field" id="acc-number-field">
-                            <label>Account / Card Number (Last 4 digits)</label>
-                            <input type="text" id="acc-number" placeholder="XXXX" maxlength="4">
+                        <div class="form-field" id="container-acc-number">
+                            <label for="acc-number">Account Number</label>
+                            <input type="text" id="acc-number" placeholder="e.g. 1234567890">
+                        </div>
+                        <div class="form-field" id="container-acc-bank-name">
+                            <label for="acc-bank-name">Bank Name</label>
+                            <input type="text" id="acc-bank-name" placeholder="E.g. HDFC Bank">
+                        </div>
+                    </div>
+                    <div class="form-row" id="row-other-details" style="display: none;">
+                        <div class="form-field">
+                            <label for="acc-loan-number">Loan Number</label>
+                            <input type="text" id="acc-loan-number" placeholder="E.g. LN-124991">
                         </div>
                         <div class="form-field">
-                            <label>Bank Name</label>
-                            <input type="text" id="acc-bank-name" placeholder="E.g. HDFC Bank">
+                            <label for="acc-emi-amount">EMI Amount (₹)</label>
+                            <input type="number" id="acc-emi-amount" placeholder="0.00" step="0.01" min="0">
                         </div>
                     </div>
                     <div class="form-row">
@@ -594,6 +604,14 @@
                 const iconName = acc.type === 'Credit Card' ? 'credit-card' : acc.type === 'Cash' ? 'banknote' : 'landmark';
                 const isActive = selectedAccountId === acc.id ? 'active' : '';
 
+                let subText = acc.type;
+                if (acc.number && acc.type !== 'Other' && acc.type !== 'Cash') {
+                    subText += ' •••• ' + acc.number;
+                }
+                if (acc.type === 'Other' && acc.loanNumber) {
+                    subText += ` — Loan No: ${acc.loanNumber}`;
+                }
+
                 const item = document.createElement('div');
                 item.className = `bank-account-item ${isActive}`;
                 item.setAttribute('data-id', acc.id);
@@ -603,7 +621,7 @@
                     </div>
                     <div class="bank-account-info">
                         <div class="bank-account-name">${acc.name}</div>
-                        <div class="bank-account-num">${acc.type}${acc.number ? ' •••• ' + acc.number : ''}</div>
+                        <div class="bank-account-num">${subText}</div>
                     </div>
                     <div class="bank-account-balance">₹ ${balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                 `;
@@ -625,7 +643,17 @@
             txnView.style.display = 'flex';
 
             document.getElementById('txn-account-name').textContent = acc.name;
-            document.getElementById('txn-account-sub').textContent = `${acc.type}${acc.bankName ? ' — ' + acc.bankName : ''}${acc.number ? ' •••• ' + acc.number : ''}`;
+            let subText = acc.type;
+            if (acc.bankName) subText += ' — ' + acc.bankName;
+            if (acc.number && acc.type !== 'Other' && acc.type !== 'Cash') {
+                subText += ' •••• ' + acc.number;
+            }
+            if (acc.type === 'Other') {
+                if (acc.loanNumber) subText += ` — Loan No: ${acc.loanNumber}`;
+                if (parseFloat(acc.emiAmount) > 0) subText += ` — EMI: ₹ ${acc.emiAmount}`;
+            }
+
+            document.getElementById('txn-account-sub').textContent = subText;
 
             renderAccountsList(); // re-render to apply active state
 
@@ -698,16 +726,63 @@
         function selectAccountType(type, el) {
             currentType = type;
             document.getElementById('acc-type').value = type;
-            document.querySelectorAll('.account-type-card').forEach(c => c.classList.remove('selected'));
-            el.classList.add('selected');
+            if (el) {
+                document.querySelectorAll('.account-type-card').forEach(c => c.classList.remove('selected'));
+                el.classList.add('selected');
+            }
+
+            const lblName = document.querySelector('label[for="acc-name"]');
+            const nameInput = document.getElementById('acc-name');
+            const containerNumber = document.getElementById('container-acc-number');
+            const lblNumber = document.querySelector('label[for="acc-number"]');
+            const numInput = document.getElementById('acc-number');
+            const containerBank = document.getElementById('container-acc-bank-name');
+            const containerLoan = document.getElementById('row-other-details');
+
+            if (type === 'Bank') {
+                lblName.innerHTML = 'Account Name <span style="color:#ef4444;">*</span>';
+                nameInput.placeholder = 'E.g. HDFC Current Account';
+                
+                containerNumber.style.display = 'block';
+                lblNumber.innerHTML = 'Account Number';
+                numInput.placeholder = 'e.g. 1234567890';
+                numInput.removeAttribute('maxlength');
+
+                containerBank.style.display = 'block';
+                containerLoan.style.display = 'none';
+            } else if (type === 'Credit Card') {
+                lblName.innerHTML = 'Card Name <span style="color:#ef4444;">*</span>';
+                nameInput.placeholder = 'E.g. Corporate Platinum';
+                
+                containerNumber.style.display = 'block';
+                lblNumber.innerHTML = 'Card Number (Last 4 digits)';
+                numInput.placeholder = 'XXXX';
+                numInput.maxLength = 4;
+
+                containerBank.style.display = 'block';
+                containerLoan.style.display = 'none';
+            } else if (type === 'Cash') {
+                lblName.innerHTML = 'Cash Name / Mode <span style="color:#ef4444;">*</span>';
+                nameInput.placeholder = 'E.g. Petty Cash / UPI';
+
+                containerNumber.style.display = 'none';
+                containerBank.style.display = 'none';
+                containerLoan.style.display = 'none';
+            } else if (type === 'Other') {
+                lblName.innerHTML = 'Loan / Account Name <span style="color:#ef4444;">*</span>';
+                nameInput.placeholder = 'E.g. Equipment Loan';
+
+                containerNumber.style.display = 'none';
+                containerBank.style.display = 'block';
+                containerLoan.style.display = 'grid';
+            }
         }
 
         function openAddAccountModal() {
             document.getElementById('add-account-form').reset();
             document.getElementById('acc-type').value = 'Bank';
             currentType = 'Bank';
-            document.querySelectorAll('.account-type-card').forEach(c => c.classList.remove('selected'));
-            document.querySelector('.account-type-card[data-type="Bank"]').classList.add('selected');
+            selectAccountType('Bank', document.querySelector('.account-type-card[data-type="Bank"]'));
             document.getElementById('acc-opening-date').valueAsDate = new Date();
             document.getElementById('add-account-modal').classList.add('open');
         }
@@ -732,6 +807,8 @@
                 name: name,
                 number: document.getElementById('acc-number').value.trim(),
                 bankName: document.getElementById('acc-bank-name').value.trim(),
+                loanNumber: document.getElementById('acc-loan-number').value.trim(),
+                emiAmount: document.getElementById('acc-emi-amount').value || '0',
                 openingBalance: document.getElementById('acc-opening-balance').value || '0',
                 openingDate: document.getElementById('acc-opening-date').value,
                 createdAt: new Date().toISOString()
