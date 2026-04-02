@@ -272,23 +272,23 @@
                         <table class="expenses-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 35%;">Description</th>
-                                    <th>Quantity</th>
-                                    <th>Rate (₹)</th>
-                                    <th>GST %</th>
-                                    <th style="text-align: right;">Total (₹)</th>
-                                    <th style="width:40px;"></th>
+                                    <th style="width: 40%;">Description</th>
+                                    <th style="width: 15%;">Quantity</th>
+                                    <th style="width: 15%;">Rate (₹)</th>
+                                    <th style="width: 12%;">GST %</th>
+                                    <th style="width: 18%; text-align: right;">Total (₹)</th>
+                                    <th style="width: 40px; text-align: center;"></th>
                                 </tr>
                             </thead>
                             <tbody id="expense-items-body">
                                 <!-- First row added natively -->
                                 <tr class="item-row">
-                                    <td><input type="text" class="pay-input item-desc" placeholder="e.g. Printer Toner" style="margin-top:0;" required></td>
-                                    <td><input type="number" class="pay-input item-qty" value="1" min="1" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
-                                    <td><input type="number" class="pay-input item-rate" placeholder="0.00" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
-                                    <td><input type="number" class="pay-input item-gst" placeholder="0" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()"></td>
-                                    <td style="text-align: right;"><input type="text" class="pay-input item-total" value="0.00" style="margin-top:0; text-align:right; font-weight:600; background:#f8fafc;" readonly></td>
-                                    <td></td>
+                                    <td style="padding: 8px 12px;"><input type="text" class="pay-input item-desc" placeholder="e.g. Printer Toner" style="margin-top:0;" required></td>
+                                    <td style="padding: 8px 12px;"><input type="number" class="pay-input item-qty" value="1" min="1" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                                    <td style="padding: 8px 12px;"><input type="number" class="pay-input item-rate" placeholder="0.00" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                                    <td style="padding: 8px 12px;"><input type="number" class="pay-input item-gst" placeholder="0" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()"></td>
+                                    <td style="text-align: right; padding: 8px 12px;"><input type="text" class="pay-input item-total" value="0.00" style="margin-top:0; text-align:right; font-weight:600; background:#f8fafc;" readonly></td>
+                                    <td style="text-align: center; padding: 8px 4px;"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -385,12 +385,12 @@
             const tr = document.createElement('tr');
             tr.className = 'item-row';
             tr.innerHTML = `
-                <td><input type="text" class="pay-input item-desc" placeholder="e.g. Printer Toner" style="margin-top:0;" required></td>
-                <td><input type="number" class="pay-input item-qty" value="1" min="1" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
-                <td><input type="number" class="pay-input item-rate" placeholder="0.00" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
-                <td><input type="number" class="pay-input item-gst" placeholder="0" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()"></td>
-                <td style="text-align: right;"><input type="text" class="pay-input item-total" value="0.00" style="margin-top:0; text-align:right; font-weight:600; background:#f8fafc;" readonly></td>
-                <td style="text-align: center;"><button type="button" class="btn-remove" onclick="removeExpenseItemRow(this)"><i data-lucide="x" style="width:16px; height:16px;"></i></button></td>
+                <td style="padding: 8px 12px;"><input type="text" class="pay-input item-desc" placeholder="e.g. Printer Toner" style="margin-top:0;" required></td>
+                <td style="padding: 8px 12px;"><input type="number" class="pay-input item-qty" value="1" min="1" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                <td style="padding: 8px 12px;"><input type="number" class="pay-input item-rate" placeholder="0.00" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                <td style="padding: 8px 12px;"><input type="number" class="pay-input item-gst" placeholder="0" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()"></td>
+                <td style="text-align: right; padding: 8px 12px;"><input type="text" class="pay-input item-total" value="0.00" style="margin-top:0; text-align:right; font-weight:600; background:#f8fafc;" readonly></td>
+                <td style="text-align: center; padding: 8px 4px;"><button type="button" class="btn-remove" onclick="removeExpenseItemRow(this)" style="padding:4px; font-size:12px; margin:0;"><i data-lucide="x" style="width:16px; height:16px;"></i></button></td>
             `;
             tbody.appendChild(tr);
             lucide.createIcons();
@@ -580,12 +580,12 @@
             document.getElementById('exp-date').valueAsDate = new Date();
             document.getElementById('expense-items-body').innerHTML = `
                 <tr class="item-row">
-                    <td><input type="text" class="pay-input item-desc" placeholder="e.g. Printer Toner" style="margin-top:0;" required></td>
-                    <td><input type="number" class="pay-input item-qty" value="1" min="1" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
-                    <td><input type="number" class="pay-input item-rate" placeholder="0.00" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
-                    <td><input type="number" class="pay-input item-gst" placeholder="0" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()"></td>
-                    <td style="text-align: right;"><input type="text" class="pay-input item-total" value="0.00" style="margin-top:0; text-align:right; font-weight:600; background:#f8fafc;" readonly></td>
-                    <td></td>
+                    <td style="padding: 8px 12px;"><input type="text" class="pay-input item-desc" placeholder="e.g. Printer Toner" style="margin-top:0;" required></td>
+                    <td style="padding: 8px 12px;"><input type="number" class="pay-input item-qty" value="1" min="1" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                    <td style="padding: 8px 12px;"><input type="number" class="pay-input item-rate" placeholder="0.00" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                    <td style="padding: 8px 12px;"><input type="number" class="pay-input item-gst" placeholder="0" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()"></td>
+                    <td style="text-align: right; padding: 8px 12px;"><input type="text" class="pay-input item-total" value="0.00" style="margin-top:0; text-align:right; font-weight:600; background:#f8fafc;" readonly></td>
+                    <td style="text-align: center; padding: 8px 4px;"></td>
                 </tr>
             `;
             calculateExpenseTotals();
