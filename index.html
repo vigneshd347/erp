@@ -390,27 +390,42 @@
             document.getElementById('kpi-active-jobs').textContent = uniqueJobs;
             document.getElementById('kpi-jobs-meta').textContent = `${jobs.length} total job entries`;
 
-            // KPI: Assets
             // KPI: Bank & Cash Balance
             const mantiBankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
             const mantiJournals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
-            
-            let totalBankBalance = 0;
-            mantiBankAccounts.forEach(acc => {
-                let bal = parseFloat(acc.openingBalance) || 0;
-                mantiJournals.forEach(j => {
-                    if(!j.lines) return;
-                    j.lines.forEach(l => {
-                        if ((l.account || '').toLowerCase() === (acc.name || '').toLowerCase() || 
-                            (l.account || '').toLowerCase() === 'bank') {
-                            bal += (parseFloat(l.debit) || 0) - (parseFloat(l.credit) || 0);
-                        }
-                    });
+            const mantiExpenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+
+            // Real account names (from Banking module)
+            const knownAcctNames = new Set(mantiBankAccounts.map(a => (a.name || '').toLowerCase()));
+            // Generic aliases used in legacy / default expense entries
+            const genericPaymentAccts = new Set(['petty cash', 'cash', 'cash / petty cash', 'bank account', 'bank']);
+
+            // Start from sum of all opening balances
+            let totalBankBalance = mantiBankAccounts.reduce((s, a) => s + (parseFloat(a.openingBalance) || 0), 0);
+
+            // Apply all journal movements that touch a payment account (real name OR generic alias)
+            mantiJournals.forEach(j => {
+                if (!j.lines) return;
+                j.lines.forEach(l => {
+                    const la = (l.account || '').toLowerCase();
+                    if (knownAcctNames.has(la) || genericPaymentAccts.has(la)) {
+                        totalBankBalance += (parseFloat(l.debit) || 0) - (parseFloat(l.credit) || 0);
+                    }
                 });
-                totalBankBalance += bal;
             });
+
+            // Safety net: directly deduct any expense whose paidThrough didn't get captured by journals
+            // (prevents balance staying flat if journal entries are missing or unmatched)
+            mantiExpenses.forEach(e => {
+                const pt = (e.paidThrough || '').toLowerCase();
+                const alreadyCounted = knownAcctNames.has(pt) || genericPaymentAccts.has(pt);
+                if (!alreadyCounted) {
+                    totalBankBalance -= parseFloat(e.total || e.amount) || 0;
+                }
+            });
+
             document.getElementById('kpi-bank-balance').textContent = `₹ ${totalBankBalance.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-            document.getElementById('kpi-bank-meta').textContent = `Across ${mantiBankAccounts.length} Accounts`;
+            document.getElementById('kpi-bank-meta').textContent = `Across ${mantiBankAccounts.length} account(s) • Expenses deducted`;
 
             // Unpaid Orders Table
             const tbody = document.getElementById('recent-orders-body');
