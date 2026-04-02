@@ -198,68 +198,77 @@
             <div style="flex: 1; padding: 30px; overflow-y: auto;">
                 <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; margin-bottom: 2rem;">
                     
-                    <form id="expense-form" class="pay-meta-grid">
-                        <!-- Left Column: Vendor & Meta -->
-                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Name / Business Name <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
-                                <input type="text" id="exp-vendor" class="pay-input" list="supplier-list" placeholder="Select or type name / business" autocomplete="off">
-                                <datalist id="supplier-list"></datalist>
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Reference#</label>
-                                <input type="text" id="exp-ref" class="pay-input" placeholder="e.g. Receipt No. or Invoice No.">
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Notes</label>
-                                <textarea id="exp-notes" class="pay-input" rows="3" placeholder="Description of the expense..."></textarea>
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;"><i data-lucide="paperclip" style="width: 14px; margin-right: 4px; vertical-align: middle;"></i> Attach Bill <span style="font-weight: 400; color: #94a3b8;">(Optional)</span></label>
-                                <input type="file" id="exp-bill" class="pay-input" accept="image/*,.pdf" style="padding: 6px;">
-                            </div>
-                        </div>
+                    <form id="expense-form" style="padding: 2rem;">
+                        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+                            
+                            <!-- Left Column: Vendor Information -->
+                            <section class="form-section">
+                                <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Vendor Information</h3>
+                                <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                                    <div>
+                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Name / Business Name <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
+                                        <input type="text" id="exp-vendor" class="pay-input" list="supplier-list" placeholder="Select or type name / business" autocomplete="off" style="margin-top:0;">
+                                        <datalist id="supplier-list"></datalist>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Reference / Bill#</label>
+                                        <input type="text" id="exp-ref" class="pay-input" placeholder="e.g. Receipt No. or Invoice No." style="margin-top:0;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Notes</label>
+                                        <textarea id="exp-notes" class="pay-input" rows="3" placeholder="Description of the expense..." style="margin-top:0;"></textarea>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;"><i data-lucide="paperclip" style="width: 14px; margin-right: 4px; vertical-align: middle;"></i> Attach Bill <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
+                                        <input type="file" id="exp-bill" class="pay-input" accept="image/*,.pdf" style="padding: 6px; margin-top:0;">
+                                    </div>
+                                </div>
+                            </section>
 
-                        <!-- Right Column: Core Logistics -->
-                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Date <span style="color:#ef4444;">*</span></label>
-                                <input type="date" id="exp-date" class="pay-input" required>
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Expense Account <span style="color:#ef4444;">*</span></label>
-                                <select id="exp-account" class="pay-input" required>
-                                    <option value="">Select Category...</option>
-                                    <optgroup label="Operating Expenses">
-                                        <option value="Meals and Entertainment">Meals and Entertainment</option>
-                                        <option value="Travel Expense">Travel Expense</option>
-                                        <option value="Office Supplies">Office Supplies</option>
-                                        <option value="Utilities">Utilities</option>
-                                        <option value="Rent Expense">Rent Expense</option>
-                                        <option value="Telephone & Internet">Telephone & Internet</option>
-                                        <option value="Advertising">Advertising</option>
-                                        <option value="Repairs and Maintenance">Repairs and Maintenance</option>
-                                    </optgroup>
-                                    <optgroup label="Cost of Goods Sold">
-                                        <option value="Cost of Goods Sold">Cost of Goods Sold</option>
-                                        <option value="Materials">Materials / Consumables</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Paid Through <span style="color:#ef4444;">*</span></label>
-                                <select id="exp-paidthrough" class="pay-input" required>
-                                    <option value="">Loading accounts...</option>
-                                </select>
-                                <span style="font-size:0.75rem; color:#94a3b8; margin-top:4px; display:block;">Add accounts in <a href="banking.html" style="color:var(--primary);">Banking</a></span>
-                            </div>
+                            <!-- Right Column: Operational Logistics -->
+                            <section class="form-section">
+                                <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Expense Details</h3>
+                                <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                                    <div>
+                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Date <span style="color:#ef4444;">*</span></label>
+                                        <input type="date" id="exp-date" class="pay-input" style="margin-top:0;" required>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Expense Account <span style="color:#ef4444;">*</span></label>
+                                        <select id="exp-account" class="pay-input" style="margin-top:0;" required>
+                                            <option value="">Select Category...</option>
+                                            <optgroup label="Operating Expenses">
+                                                <option value="Meals and Entertainment">Meals and Entertainment</option>
+                                                <option value="Travel Expense">Travel Expense</option>
+                                                <option value="Office Supplies">Office Supplies</option>
+                                                <option value="Utilities">Utilities</option>
+                                                <option value="Rent Expense">Rent Expense</option>
+                                                <option value="Telephone & Internet">Telephone & Internet</option>
+                                                <option value="Advertising">Advertising</option>
+                                                <option value="Repairs and Maintenance">Repairs and Maintenance</option>
+                                            </optgroup>
+                                            <optgroup label="Cost of Goods Sold">
+                                                <option value="Cost of Goods Sold">Cost of Goods Sold</option>
+                                                <option value="Materials">Materials / Consumables</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Paid Through <span style="color:#ef4444;">*</span></label>
+                                        <select id="exp-paidthrough" class="pay-input" style="margin-top:0;" required>
+                                            <option value="">Loading accounts...</option>
+                                        </select>
+                                        <span style="font-size:0.75rem; color:#94a3b8; margin-top:4px; display:block;">Add accounts in <a href="banking.html" style="color:var(--primary);">Banking</a></span>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
                     </form>
 
                     <!-- Dynamic Items Table -->
-                    <div class="table-container" style="border-top: 1px dashed var(--border);">
+                    <div class="table-container" style="border-top: 1px dashed var(--border); padding-top: 1rem;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <h3 style="font-size: 1rem; margin:0;">Itemized Details</h3>
+                            <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin:0;">Itemized Details</h3>
                             <button type="button" class="btn-liquid btn-secondary" onclick="addExpenseItemRow()" style="font-size:0.85rem; padding: 6px 12px;">+ Add Item</button>
                         </div>
                         <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
