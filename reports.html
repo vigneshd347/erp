@@ -846,9 +846,25 @@
                     expenses.filter(e => isWithinDateFilter(e.date)).forEach(e => {
                         totalExpenses += parseFloat(e.amount) || 0;
                     });
-
-                    const onHandBalance = totalSales - (totalPurchases + totalExpenses);
                     
+                    const mantiBankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
+                    const mantiJournals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+                    let bankBalance = 0;
+                    mantiBankAccounts.forEach(acc => {
+                        let bal = parseFloat(acc.openingBalance) || 0;
+                        mantiJournals.forEach(j => {
+                            if(!j.lines || !isWithinDateFilter(j.date)) return;
+                            j.lines.forEach(l => {
+                                if ((l.account || '').toLowerCase() === (acc.name || '').toLowerCase() || 
+                                    (l.account || '').toLowerCase() === 'bank') {
+                                    bal += (parseFloat(l.debit) || 0) - (parseFloat(l.credit) || 0);
+                                }
+                            });
+                        });
+                        bankBalance += bal;
+                    });
+
+                    const onHandBalance = totalSales - (totalPurchases + totalExpenses) + bankBalance;
                     reportHead.innerHTML = `
                         <tr>
                             <th colspan="2" style="font-size: 1rem; color: #1f2937;">Transaction Category Totals</th>
@@ -867,6 +883,10 @@
                         <tr>
                             <td style="font-weight: 600; font-size: 1.05rem;"><i data-lucide="receipt" style="color: #ef4444; width: 18px; margin-right: 8px; vertical-align: middle;"></i> Other Expenses</td>
                             <td style="text-align: right; font-weight: 700; color: #ef4444; font-size: 1.1rem;">- ₹ ${totalExpenses.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600; font-size: 1.05rem;"><i data-lucide="landmark" style="color: #6366f1; width: 18px; margin-right: 8px; vertical-align: middle;"></i> Net Bank/Cash Liquidity</td>
+                            <td style="text-align: right; font-weight: 700; color: #6366f1; font-size: 1.1rem;">+ ₹ ${bankBalance.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
                         <tr style="background: #f1f5f9; border-top: 3px solid #cbd5e1;">
                             <td style="font-weight: 800; font-size: 1.2rem; padding: 20px;"><i data-lucide="wallet" style="color: #3b82f6; width: 22px; margin-right: 8px; vertical-align: middle;"></i> Net On-Hand Balance</td>

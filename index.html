@@ -216,9 +216,9 @@
                     <div class="kpi-icon" style="background: #fae8ff; color: #9333ea;">
                         <i data-lucide="package" style="width:20px;height:20px;"></i>
                     </div>
-                    <div class="kpi-label">Assets Tracked</div>
-                    <div class="kpi-value" id="kpi-assets">0</div>
-                    <div class="kpi-meta" id="kpi-assets-meta">Loading…</div>
+                    <div class="kpi-label">Bank & Cash Balance</div>
+                    <div class="kpi-value" id="kpi-bank-balance">₹ 0.00</div>
+                    <div class="kpi-meta" id="kpi-bank-meta">Loading…</div>
                 </div>
             </div>
 
@@ -391,10 +391,26 @@
             document.getElementById('kpi-jobs-meta').textContent = `${jobs.length} total job entries`;
 
             // KPI: Assets
-            const assets = JSON.parse(localStorage.getItem('manti_assets') || '[]');
-            document.getElementById('kpi-assets').textContent = assets.length;
-            const activeAssets = assets.filter(a => a.status === 'Active').length;
-            document.getElementById('kpi-assets-meta').textContent = `${activeAssets} active assets`;
+            // KPI: Bank & Cash Balance
+            const mantiBankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
+            const mantiJournals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+            
+            let totalBankBalance = 0;
+            mantiBankAccounts.forEach(acc => {
+                let bal = parseFloat(acc.openingBalance) || 0;
+                mantiJournals.forEach(j => {
+                    if(!j.lines) return;
+                    j.lines.forEach(l => {
+                        if ((l.account || '').toLowerCase() === (acc.name || '').toLowerCase() || 
+                            (l.account || '').toLowerCase() === 'bank') {
+                            bal += (parseFloat(l.debit) || 0) - (parseFloat(l.credit) || 0);
+                        }
+                    });
+                });
+                totalBankBalance += bal;
+            });
+            document.getElementById('kpi-bank-balance').textContent = `₹ ${totalBankBalance.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpi-bank-meta').textContent = `Across ${mantiBankAccounts.length} Accounts`;
 
             // Unpaid Orders Table
             const tbody = document.getElementById('recent-orders-body');
