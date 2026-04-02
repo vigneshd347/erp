@@ -169,7 +169,10 @@ async function syncKeyToSupabase(key, data) {
                 customer_name: o.vendor || o.customer || '', product_name: o.product || '',
                 total_weight: parseFloat(o.qty || o.weight) || 0, weight_unit: 'g', remark: o.remark || '-'
             }));
-            if (dbOrders.length > 0) await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
+            if (dbOrders.length > 0) {
+                const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
+                if (error) { console.error("Orders Sync Error:", error); alert("Failed to save Orders to Cloud: " + error.message); }
+            }
         } else if (key === 'manti_jobwork_records') {
             const dbJobs = data.map(j => ({
                 job_no: j.jobNo || j.jobnum, date: j.date, worker_id: j.workerId || '', worker_name: j.workerName || '',
@@ -177,8 +180,10 @@ async function syncKeyToSupabase(key, data) {
                 receive_wt: parseFloat(j.receiveWt) || null
             }));
             if (dbJobs.length > 0) {
-                await supabase.from('job_works').delete().neq('worker_id', 'NON_EXISTENT_MAGIC_STRING');
-                await supabase.from('job_works').insert(dbJobs);
+                const { error: delErr } = await supabase.from('job_works').delete().neq('worker_id', 'NON_EXISTENT_MAGIC_STRING');
+                if (delErr) { console.error("Job Works Sync Error:", delErr); alert("Failed to clear Job Works for sync: " + delErr.message); }
+                const { error } = await supabase.from('job_works').insert(dbJobs);
+                if (error) { console.error("Job Works Sync Error:", error); alert("Failed to save Job Works to Cloud: " + error.message); }
             }
         } else if (key === 'manti_saved_invoices') {
             const dbInvoices = Object.values(data).map(inv => ({
@@ -187,7 +192,10 @@ async function syncKeyToSupabase(key, data) {
                 tax_rate: parseFloat(inv.totals?.taxRate) || 0, total_amount: parseFloat(inv.totals?.grandTotal?.replace(/[^0-9.-]+/g, "")) || 0,
                 payment_status: inv.paymentStatus || 'Unpaid'
             }));
-            if (dbInvoices.length > 0) await supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' });
+            if (dbInvoices.length > 0) {
+                const { error } = await supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' });
+                if (error) { console.error("Invoices Sync Error:", error); alert("Failed to save Invoices to Cloud: " + error.message); }
+            }
         } else if (key === 'manti_vendor_kyc_records') {
             const dbVendors = data.map(v => ({
                 id: v.id, date: v.date || null, name: v.name || '', mobile: v.mobile || '', email: v.email || null,
@@ -195,7 +203,10 @@ async function syncKeyToSupabase(key, data) {
                 pin: v.pin || null, gst: v.gst || null, pan: v.pan || null, msme: v.msme || null, bank_name: v.bankName || null,
                 bank_branch: v.bankBranch || null, bank_acc: v.bankAcc || null, bank_ifsc: v.bankIfsc || null, bank_upi: v.bankUpi || null
             }));
-            if (dbVendors.length > 0) await supabase.from('vendor_kyc').upsert(dbVendors, { onConflict: 'id' });
+            if (dbVendors.length > 0) {
+                const { error } = await supabase.from('vendor_kyc').upsert(dbVendors, { onConflict: 'id' });
+                if (error) { console.error("Vendor KYC Sync Error:", error); alert("Failed to save Vendor KYC to Cloud: " + error.message); }
+            }
         } else if (key === 'manti_supplier_kyc_records') {
             const dbSuppliers = data.map(v => ({
                 id: v.id, date: v.date || null, name: v.name || '', mobile: v.mobile || '', email: v.email || null,
@@ -215,54 +226,73 @@ async function syncKeyToSupabase(key, data) {
                 id: s.id, name: s.name || '', type: s.type || '', mobile: s.mobile || null,
                 email: s.email || null, data: s
             }));
-            if (dbStaff.length > 0) await supabase.from('staff_records').upsert(dbStaff, { onConflict: 'id' });
+            if (dbStaff.length > 0) {
+                const { error } = await supabase.from('staff_records').upsert(dbStaff, { onConflict: 'id' });
+                if (error) { console.error("Staff Records Sync Error:", error); alert("Failed to save Staff Records to Cloud: " + error.message); }
+            }
         } else if (key === 'manti_assets') {
             const dbAssets = data.map(a => ({
                 id: a.id, name: a.name || '', category: a.category || '', purchase_date: a.purchaseDate || null,
                 value: parseFloat(a.value) || 0, status: a.status || '', data: a
             }));
-            if (dbAssets.length > 0) await supabase.from('assets').upsert(dbAssets, { onConflict: 'id' });
+            if (dbAssets.length > 0) {
+                const { error } = await supabase.from('assets').upsert(dbAssets, { onConflict: 'id' });
+                if (error) { console.error("Assets Sync Error:", error); alert("Failed to save Assets to Cloud: " + error.message); }
+            }
         } else if (key === 'manti_delivery_challan_records') {
             const dbChallans = data.map(c => ({
                 id: c.id, date: c.date, customer_name: c.customer || '', status: c.status || 'Draft',
                 total_amount: parseFloat(c.total) || 0, items: c.items || []
             }));
-            if (dbChallans.length > 0) await supabase.from('delivery_challans').upsert(dbChallans, { onConflict: 'id' });
+            if (dbChallans.length > 0) {
+                const { error } = await supabase.from('delivery_challans').upsert(dbChallans, { onConflict: 'id' });
+                if (error) { console.error("Delivery Challans Sync Error:", error); alert("Failed to save Delivery Challans to Cloud: " + error.message); }
+            }
         } else if (key === 'manti_payments_made') {
             const dbPayments = data.map(p => ({
                 vendor: p.vendor || '', date: p.date, amount: parseFloat(p.amount) || 0,
                 mode: p.mode || '', reference: p.reference || '', applications: p.applications || []
             }));
             if (dbPayments.length > 0) {
-                await supabase.from('payments_made').delete().neq('vendor', 'NON_EXISTENT');
-                await supabase.from('payments_made').insert(dbPayments);
+                const { error: delErr } = await supabase.from('payments_made').delete().neq('vendor', 'NON_EXISTENT');
+                if (delErr) { console.error("Payments Sync Error:", delErr); alert("Failed to clear Payments for sync: " + delErr.message); }
+                const { error } = await supabase.from('payments_made').insert(dbPayments);
+                if (error) { console.error("Payments Sync Error:", error); alert("Failed to save Payments to Cloud: " + error.message); }
             }
         } else if (key === 'manti_journal_entries') {
             const dbJournals = data.map(j => ({
                 date: j.date, amount: parseFloat(j.amount) || 0, description: j.description || '', lines: j.lines || []
             }));
             if (dbJournals.length > 0) {
-                await supabase.from('journal_entries').delete().neq('date', '1900-01-01');
-                await supabase.from('journal_entries').insert(dbJournals);
+                const { error: delErr } = await supabase.from('journal_entries').delete().neq('date', '1900-01-01');
+                if (delErr) { console.error("Journal Entries Sync Error:", delErr); alert("Failed to clear Journal Entries for sync: " + delErr.message); }
+                const { error } = await supabase.from('journal_entries').insert(dbJournals);
+                if (error) { console.error("Journal Entries Sync Error:", error); alert("Failed to save Journal Entries to Cloud: " + error.message); }
             }
         } else if (key === 'manti_bank_accounts') {
             const dbAccounts = data.map(a => ({
                 account_name: a.name, opening_balance: parseFloat(a.openingBalance) || 0, opening_date: a.openingDate || null
             }));
-            if (dbAccounts.length > 0) await supabase.from('bank_accounts').upsert(dbAccounts, { onConflict: 'account_name' });
+            if (dbAccounts.length > 0) {
+                const { error } = await supabase.from('bank_accounts').upsert(dbAccounts, { onConflict: 'account_name' });
+                if (error) { console.error("Bank Accounts Sync Error:", error); alert("Failed to save Bank Accounts to Cloud: " + error.message); }
+            }
         } else if (key === 'manti_stock_history') {
             const dbStock = data.map(s => ({
                 date: s.date, type: s.type || '', details: s.details || '', qty: parseFloat(s.qty) || 0,
                 weight: parseFloat(s.weight) || 0, metal_type: s.metal || ''
             }));
             if (dbStock.length > 0) {
-                await supabase.from('stock_history').delete().neq('type', 'NON_EXISTENT');
-                await supabase.from('stock_history').insert(dbStock);
+                const { error: delErr } = await supabase.from('stock_history').delete().neq('type', 'NON_EXISTENT');
+                if (delErr) { console.error("Stock History Sync Error:", delErr); alert("Failed to clear Stock History for sync: " + delErr.message); }
+                const { error } = await supabase.from('stock_history').insert(dbStock);
+                if (error) { console.error("Stock History Sync Error:", error); alert("Failed to save Stock History to Cloud: " + error.message); }
             }
         } else {
-            await supabase.from('settings').upsert({
+            const { error } = await supabase.from('settings').upsert({
                 setting_key: key, setting_value: data, updated_at: new Date().toISOString()
             }, { onConflict: 'setting_key' });
+            if (error) { console.error(`Settings Sync Error for ${key}:`, error); alert(`Failed to save ${key} to Cloud Settings: ` + error.message); }
         }
     } catch (e) {
         console.error(`Failed to sync ${key}:`, e);
