@@ -29,6 +29,30 @@
     padding: 0;
 }
 
+/* ── Remove calendar picker icon from all date inputs ── */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+}
+input[type="date"],
+input[type="datetime-local"] {
+    -webkit-appearance: textfield;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* ── Remove number spinner arrows from all number inputs ── */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
 body {
     font-family: 'Inter', sans-serif;
     background-color: var(--bg-main);
