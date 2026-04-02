@@ -203,7 +203,13 @@ async function syncKeyToSupabase(key, data) {
                 pin: v.pin || null, gst: v.gst || null, pan: v.pan || null, msme: v.msme || null, bank_name: v.bankName || null,
                 bank_branch: v.bankBranch || null, bank_acc: v.bankAcc || null, bank_ifsc: v.bankIfsc || null, bank_upi: v.bankUpi || null
             }));
-            if (dbSuppliers.length > 0) await supabase.from('supplier_kyc').upsert(dbSuppliers, { onConflict: 'id' });
+            if (dbSuppliers.length > 0) {
+                const { error } = await supabase.from('supplier_kyc').upsert(dbSuppliers, { onConflict: 'id' });
+                if (error) {
+                    console.error("Supplier KYC Sync Error:", error);
+                    alert("Failed to save Supplier KYC to Cloud: " + error.message + " (Check if the table exists in Supabase)");
+                }
+            }
         } else if (key === 'manti_staff_records') {
             const dbStaff = data.map(s => ({
                 id: s.id, name: s.name || '', type: s.type || '', mobile: s.mobile || null,
