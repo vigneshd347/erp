@@ -78,6 +78,34 @@ window.mantiSyncPromises = [];
 const originalGetItem = Storage.prototype.getItem;
 const originalSetItem = Storage.prototype.setItem;
 
+function updateSyncIndicator() {
+    let indicator = document.getElementById('manti-sync-indicator');
+    if (window.mantiSyncPromises.length > 0) {
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'manti-sync-indicator';
+            indicator.innerHTML = '<style>@keyframes spin { 100% { transform: rotate(360deg); } }</style><div style="width: 16px; height: 16px; border: 2px solid #e0e7ff; border-top-color: #5454d4; border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px;"></div><span style="vertical-align: middle;">Syncing to Cloud...</span>';
+            indicator.style = 'position: fixed; bottom: 20px; right: 20px; background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: Inter, sans-serif; font-size: 0.9rem; font-weight: 600; color: #5454d4; z-index: 999999; border: 1px solid #e0e7ff; transition: opacity 0.3s ease;';
+            if (document.body) document.body.appendChild(indicator);
+        } else {
+            indicator.style.opacity = '1';
+        }
+    } else {
+        if (indicator) {
+            indicator.style.opacity = '0';
+            setTimeout(() => { if(window.mantiSyncPromises.length === 0 && indicator) indicator.remove(); }, 300);
+        }
+    }
+}
+
+window.addEventListener('beforeunload', (e) => {
+    if (window.mantiSyncPromises && window.mantiSyncPromises.length > 0) {
+        e.preventDefault();
+        e.returnValue = 'Syncing data to cloud. Please wait...';
+        return 'Syncing data to cloud. Please wait...';
+    }
+});
+
 Storage.prototype.getItem = function(key) {
     if (key.startsWith('manti_')) {
         return window.ERP_MEMORY.get(key) || null;
@@ -97,8 +125,10 @@ Storage.prototype.setItem = function(key, value) {
             const parsedData = JSON.parse(value);
             const promise = syncKeyToSupabase(key, parsedData);
             window.mantiSyncPromises.push(promise);
+            updateSyncIndicator();
             promise.finally(() => {
                 window.mantiSyncPromises = window.mantiSyncPromises.filter(p => p !== promise);
+                updateSyncIndicator();
             });
         } catch (e) {
             console.error("Failed to parse data for cloud push", e);
