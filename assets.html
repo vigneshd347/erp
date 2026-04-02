@@ -153,7 +153,7 @@
                 <table id="assets-table">
                     <thead>
                         <tr>
-                            <th width="40" style="text-align: center;"><input type="checkbox" id="select-all-pending" onchange="toggleSelectAllPending(this)"></th>
+                            <th id="th-select-all" width="40" style="text-align: center;"><input type="checkbox" id="select-all-pending" onchange="toggleSelectAllPending(this)"></th>
                             <th width="50">Sr</th>
                             <th width="150">Purchase Date</th>
                             <th>Asset Name / Description</th>
@@ -296,6 +296,12 @@
                 }
 
                 const pendingCount = assets.filter(a => a.status === 'Pending Approval').length;
+                
+                const thSelectAll = document.getElementById('th-select-all');
+                if (thSelectAll) {
+                    thSelectAll.style.display = pendingCount > 0 ? '' : 'none';
+                }
+
                 const bulkBtn = document.getElementById('bulk-approve-btn');
                 if (bulkBtn) {
                     bulkBtn.style.display = pendingCount > 0 ? 'inline-block' : 'none';
@@ -321,10 +327,11 @@
                     }
 
                     const hasCheckbox = a.status === 'Pending Approval' ? `<input type="checkbox" class="asset-select-cb" value="${a.id}" onchange="updateBulkApproveBtn()">` : '';
+                    const cbColDisplay = pendingCount > 0 ? '' : 'display:none;';
 
                     tbody.innerHTML += `
                         <tr>
-                            <td style="text-align: center;">${hasCheckbox}</td>
+                            <td style="text-align: center; ${cbColDisplay}">${hasCheckbox}</td>
                             <td>${index + 1}</td>
                             <td>${a.date}</td>
                             <td style="text-align: left; padding-left: 15px;"><strong>${a.name}</strong><br><span style="font-size:0.75rem; color:#666;">ID: ${a.id}</span></td>
