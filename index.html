@@ -490,6 +490,19 @@
                 }
             });
 
+            // Also include direct Expenses in the Cash Flow Expense chart
+            mantiExpenses.forEach(e => {
+                if (!e.date) return;
+                const amt = parseFloat(e.total || e.amount) || 0; // Check e.total first, fallback to e.amount
+                if (amt <= 0) return;
+
+                const d = new Date(e.date);
+                const monthMatch = past6Months.find(m => m.month === d.getMonth() && m.year === d.getFullYear());
+                if (monthMatch) {
+                    monthMatch.expense += amt;
+                }
+            });
+
             const customerTotals = {};
             salesOrders.forEach(o => {
                 if (!o.vendor || !o.amount || o.status === 'Cancelled') return;
