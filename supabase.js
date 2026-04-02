@@ -304,12 +304,7 @@ async function syncKeyToSupabase(key, data) {
 window.fetchEverythingFromCloud = async function () {
     console.log("Fetching all data directly from Supabase Cloud...");
 
-    // Create a blocking UI loader
-    const loader = document.createElement('div');
-    loader.id = 'cloud-loader';
-    loader.innerHTML = '<div style="background: white; padding: 20px 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); font-family: Inter, sans-serif; font-weight: 700; color: #5454d4; display: flex; align-items: center; gap: 15px;"><div class="spinner" style="width: 24px; height: 24px; border: 3px solid #e0e7ff; border-top-color: #5454d4; border-radius: 50%; animation: spin 1s linear infinite;"></div> Fetching latest cloud data...</div><style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>';
-    loader.style = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(241, 245, 249, 0.9); z-index: 999999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);';
-    document.body.appendChild(loader);
+    // Sync happens in the background without a blocking UI loader
 
     try {
         // 1. Fetch Orders
@@ -446,11 +441,8 @@ window.fetchEverythingFromCloud = async function () {
         }
     } catch (e) {
         console.error("Cloud Fetch Failed!", e);
-        loader.innerHTML = '<div style="background: #fee2e2; color: #dc2626; padding: 20px; border-radius: 12px; font-weight: 700;">Could not connect to Supabase Cloud. Please check your internet connection.</div>';
-        return; // Halt execution if offline (strict option B)
+        // Continue booting the app anyway with locally cached/empty data
     }
-
-    loader.remove();
     console.log("Cloud data loaded into RAM. Dispatching CloudDataLoaded event.");
 
     // Boot the main ERP scripts natively

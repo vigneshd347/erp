@@ -303,6 +303,7 @@
     </div>
 
     <script src="liquid-button.js"></script>
+    <script src="script.js?v=24"></script>
     <script>
         lucide.createIcons();
     </script>
@@ -534,6 +535,21 @@
             });
 
             localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+
+            // 3. Record Payment Made
+            const payments = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
+            payments.push({
+                id: 'PMT-' + Date.now(),
+                vendor: vendor,
+                date: date,
+                amount: amountEntered,
+                mode: mode,
+                reference: ref,
+                applications: applications,
+                account: account,
+                notes: notes
+            });
+            localStorage.setItem('manti_payments_made', JSON.stringify(payments));
 
             alert(`Payment of ₹ ${amountEntered.toFixed(2)} recorded successfully.`);
             if (window.navigateAfterSync) window.navigateAfterSync('purchases.html'); else window.location.href = 'purchases.html';
