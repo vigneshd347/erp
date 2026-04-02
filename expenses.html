@@ -181,88 +181,91 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="main-content" style="flex: 1; display: flex; flex-direction: column; background: #f1f5f9;">
-            <div class="pay-header">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="background: var(--danger-light); color: var(--danger); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                        <i data-lucide="receipt"></i>
-                    </div>
-                    <h1 style="font-size: 1.5rem; color: #0f172a; margin: 0;">Record Expense</h1>
+        <main class="main-content" style="flex: 1; padding: 2.5rem; background: #f1f5f9; overflow-y: auto;">
+            <header class="content-header" style="margin-bottom: 2rem;">
+                <div class="header-content">
+                    <h1>Expenses</h1>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button type="button" class="btn-liquid btn-secondary" onclick="document.getElementById('expense-form').reset()">Clear</button>
-                    <button type="button" class="btn-liquid btn-primary" onclick="saveExpense()">Save Expense</button>
+                <div style="display: flex; gap: 10px; align-items: center;">
                 </div>
-            </div>
+            </header>
 
-            <div style="flex: 1; padding: 30px; overflow-y: auto;">
-                <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; margin-bottom: 2rem;">
-                    
-                    <form id="expense-form" style="padding: 2rem;">
-                        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
-                            
-                            <!-- Left Column: Vendor Information -->
-                            <section class="form-section">
-                                <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Vendor Information</h3>
-                                <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-                                    <div>
-                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Name / Business Name <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
-                                        <input type="text" id="exp-vendor" class="pay-input" list="supplier-list" placeholder="Select or type name / business" autocomplete="off" style="margin-top:0;">
-                                        <datalist id="supplier-list"></datalist>
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Reference / Bill#</label>
-                                        <input type="text" id="exp-ref" class="pay-input" placeholder="e.g. Receipt No. or Invoice No." style="margin-top:0;">
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Notes</label>
-                                        <textarea id="exp-notes" class="pay-input" rows="3" placeholder="Description of the expense..." style="margin-top:0;"></textarea>
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;"><i data-lucide="paperclip" style="width: 14px; margin-right: 4px; vertical-align: middle;"></i> Attach Bill <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
-                                        <input type="file" id="exp-bill" class="pay-input" accept="image/*,.pdf" style="padding: 6px; margin-top:0;">
-                                    </div>
-                                </div>
-                            </section>
-
-                            <!-- Right Column: Operational Logistics -->
-                            <section class="form-section">
-                                <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Expense Details</h3>
-                                <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-                                    <div>
-                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Date <span style="color:#ef4444;">*</span></label>
-                                        <input type="date" id="exp-date" class="pay-input" style="margin-top:0;" required>
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Expense Account <span style="color:#ef4444;">*</span></label>
-                                        <select id="exp-account" class="pay-input" style="margin-top:0;" required>
-                                            <option value="">Select Category...</option>
-                                            <optgroup label="Operating Expenses">
-                                                <option value="Meals and Entertainment">Meals and Entertainment</option>
-                                                <option value="Travel Expense">Travel Expense</option>
-                                                <option value="Office Supplies">Office Supplies</option>
-                                                <option value="Utilities">Utilities</option>
-                                                <option value="Rent Expense">Rent Expense</option>
-                                                <option value="Telephone & Internet">Telephone & Internet</option>
-                                                <option value="Advertising">Advertising</option>
-                                                <option value="Repairs and Maintenance">Repairs and Maintenance</option>
-                                            </optgroup>
-                                            <optgroup label="Cost of Goods Sold">
-                                                <option value="Cost of Goods Sold">Cost of Goods Sold</option>
-                                                <option value="Materials">Materials / Consumables</option>
-                                            </optgroup>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Paid Through <span style="color:#ef4444;">*</span></label>
-                                        <select id="exp-paidthrough" class="pay-input" style="margin-top:0;" required>
-                                            <option value="">Loading accounts...</option>
-                                        </select>
-                                        <span style="font-size:0.75rem; color:#94a3b8; margin-top:4px; display:block;">Add accounts in <a href="banking.html" style="color:var(--primary);">Banking</a></span>
-                                    </div>
-                                </div>
-                            </section>
+            <form id="expense-form" class="invoice-form" style="margin-bottom: 5rem; background: #fbfbfc; padding: 0; border-radius: 12px; border: 1px solid var(--border); position: relative;">
+                
+                <div style="padding: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="background: var(--danger-light); color: var(--danger); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                <i data-lucide="receipt"></i>
+                            </div>
+                            <h2 style="margin: 0; color: #1f2937;">Record Expense</h2>
                         </div>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        
+                        <!-- Left Column: Vendor Information -->
+                        <section class="form-section">
+                            <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Vendor Information</h3>
+                            <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                                <div>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Name / Business Name <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
+                                    <input type="text" id="exp-vendor" class="input-wrapper" list="supplier-list" placeholder="Select or type name / business" autocomplete="off" style="margin-top:0; width: 100%; border-color: #d1d5db;">
+                                    <datalist id="supplier-list"></datalist>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Reference / Bill#</label>
+                                    <input type="text" id="exp-ref" class="input-wrapper" placeholder="e.g. Receipt No. or Invoice No." style="margin-top:0; width: 100%; border-color: #d1d5db;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Notes</label>
+                                    <textarea id="exp-notes" class="input-wrapper" rows="3" placeholder="Description of the expense..." style="margin-top:0; width: 100%; border-color: #d1d5db; min-height: 80px; resize: vertical;"></textarea>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;"><i data-lucide="paperclip" style="width: 14px; margin-right: 4px; vertical-align: middle;"></i> Attach Bill <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
+                                    <input type="file" id="exp-bill" class="input-wrapper" accept="image/*,.pdf" style="padding: 6px; margin-top:0; width: 100%; border-color: #d1d5db;">
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Right Column: Operational Logistics -->
+                        <section class="form-section">
+                            <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Expense Details</h3>
+                            <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                                <div>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Date <span style="color:#ef4444;">*</span></label>
+                                    <input type="date" id="exp-date" class="input-wrapper" style="margin-top:0; width: 100%; border-color: #d1d5db;" required>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Expense Account <span style="color:#ef4444;">*</span></label>
+                                    <select id="exp-account" class="input-wrapper" style="margin-top:0; width: 100%; border-color: #d1d5db;" required>
+                                        <option value="">Select Category...</option>
+                                        <optgroup label="Operating Expenses">
+                                            <option value="Meals and Entertainment">Meals and Entertainment</option>
+                                            <option value="Travel Expense">Travel Expense</option>
+                                            <option value="Office Supplies">Office Supplies</option>
+                                            <option value="Utilities">Utilities</option>
+                                            <option value="Rent Expense">Rent Expense</option>
+                                            <option value="Telephone & Internet">Telephone & Internet</option>
+                                            <option value="Advertising">Advertising</option>
+                                            <option value="Repairs and Maintenance">Repairs and Maintenance</option>
+                                        </optgroup>
+                                        <optgroup label="Cost of Goods Sold">
+                                            <option value="Cost of Goods Sold">Cost of Goods Sold</option>
+                                            <option value="Materials">Materials / Consumables</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Paid Through <span style="color:#ef4444;">*</span></label>
+                                    <select id="exp-paidthrough" class="input-wrapper" style="margin-top:0; width: 100%; border-color: #d1d5db;" required>
+                                        <option value="">Loading accounts...</option>
+                                    </select>
+                                    <span style="font-size:0.75rem; color:#94a3b8; margin-top:4px; display:block;">Add accounts in <a href="banking.html" style="color:var(--primary);">Banking</a></span>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
                     </form>
 
                     <!-- Dynamic Items Table -->
@@ -314,6 +317,14 @@
                     </div>
                 </div>
 
+                <!-- Sticky Footer Form Action Block -->
+                <div style="position: sticky; bottom: 0; background: white; padding: 1rem 2rem; border-top: 1px solid #e5e7eb; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: flex-start; gap: 12px; z-index: 100; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                    <button type="button" class="btn-liquid btn-primary" onclick="saveExpense()">Save Expense</button>
+                    <button type="button" class="btn-liquid btn-secondary" onclick="document.getElementById('expense-form').reset()">Clear</button>
+                </div>
+            </form>
+
+            <div style="margin-top: 3rem;">
                 <h2 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 1rem;">Recent Expenses</h2>
                 <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;">
                     <table class="expenses-table">
