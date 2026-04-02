@@ -424,6 +424,16 @@
                 }
             });
 
+            // Also directly deduct any specific Payments Made to Vendors
+            const mantiPaymentsMade = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
+            mantiPaymentsMade.forEach(pm => {
+                const pt = (pm.paidThrough || pm.paymentMode || '').toLowerCase();
+                const alreadyCounted = knownAcctNames.has(pt) || genericPaymentAccts.has(pt);
+                if (!alreadyCounted) {
+                    totalBankBalance -= parseFloat(pm.amount) || 0;
+                }
+            });
+
             document.getElementById('kpi-bank-balance').textContent = `₹ ${totalBankBalance.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
             document.getElementById('kpi-bank-meta').textContent = `Across ${mantiBankAccounts.length} account(s) • Expenses deducted`;
 
