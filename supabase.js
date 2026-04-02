@@ -1,5 +1,5 @@
 // Supabase Initialization and Sync Layer
-const SUPABASE_URL = 'https://stcomjtuuuchdafssgv.supabase.co';
+const SUPABASE_URL = 'https://stcomjtuuuchdafhssgv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0Y29tanR1dXVjaGRhZmhzc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTg2NDYsImV4cCI6MjA5MDM3NDY0Nn0.scmi8txiJEd334girnUK3EXGLFM6vvqPekRzE2DDaC0';
 
 // Initialize the Supabase client
@@ -9,10 +9,10 @@ console.log("Supabase Client Initialized Successfully!");
 
 // --- DATA MIGRATION UTILITY ---
 // Used once to migrate existing localStorage data to Supabase
-window.migrateDataToSupabase = async function() {
+window.migrateDataToSupabase = async function () {
     console.log("Starting Data Migration to Supabase...");
     let successCount = 0;
-    
+
     // 1. Migrate Orders
     const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
     if (orders.length > 0) {
@@ -28,7 +28,7 @@ window.migrateDataToSupabase = async function() {
             remark: o.remark || '-'
         }));
         const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
-        if(error) console.error("Error migrating orders:", error);
+        if (error) console.error("Error migrating orders:", error);
         else successCount++;
     }
 
@@ -47,10 +47,10 @@ window.migrateDataToSupabase = async function() {
         }));
         await supabase.from('job_works').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // delete all
         const { error } = await supabase.from('job_works').insert(dbJobs);
-        if(error) console.error("Error migrating job works:", error);
+        if (error) console.error("Error migrating job works:", error);
         else successCount++;
     }
-    
+
     // Set migration flag so sync down knows it's safe to load empty cloud data
     localStorage.setItem('manti_cloud_migrated', 'true');
 
@@ -93,7 +93,7 @@ function updateSyncIndicator() {
     } else {
         if (indicator) {
             indicator.style.opacity = '0';
-            setTimeout(() => { if(window.mantiSyncPromises.length === 0 && indicator) indicator.remove(); }, 300);
+            setTimeout(() => { if (window.mantiSyncPromises.length === 0 && indicator) indicator.remove(); }, 300);
         }
     }
 }
@@ -106,21 +106,21 @@ window.addEventListener('beforeunload', (e) => {
     }
 });
 
-Storage.prototype.getItem = function(key) {
+Storage.prototype.getItem = function (key) {
     if (key.startsWith('manti_')) {
         return window.ERP_MEMORY.get(key) || null;
     }
     return originalGetItem.call(this, key);
 };
 
-Storage.prototype.setItem = function(key, value) {
+Storage.prototype.setItem = function (key, value) {
     if (key === 'manti_cloud_migrated' || key.startsWith('manti_scroll_') || key.startsWith('manti_val_')) {
         return originalSetItem.call(this, key, value);
     }
     if (key.startsWith('manti_')) {
         // Save to RAM only
         window.ERP_MEMORY.set(key, value);
-        
+
         try {
             const parsedData = JSON.parse(value);
             const promise = syncKeyToSupabase(key, parsedData);
@@ -138,17 +138,17 @@ Storage.prototype.setItem = function(key, value) {
     originalSetItem.call(this, key, value);
 };
 
-window.awaitPendingSyncs = async function() {
+window.awaitPendingSyncs = async function () {
     if (window.mantiSyncPromises.length > 0) {
         document.body.style.opacity = '0.5';
         document.body.style.pointerEvents = 'none';
-        try { await Promise.allSettled(window.mantiSyncPromises); } catch (e) {}
+        try { await Promise.allSettled(window.mantiSyncPromises); } catch (e) { }
         document.body.style.opacity = '1';
         document.body.style.pointerEvents = 'auto';
     }
 };
 
-window.navigateAfterSync = async function(url) {
+window.navigateAfterSync = async function (url) {
     const btn = document.activeElement;
     if (btn && btn.tagName === 'BUTTON') {
         btn.disabled = true;
@@ -177,14 +177,14 @@ async function syncKeyToSupabase(key, data) {
                 receive_wt: parseFloat(j.receiveWt) || null
             }));
             if (dbJobs.length > 0) {
-                await supabase.from('job_works').delete().neq('worker_id', 'NON_EXISTENT_MAGIC_STRING'); 
+                await supabase.from('job_works').delete().neq('worker_id', 'NON_EXISTENT_MAGIC_STRING');
                 await supabase.from('job_works').insert(dbJobs);
             }
         } else if (key === 'manti_saved_invoices') {
             const dbInvoices = Object.values(data).map(inv => ({
                 invoice_number: inv.invoiceData.invoiceNum, date: inv.invoiceData.date, customer_data: inv.customerData || {},
-                items: inv.items || [], subtotal: parseFloat(inv.totals?.subtotal?.replace(/[^0-9.-]+/g,"")) || 0,
-                tax_rate: parseFloat(inv.totals?.taxRate) || 0, total_amount: parseFloat(inv.totals?.grandTotal?.replace(/[^0-9.-]+/g,"")) || 0,
+                items: inv.items || [], subtotal: parseFloat(inv.totals?.subtotal?.replace(/[^0-9.-]+/g, "")) || 0,
+                tax_rate: parseFloat(inv.totals?.taxRate) || 0, total_amount: parseFloat(inv.totals?.grandTotal?.replace(/[^0-9.-]+/g, "")) || 0,
                 payment_status: inv.paymentStatus || 'Unpaid'
             }));
             if (dbInvoices.length > 0) await supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' });
@@ -264,16 +264,16 @@ async function syncKeyToSupabase(key, data) {
                 setting_key: key, setting_value: data, updated_at: new Date().toISOString()
             }, { onConflict: 'setting_key' });
         }
-    } catch (e) { 
-        console.error(`Failed to sync ${key}:`, e); 
+    } catch (e) {
+        console.error(`Failed to sync ${key}:`, e);
         alert(`Cloud Sync Error for ${key}: ` + e.message + ".\nPlease ensure internet stability or check database configuration.");
     }
 }
 
 // Global Cloud Fetcher
-window.fetchEverythingFromCloud = async function() {
+window.fetchEverythingFromCloud = async function () {
     console.log("Fetching all data directly from Supabase Cloud...");
-    
+
     // Create a blocking UI loader
     const loader = document.createElement('div');
     loader.id = 'cloud-loader';
@@ -286,8 +286,8 @@ window.fetchEverythingFromCloud = async function() {
         const { data: ordersData } = await supabase.from('orders').select('*');
         if (ordersData) {
             const mappedOrders = ordersData.map(o => ({
-                id: o.order_number, type: o.type, date: o.date, dueDate: o.due_date, 
-                customer: o.customer_name, product: o.product_name, weight: o.total_weight, 
+                id: o.order_number, type: o.type, date: o.date, dueDate: o.due_date,
+                customer: o.customer_name, product: o.product_name, weight: o.total_weight,
                 unit: o.weight_unit, remark: o.remark, timestamp: o.created_at
             }));
             window.ERP_MEMORY.set('manti_order_records', JSON.stringify(mappedOrders));
@@ -414,7 +414,7 @@ window.fetchEverythingFromCloud = async function() {
                 }
             });
         }
-    } catch(e) {
+    } catch (e) {
         console.error("Cloud Fetch Failed!", e);
         loader.innerHTML = '<div style="background: #fee2e2; color: #dc2626; padding: 20px; border-radius: 12px; font-weight: 700;">Could not connect to Supabase Cloud. Please check your internet connection.</div>';
         return; // Halt execution if offline (strict option B)
@@ -422,7 +422,7 @@ window.fetchEverythingFromCloud = async function() {
 
     loader.remove();
     console.log("Cloud data loaded into RAM. Dispatching CloudDataLoaded event.");
-    
+
     // Boot the main ERP scripts natively
     document.dispatchEvent(new Event('CloudDataLoaded'));
 };
