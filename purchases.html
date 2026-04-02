@@ -120,35 +120,24 @@
                 </div>
             </header>
 
-            <!-- KPI Stats Bar -->
             <div id="po-kpi-bar" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
                 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
                     <div style="width:36px;height:36px;border-radius:8px;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;"><i data-lucide="shopping-cart" style="width:18px;height:18px;"></i></div>
-                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Total POs</div><div id="kpi-po-total" style="font-size:1.3rem;font-weight:800;color:#111827;">0</div></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Total POs</div><div id="kpi-po-total" style="font-size:1.3rem;font-weight:800;color:#111827;">—</div></div>
                 </div>
                 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
                     <div style="width:36px;height:36px;border-radius:8px;background:#fef9c3;color:#ca8a04;display:flex;align-items:center;justify-content:center;"><i data-lucide="clock" style="width:18px;height:18px;"></i></div>
-                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Open</div><div id="kpi-po-open" style="font-size:1.3rem;font-weight:800;color:#ca8a04;">0</div></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Open</div><div id="kpi-po-open" style="font-size:1.3rem;font-weight:800;color:#ca8a04;">—</div></div>
                 </div>
                 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
                     <div style="width:36px;height:36px;border-radius:8px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;"><i data-lucide="check-circle" style="width:18px;height:18px;"></i></div>
-                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Completed</div><div id="kpi-po-completed" style="font-size:1.3rem;font-weight:800;color:#16a34a;">0</div></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Completed</div><div id="kpi-po-completed" style="font-size:1.3rem;font-weight:800;color:#16a34a;">—</div></div>
                 </div>
                 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
                     <div style="width:36px;height:36px;border-radius:8px;background:#fae8ff;color:#9333ea;display:flex;align-items:center;justify-content:center;"><i data-lucide="package" style="width:18px;height:18px;"></i></div>
-                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Asset POs</div><div id="kpi-po-assets" style="font-size:1.3rem;font-weight:800;color:#9333ea;">0</div></div>
+                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Asset POs</div><div id="kpi-po-assets" style="font-size:1.3rem;font-weight:800;color:#9333ea;">—</div></div>
                 </div>
             </div>
-            <script>
-                (function(){
-                    const allOrders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
-                    const pos = allOrders.filter(o => o.type === 'Purchase Order');
-                    document.getElementById('kpi-po-total').textContent = pos.length;
-                    document.getElementById('kpi-po-open').textContent = pos.filter(o => o.status !== 'Completed').length;
-                    document.getElementById('kpi-po-completed').textContent = pos.filter(o => o.status === 'Completed').length;
-                    document.getElementById('kpi-po-assets').textContent = pos.filter(o => o.category === 'Assets').length;
-                })();
-            </script>
 
             <form id="order-form" class="invoice-form"
                 style="margin-bottom: 5rem; display: none; background: #fbfbfc; padding: 0; border-radius: 12px; border: 1px solid var(--border); position: relative;">
@@ -377,9 +366,21 @@
     <script src="liquid-button.js"></script>
     <script src="script.js?v=24"></script>
     <script>
-        let records = JSON.parse(localStorage.getItem('manti_order_records')) || [];
-        
+        let records = [];
+
+        function updatePOKPIs() {
+            const pos = records.filter(o => o.type === 'Purchase Order');
+            document.getElementById('kpi-po-total').textContent = pos.length;
+            document.getElementById('kpi-po-open').textContent = pos.filter(o => (o.status || 'Open') !== 'Completed' && (o.status || 'Open') !== 'Cancelled').length;
+            document.getElementById('kpi-po-completed').textContent = pos.filter(o => o.status === 'Completed').length;
+            document.getElementById('kpi-po-assets').textContent = pos.filter(o => o.category === 'Assets').length;
+        }
+
         document.addEventListener('CloudDataLoaded', () => {
+            // Reload records from cloud-populated RAM
+            records = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+            updatePOKPIs();
+
             // Load rates
             const savedRates = localStorage.getItem('manti_metal_rates');
             if (savedRates) {
