@@ -281,6 +281,8 @@
                     <div class="report-group">
                         <div class="report-group-title">Financial Statements</div>
                         <ul class="report-list">
+                            <li><a class="report-link" onclick="selectReport('expenses', this)"><i data-lucide="receipt" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i> Expense Details</a></li>
+                            <li><a class="report-link" onclick="selectReport('banking-ledger', this)"><i data-lucide="landmark" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i> Banking & Ledger</a></li>
                             <li><a class="report-link" onclick="selectReport('finance-summary', this)" style="font-weight: 700; color: #8b5cf6;">Financial Summary</a></li>
                             <li><a class="report-link" onclick="selectReport('profit-loss', this)" style="font-weight: 700; color: var(--success);">Profit & Loss</a></li>
                             <li><a class="report-link" onclick="selectReport('overall-valuation', this)" style="font-weight: 700; color: #0284c7;">Overall Valuation</a></li>
@@ -873,6 +875,94 @@
                     `;
                     
                     if (window.lucide) window.lucide.createIcons();
+                }
+                else if (type === 'expenses') {
+                    reportTitle.textContent = `Expense Details Report (${new Date().toLocaleDateString()})`;
+                    const expenses = JSON.parse(localStorage.getItem('manti_expenses')) || [];
+                    const filtered = expenses.filter(e => isWithinDateFilter(e.date));
+                    
+                    reportHead.innerHTML = `
+                        <tr>
+                            <th>Date</th>
+                            <th>Expense ID</th>
+                            <th>Category</th>
+                            <th>Vendor</th>
+                            <th>Paid Through</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                        </tr>
+                    `;
+                    let bodyHtml = '';
+                    let total = 0;
+                    if (filtered.length === 0) {
+                        bodyHtml = `<tr><td colspan="7" style="text-align:center;">No expenses found for this period.</td></tr>`;
+                    } else {
+                        filtered.forEach(e => {
+                            total += parseFloat(e.amount) || 0;
+                            bodyHtml += `
+                                <tr>
+                                    <td>${e.date}</td>
+                                    <td>${e.id}</td>
+                                    <td>${e.expense_account || e.account || '-'}</td>
+                                    <td>${e.vendor || '-'}</td>
+                                    <td>${e.paid_through || e.paidThrough || '-'}</td>
+                                    <td>${e.notes || e.reference || '-'}</td>
+                                    <td style="font-weight: 600;">₹ ${(parseFloat(e.amount) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                </tr>
+                            `;
+                        });
+                        bodyHtml += `
+                            <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1;">
+                                <td colspan="6" style="text-align: right; font-weight: 700;">Total Expenses:</td>
+                                <td style="font-weight: 800; color: #ef4444;">₹ ${total.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    }
+                    reportBody.innerHTML = bodyHtml;
+                }
+                else if (type === 'banking-ledger') {
+                    reportTitle.textContent = `Banking & Journal Ledger (${new Date().toLocaleDateString()})`;
+                    const journals = JSON.parse(localStorage.getItem('manti_journal_entries')) || [];
+                    const filteredJournals = journals.filter(j => isWithinDateFilter(j.date));
+                    
+                    reportHead.innerHTML = `
+                        <tr>
+                            <th>Date</th>
+                            <th>Journal ID</th>
+                            <th>Account Name</th>
+                            <th>Description</th>
+                            <th style="color: #10b981;">Total Value (₹)</th>
+                        </tr>
+                    `;
+                    let bodyHtml = '';
+                    let totalValue = 0;
+                    
+                    if (filteredJournals.length === 0) {
+                        bodyHtml = `<tr><td colspan="5" style="text-align:center;">No journal entries found for this period.</td></tr>`;
+                    } else {
+                        filteredJournals.forEach(j => {
+                            totalValue += parseFloat(j.amount) || 0;
+                            let accountsText = (j.lines || []).map(l => l.account).join(', ');
+                            if (!accountsText) accountsText = 'Multiple Accounts';
+                            
+                            bodyHtml += `
+                                <tr>
+                                    <td>${j.date}</td>
+                                    <td>${j.id || j.no || '-'}</td>
+                                    <td>${accountsText}</td>
+                                    <td>${j.description || j.notes || '-'}</td>
+                                    <td style="font-weight: 600;">₹ ${(parseFloat(j.amount) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                </tr>
+                            `;
+                        });
+                        bodyHtml += `
+                            <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1;">
+                                <td colspan="4" style="text-align: right; font-weight: 700;">Net Journal Movement:</td>
+                                <td style="font-weight: 800; color: #3b82f6;">₹ ${totalValue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    }
+                    reportBody.innerHTML = bodyHtml;
                 }
                 else if (type === 'jobwork-metal') {
                     reportTitle.textContent = "Metal Balance Report (" + new Date().toLocaleDateString() + ")";

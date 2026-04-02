@@ -190,7 +190,7 @@ CREATE TABLE IF NOT EXISTS public.payments_made (
 
 -- 12. Create Journal Entries table
 CREATE TABLE IF NOT EXISTS public.journal_entries (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY,
     date DATE NOT NULL,
     amount NUMERIC NOT NULL,
     description TEXT,
@@ -200,7 +200,13 @@ CREATE TABLE IF NOT EXISTS public.journal_entries (
 
 -- 13. Create Bank Accounts table
 CREATE TABLE IF NOT EXISTS public.bank_accounts (
-    account_name TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY,
+    account_name TEXT NOT NULL,
+    type TEXT,
+    bank_name TEXT,
+    "number" TEXT,
+    loan_number TEXT,
+    emi_amount NUMERIC,
     opening_balance NUMERIC NOT NULL,
     opening_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

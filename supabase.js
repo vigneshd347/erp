@@ -272,20 +272,20 @@ async function syncKeyToSupabase(key, data) {
             }
         } else if (key === 'manti_journal_entries') {
             const dbJournals = data.map(j => ({
-                date: j.date, amount: parseFloat(j.amount) || 0, description: j.description || '', lines: j.lines || []
+                id: j.id || j.no, date: j.date, amount: parseFloat(j.amount) || 0, description: j.description || j.notes || '', lines: j.lines || []
             }));
             if (dbJournals.length > 0) {
-                const { error: delErr } = await supabase.from('journal_entries').delete().neq('date', '1900-01-01');
-                if (delErr) { console.error("Journal Entries Sync Error:", delErr); alert("Failed to clear Journal Entries for sync: " + delErr.message); }
-                const { error } = await supabase.from('journal_entries').insert(dbJournals);
+                const { error } = await supabase.from('journal_entries').upsert(dbJournals, { onConflict: 'id' });
                 if (error) { console.error("Journal Entries Sync Error:", error); alert("Failed to save Journal Entries to Cloud: " + error.message); }
             }
         } else if (key === 'manti_bank_accounts') {
             const dbAccounts = data.map(a => ({
-                account_name: a.name, opening_balance: parseFloat(a.openingBalance) || 0, opening_date: a.openingDate || null
+                id: a.id, account_name: a.name, type: a.type || 'Bank', bank_name: a.bankName || '', "number": a.number || '',
+                loan_number: a.loanNumber || '', emi_amount: parseFloat(a.emiAmount) || 0,
+                opening_balance: parseFloat(a.openingBalance) || 0, opening_date: a.openingDate || null
             }));
             if (dbAccounts.length > 0) {
-                const { error } = await supabase.from('bank_accounts').upsert(dbAccounts, { onConflict: 'account_name' });
+                const { error } = await supabase.from('bank_accounts').upsert(dbAccounts, { onConflict: 'id' });
                 if (error) { console.error("Bank Accounts Sync Error:", error); alert("Failed to save Bank Accounts to Cloud: " + error.message); }
             }
         } else if (key === 'manti_stock_history') {
@@ -433,7 +433,7 @@ window.fetchEverythingFromCloud = async function () {
         const { data: journalsData } = await supabase.from('journal_entries').select('*');
         if (journalsData && journalsData.length > 0) {
             const mappedJournals = journalsData.map(j => ({
-                date: j.date, amount: j.amount, description: j.description, lines: j.lines
+                id: j.id, no: j.id, date: j.date, amount: j.amount, notes: j.description, description: j.description, lines: j.lines
             }));
             window.ERP_MEMORY.set('manti_journal_entries', JSON.stringify(mappedJournals));
         }
@@ -442,7 +442,8 @@ window.fetchEverythingFromCloud = async function () {
         const { data: bankAccountsData } = await supabase.from('bank_accounts').select('*');
         if (bankAccountsData && bankAccountsData.length > 0) {
             const mappedAccounts = bankAccountsData.map(a => ({
-                name: a.account_name, openingBalance: a.opening_balance, openingDate: a.opening_date
+                id: a.id, name: a.account_name, type: a.type, bankName: a.bank_name, number: a.number,
+                loanNumber: a.loan_number, emiAmount: a.emi_amount, openingBalance: a.opening_balance, openingDate: a.opening_date
             }));
             window.ERP_MEMORY.set('manti_bank_accounts', JSON.stringify(mappedAccounts));
         }
