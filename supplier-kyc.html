@@ -162,7 +162,7 @@
 
             function generateSupplierId() {
                 // Find highest existing ID
-                let maxId = 1000;
+                let maxId = 0;
                 records.forEach(rec => {
                     if (rec && rec.id && typeof rec.id === 'string' && rec.id.startsWith('SUP-')) {
                         const num = parseInt(rec.id.replace('SUP-', ''), 10);
@@ -171,7 +171,7 @@
                         }
                     }
                 });
-                return 'SUP-' + (maxId + 1);
+                return 'SUP-' + ((maxId + 1).toString().padStart(4, '0'));
             }
 
             function renderTable() {

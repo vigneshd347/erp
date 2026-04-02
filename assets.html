@@ -268,7 +268,15 @@
             
             // Generate basic ID
             function generateId() {
-                return 'AST-' + Date.now().toString().slice(-6);
+                const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                let maxId = 0;
+                assets.forEach(a => {
+                    if (a.id && a.id.startsWith('AST-')) {
+                        let num = parseInt(a.id.replace('AST-', ''), 10);
+                        if (!isNaN(num) && num > maxId) maxId = num;
+                    }
+                });
+                return 'AST-' + (maxId + 1).toString().padStart(4, '0');
             }
 
             // Load from storage
@@ -308,21 +316,29 @@
                             <td>${a.value ? '₹ ' + parseFloat(a.value).toFixed(2) : '-'}</td>
                             <td><strong>${displayCurrentValue}</strong></td>
                             <td><span style="color: ${statusColor}; font-weight: 600; background: ${statusColor}15; padding: 4px 10px; border-radius: 20px;">${a.status}</span></td>
-                            <td style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
-                                ${a.status === 'Pending Approval' ? 
-                                `<button type="button" class="btn-text approve-btn" data-id="${a.id}" style="padding: 4px; color: var(--success); display: flex; align-items: center; justify-content: center;" title="Approve">
-                                    <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
-                                </button>` : ''}
-                                <button type="button" class="btn-edit edit-btn" data-id="${a.id}" title="Edit" style="margin-bottom: 5px;">
-                                    <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
-                                </button>
-                                ${a.status !== 'Retired' && a.status !== 'Scrapped' && a.status !== 'Sold' ? `
-                                <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;">
-                                    <button type="button" onclick="actionAsset('${a.id}', 'sell')" class="btn-text" style="font-size: 0.7rem; color: #10b981; padding: 2px 6px; border: 1px solid #10b981; border-radius: 4px;" title="Sell via Sales Order">Sell</button>
-                                    <button type="button" onclick="actionAsset('${a.id}', 'scrap')" class="btn-text" style="font-size: 0.7rem; color: #ef4444; padding: 2px 6px; border: 1px solid #ef4444; border-radius: 4px;" title="Mark as Scrapped">Scrap</button>
-                                    <button type="button" onclick="actionAsset('${a.id}', 'service')" class="btn-text" style="font-size: 0.7rem; color: #3b82f6; padding: 2px 6px; border: 1px solid #3b82f6; border-radius: 4px;" title="Send for Service (Returnable)">Service</button>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <div style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                                    ${a.status === 'Pending Approval' ? 
+                                    `<button type="button" class="approve-btn" data-id="${a.id}" style="padding: 6px; color: #16a34a; background: #dcfce7; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;" title="Approve" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter='none'">
+                                        <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                                    </button>` : ''}
+                                    
+                                    <button type="button" class="btn-edit edit-btn" data-id="${a.id}" title="Edit" style="padding: 6px; background: #f1f5f9; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter='none'">
+                                        <i data-lucide="edit" style="width: 16px; height: 16px; color: #475569;"></i>
+                                    </button>
+                                    
+                                    ${a.status !== 'Retired' && a.status !== 'Scrapped' && a.status !== 'Sold' ? `
+                                        <button type="button" onclick="actionAsset('${a.id}', 'sell')" style="padding: 6px; color: #0284c7; background: #e0f2fe; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;" title="Sell Asset (Sales Order)" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter='none'">
+                                            <i data-lucide="shopping-cart" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                        <button type="button" onclick="actionAsset('${a.id}', 'service')" style="padding: 6px; color: #ca8a04; background: #fef9c3; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;" title="Send for Service (Challan)" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter='none'">
+                                            <i data-lucide="wrench" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                        <button type="button" onclick="actionAsset('${a.id}', 'scrap')" style="padding: 6px; color: #dc2626; background: #fee2e2; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;" title="Mark as Scrapped" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter='none'">
+                                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                    ` : ''}
                                 </div>
-                                ` : ''}
                             </td>
                         </tr>
                     `;
@@ -419,6 +435,13 @@
                         let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
                         assets = assets.filter(a => a.id !== id);
                         localStorage.setItem('manti_assets', JSON.stringify(assets));
+
+                        // Force cloud deletion
+                        if (window.supabase) {
+                            window.supabase.from('assets').delete().match({ id: id })
+                                .then(({error}) => { if (error) console.error("Cloud Asset delete error", error); });
+                        }
+
                         closeModal();
                         loadAssets();
                     }

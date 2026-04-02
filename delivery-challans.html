@@ -279,7 +279,15 @@
         function resetChallanForm() {
             document.getElementById('challan-form').reset();
             document.getElementById('challan-items-body').innerHTML = '';
-            document.getElementById('challan-number').value = 'DC-' + (Date.now() % 1000000);
+                        const records = JSON.parse(localStorage.getItem('manti_delivery_challan_records') || '[]');
+            let nextId = 1;
+            records.forEach(r => {
+                if(r.id && r.id.startsWith('DC-')) {
+                    let n = parseInt(r.id.replace('DC-', ''));
+                    if(n >= nextId) nextId = n + 1;
+                }
+            });
+            document.getElementById('challan-number').value = 'DC-' + nextId.toString().padStart(4, '0');
             document.getElementById('challan-date').valueAsDate = new Date();
             addChallanRow();
             populateCustomerDropdown();

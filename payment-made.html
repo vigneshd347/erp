@@ -555,7 +555,16 @@
             // 3. Record Payment Made
             const payments = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
             const paymentObj = {
-                id: 'PAY-' + Date.now().toString().slice(-6),
+                id: (function(){
+                    let nextId = 1;
+                    payments.forEach(r => {
+                        if(r.id && r.id.startsWith('PAY-')) {
+                            const n = parseInt(r.id.replace('PAY-', ''), 10);
+                            if(!isNaN(n) && n >= nextId) nextId = n + 1;
+                        }
+                    });
+                    return 'PAY-' + nextId.toString().padStart(4, '0');
+                })(),
                 vendor: vendorId,
                 date: date,
                 amount: amountEntered,

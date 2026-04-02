@@ -402,7 +402,15 @@
                 return alert("Please fill the required fields: Date, Expense Account, and a valid Amount.");
             }
 
-            const expId = 'EXP-' + String(Date.now()).slice(-8);
+            let nextId = 1;
+            const records = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+            records.forEach(r => {
+                if(r.id && r.id.startsWith('EXP-')) {
+                    const n = parseInt(r.id.replace('EXP-', ''), 10);
+                    if(!isNaN(n) && n >= nextId) nextId = n + 1;
+                }
+            });
+            const expId = 'EXP-' + nextId.toString().padStart(4, '0');
 
             // Handle Supabase Bucket File Upload if any
             let billPubUrl = null;
