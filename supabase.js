@@ -299,6 +299,14 @@ async function syncKeyToSupabase(key, data) {
                 const { error } = await supabase.from('stock_history').insert(dbStock);
                 if (error) { console.error("Stock History Sync Error:", error); alert("Failed to save Stock History to Cloud: " + error.message); }
             }
+        } else if (key === 'manti_report_snapshots') {
+            const dbSnaps = data.map(s => ({
+                id: s.id, title: s.title, date: s.date, html: s.html, type: s.type
+            }));
+            if (dbSnaps.length > 0) {
+                const { error } = await supabase.from('snapshots').upsert(dbSnaps, { onConflict: 'id' });
+                if (error) { console.error("Snapshots Sync Error:", error); alert("Failed to save Snapshots to Cloud: " + error.message); }
+            }
         } else {
             const { error } = await supabase.from('settings').upsert({
                 setting_key: key, setting_value: data, updated_at: new Date().toISOString()
@@ -448,13 +456,23 @@ window.fetchEverythingFromCloud = async function () {
             window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(mappedStock));
         }
 
-        // 13. Fetch Settings (Generic Rules, Custom DBs)
+        // 13. Fetch Snapshots
+        const { data: snapsData } = await supabase.from('snapshots').select('*');
+        if (snapsData && snapsData.length > 0) {
+            const mappedSnaps = snapsData.map(s => ({
+                id: s.id, title: s.title, date: s.date, html: s.html, type: s.type
+            }));
+            window.ERP_MEMORY.set('manti_report_snapshots', JSON.stringify(mappedSnaps));
+        }
+
+        // 14. Fetch Settings (Generic Rules, Custom DBs)
         const { data: settingsData } = await supabase.from('settings').select('*');
         if (settingsData) {
             const ignoredKeys = [
                 'manti_vendor_kyc_records', 'manti_supplier_kyc_records', 'manti_staff_records',
                 'manti_assets', 'manti_delivery_challan_records', 'manti_payments_made',
-                'manti_expenses', 'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history'
+                'manti_expenses', 'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history',
+                'manti_report_snapshots'
             ];
             settingsData.forEach(s => {
                 // To avoid overwriting dedicated fetches if they accidentally saved in settings earlier
