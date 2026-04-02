@@ -656,10 +656,10 @@
                 reportHead.innerHTML = '';
                 reportBody.innerHTML = '';
 
-                if (type === 'sales-orders' || type === 'purchase-orders') {
-                    const isSales = type === 'sales-orders';
-                    const reportName = isSales ? 'Sales' : 'Purchase';
-                    reportTitle.textContent = `${reportName} Orders Report (${new Date().toLocaleDateString()})`;
+                if (type === 'sales-orders') {
+                    const isSales = true;
+                    const reportName = 'Sales';
+                    reportTitle.textContent = `Sales Orders Report (${new Date().toLocaleDateString()})`;
 
                     const allOrders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
                     const filterType = isSales ? 'Sales Order' : 'Purchase Order';
@@ -828,6 +828,146 @@
                         reportBody.innerHTML = bodyHtml;
                     }
                 }
+
+                else if (type === 'purchase-orders') {
+                    reportTitle.textContent = `Purchase Orders Report`;
+                    document.getElementById('report-subtitle').textContent = new Date().toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
+
+                    const allOrders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+                    const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+                    const supplierMap = {}; suppliers.forEach(s => supplierMap[s.id] = s.name);
+
+                    const pos = allOrders.filter(o => o.type === 'Purchase Order' && isWithinDateFilter(o.date));
+
+                    const totalPOs    = pos.length;
+                    const openPOs     = pos.filter(o => (o.status||'Open') === 'Open').length;
+                    const completedPOs= pos.filter(o => o.status === 'Completed').length;
+                    const cancelledPOs= pos.filter(o => o.status === 'Cancelled').length;
+                    const grandTotalAmt = pos.filter(o => o.status !== 'Cancelled').reduce((s,o) => s+(parseFloat(o.amount)||0), 0);
+
+                    const cats = ['Stock','Assets','Consumables','Others'];
+                    const catData = {}; cats.forEach(c => catData[c] = { count:0, amount:0 });
+                    pos.forEach(o => {
+                        const cat = cats.includes(o.category) ? o.category : 'Others';
+                        catData[cat].count++; catData[cat].amount += parseFloat(o.amount)||0;
+                    });
+
+                    const statusStyle = {
+                        'Open':      { bg:'#fef9c3', color:'#92400e', dot:'#d97706' },
+                        'Completed': { bg:'#dcfce7', color:'#166534', dot:'#16a34a' },
+                        'Cancelled': { bg:'#fee2e2', color:'#991b1b', dot:'#dc2626' }
+                    };
+                    const catStyle = {
+                        'Stock':       { bg:'#e0f2fe', color:'#0369a1' },
+                        'Assets':      { bg:'#ede9fe', color:'#7c3aed' },
+                        'Consumables': { bg:'#fef3c7', color:'#92400e' },
+                        'Others':      { bg:'#f3f4f6', color:'#374151' }
+                    };
+
+                    reportHead.innerHTML = `
+                    <tr><td colspan="9" style="padding:0;border:none;">
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 20px 14px;">
+                            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;">
+                                <div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Total POs</div>
+                                <div style="font-size:1.8rem;font-weight:800;color:#111827;">${totalPOs}</div>
+                                <div style="font-size:0.78rem;color:#9ca3af;margin-top:4px;">₹ ${grandTotalAmt.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                            </div>
+                            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:16px;">
+                                <div style="font-size:0.7rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Open</div>
+                                <div style="font-size:1.8rem;font-weight:800;color:#d97706;">${openPOs}</div>
+                                <div style="font-size:0.78rem;color:#9ca3af;margin-top:4px;">Pending receipt</div>
+                            </div>
+                            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px;">
+                                <div style="font-size:0.7rem;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Completed</div>
+                                <div style="font-size:1.8rem;font-weight:800;color:#16a34a;">${completedPOs}</div>
+                                <div style="font-size:0.78rem;color:#9ca3af;margin-top:4px;">Received &amp; closed</div>
+                            </div>
+                            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px;">
+                                <div style="font-size:0.7rem;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Cancelled</div>
+                                <div style="font-size:1.8rem;font-weight:800;color:#dc2626;">${cancelledPOs}</div>
+                                <div style="font-size:0.78rem;color:#9ca3af;margin-top:4px;">Voided orders</div>
+                            </div>
+                        </div>
+
+                        <div style="padding:0 20px 14px;">
+                            <div style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Category Breakdown</div>
+                            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+                                ${cats.map(cat => `
+                                <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;background:#fafafa;">
+                                    <span style="background:${catStyle[cat].bg};color:${catStyle[cat].color};font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:20px;">${cat}</span>
+                                    <div style="font-size:1.2rem;font-weight:800;color:#111827;margin-top:8px;">${catData[cat].count} <span style="font-size:0.72rem;color:#9ca3af;font-weight:400;">orders</span></div>
+                                    <div style="font-size:0.8rem;color:#059669;font-weight:600;margin-top:2px;">₹ ${catData[cat].amount.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                                </div>`).join('')}
+                            </div>
+                        </div>
+
+                        <div style="padding:0 20px 0;display:flex;align-items:center;gap:0;border-bottom:2px solid #f3f4f6;padding-bottom:12px;">
+                            <span style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-right:14px;">Filter:</span>
+                            ${['All','Open','Completed','Cancelled'].map((s,i) => `
+                            <button onclick="window._poStatusFilter='${s}';document.querySelectorAll('.po-rpt-tab').forEach(b=>{b.style.background='#fff';b.style.color='#6b7280';b.style.fontWeight='500'});this.style.background='var(--primary)';this.style.color='#fff';this.style.fontWeight='700';document.querySelectorAll('.po-rpt-row').forEach(r=>{r.style.display=('${s}'==='All'||r.dataset.poStatus==='${s}')?'':'none'})"
+                                class="po-rpt-tab"
+                                style="padding:6px 16px;font-size:0.82rem;font-weight:${i===0?'700':'500'};border:1px solid #e5e7eb;border-left:${i===0?'1px':'0'} solid #e5e7eb;background:${i===0?'var(--primary)':'#fff'};color:${i===0?'#fff':'#6b7280'};cursor:pointer;${i===0?'border-radius:6px 0 0 6px;':i===3?'border-radius:0 6px 6px 0;':''}">${s}</button>`).join('')}
+                        </div>
+                    </td></tr>
+                    <tr style="background:#f8fafc;">
+                        <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">PO #</th>
+                        <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Date</th>
+                        <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Supplier</th>
+                        <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Category</th>
+                        <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Items</th>
+                        <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Bill No.</th>
+                        <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;text-align:right;">Amount (₹)</th>
+                        <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;text-align:center;">Status</th>
+                        <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Remark</th>
+                    </tr>`;
+
+                    if (pos.length === 0) {
+                        reportBody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:48px;color:#9ca3af;">No purchase orders found for this period.</td></tr>`;
+                    } else {
+                        let bodyHtml = '';
+                        let totalExclCancelled = 0;
+                        pos.sort((a,b) => new Date(b.date)-new Date(a.date)).forEach(o => {
+                            const status = o.status || 'Open';
+                            const sc = statusStyle[status] || { bg:'#f3f4f6', color:'#374151', dot:'#9ca3af' };
+                            const cat = cats.includes(o.category) ? o.category : (o.category || '—');
+                            const cs = catStyle[cat] || { bg:'#f3f4f6', color:'#374151' };
+                            const supplierName = supplierMap[o.vendor] || o.vendor || '—';
+                            const amt = parseFloat(o.amount) || 0;
+                            if (status !== 'Cancelled') totalExclCancelled += amt;
+
+                            let itemsSummary = '—';
+                            if (o.items && o.items.length > 0) {
+                                itemsSummary = o.items.map(it => it.desc).filter(Boolean).join(', ');
+                                if (itemsSummary.length > 50) itemsSummary = itemsSummary.slice(0,47) + '…';
+                            } else if (o.product) { itemsSummary = o.product; }
+
+                            bodyHtml += `<tr class="po-rpt-row" data-po-status="${status}" style="border-bottom:1px solid #f3f4f6;">
+                                <td style="padding:13px 14px;font-weight:700;color:#0284c7;">${o.id||'—'}</td>
+                                <td style="padding:13px 14px;color:#374151;">${o.date||'—'}</td>
+                                <td style="padding:13px 14px;font-weight:600;color:#1f2937;">${supplierName}</td>
+                                <td style="padding:13px 14px;">${cat!=='—'?`<span style="background:${cs.bg};color:${cs.color};font-size:0.7rem;font-weight:700;padding:3px 9px;border-radius:20px;">${cat}</span>`:'—'}</td>
+                                <td style="padding:13px 14px;color:#374151;font-size:0.84rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemsSummary}</td>
+                                <td style="padding:13px 14px;color:#6b7280;font-size:0.82rem;">${o.billNo||'—'}</td>
+                                <td style="padding:13px 14px;text-align:right;font-weight:700;color:#059669;">${amt>0?'₹ '+amt.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</td>
+                                <td style="padding:13px 14px;text-align:center;">
+                                    <span style="display:inline-flex;align-items:center;gap:4px;background:${sc.bg};color:${sc.color};font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:20px;">
+                                        <span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};flex-shrink:0;"></span>${status}
+                                    </span>
+                                </td>
+                                <td style="padding:13px 14px;color:#6b7280;font-size:0.82rem;">${o.remark||'—'}</td>
+                            </tr>`;
+                        });
+
+                        bodyHtml += `<tr style="background:#f8fafc;border-top:2px solid #e5e7eb;">
+                            <td colspan="6" style="padding:14px;text-align:right;font-weight:700;color:#374151;">Grand Total (excl. Cancelled):</td>
+                            <td style="padding:14px;text-align:right;font-weight:800;color:#059669;font-size:1rem;">₹ ${totalExclCancelled.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                            <td colspan="2"></td>
+                        </tr>`;
+                        reportBody.innerHTML = bodyHtml;
+                    }
+                    window._poStatusFilter = 'All';
+                }
+
                 else if (type === 'finance-summary') {
                     reportTitle.textContent = `Financial Summary (${new Date().toLocaleDateString()})`;
                     const allOrders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
