@@ -264,7 +264,8 @@ async function syncKeyToSupabase(key, data) {
         } else if (key === 'manti_expenses') {
             const dbExpenses = data.map(e => ({
                 id: e.id, date: e.date, expense_account: e.account || '', amount: parseFloat(e.amount) || 0,
-                paid_through: e.paidThrough || '', vendor: e.vendor || null, gst_number: e.gstNumber || null,
+                paid_through: e.paidThrough || '', vendor: e.vendor || null,
+                gst_percent: e.gstPercent || null, gst_amount: e.gstAmount || null,
                 reference: e.reference || '', notes: e.notes || '', bill_url: e.billUrl || null
             }));
             if (dbExpenses.length > 0) {
@@ -424,7 +425,9 @@ window.fetchEverythingFromCloud = async function () {
             if (expensesData && expensesData.length > 0) {
                 const mappedExpenses = expensesData.map(e => ({
                     id: e.id, date: e.date, account: e.expense_account, amount: e.amount,
-                    paidThrough: e.paid_through, vendor: e.vendor, gstNumber: e.gst_number || null,
+                    paidThrough: e.paid_through, vendor: e.vendor,
+                    gstPercent: e.gst_percent || null, gstAmount: e.gst_amount || null,
+                    total: (parseFloat(e.amount) || 0) + (parseFloat(e.gst_amount) || 0),
                     reference: e.reference, notes: e.notes, billUrl: e.bill_url
                 }));
                 window.ERP_MEMORY.set('manti_expenses', JSON.stringify(mappedExpenses));

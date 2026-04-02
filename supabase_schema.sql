@@ -261,15 +261,17 @@ CREATE TABLE IF NOT EXISTS public.expenses (
     amount DECIMAL(15,2) NOT NULL DEFAULT 0.00,
     paid_through TEXT NOT NULL,
     vendor TEXT,
-    gst_number TEXT,
+    gst_percent NUMERIC,
+    gst_amount NUMERIC,
     reference TEXT,
     notes TEXT,
     bill_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Add gst_number to existing expenses tables (safe for re-runs)
-ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS gst_number TEXT;
+-- Add GST columns to existing expenses tables (safe for re-runs)
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS gst_percent NUMERIC;
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS gst_amount NUMERIC;
 
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Enable all for anon" ON public.expenses;
