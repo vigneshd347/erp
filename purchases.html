@@ -765,28 +765,54 @@
 
                 if (rec.category === 'Assets' && rec.items && rec.items.length > 0) {
                     let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                    const noteStr = 'Auto-added from PO: ' + rec.id;
+                    
+                    // Prevent duplicate execution if this PO has already been synced
+                    if (assets.some(a => a.notes && a.notes.includes(noteStr))) {
+                        return;
+                    }
+
                     let addedCount = 0;
                     
-                    rec.items.forEach((it, i) => {
-                        const totalVal = parseFloat(it.total) || 0;
-                        const noteStr = 'Auto-added from PO: ' + rec.id;
-                        if (totalVal > 0 && !assets.some(a => a.notes && a.notes.includes(noteStr))) {
-                            assets.push({
-                                id: 'AST-' + Date.now().toString().slice(-6) + i,
-                                name: it.desc + (it.qty > 1 ? ` (Qty: ${it.qty})` : ''),
-                                category: rec.assetType || 'Other',     
-                                status: 'Pending Approval',
-                                date: rec.date,
-                                value: totalVal.toString(),
-                                notes: noteStr
+                    rec.items.forEach((it) => {
+                        const q = parseInt(it.qty, 10) || 1;
+                        const perItemTotal = (parseFloat(it.total) || 0) / q;
+                        
+                        // For each unit in quantity, create an individual asset
+                        for(let k = 0; k < q; k++) {
+                            // Find next valid ID starting from 0001
+                            let maxId = 0;
+                            assets.forEach(a => {
+                                if (a.id && a.id.startsWith('AST-')) {
+                                    let num = parseInt(a.id.replace('AST-', ''), 10);
+                                    if (!isNaN(num) && num > maxId) maxId = num;
+                                }
                             });
-                            addedCount++;
+                            let newAssetId = 'AST-' + (maxId + 1).toString().padStart(4, '0');
+
+                            if (perItemTotal > 0) {
+                                assets.push({
+                                    id: newAssetId,
+                                    name: it.desc + (q > 1 ? ` (#${k + 1})` : ''),
+                                    category: rec.assetType || 'Other',     
+                                    status: 'Pending Approval',
+                                    date: rec.date,
+                                    value: perItemTotal.toFixed(2),
+                                    notes: noteStr
+                                });
+                                addedCount++;
+                            }
                         }
                     });
                     
                     if (addedCount > 0) {
                         localStorage.setItem('manti_assets', JSON.stringify(assets));
                         alert(`${addedCount} new Asset(s) routed to Asset Management for Approval!`);
+                        
+                        // Force cloud push for newly auto-generated assets
+                        if(window.supabase && window.syncKeyToSupabase) {
+                            window.syncKeyToSupabase('manti_assets', assets);
+                        }
                     }
                 } else if (rec.category === 'Stock') {
                     const mainMetal = rec.mainMetalType || 'Gold';
