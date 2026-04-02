@@ -1474,8 +1474,10 @@
                         reportBody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No assets found in the system.</td></tr>`;
                     } else {
                         let totalValue = 0;
+                        let totalPurchaseValue = 0;
                         assets.forEach(ast => {
                             const val = parseFloat(ast.value) || 0;
+                            totalPurchaseValue += val;
                             
                             // Calculation logic from assets.html
                             let currentVal = val;
@@ -1521,10 +1523,11 @@
                         // Summary Row
                         reportBody.innerHTML += `
                             <tr style="background: #f9fafb; font-weight: 700;">
-                                <td colspan="5" style="text-align: right;">Total Active Asset Valuation:</td>
+                                <td colspan="3" style="text-align: right; color: #475569;">Total Assets: ${assets.length}</td>
+                                <td style="text-align: right;">Total Valuations:</td>
+                                <td style="text-align: right;">₹${totalPurchaseValue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                                 <td style="text-align: right; color: #16a34a; font-size: 1rem;">₹${totalValue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                                <td></td>
-                                <td></td>
+                                <td colspan="2"></td>
                             </tr>
                         `;
                     }
