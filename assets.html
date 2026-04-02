@@ -127,6 +127,9 @@
                 <div class="actions">
                     <button type="button" class="btn-liquid btn-secondary" onclick="window.location.href='index.html'">Back to
                         Dashboard</button>
+                    <button type="button" id="bulk-approve-btn" onclick="bulkApproveAssets()" style="display:none; background: #8b5cf6; color: white; padding: 10px 15px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s;" onmouseover="this.style.filter='brightness(0.95)'" onmouseout="this.style.filter='none'">
+                        Approve Pending
+                    </button>
                     <button type="button" id="add-asset" class="btn-animated-add">
                       <span class="add-text">New Asset</span>
                       <span class="add-icon-wrap">
@@ -286,7 +289,16 @@
                 
                 if (assets.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No assets found. Click Add New Asset.</td></tr>';
+                    const bulkBtn = document.getElementById('bulk-approve-btn');
+                    if (bulkBtn) bulkBtn.style.display = 'none';
                     return;
+                }
+
+                const pendingCount = assets.filter(a => a.status === 'Pending Approval').length;
+                const bulkBtn = document.getElementById('bulk-approve-btn');
+                if (bulkBtn) {
+                    bulkBtn.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+                    bulkBtn.innerHTML = `Approve Pending (${pendingCount})`;
                 }
 
                 assets.forEach((a, index) => {
@@ -361,8 +373,31 @@
                         if(index !== -1) {
                             assets[index].status = 'Active';
                             localStorage.setItem('manti_assets', JSON.stringify(assets));
+                            if(window.supabase && window.syncKeyToSupabase) {
+                                window.syncKeyToSupabase('manti_assets', assets);
+                            }
                             loadAssets();
                         }
+                    }
+                };
+
+                window.bulkApproveAssets = function() {
+                    let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                    const pendingCount = assets.filter(a => a.status === 'Pending Approval').length;
+                    
+                    if (pendingCount === 0) return;
+                    
+                    if(confirm(`Are you sure you want to approve all ${pendingCount} pending assets?`)) {
+                        assets.forEach(a => {
+                            if (a.status === 'Pending Approval') {
+                                a.status = 'Active';
+                            }
+                        });
+                        localStorage.setItem('manti_assets', JSON.stringify(assets));
+                        if(window.supabase && window.syncKeyToSupabase) {
+                            window.syncKeyToSupabase('manti_assets', assets);
+                        }
+                        loadAssets();
                     }
                 };
 
