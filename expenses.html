@@ -270,9 +270,8 @@
 
                     <!-- Dynamic Items Table -->
                     <div class="table-container" style="border-top: 1px dashed var(--border); padding-top: 1rem;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <div style="margin-bottom:15px;">
                             <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin:0;">Itemized Details</h3>
-                            <button type="button" class="btn-liquid btn-secondary" onclick="addExpenseItemRow()" style="font-size:0.85rem; padding: 6px 12px;">+ Add Item</button>
                         </div>
                         <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
                             <thead style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
@@ -297,6 +296,16 @@
                                 </tr>
                             </tbody>
                         </table>
+                        
+                        <button type="button" class="btn-animated-add" onclick="addExpenseItemRow()" style="margin-top: 15px;">
+                            <span class="add-text">Add New Row</span>
+                            <span class="add-icon-wrap">
+                                <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                                    <line x1="12" x2="12" y1="5" y2="19"></line>
+                                    <line x1="5" x2="19" y1="12" y2="12"></line>
+                                </svg>
+                            </span>
+                        </button>
                         
                         <div style="display: flex; justify-content: flex-end; margin-top: 3rem; gap: 3rem;">
                             <div style="width: 100%; max-width: 400px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
