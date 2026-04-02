@@ -284,3 +284,9 @@ ADD COLUMN IF NOT EXISTS total_amount NUMERIC DEFAULT 0,
 ADD COLUMN IF NOT EXISTS paid_amount NUMERIC DEFAULT 0,
 ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Open',
 ADD COLUMN IF NOT EXISTS vendor_id TEXT;
+
+-- FIX: Migrate journal_entries ID from UUID to TEXT to support custom JV-XXX prefixes
+ALTER TABLE public.journal_entries DROP CONSTRAINT IF EXISTS journal_entries_pkey CASCADE;
+ALTER TABLE public.journal_entries ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE public.journal_entries ALTER COLUMN id TYPE TEXT USING id::text;
+ALTER TABLE public.journal_entries ADD PRIMARY KEY (id);
