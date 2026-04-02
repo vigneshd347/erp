@@ -278,7 +278,8 @@ async function syncKeyToSupabase(key, data) {
                 id: e.id, date: e.date, expense_account: e.account || '', amount: parseFloat(e.amount) || 0,
                 paid_through: e.paidThrough || '', vendor: e.vendor || null,
                 gst_percent: e.gstPercent || null, gst_amount: e.gstAmount || null,
-                reference: e.reference || '', notes: e.notes || '', bill_url: e.billUrl || null
+                reference: e.reference || '', notes: e.notes || '', bill_url: e.billUrl || null,
+                items: e.items || []
             }));
             if (dbExpenses.length > 0) {
                 const { error } = await supabase.from('expenses').upsert(dbExpenses, { onConflict: 'id' });
@@ -464,11 +465,11 @@ window.fetchEverythingFromCloud = async function () {
         // 10. Expenses
         if (expensesRes.data && expensesRes.data.length > 0) {
             const mappedExpenses = expensesRes.data.map(e => ({
-                id: e.id, date: e.date, account: e.expense_account, amount: e.amount,
+                id: e.id, date: e.date, account: e.expense_account, amount: parseFloat(e.amount) || 0,
                 paidThrough: e.paid_through, vendor: e.vendor,
                 gstPercent: e.gst_percent || null, gstAmount: e.gst_amount || null,
                 total: (parseFloat(e.amount) || 0) + (parseFloat(e.gst_amount) || 0),
-                reference: e.reference, notes: e.notes, billUrl: e.bill_url
+                reference: e.reference, notes: e.notes, billUrl: e.bill_url, items: e.items || []
             }));
             window.ERP_MEMORY.set('manti_expenses', JSON.stringify(mappedExpenses));
         } else if (expensesRes.error) {

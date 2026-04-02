@@ -273,6 +273,7 @@ CREATE TABLE IF NOT EXISTS public.expenses (
 ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS gst_percent NUMERIC;
 ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS gst_amount NUMERIC;
 ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS bill_url TEXT;
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS items JSONB;
 
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Enable all for anon" ON public.expenses;

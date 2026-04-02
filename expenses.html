@@ -226,10 +226,13 @@
                                 </select>
                             </div>
                             <div>
-                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Amount (₹) <span style="color:#ef4444;">*</span></label>
-                                <input type="number" id="exp-amount" class="pay-input amount-highlight" placeholder="0.00" required oninput="calcGST()">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Paid Through <span style="color:#ef4444;">*</span></label>
+                                <select id="exp-paidthrough" class="pay-input" required>
+                                    <option value="">Loading accounts...</option>
+                                </select>
+                                <span style="font-size:0.75rem; color:#94a3b8; margin-top:4px; display:block;">Add accounts in <a href="banking.html" style="color:var(--primary);">Banking</a></span>
                             </div>
-                            <div>
+                        </div>
                                 <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Paid Through <span style="color:#ef4444;">*</span></label>
                                 <select id="exp-paidthrough" class="pay-input" required>
                                     <option value="">Loading accounts...</option>
@@ -245,16 +248,6 @@
                                 <input type="text" id="exp-vendor" class="pay-input" list="supplier-list" placeholder="Select or type name / business" autocomplete="off">
                                 <datalist id="supplier-list"></datalist>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
-                                <div>
-                                    <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">GST % <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
-                                    <input type="number" id="exp-gst-pct" class="pay-input" placeholder="e.g. 18" min="0" max="100" step="0.01" oninput="calcGST()">
-                                </div>
-                                <div>
-                                    <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">GST Amount (₹)</label>
-                                    <input type="text" id="exp-gst-amt" class="pay-input" placeholder="0.00" readonly style="background:#f8fafc; color:#475569; cursor:not-allowed;">
-                                </div>
-                            </div>
                             <div>
                                 <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Reference#</label>
                                 <input type="text" id="exp-ref" class="pay-input" placeholder="e.g. Receipt No. or Invoice No.">
@@ -269,6 +262,54 @@
                             </div>
                         </div>
                     </form>
+
+                    <!-- Dynamic Items Table -->
+                    <div class="table-container" style="border-top: 1px dashed var(--border);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3 style="font-size: 1rem; margin:0;">Itemized Details</h3>
+                            <button type="button" class="btn-liquid btn-secondary" onclick="addExpenseItemRow()" style="font-size:0.85rem; padding: 6px 12px;">+ Add Item</button>
+                        </div>
+                        <table class="expenses-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 35%;">Description</th>
+                                    <th>Quantity</th>
+                                    <th>Rate (₹)</th>
+                                    <th>GST %</th>
+                                    <th style="text-align: right;">Total (₹)</th>
+                                    <th style="width:40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="expense-items-body">
+                                <!-- First row added natively -->
+                                <tr class="item-row">
+                                    <td><input type="text" class="pay-input item-desc" placeholder="e.g. Printer Toner" style="margin-top:0;" required></td>
+                                    <td><input type="number" class="pay-input item-qty" value="1" min="1" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                                    <td><input type="number" class="pay-input item-rate" placeholder="0.00" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                                    <td><input type="number" class="pay-input item-gst" placeholder="0" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()"></td>
+                                    <td style="text-align: right;"><input type="text" class="pay-input item-total" value="0.00" style="margin-top:0; text-align:right; font-weight:600; background:#f8fafc;" readonly></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div style="display: flex; justify-content: flex-end; margin-top:20px;">
+                            <table style="width: 300px; font-size:0.95rem;">
+                                <tr>
+                                    <td style="padding:4px 0; color:var(--text-muted);">Amount (excl. GST):</td>
+                                    <td style="padding:4px 0; text-align:right; font-weight:600;" id="summary-subtotal">₹ 0.00</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:4px 0; color:var(--text-muted); border-bottom: 1px solid var(--border); padding-bottom:10px;">GST Amount:</td>
+                                    <td style="padding:4px 0; text-align:right; border-bottom: 1px solid var(--border); padding-bottom:10px;" id="summary-gst">₹ 0.00</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:10px 0 0 0; font-weight:700; color:var(--text-main); font-size:1.1rem;">Grand Total:</td>
+                                    <td style="padding:10px 0 0 0; text-align:right; font-weight:700; color:var(--danger); font-size:1.2rem;" id="summary-total">₹ 0.00</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <h2 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 1rem;">Recent Expenses</h2>
@@ -339,11 +380,55 @@
             renderExpensesTable();
         });
 
-        function calcGST() {
-            const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
-            const pct = parseFloat(document.getElementById('exp-gst-pct').value) || 0;
-            const gstAmt = (amount * pct / 100);
-            document.getElementById('exp-gst-amt').value = pct > 0 ? gstAmt.toFixed(2) : '';
+        function addExpenseItemRow() {
+            const tbody = document.getElementById('expense-items-body');
+            const tr = document.createElement('tr');
+            tr.className = 'item-row';
+            tr.innerHTML = `
+                <td><input type="text" class="pay-input item-desc" placeholder="e.g. Printer Toner" style="margin-top:0;" required></td>
+                <td><input type="number" class="pay-input item-qty" value="1" min="1" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                <td><input type="number" class="pay-input item-rate" placeholder="0.00" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                <td><input type="number" class="pay-input item-gst" placeholder="0" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()"></td>
+                <td style="text-align: right;"><input type="text" class="pay-input item-total" value="0.00" style="margin-top:0; text-align:right; font-weight:600; background:#f8fafc;" readonly></td>
+                <td style="text-align: center;"><button type="button" class="btn-remove" onclick="removeExpenseItemRow(this)"><i data-lucide="x" style="width:16px; height:16px;"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+            lucide.createIcons();
+            calculateExpenseTotals();
+        }
+
+        function removeExpenseItemRow(btn) {
+            const row = btn.closest('tr');
+            if (document.querySelectorAll('.item-row').length > 1) {
+                row.remove();
+                calculateExpenseTotals();
+            }
+        }
+
+        function calculateExpenseTotals() {
+            let totalAmount = 0;
+            let totalGstAmount = 0;
+
+            document.querySelectorAll('.item-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+                const gstPct = parseFloat(row.querySelector('.item-gst').value) || 0;
+                
+                const subtotal = qty * rate;
+                const gst = subtotal * (gstPct / 100);
+                const rowTotal = subtotal + gst;
+
+                row.querySelector('.item-total').value = rowTotal.toFixed(2);
+                
+                totalAmount += subtotal;
+                totalGstAmount += gst;
+            });
+
+            document.getElementById('summary-subtotal').textContent = `₹ ${totalAmount.toFixed(2)}`;
+            document.getElementById('summary-gst').textContent = `₹ ${totalGstAmount.toFixed(2)}`;
+            document.getElementById('summary-total').textContent = `₹ ${(totalAmount + totalGstAmount).toFixed(2)}`;
+            
+            return { totalAmount, totalGstAmount };
         }
 
         function renderExpensesTable() {
@@ -389,17 +474,31 @@
         async function saveExpense() {
             const date = document.getElementById('exp-date').value;
             const account = document.getElementById('exp-account').value;
-            const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
             const paidThrough = document.getElementById('exp-paidthrough').value;
             const vendor = document.getElementById('exp-vendor').value.trim();
-            const gstPercent = parseFloat(document.getElementById('exp-gst-pct').value) || 0;
-            const gstAmount = parseFloat((amount * gstPercent / 100).toFixed(2));
             const ref = document.getElementById('exp-ref').value;
             const notes = document.getElementById('exp-notes').value;
             const fileInput = document.getElementById('exp-bill');
 
-            if (!date || !account || amount <= 0) {
-                return alert("Please fill the required fields: Date, Expense Account, and a valid Amount.");
+            const { totalAmount, totalGstAmount } = calculateExpenseTotals();
+            const amount = totalAmount; // Base amount
+            const gstAmount = totalGstAmount;
+            
+            // Extract Items Array
+            const items = [];
+            document.querySelectorAll('.item-row').forEach(row => {
+                const desc = row.querySelector('.item-desc').value.trim();
+                const qty = row.querySelector('.item-qty').value;
+                const rate = row.querySelector('.item-rate').value;
+                const gstPct = row.querySelector('.item-gst').value || '0';
+                const rowTotal = row.querySelector('.item-total').value;
+                if (desc) {
+                    items.push({ desc, qty, rate, gst: gstPct, total: rowTotal });
+                }
+            });
+
+            if (!date || !account || amount <= 0 || items.length === 0) {
+                return alert("Please fill the required fields: Date, Expense Account, and at least one valid Item.");
             }
 
             let nextId = 1;
@@ -445,14 +544,15 @@
                 date: date,
                 account: account,
                 amount: amount,
-                gstPercent: gstPercent || null,
-                gstAmount: gstAmount || null,
+                gstPercent: null, // Legacy field
+                gstAmount: gstAmount > 0 ? gstAmount : null,
                 total: total,
                 paidThrough: paidThrough,
                 vendor: vendor,
                 reference: ref,
                 notes: notes,
-                billUrl: billPubUrl
+                billUrl: billPubUrl,
+                items: items
             });
             localStorage.setItem('manti_expenses', JSON.stringify(expenses));
 
@@ -462,11 +562,11 @@
                 id: 'JV-' + expId,
                 date: date,
                 reference: ref || expId,
-                notes: notes || `Expense: ${account}${vendor ? ' - ' + vendor : ''}${gstPercent ? ' (GST ' + gstPercent + '% = ₹' + gstAmount.toFixed(2) + ')' : ''}`,
+                notes: notes || `Expense: ${account}${vendor ? ' - ' + vendor : ''}${gstAmount > 0 ? ' (Includes GST ₹' + gstAmount.toFixed(2) + ')' : ''}`,
                 total: total,
                 lines: [
                     { account: account, desc: notes, contact: vendor, debit: amount, credit: 0 },
-                    ...(gstAmount > 0 ? [{ account: 'GST Input Tax', desc: `GST ${gstPercent}%`, contact: vendor, debit: gstAmount, credit: 0 }] : []),
+                    ...(gstAmount > 0 ? [{ account: 'GST Input Tax', desc: `GST on Expenses`, contact: vendor, debit: gstAmount, credit: 0 }] : []),
                     { account: paidThrough, desc: notes, contact: vendor, debit: 0, credit: total }
                 ],
                 timestamp: new Date().toISOString()
@@ -474,9 +574,21 @@
             localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
 
             alert(`Expense of ₹ ${amount.toFixed(2)}${gstAmount > 0 ? ` + GST ₹ ${gstAmount.toFixed(2)} = Total ₹ ${total.toFixed(2)}` : ''} recorded successfully.`);
+            
+            // Reset Form properly
             document.getElementById('expense-form').reset();
-            document.getElementById('exp-gst-amt').value = '';
             document.getElementById('exp-date').valueAsDate = new Date();
+            document.getElementById('expense-items-body').innerHTML = `
+                <tr class="item-row">
+                    <td><input type="text" class="pay-input item-desc" placeholder="e.g. Printer Toner" style="margin-top:0;" required></td>
+                    <td><input type="number" class="pay-input item-qty" value="1" min="1" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                    <td><input type="number" class="pay-input item-rate" placeholder="0.00" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()" required></td>
+                    <td><input type="number" class="pay-input item-gst" placeholder="0" min="0" step="0.01" style="margin-top:0;" oninput="calculateExpenseTotals()"></td>
+                    <td style="text-align: right;"><input type="text" class="pay-input item-total" value="0.00" style="margin-top:0; text-align:right; font-weight:600; background:#f8fafc;" readonly></td>
+                    <td></td>
+                </tr>
+            `;
+            calculateExpenseTotals();
             renderExpensesTable();
         }
 
