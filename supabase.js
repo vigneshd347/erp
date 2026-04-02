@@ -337,13 +337,33 @@ async function syncKeyToSupabase(key, data) {
 window.fetchEverythingFromCloud = async function () {
     console.log("Fetching all data directly from Supabase Cloud...");
 
-    // Sync happens in the background without a blocking UI loader
-
     try {
-        // 1. Fetch Orders
-        const { data: ordersData } = await supabase.from('orders').select('*');
-        if (ordersData) {
-            const mappedOrders = ordersData.map(o => {
+        const [
+            ordersRes, jobsRes, invoicesRes, vendorRes,
+            supplierRes, staffRes, assetsRes, challansRes,
+            paymentsRes, expensesRes, journalsRes, accountsRes,
+            stockRes, snapsRes, settingsRes
+        ] = await Promise.all([
+            supabase.from('orders').select('*'),
+            supabase.from('job_works').select('*'),
+            supabase.from('invoices').select('*'),
+            supabase.from('vendor_kyc').select('*'),
+            supabase.from('supplier_kyc').select('*'),
+            supabase.from('staff_records').select('*'),
+            supabase.from('assets').select('*'),
+            supabase.from('delivery_challans').select('*'),
+            supabase.from('payments_made').select('*'),
+            supabase.from('expenses').select('*'),
+            supabase.from('journal_entries').select('*'),
+            supabase.from('bank_accounts').select('*'),
+            supabase.from('stock_history').select('*'),
+            supabase.from('snapshots').select('*'),
+            supabase.from('settings').select('*')
+        ]);
+
+        // 1. Orders
+        if (ordersRes.data) {
+            const mappedOrders = ordersRes.data.map(o => {
                 let extended = {};
                 let remark = o.remark;
                 if (o.remark && o.remark.startsWith('{')) {
@@ -352,7 +372,6 @@ window.fetchEverythingFromCloud = async function () {
                         remark = extended.remark || '-';
                     } catch(e) {}
                 }
-                
                 return {
                     id: o.order_number, type: o.type, date: o.date, dueDate: o.due_date,
                     customer: o.customer_name, vendor: o.vendor_id, product: o.product_name, 
@@ -371,21 +390,19 @@ window.fetchEverythingFromCloud = async function () {
             window.ERP_MEMORY.set('manti_order_records', JSON.stringify(mappedOrders));
         }
 
-        // 2. Fetch Job Works
-        const { data: jobsData } = await supabase.from('job_works').select('*');
-        if (jobsData) {
-            const mappedJobs = jobsData.map(j => ({
+        // 2. Job Works
+        if (jobsRes.data) {
+            const mappedJobs = jobsRes.data.map(j => ({
                 jobNo: j.job_no, date: j.date, workerId: j.worker_id, workerName: j.worker_name,
                 itemName: j.item_name, process: j.process, issueWt: j.issue_wt, receiveWt: j.receive_wt
             }));
             window.ERP_MEMORY.set('manti_jobwork_records', JSON.stringify(mappedJobs));
         }
 
-        // 3. Fetch Invoices
-        const { data: invoicesData } = await supabase.from('invoices').select('*');
-        if (invoicesData) {
+        // 3. Invoices
+        if (invoicesRes.data) {
             const invoiceMap = {};
-            invoicesData.forEach(inv => {
+            invoicesRes.data.forEach(inv => {
                 invoiceMap[inv.invoice_number] = {
                     invoiceData: { invoiceNum: inv.invoice_number, date: inv.date },
                     customerData: inv.customer_data, items: inv.items,
@@ -396,10 +413,9 @@ window.fetchEverythingFromCloud = async function () {
             window.ERP_MEMORY.set('manti_saved_invoices', JSON.stringify(invoiceMap));
         }
 
-        // 4. Fetch Vendor KYC
-        const { data: vendorData } = await supabase.from('vendor_kyc').select('*');
-        if (vendorData && vendorData.length > 0) {
-            const mappedVendors = vendorData.map(v => ({
+        // 4. Vendor KYC
+        if (vendorRes.data && vendorRes.data.length > 0) {
+            const mappedVendors = vendorRes.data.map(v => ({
                 id: v.id, date: v.date, name: v.name, mobile: v.mobile, email: v.email, type: v.company_type,
                 address: v.address, city: v.city, state: v.state, pin: v.pin, gst: v.gst, pan: v.pan, msme: v.msme,
                 bankName: v.bank_name, bankBranch: v.bank_branch, bankAcc: v.bank_acc, bankIfsc: v.bank_ifsc, bankUpi: v.bank_upi
@@ -407,10 +423,9 @@ window.fetchEverythingFromCloud = async function () {
             window.ERP_MEMORY.set('manti_vendor_kyc_records', JSON.stringify(mappedVendors));
         }
 
-        // 5. Fetch Supplier KYC
-        const { data: supplierData } = await supabase.from('supplier_kyc').select('*');
-        if (supplierData && supplierData.length > 0) {
-            const mappedSuppliers = supplierData.map(v => ({
+        // 5. Supplier KYC
+        if (supplierRes.data && supplierRes.data.length > 0) {
+            const mappedSuppliers = supplierRes.data.map(v => ({
                 id: v.id, date: v.date, name: v.name, mobile: v.mobile, email: v.email, type: v.company_type,
                 address: v.address, city: v.city, state: v.state, pin: v.pin, gst: v.gst, pan: v.pan, msme: v.msme,
                 bankName: v.bank_name, bankBranch: v.bank_branch, bankAcc: v.bank_acc, bankIfsc: v.bank_ifsc, bankUpi: v.bank_upi
@@ -418,101 +433,90 @@ window.fetchEverythingFromCloud = async function () {
             window.ERP_MEMORY.set('manti_supplier_kyc_records', JSON.stringify(mappedSuppliers));
         }
 
-        // 6. Fetch Staff Records
-        const { data: staffData } = await supabase.from('staff_records').select('*');
-        if (staffData && staffData.length > 0) {
-            window.ERP_MEMORY.set('manti_staff_records', JSON.stringify(staffData.map(s => s.data)));
+        // 6. Staff Records
+        if (staffRes.data && staffRes.data.length > 0) {
+            window.ERP_MEMORY.set('manti_staff_records', JSON.stringify(staffRes.data.map(s => s.data)));
         }
 
-        // 7. Fetch Assets
-        const { data: assetsData } = await supabase.from('assets').select('*');
-        if (assetsData && assetsData.length > 0) {
-            window.ERP_MEMORY.set('manti_assets', JSON.stringify(assetsData.map(a => a.data)));
+        // 7. Assets
+        if (assetsRes.data && assetsRes.data.length > 0) {
+            window.ERP_MEMORY.set('manti_assets', JSON.stringify(assetsRes.data.map(a => a.data)));
         }
 
-        // 8. Fetch Delivery Challans
-        const { data: challansData } = await supabase.from('delivery_challans').select('*');
-        if (challansData && challansData.length > 0) {
-            const mappedChallans = challansData.map(c => ({
+        // 8. Delivery Challans
+        if (challansRes.data && challansRes.data.length > 0) {
+            const mappedChallans = challansRes.data.map(c => ({
                 id: c.id, date: c.date, customer: c.customer_name, status: c.status,
                 total: c.total_amount, items: c.items
             }));
             window.ERP_MEMORY.set('manti_delivery_challan_records', JSON.stringify(mappedChallans));
         }
 
-        // 9. Fetch Payments Made
-        const { data: paymentsData } = await supabase.from('payments_made').select('*');
-        if (paymentsData && paymentsData.length > 0) {
-            const mappedPayments = paymentsData.map(p => ({
+        // 9. Payments Made
+        if (paymentsRes.data && paymentsRes.data.length > 0) {
+            const mappedPayments = paymentsRes.data.map(p => ({
                 vendor: p.vendor, date: p.date, amount: p.amount, mode: p.mode,
                 reference: p.reference, applications: p.applications, billUrl: p.bill_url
             }));
             window.ERP_MEMORY.set('manti_payments_made', JSON.stringify(mappedPayments));
         }
 
-        // 10. Fetch Expenses
-        try {
-            const { data: expensesData } = await supabase.from('expenses').select('*');
-            if (expensesData && expensesData.length > 0) {
-                const mappedExpenses = expensesData.map(e => ({
-                    id: e.id, date: e.date, account: e.expense_account, amount: e.amount,
-                    paidThrough: e.paid_through, vendor: e.vendor,
-                    gstPercent: e.gst_percent || null, gstAmount: e.gst_amount || null,
-                    total: (parseFloat(e.amount) || 0) + (parseFloat(e.gst_amount) || 0),
-                    reference: e.reference, notes: e.notes, billUrl: e.bill_url
-                }));
-                window.ERP_MEMORY.set('manti_expenses', JSON.stringify(mappedExpenses));
-            }
-        } catch(e) { console.warn("Supabase expenses table missing. Skipping..."); }
+        // 10. Expenses
+        if (expensesRes.data && expensesRes.data.length > 0) {
+            const mappedExpenses = expensesRes.data.map(e => ({
+                id: e.id, date: e.date, account: e.expense_account, amount: e.amount,
+                paidThrough: e.paid_through, vendor: e.vendor,
+                gstPercent: e.gst_percent || null, gstAmount: e.gst_amount || null,
+                total: (parseFloat(e.amount) || 0) + (parseFloat(e.gst_amount) || 0),
+                reference: e.reference, notes: e.notes, billUrl: e.bill_url
+            }));
+            window.ERP_MEMORY.set('manti_expenses', JSON.stringify(mappedExpenses));
+        } else if (expensesRes.error) {
+            console.warn("Supabase expenses table missing or error. Skipping...", expensesRes.error);
+        }
 
-        // 11. Fetch Journal Entries
-        const { data: journalsData } = await supabase.from('journal_entries').select('*');
-        if (journalsData && journalsData.length > 0) {
-            const mappedJournals = journalsData.map(j => ({
+        // 11. Journal Entries
+        if (journalsRes.data && journalsRes.data.length > 0) {
+            const mappedJournals = journalsRes.data.map(j => ({
                 id: j.id, no: j.id, date: j.date, amount: j.amount, notes: j.description, description: j.description, lines: j.lines
             }));
             window.ERP_MEMORY.set('manti_journal_entries', JSON.stringify(mappedJournals));
         }
 
-        // 11. Fetch Bank Accounts
-        const { data: bankAccountsData } = await supabase.from('bank_accounts').select('*');
-        if (bankAccountsData && bankAccountsData.length > 0) {
-            const mappedAccounts = bankAccountsData.map(a => ({
+        // 12. Bank Accounts
+        if (accountsRes.data && accountsRes.data.length > 0) {
+            const mappedAccounts = accountsRes.data.map(a => ({
                 id: a.id, name: a.account_name, type: a.type, bankName: a.bank_name, number: a.number,
                 loanNumber: a.loan_number, emiAmount: a.emi_amount, openingBalance: a.opening_balance, openingDate: a.opening_date
             }));
             window.ERP_MEMORY.set('manti_bank_accounts', JSON.stringify(mappedAccounts));
         }
 
-        // 12. Fetch Stock History
-        const { data: stockHistoryData } = await supabase.from('stock_history').select('*');
-        if (stockHistoryData && stockHistoryData.length > 0) {
-            const mappedStock = stockHistoryData.map(s => ({
+        // 13. Stock History
+        if (stockRes.data && stockRes.data.length > 0) {
+            const mappedStock = stockRes.data.map(s => ({
                 date: s.date, type: s.type, details: s.details, qty: s.qty, weight: s.weight, metal: s.metal_type
             }));
             window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(mappedStock));
         }
 
-        // 13. Fetch Snapshots
-        const { data: snapsData } = await supabase.from('snapshots').select('*');
-        if (snapsData && snapsData.length > 0) {
-            const mappedSnaps = snapsData.map(s => ({
+        // 14. Snapshots
+        if (snapsRes.data && snapsRes.data.length > 0) {
+            const mappedSnaps = snapsRes.data.map(s => ({
                 id: s.id, title: s.title, date: s.date, html: s.html, type: s.type
             }));
             window.ERP_MEMORY.set('manti_report_snapshots', JSON.stringify(mappedSnaps));
         }
 
-        // 14. Fetch Settings (Generic Rules, Custom DBs)
-        const { data: settingsData } = await supabase.from('settings').select('*');
-        if (settingsData) {
+        // 15. Settings
+        if (settingsRes.data) {
             const ignoredKeys = [
                 'manti_vendor_kyc_records', 'manti_supplier_kyc_records', 'manti_staff_records',
                 'manti_assets', 'manti_delivery_challan_records', 'manti_payments_made',
                 'manti_expenses', 'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history',
                 'manti_report_snapshots'
             ];
-            settingsData.forEach(s => {
-                // To avoid overwriting dedicated fetches if they accidentally saved in settings earlier
+            settingsRes.data.forEach(s => {
                 if (!ignoredKeys.includes(s.setting_key)) {
                     window.ERP_MEMORY.set(s.setting_key, JSON.stringify(s.setting_value));
                 }
