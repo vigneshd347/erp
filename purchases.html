@@ -728,8 +728,28 @@
             };
 
             window.deleteRecord = function (index) {
+                const rec = records[index];
+
+                // Safegaurd: Prevent deletion if linked stock/asset still exists
+                if (rec.status === 'Completed') {
+                    if (rec.category === 'Assets') {
+                        const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
+                        const hasAsset = assets.some(a => a.notes && a.notes.includes(rec.id));
+                        if (hasAsset) {
+                            alert("Cannot delete this completed Purchase Order. You must first delete the corresponding auto-created Asset(s) from the Asset Management page.");
+                            return;
+                        }
+                    } else if (rec.category === 'Stock') {
+                        const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+                        const hasStock = history.some(h => (h.note && h.note.includes(rec.id)) || (h.details && h.details.includes(rec.id)));
+                        if (hasStock) {
+                            alert("Cannot delete this completed Purchase Order. You must first delete the corresponding Stock entry from the Stock Management page.");
+                            return;
+                        }
+                    }
+                }
+
                 if (confirm("Delete this order?")) {
-                    const rec = records[index];
                     if (rec && rec.id && window.supabase) {
                         window.supabase.from('orders').delete().match({ order_number: rec.id })
                             .then(({error}) => { if (error) console.error("Cloud delete error", error); });
