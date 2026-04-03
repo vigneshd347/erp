@@ -310,7 +310,7 @@ async function syncKeyToSupabase(key, data) {
             }
         } else if (key === 'manti_stock_history') {
             const dbStock = data.map(s => ({
-                date: s.date, type: s.type || '', details: s.details || '', qty: parseFloat(s.qty) || 0,
+                date: s.date, type: s.type || '', details: s.note || s.details || '', qty: parseFloat(s.qty) || 0,
                 weight: parseFloat(s.weight) || 0, metal_type: s.metal || ''
             }));
             if (dbStock.length > 0) {
@@ -318,6 +318,8 @@ async function syncKeyToSupabase(key, data) {
                 if (delErr) { console.error("Stock History Sync Error:", delErr); alert("Failed to clear Stock History for sync: " + delErr.message); }
                 const { error } = await supabase.from('stock_history').insert(dbStock);
                 if (error) { console.error("Stock History Sync Error:", error); alert("Failed to save Stock History to Cloud: " + error.message); }
+            } else {
+                await supabase.from('stock_history').delete().neq('type', 'NON_EXISTENT');
             }
         } else if (key === 'manti_report_snapshots') {
             const dbSnaps = data.map(s => ({
@@ -501,7 +503,7 @@ window.fetchEverythingFromCloud = async function () {
         // 13. Stock History
         if (stockRes.data && stockRes.data.length > 0) {
             const mappedStock = stockRes.data.map(s => ({
-                date: s.date, type: s.type, details: s.details, qty: s.qty, weight: s.weight, metal: s.metal_type
+                date: s.date, type: s.type, note: s.details, qty: s.qty, weight: s.weight, metal: s.metal_type
             }));
             window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(mappedStock));
         }

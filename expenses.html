@@ -370,19 +370,29 @@
             document.getElementById('exp-date').valueAsDate = new Date();
             expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
             
-            // Populate Paid Through from actual bank accounts
+            // Populate Paid Through from actual bank accounts dynamically
             const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
             const paidThroughSelect = document.getElementById('exp-paidthrough');
             paidThroughSelect.innerHTML = '';
+            
             if (bankAccounts.length === 0) {
-                paidThroughSelect.innerHTML = '<option value="Petty Cash">Cash / Petty Cash (default)</option><option value="Bank Account">Bank Account</option>';
+                paidThroughSelect.innerHTML = '<option value="Cash">Petty Cash</option><option value="Bank">Bank Account</option>';
             } else {
+                let cashGroup = document.createElement('optgroup');
+                cashGroup.label = "Cash Accounts";
+                let bankGroup = document.createElement('optgroup');
+                bankGroup.label = "Bank & Credit Cards";
+
                 bankAccounts.forEach(acc => {
                     const opt = document.createElement('option');
-                    opt.value = acc.name;
-                    opt.textContent = `${acc.name}${acc.type ? ' (' + acc.type + ')' : ''}`;
-                    paidThroughSelect.appendChild(opt);
+                    opt.value = acc.name; // Use exact name globally
+                    opt.textContent = `${acc.name} (${acc.type || 'Bank'})`;
+                    if (acc.type === 'Cash') cashGroup.appendChild(opt);
+                    else bankGroup.appendChild(opt);
                 });
+
+                if (bankGroup.children.length > 0) paidThroughSelect.appendChild(bankGroup);
+                if (cashGroup.children.length > 0) paidThroughSelect.appendChild(cashGroup);
             }
 
             // Populate Name/Business list from KYC records

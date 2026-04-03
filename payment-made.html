@@ -228,13 +228,10 @@
                                     <option value="UPI">UPI Payment</option>
                                     <option value="Cheque">Cheque</option>
                                     <option value="Cash">Cash</option>
-                                </select>
-                            </div>
                             <div>
                                 <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Paid Through <span style="color:#ef4444;">*</span></label>
                                 <select id="pay-account" class="pay-input" required>
-                                    <option value="Bank">Bank Account</option>
-                                    <option value="Cash">Petty Cash</option>
+                                    <!-- Populated by JS -->
                                 </select>
                             </div>
                         </div>
@@ -324,6 +321,31 @@
                     opt.value = v.name ? `${v.name} (${v.id})` : v.id;
                     vendorList.appendChild(opt);
                 });
+            }
+
+            // Populate Paid Through from actual bank accounts dynamically
+            const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
+            const select = document.getElementById('pay-account');
+            select.innerHTML = '';
+            
+            if (bankAccounts.length === 0) {
+                select.innerHTML = '<option value="Cash">Petty Cash</option><option value="Bank">Bank Account</option>';
+            } else {
+                let cashGroup = document.createElement('optgroup');
+                cashGroup.label = "Cash Accounts";
+                let bankGroup = document.createElement('optgroup');
+                bankGroup.label = "Bank & Credit Cards";
+
+                bankAccounts.forEach(acc => {
+                    const opt = document.createElement('option');
+                    opt.value = acc.name; // Use exact name globally
+                    opt.textContent = `${acc.name} (${acc.type || 'Bank'})`;
+                    if (acc.type === 'Cash') cashGroup.appendChild(opt);
+                    else bankGroup.appendChild(opt);
+                });
+
+                if (bankGroup.children.length > 0) select.appendChild(bankGroup);
+                if (cashGroup.children.length > 0) select.appendChild(cashGroup);
             }
         });
 
