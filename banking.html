@@ -442,6 +442,10 @@
                                 </div>
                             </div>
                             <div class="bank-action-btns">
+                                <button class="btn-bank-action btn-bank-secondary" id="btn-edit-account" title="Edit Account">
+                                    <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+                                    Edit
+                                </button>
                                 <button class="btn-bank-action btn-bank-secondary" id="btn-delete-account" title="Delete Account">
                                     <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
                                     Delete
@@ -463,6 +467,7 @@
                                         <th>Money In (₹)</th>
                                         <th>Money Out (₹)</th>
                                         <th>Balance (₹)</th>
+                                        <th style="text-align: center; width: 60px;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="bank-txn-body">
@@ -680,6 +685,7 @@
                     const aName = acc.name.toLowerCase();
                     if (lAccount === aName || lAccount === 'bank') {
                         ledgerLines.push({
+                            id: j.id,
                             date: j.date,
                             desc: line.desc || j.notes || 'Journal Entry',
                             type: 'Journal',
@@ -698,10 +704,16 @@
             let runningBalance = 0;
 
             if (ledgerLines.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#9ca3af; padding: 40px;">No transactions found for this account.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#9ca3af; padding: 40px;">No transactions found for this account.</td></tr>`;
             } else {
                 ledgerLines.forEach((line, i) => {
                     runningBalance += line.moneyIn - line.moneyOut;
+                    
+                    let actionHtml = '';
+                    if (line.id) {
+                        actionHtml = `<a href="journal-entry.html?edit=${line.id}" title="Edit Transaction" style="color: var(--primary); display: inline-flex; align-items: center; justify-content: center; padding: 4px; border-radius: 4px;"><i data-lucide="edit-3" style="width: 14px; height: 14px;"></i></a>`;
+                    }
+                    
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${i + 1}</td>
@@ -711,9 +723,11 @@
                         <td class="amount-in">${line.moneyIn > 0 ? '₹ ' + line.moneyIn.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</td>
                         <td class="amount-out">${line.moneyOut > 0 ? '₹ ' + line.moneyOut.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</td>
                         <td style="font-weight:600;">₹ ${runningBalance.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                        <td style="text-align: center;">${actionHtml}</td>
                     `;
                     tbody.appendChild(row);
                 });
+                if (window.lucide) window.lucide.createIcons();
             }
 
             const finalBalance = computeBalance(acc.name, acc.openingBalance);
@@ -778,12 +792,49 @@
             }
         }
 
+        function openEditAccountModal() {
+            if (!selectedAccountId) return;
+            const accounts = getAccounts();
+            const acc = accounts.find(a => a.id === selectedAccountId);
+            if (!acc) return;
+
+            document.getElementById('add-account-form').reset();
+            currentType = acc.type || 'Bank';
+            document.getElementById('acc-type').value = currentType;
+
+            // Wait for DOM to update potentially before setting type
+            setTimeout(() => {
+                const typeCard = document.querySelector(`.account-type-card[data-type="${currentType}"]`);
+                if (typeCard) selectAccountType(currentType, typeCard);
+                else selectAccountType(currentType, null);
+
+                document.getElementById('acc-name').value = acc.name || '';
+                document.getElementById('acc-number').value = acc.number || '';
+                document.getElementById('acc-bank-name').value = acc.bankName || '';
+                document.getElementById('acc-loan-number').value = acc.loanNumber || '';
+                document.getElementById('acc-emi-amount').value = acc.emiAmount || '';
+                document.getElementById('acc-opening-balance').value = acc.openingBalance || '';
+                if (acc.openingDate) {
+                    document.getElementById('acc-opening-date').value = acc.openingDate;
+                }
+            }, 0);
+            
+            document.querySelector('.modal-card-header h2').textContent = 'Edit Account';
+            window.editingAccountId = acc.id;
+            
+            document.getElementById('add-account-modal').classList.add('open');
+        }
+
         function openAddAccountModal() {
             document.getElementById('add-account-form').reset();
             document.getElementById('acc-type').value = 'Bank';
             currentType = 'Bank';
             selectAccountType('Bank', document.querySelector('.account-type-card[data-type="Bank"]'));
             document.getElementById('acc-opening-date').valueAsDate = new Date();
+            
+            document.querySelector('.modal-card-header h2').textContent = 'Add Bank or Credit Card';
+            window.editingAccountId = null;
+            
             document.getElementById('add-account-modal').classList.add('open');
         }
 
@@ -801,6 +852,28 @@
             if (!name) { alert('Please enter an Account Name.'); return; }
 
             const accounts = getAccounts();
+            if (window.editingAccountId) {
+                const accIndex = accounts.findIndex(a => a.id === window.editingAccountId);
+                if (accIndex !== -1) {
+                    accounts[accIndex] = {
+                        ...accounts[accIndex],
+                        type: currentType,
+                        name: name,
+                        number: document.getElementById('acc-number').value.trim(),
+                        bankName: document.getElementById('acc-bank-name').value.trim(),
+                        loanNumber: document.getElementById('acc-loan-number').value.trim(),
+                        emiAmount: document.getElementById('acc-emi-amount').value || '0',
+                        openingBalance: document.getElementById('acc-opening-balance').value || '0',
+                        openingDate: document.getElementById('acc-opening-date').value
+                    };
+                    saveAccounts(accounts);
+                    closeAddAccountModal();
+                    renderAccountsList();
+                    selectAccount(window.editingAccountId);
+                    return;
+                }
+            }
+
             const newAcc = {
                 id: 'ACC-' + Date.now(),
                 type: currentType,
@@ -819,6 +892,9 @@
             renderAccountsList();
             selectAccount(newAcc.id);
         });
+
+        // ---- Edit Account ----
+        document.getElementById('btn-edit-account').addEventListener('click', openEditAccountModal);
 
         // ---- Delete Account ----
         document.getElementById('btn-delete-account').addEventListener('click', () => {

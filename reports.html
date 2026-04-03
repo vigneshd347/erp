@@ -1084,45 +1084,106 @@
                     reportTitle.textContent = `Banking & Journal Ledger (${new Date().toLocaleDateString()})`;
                     const journals = JSON.parse(localStorage.getItem('manti_journal_entries')) || [];
                     const filteredJournals = journals.filter(j => isWithinDateFilter(j.date));
+                    const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts')) || [];
                     
-                    reportHead.innerHTML = `
-                        <tr>
-                            <th>Date</th>
-                            <th>Journal ID</th>
-                            <th>Account Name</th>
-                            <th>Description</th>
-                            <th style="color: #10b981;">Total Value (₹)</th>
+                    let html = '';
+                    
+                    // --- 1. Bank Accounts Summary ---
+                    html += `
+                        <tr style="background: #f1f5f9;">
+                            <td colspan="5" style="padding: 12px; font-weight: bold; color: #0f172a; font-size: 1.05rem; border-left: 4px solid #3b82f6;">
+                                Bank & Cash Accounts
+                            </td>
+                        </tr>
+                        <tr style="background: #f8fafc; font-size: 0.85rem; color: #475569; font-weight: 600;">
+                            <td>Account ID</td>
+                            <td colspan="2">Account Name</td>
+                            <td>Type</td>
+                            <td style="text-align: right; color: #10b981;">Current Balance (₹)</td>
                         </tr>
                     `;
-                    let bodyHtml = '';
-                    let totalValue = 0;
                     
+                    let totalBankBalance = 0;
+                    if (bankAccounts.length === 0) {
+                        html += `<tr><td colspan="5" style="text-align:center; padding: 15px;">No bank accounts found.</td></tr>`;
+                    } else {
+                        bankAccounts.forEach(acc => {
+                            let bal = parseFloat(acc.openingBalance) || 0;
+                            // Calculate balance from all journals (not just filtered, to get true current balance)
+                            journals.forEach(j => {
+                                if(!j.lines) return;
+                                j.lines.forEach(l => {
+                                    if ((l.account || '').toLowerCase() === (acc.name || '').toLowerCase() || 
+                                        (l.account || '').toLowerCase() === 'bank') {
+                                        bal += (parseFloat(l.debit) || 0) - (parseFloat(l.credit) || 0);
+                                    }
+                                });
+                            });
+                            
+                            totalBankBalance += bal;
+                            html += `
+                                <tr>
+                                    <td>${acc.id || '-'}</td>
+                                    <td colspan="2" style="font-weight: 600;">${acc.name || '-'} <span style="font-size:0.75rem; color:#6b7280; font-weight:normal;">${acc.bankName ? '('+acc.bankName+')' : ''}</span></td>
+                                    <td><span style="background:#e0e7ff; color:#3730a3; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">${acc.type || 'Bank'}</span></td>
+                                    <td style="text-align: right; font-weight: 700; color: ${bal >= 0 ? '#10b981' : '#ef4444'};">₹ ${bal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                </tr>
+                            `;
+                        });
+                        html += `
+                            <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1;">
+                                <td colspan="4" style="text-align: right; font-weight: 700;">Total Liquidity:</td>
+                                <td style="text-align: right; font-weight: 800; color: #3b82f6; font-size: 1.1rem;">₹ ${totalBankBalance.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    }
+                    
+                    // --- 2. Journal Entries Ledger ---
+                    html += `
+                        <tr style="background: #fff;"><td colspan="5" style="border:none; padding:15px;"></td></tr>
+                        <tr style="background: #f1f5f9;">
+                            <td colspan="5" style="padding: 12px; font-weight: bold; color: #0f172a; font-size: 1.05rem; border-left: 4px solid #8b5cf6;">
+                                Journal Entries Movement (Filtered Period)
+                            </td>
+                        </tr>
+                        <tr style="background: #f8fafc; font-size: 0.85rem; color: #475569; font-weight: 600;">
+                            <td>Date</td>
+                            <td>Journal ID</td>
+                            <td>Account(s)</td>
+                            <td>Description</td>
+                            <td style="text-align: right; color: #10b981;">Total Value (₹)</td>
+                        </tr>
+                    `;
+                    
+                    let totalJournalMovement = 0;
                     if (filteredJournals.length === 0) {
-                        bodyHtml = `<tr><td colspan="5" style="text-align:center;">No journal entries found for this period.</td></tr>`;
+                        html += `<tr><td colspan="5" style="text-align:center; padding: 15px;">No journal entries found for this period.</td></tr>`;
                     } else {
                         filteredJournals.forEach(j => {
-                            totalValue += parseFloat(j.amount) || 0;
+                            totalJournalMovement += parseFloat(j.amount) || 0;
                             let accountsText = (j.lines || []).map(l => l.account).join(', ');
                             if (!accountsText) accountsText = 'Multiple Accounts';
                             
-                            bodyHtml += `
+                            html += `
                                 <tr>
                                     <td>${j.date}</td>
                                     <td>${j.id || j.no || '-'}</td>
                                     <td>${accountsText}</td>
                                     <td>${j.description || j.notes || '-'}</td>
-                                    <td style="font-weight: 600;">₹ ${(parseFloat(j.amount) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    <td style="text-align: right; font-weight: 600;">₹ ${(parseFloat(j.amount) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                                 </tr>
                             `;
                         });
-                        bodyHtml += `
+                        html += `
                             <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1;">
                                 <td colspan="4" style="text-align: right; font-weight: 700;">Net Journal Movement:</td>
-                                <td style="font-weight: 800; color: #3b82f6;">₹ ${totalValue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                <td style="text-align: right; font-weight: 800; color: #8b5cf6;">₹ ${totalJournalMovement.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                             </tr>
                         `;
                     }
-                    reportBody.innerHTML = bodyHtml;
+                    
+                    reportHead.innerHTML = '';
+                    reportBody.innerHTML = html;
                 }
                 else if (type === 'jobwork-metal') {
                     reportTitle.textContent = "Metal Balance Report (" + new Date().toLocaleDateString() + ")";
@@ -1853,8 +1914,21 @@
 
                     // 1. Bank Balances
                     const banks = JSON.parse(localStorage.getItem('manti_bank_accounts')) || [];
+                    const journals = JSON.parse(localStorage.getItem('manti_journal_entries')) || [];
                     let totalBank = 0;
-                    banks.forEach(b => totalBank += (parseFloat(b.balance) || 0));
+                    banks.forEach(b => {
+                        let bal = parseFloat(b.openingBalance) || 0;
+                        journals.forEach(j => {
+                            if(!j.lines) return;
+                            j.lines.forEach(l => {
+                                if ((l.account || '').toLowerCase() === (b.name || '').toLowerCase() || 
+                                    (l.account || '').toLowerCase() === 'bank') {
+                                    bal += (parseFloat(l.debit) || 0) - (parseFloat(l.credit) || 0);
+                                }
+                            });
+                        });
+                        totalBank += bal;
+                    });
 
                     // 2. Fixed Assets
                     const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
@@ -1871,10 +1945,88 @@
                     });
 
                     // 3. Inventory Value
-                    const inv = JSON.parse(localStorage.getItem('manti_inventory')) || {};
                     const rates = JSON.parse(localStorage.getItem('manti_rates')) || {gold: 0, silver: 0};
+                    const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+                    const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+                    const jobRecords = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+
+                    const inventoryData = {
+                        'Gold': { 'Metal': { inflow: 0, outflow: 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } },
+                        'Silver': { 'Metal': { inflow: 0, outflow: 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } }
+                    };
+
+                    function initType(metal, type) {
+                        const m = metal || 'Unknown';
+                        const t = type || 'Metal';
+                        if (!inventoryData[m]) inventoryData[m] = {};
+                        if (!inventoryData[m][t]) inventoryData[m][t] = { inflow: 0, outflow: 0 };
+                    }
+
+                    orders.forEach(o => {
+                        if (o.type === 'Purchase Order' && o.qty && o.status !== 'Completed' && o.status !== 'Archived') {
+                            const m = o.mainMetalType || 'Unknown';
+                            let t = 'Metal';
+                            const prodDesc = (o.product || '').toLowerCase();
+                            if (prodDesc.includes('solder')) t = 'Solder';
+                            else if (prodDesc.includes('scrap')) t = 'Scrap';
+                            else if (prodDesc.includes('dust')) t = 'Dust';
+                            initType(m, t);
+                            inventoryData[m][t].inflow += (parseFloat(o.qty) || 0);
+                        }
+                    });
+
+                    history.forEach(h => {
+                        const wt = parseFloat(h.weight) || 0;
+                        if (wt !== 0) {
+                            const metalStr = (h.metal || '').toLowerCase();
+                            const m = metalStr.includes('gold') ? 'Gold' : (metalStr.includes('silver') ? 'Silver' : 'Unknown');
+                            initType(m, 'Metal');
+                            if (wt < 0) inventoryData[m]['Metal'].outflow += Math.abs(wt);
+                            else inventoryData[m]['Metal'].inflow += wt;
+                        }
+                    });
+
+                    jobRecords.forEach(r => {
+                        const so = orders.find(o => o.id === r.jobnum);
+                        const mainM = so ? (so.mainMetalType || 'Unknown') : 'Unknown';
+                        if (r.status === '1. Issue') {
+                            if (r.issueLines && r.issueLines.length > 0) {
+                                r.issueLines.forEach(l => {
+                                    const subType = l.type || 'Metal';
+                                    initType(mainM, subType);
+                                    inventoryData[mainM][subType].outflow += (parseFloat(l.weight) || 0);
+                                });
+                            } else if (r.issueType) {
+                                initType(mainM, r.issueType);
+                                inventoryData[mainM][r.issueType].outflow += (parseFloat(r.issueWt) || 0);
+                            } else if (parseFloat(r.issueWt) > 0) {
+                                initType(mainM, 'Metal'); 
+                                inventoryData[mainM]['Metal'].outflow += (parseFloat(r.issueWt) || 0);
+                            }
+                        }
+                        if (r.status === '2. Receive') {
+                            if (r.receiveLines && r.receiveLines.length > 0) {
+                                r.receiveLines.forEach(l => {
+                                    const subType = l.type || 'Metal';
+                                    if (subType !== 'Wastage' && subType !== 'Wastage(Loss)') {
+                                        initType(mainM, subType);
+                                        inventoryData[mainM][subType].outflow -= (parseFloat(l.weight) || 0);
+                                    }
+                                });
+                            } else if (r.returnType) {
+                                if (r.returnType !== 'Wastage' && r.returnType !== 'Wastage(Loss)') {
+                                    initType(mainM, r.returnType);
+                                    inventoryData[mainM][r.returnType].outflow -= (parseFloat(r.receiveWt) || 0);
+                                }
+                            } else if (parseFloat(r.receiveWt) > 0) {
+                                initType(mainM, 'Metal');
+                                inventoryData[mainM]['Metal'].outflow -= (parseFloat(r.receiveWt) || 0);
+                            }
+                        }
+                    });
+
                     let totalInv = 0;
-                    for (const [metal, typesObj] of Object.entries(inv)) {
+                    for (const [metal, typesObj] of Object.entries(inventoryData)) {
                         for (const [type, data] of Object.entries(typesObj)) {
                             let available = data.inflow - data.outflow;
                             if (available > 0) {

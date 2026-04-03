@@ -299,9 +299,14 @@ async function syncKeyToSupabase(key, data) {
                 loan_number: a.loanNumber || '', emi_amount: parseFloat(a.emiAmount) || 0,
                 opening_balance: parseFloat(a.openingBalance) || 0, opening_date: a.openingDate || null
             }));
+            
             if (dbAccounts.length > 0) {
+                const idList = dbAccounts.map(a => `"${a.id}"`).join(',');
+                await supabase.from('bank_accounts').delete().not('id', 'in', `(${idList})`);
                 const { error } = await supabase.from('bank_accounts').upsert(dbAccounts, { onConflict: 'id' });
                 if (error) { console.error("Bank Accounts Sync Error:", error); alert("Failed to save Bank Accounts to Cloud: " + error.message); }
+            } else {
+                await supabase.from('bank_accounts').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_stock_history') {
             const dbStock = data.map(s => ({

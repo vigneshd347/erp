@@ -256,14 +256,9 @@
     <script>
         // Journal specific logic
         document.addEventListener('CloudDataLoaded', () => {
-            // Set today's date
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('journal-date').value = today;
-
-            // Generate next journal number
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('edit');
             const journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
-            const nextId = 'JN-' + String(journals.length + 1).padStart(4, '0');
-            document.getElementById('journal-no').value = nextId;
 
             // Populate contacts
             const contactList = document.getElementById('contact-list');
@@ -276,11 +271,52 @@
                 });
             } catch(e) {}
 
-            // Initial rows (at least 2 are needed for double-entry)
-            addJournalRow();
-            addJournalRow();
+            if (editId) {
+                const existing = journals.find(j => j.id === editId);
+                if (existing) {
+                    window.editingJournalId = editId;
+                    document.querySelector('.header-content h1').textContent = 'Edit Journal';
+                    document.querySelector('.header-content p').textContent = 'Modify existing accounting record';
+                    document.getElementById('save-journal').textContent = 'Update Journal';
+                    
+                    document.getElementById('journal-date').value = existing.date;
+                    document.getElementById('journal-no').value = existing.id;
+                    document.getElementById('journal-no').disabled = true; // Protect ID
+                    document.getElementById('journal-ref').value = existing.reference || '';
+                    document.getElementById('journal-notes').value = existing.notes || '';
+                    
+                    if (existing.lines && existing.lines.length > 0) {
+                        existing.lines.forEach(l => addJournalRow(l));
+                    } else {
+                        addJournalRow(); addJournalRow();
+                    }
+                    calcJournalTotals();
+                } else {
+                    alert("Journal not found.");
+                    window.location.href = 'banking.html';
+                }
+            } else {
+                // Set today's date
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('journal-date').value = today;
 
-            document.getElementById('add-journal-row').addEventListener('click', addJournalRow);
+                // Generate next journal number
+                let nextNum = 1;
+                journals.forEach(r => {
+                    if (r.id && r.id.startsWith('JN-')) {
+                        const n = parseInt(r.id.replace('JN-', ''), 10);
+                        if (!isNaN(n) && n >= nextNum) nextNum = n + 1;
+                    }
+                });
+                const nextId = 'JN-' + String(nextNum).padStart(4, '0');
+                document.getElementById('journal-no').value = nextId;
+
+                // Initial rows
+                addJournalRow();
+                addJournalRow();
+            }
+
+            document.getElementById('add-journal-row').addEventListener('click', () => addJournalRow());
             document.getElementById('save-journal').addEventListener('click', saveJournalEntry);
         });
 
@@ -312,7 +348,7 @@
             `;
         }
 
-        function addJournalRow() {
+        function addJournalRow(data = {}) {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td style="text-align: center; border-bottom: 1px solid #eee;"><i data-lucide="grip-vertical" style="color: #cbd5e1; width: 16px; height: 16px;"></i></td>
@@ -323,23 +359,40 @@
                     </select>
                 </td>
                 <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                    <input type="text" class="journal-input left-align" name="j_desc" placeholder="Description">
+                    <input type="text" class="journal-input left-align" name="j_desc" placeholder="Description" value="${data.desc || ''}">
                 </td>
                 <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                    <input type="text" class="journal-input left-align" name="j_contact" list="contact-list" placeholder="Select Contact">
+                    <input type="text" class="journal-input left-align" name="j_contact" list="contact-list" placeholder="Select Contact" value="${data.contact || ''}">
                 </td>
                 <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                    <input type="number" class="journal-input" name="j_debit" placeholder="0.00" step="0.01" oninput="calcJournalTotals()">
+                    <input type="number" class="journal-input" name="j_debit" placeholder="0.00" step="0.01" oninput="calcJournalTotals()" value="${data.debit || ''}">
                 </td>
                 <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                    <input type="number" class="journal-input" name="j_credit" placeholder="0.00" step="0.01" oninput="calcJournalTotals()">
+                    <input type="number" class="journal-input" name="j_credit" placeholder="0.00" step="0.01" oninput="calcJournalTotals()" value="${data.credit || ''}">
                 </td>
                 <td style="text-align: center; border-bottom: 1px solid #eee;">
                     <button type="button" class="btn-remove-sm" onclick="removeJournalRow(this)"><i data-lucide="trash-2" style="width: 16px; height: 16px;"></i></button>
                 </td>
             `;
+            if (data.account) {
+                const sel = row.querySelector('select[name="j_account"]');
+                let found = false;
+                Array.from(sel.options).forEach(opt => {
+                    if (opt.value === data.account || opt.text === data.account) {
+                        sel.value = opt.value;
+                        found = true;
+                    }
+                });
+                if (!found && data.account) {
+                    const opt = document.createElement('option');
+                    opt.value = data.account;
+                    opt.text = data.account;
+                    sel.appendChild(opt);
+                    sel.value = data.account;
+                }
+            }
             jBody.appendChild(row);
-            lucide.createIcons();
+            if (window.lucide) window.lucide.createIcons();
         }
 
         function removeJournalRow(btn) {
@@ -443,7 +496,19 @@
             };
 
             let journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
-            journals.push(record);
+            
+            if (window.editingJournalId) {
+                const existingIdx = journals.findIndex(j => j.id === window.editingJournalId);
+                if (existingIdx !== -1) {
+                    record.timestamp = journals[existingIdx].timestamp; // Preserve older timestamp if desired
+                    journals[existingIdx] = record;
+                } else {
+                    journals.push(record);
+                }
+            } else {
+                journals.push(record);
+            }
+            
             localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
 
             // Show success and redirect
