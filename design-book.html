@@ -352,6 +352,18 @@
         </div>
     </div>
 
+    <!-- Full Image Viewer Modal -->
+    <div id="image-viewer-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center; flex-direction:column; backdrop-filter:blur(4px);">
+        <button onclick="closeImageViewer()" style="position:absolute; top:24px; right:24px; background:none; border:none; cursor:pointer; color:#fff; display:flex;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <img id="full-image-preview" src="" style="max-width:90%; max-height:80vh; object-fit:contain; border-radius:12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+        <div style="margin-top: 20px; text-align: center; color: #fff;">
+            <h2 id="full-image-title" style="margin:0 0 8px 0; font-size:1.5rem; font-weight:700;"></h2>
+            <div id="full-image-usage" style="display:inline-block; background:rgba(255,255,255,0.2); padding:6px 16px; border-radius:20px; font-size:0.95rem; font-weight:500;"></div>
+        </div>
+    </div>
+
     <script src="liquid-button.js"></script>
     <script src="script.js?v=25"></script>
     <script>
@@ -573,6 +585,29 @@
             }
         });
 
+        function viewFullImage(designId, imgSrc) {
+            if (!imgSrc || imgSrc.includes('svg+xml')) return;
+            const treeData = JSON.parse(localStorage.getItem('manti_trees') || '[]');
+            let count = 0;
+            treeData.forEach(t => {
+                if (t.designs) {
+                    t.designs.forEach(dd => {
+                        if (dd.design_id === designId) {
+                            count += (parseInt(dd.count) || 1);
+                        }
+                    });
+                }
+            });
+            document.getElementById('full-image-preview').src = imgSrc;
+            document.getElementById('full-image-title').textContent = "Design " + designId;
+            document.getElementById('full-image-usage').innerHTML = `Total usage in Production Trees: <strong>${count} pcs</strong>`;
+            document.getElementById('image-viewer-modal').style.display = 'flex';
+        }
+
+        function closeImageViewer() {
+            document.getElementById('image-viewer-modal').style.display = 'none';
+        }
+
         window.deleteDesign = function(id) {
             if (confirm("Are you sure you want to completely destroy this design?")) {
                 designs = designs.filter(d => d.id !== id);
@@ -605,8 +640,19 @@
             grid.style.display = 'grid';
             emptyState.style.display = 'none';
             grid.innerHTML = '';
+            
+            const treeData = JSON.parse(localStorage.getItem('manti_trees') || '[]');
 
             filtered.forEach(d => {
+                let usageCount = 0;
+                treeData.forEach(t => {
+                    if (t.designs) {
+                        t.designs.forEach(dd => {
+                            if (dd.design_id === d.id) usageCount += (parseInt(dd.count) || 1);
+                        });
+                    }
+                });
+
                 const card = document.createElement('div');
                 card.className = 'design-card';
                 
@@ -614,7 +660,7 @@
 
                 card.innerHTML = `
                     <div class="design-image">
-                        <img src="${imgSrc}" alt="${d.category} Design" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%23cbd5e1\\' stroke-width=\\'2\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'></circle><line x1=\\'12\\' y1=\\'8\\' x2=\\'12\\' y2=\\'12\\'></line><line x1=\\'12\\' y1=\\'16\\' x2=\\'12.01\\' y2=\\'16\\'></line></svg>'">
+                        <img src="${imgSrc}" alt="${d.category} Design" style="cursor: pointer;" onclick="viewFullImage('${d.id}', '${imgSrc}')" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%23cbd5e1\\' stroke-width=\\'2\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'></circle><line x1=\\'12\\' y1=\\'8\\' x2=\\'12\\' y2=\\'12\\'></line><line x1=\\'12\\' y1=\\'16\\' x2=\\'12.01\\' y2=\\'16\\'></line></svg>'">
                     </div>
                     <div class="design-info">
                         <div>
@@ -624,6 +670,10 @@
                         </div>
                         
                         <div class="design-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Tree Usage</span>
+                                <span class="meta-value" style="color: var(--primary);">${usageCount} pcs</span>
+                            </div>
                             <div class="meta-item">
                                 <span class="meta-label">Weight</span>
                                 <span class="meta-value">${parseFloat(d.weight).toFixed(2)} g</span>
