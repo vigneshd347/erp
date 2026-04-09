@@ -233,7 +233,12 @@
                             <input type="number" id="a-depreciation" step="0.1" min="0" max="100" placeholder="0.0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
                         </div>
                         <div style="flex: 1;">
-                            <!-- Placeholder for alignment -->
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Paid Through</label>
+                            <select id="a-paidthrough" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                <option value="Bank">Bank Account</option>
+                                <option value="Cash">Cash / Petty Cash</option>
+                                <option value="">Not Paid (Credit / Existing)</option>
+                            </select>
                         </div>
                     </div>
                     
@@ -516,6 +521,7 @@
                 document.getElementById('a-date').value = asset.date || '';
                 document.getElementById('a-value').value = asset.value || '';
                 document.getElementById('a-depreciation').value = asset.depreciation || '';
+                document.getElementById('a-paidthrough').value = asset.paidThrough !== undefined ? asset.paidThrough : 'Bank';
                 document.getElementById('a-notes').value = asset.notes || '';
                 
                 document.getElementById('modal-title').textContent = 'Edit Asset';
@@ -527,6 +533,11 @@
                         let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
                         assets = assets.filter(a => a.id !== id);
                         localStorage.setItem('manti_assets', JSON.stringify(assets));
+
+                        // Erase any corresponding Asset Purchase Journal Entry
+                        let journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+                        journals = journals.filter(j => j.id !== 'JV-' + id);
+                        localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
 
                         // Force cloud deletion
                         if (window.supabase) {
@@ -563,6 +574,7 @@
                     date: document.getElementById('a-date').value,
                     value: document.getElementById('a-value').value,
                     depreciation: document.getElementById('a-depreciation').value,
+                    paidThrough: document.getElementById('a-paidthrough').value,
                     notes: document.getElementById('a-notes').value.trim()
                 };
 
@@ -574,6 +586,35 @@
                 }
 
                 localStorage.setItem('manti_assets', JSON.stringify(assets));
+
+                // ---- Journal Entry Generation for Asset Purchase ----
+                let journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+                
+                // Remove existing journal entry if modifying
+                if (isEdit) {
+                    journals = journals.filter(j => j.id !== 'JV-' + newData.id);
+                }
+                
+                const purchaseValue = parseFloat(newData.value) || 0;
+                
+                // If the asset has a cost and was actually paid for through a bank/cash account
+                if (purchaseValue > 0 && newData.paidThrough && newData.paidThrough !== '') {
+                    journals.push({
+                        id: 'JV-' + newData.id,
+                        date: newData.date,
+                        reference: newData.id,
+                        notes: `Asset Purchase: ${newData.name} [${newData.category}]`,
+                        total: purchaseValue,
+                        lines: [
+                            { account: 'Fixed Assets', desc: `Purchased Asset: ${newData.name}`, contact: '', debit: purchaseValue, credit: 0 },
+                            { account: newData.paidThrough, desc: `Payment for ${newData.name}`, contact: '', debit: 0, credit: purchaseValue }
+                        ],
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
+                localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+                // ---------------------------------------------------
                 closeModal();
                 loadAssets();
             });

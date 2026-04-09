@@ -184,8 +184,12 @@ async function syncKeyToSupabase(key, data) {
                 };
             });
             if (dbOrders.length > 0) {
+                const idList = dbOrders.map(o => `"${o.order_number}"`).join(',');
+                await supabase.from('orders').delete().not('order_number', 'in', `(${idList})`);
                 const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
                 if (error) { console.error("Orders Sync Error:", error); alert("Failed to save Orders to Cloud: " + error.message); }
+            } else {
+                await supabase.from('orders').delete().neq('order_number', 'NON_EXISTENT');
             }
         } else if (key === 'manti_jobwork_records') {
             const dbJobs = data.map(j => ({
@@ -207,8 +211,12 @@ async function syncKeyToSupabase(key, data) {
                 payment_status: inv.paymentStatus || 'Unpaid'
             }));
             if (dbInvoices.length > 0) {
+                const idList = dbInvoices.map(i => `"${i.invoice_number}"`).join(',');
+                await supabase.from('invoices').delete().not('invoice_number', 'in', `(${idList})`);
                 const { error } = await supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' });
                 if (error) { console.error("Invoices Sync Error:", error); alert("Failed to save Invoices to Cloud: " + error.message); }
+            } else {
+                await supabase.from('invoices').delete().neq('invoice_number', 'NON_EXISTENT');
             }
         } else if (key === 'manti_vendor_kyc_records') {
             const dbVendors = data.map(v => ({
@@ -218,8 +226,12 @@ async function syncKeyToSupabase(key, data) {
                 bank_branch: v.bankBranch || null, bank_acc: v.bankAcc || null, bank_ifsc: v.bankIfsc || null, bank_upi: v.bankUpi || null
             }));
             if (dbVendors.length > 0) {
+                const idList = dbVendors.map(v => `"${v.id}"`).join(',');
+                await supabase.from('vendor_kyc').delete().not('id', 'in', `(${idList})`);
                 const { error } = await supabase.from('vendor_kyc').upsert(dbVendors, { onConflict: 'id' });
                 if (error) { console.error("Vendor KYC Sync Error:", error); alert("Failed to save Vendor KYC to Cloud: " + error.message); }
+            } else {
+                await supabase.from('vendor_kyc').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_supplier_kyc_records') {
             const dbSuppliers = data.map(v => ({
@@ -229,11 +241,15 @@ async function syncKeyToSupabase(key, data) {
                 bank_branch: v.bankBranch || null, bank_acc: v.bankAcc || null, bank_ifsc: v.bankIfsc || null, bank_upi: v.bankUpi || null
             }));
             if (dbSuppliers.length > 0) {
+                const idList = dbSuppliers.map(s => `"${s.id}"`).join(',');
+                await supabase.from('supplier_kyc').delete().not('id', 'in', `(${idList})`);
                 const { error } = await supabase.from('supplier_kyc').upsert(dbSuppliers, { onConflict: 'id' });
                 if (error) {
                     console.error("Supplier KYC Sync Error:", error);
                     alert("Failed to save Supplier KYC to Cloud: " + error.message + " (Check if the table exists in Supabase)");
                 }
+            } else {
+                await supabase.from('supplier_kyc').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_staff_records') {
             const dbStaff = data.map(s => ({
@@ -241,8 +257,12 @@ async function syncKeyToSupabase(key, data) {
                 email: s.email || null, data: s
             }));
             if (dbStaff.length > 0) {
+                const idList = dbStaff.map(s => `"${s.id}"`).join(',');
+                await supabase.from('staff_records').delete().not('id', 'in', `(${idList})`);
                 const { error } = await supabase.from('staff_records').upsert(dbStaff, { onConflict: 'id' });
                 if (error) { console.error("Staff Records Sync Error:", error); alert("Failed to save Staff Records to Cloud: " + error.message); }
+            } else {
+                await supabase.from('staff_records').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_assets') {
             const dbAssets = data.map(a => ({
@@ -250,8 +270,12 @@ async function syncKeyToSupabase(key, data) {
                 value: parseFloat(a.value) || 0, status: a.status || '', data: a
             }));
             if (dbAssets.length > 0) {
+                const idList = dbAssets.map(a => `"${a.id}"`).join(',');
+                await supabase.from('assets').delete().not('id', 'in', `(${idList})`);
                 const { error } = await supabase.from('assets').upsert(dbAssets, { onConflict: 'id' });
                 if (error) { console.error("Assets Sync Error:", error); alert("Failed to save Assets to Cloud: " + error.message); }
+            } else {
+                await supabase.from('assets').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_delivery_challan_records') {
             const dbChallans = data.map(c => ({
@@ -259,8 +283,12 @@ async function syncKeyToSupabase(key, data) {
                 total_amount: parseFloat(c.total) || 0, items: c.items || []
             }));
             if (dbChallans.length > 0) {
+                const idList = dbChallans.map(c => `"${c.id}"`).join(',');
+                await supabase.from('delivery_challans').delete().not('id', 'in', `(${idList})`);
                 const { error } = await supabase.from('delivery_challans').upsert(dbChallans, { onConflict: 'id' });
                 if (error) { console.error("Delivery Challans Sync Error:", error); alert("Failed to save Delivery Challans to Cloud: " + error.message); }
+            } else {
+                await supabase.from('delivery_challans').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_payments_made') {
             const dbPayments = data.map(p => ({
@@ -282,16 +310,24 @@ async function syncKeyToSupabase(key, data) {
                 items: e.items || []
             }));
             if (dbExpenses.length > 0) {
+                const idList = dbExpenses.map(e => `"${e.id}"`).join(',');
+                await supabase.from('expenses').delete().not('id', 'in', `(${idList})`);
                 const { error } = await supabase.from('expenses').upsert(dbExpenses, { onConflict: 'id' });
                 if (error) { console.error("Expenses Sync Error:", error); alert("Failed to save Expenses to Cloud: " + error.message); }
+            } else {
+                await supabase.from('expenses').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_journal_entries') {
             const dbJournals = data.map(j => ({
                 id: j.id || j.no, date: j.date, amount: parseFloat(j.amount) || 0, description: j.description || j.notes || '', lines: j.lines || []
             }));
             if (dbJournals.length > 0) {
+                const idList = dbJournals.map(j => `"${j.id}"`).join(',');
+                await supabase.from('journal_entries').delete().not('id', 'in', `(${idList})`);
                 const { error } = await supabase.from('journal_entries').upsert(dbJournals, { onConflict: 'id' });
                 if (error) { console.error("Journal Entries Sync Error:", error); alert("Failed to save Journal Entries to Cloud: " + error.message); }
+            } else {
+                await supabase.from('journal_entries').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_bank_accounts') {
             const dbAccounts = data.map(a => ({
@@ -326,8 +362,12 @@ async function syncKeyToSupabase(key, data) {
                 id: s.id, title: s.title, date: s.date, html: s.html, type: s.type
             }));
             if (dbSnaps.length > 0) {
+                const idList = dbSnaps.map(s => `"${s.id}"`).join(',');
+                await supabase.from('snapshots').delete().not('id', 'in', `(${idList})`);
                 const { error } = await supabase.from('snapshots').upsert(dbSnaps, { onConflict: 'id' });
                 if (error) { console.error("Snapshots Sync Error:", error); alert("Failed to save Snapshots to Cloud: " + error.message); }
+            } else {
+                await supabase.from('snapshots').delete().neq('id', 'NON_EXISTENT');
             }
         } else {
             const { error } = await supabase.from('settings').upsert({

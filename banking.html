@@ -406,6 +406,17 @@
 
             <!-- Dashboard View -->
             <div id="banking-dashboard" style="padding: 24px; overflow-y: auto; flex: 1; background: #f8fafc;">
+                <!-- Total Balance Widget -->
+                <div id="banking-total-container" style="background: white; border-radius: 12px; border: 1px solid #e5e7eb; padding: 24px; margin-bottom: 24px; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: none;">
+                    <div>
+                        <h2 style="font-size: 0.9rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0; font-weight: 600;">Total Net Balance</h2>
+                        <h1 id="banking-total-amount" style="font-size: 2.2rem; font-weight: 800; color: #1e293b; margin: 0;">₹ 0.00</h1>
+                    </div>
+                    <div style="background: #e0f2fe; color: #0284c7; width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="wallet" style="width: 32px; height: 32px;"></i>
+                    </div>
+                </div>
+
                 <!-- Grouped Grid populated by JS -->
                 <div id="bank-cards-container">
                 </div>
@@ -637,17 +648,20 @@
         function renderAccountsList() {
             const container = document.getElementById('bank-cards-container');
             const placeholder = document.getElementById('no-account-placeholder');
+            const totalContainer = document.getElementById('banking-total-container');
             const accounts = getAccounts();
 
             container.innerHTML = '';
             
             if (accounts.length === 0) {
                 container.style.display = 'none';
+                if(totalContainer) totalContainer.style.display = 'none';
                 placeholder.style.display = 'block';
                 return;
             }
 
             container.style.display = 'block';
+            if(totalContainer) totalContainer.style.display = 'flex';
             placeholder.style.display = 'none';
 
             // Group accounts by type
@@ -664,6 +678,7 @@
             });
 
             // Iterate and render each group
+            let grandTotal = 0;
             for (const [groupName, groupAccs] of Object.entries(groups)) {
                 if (groupAccs.length === 0) continue;
 
@@ -682,6 +697,7 @@
 
                 groupAccs.forEach(acc => {
                     const balance = computeBalance(acc.name, acc.openingBalance);
+                    grandTotal += balance;
                     const iconClass = acc.type === 'Credit Card' ? 'credit-type' : acc.type === 'Cash' ? 'cash-type' : 'bank-type';
                     const iconName = acc.type === 'Credit Card' ? 'credit-card' : acc.type === 'Cash' ? 'banknote' : 'landmark';
 
@@ -724,6 +740,17 @@
                 
                 container.appendChild(section);
             }
+            
+            // Update Grand Total
+            if(document.getElementById('banking-total-amount')) {
+                document.getElementById('banking-total-amount').textContent = `₹ ${grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                if(grandTotal < 0) {
+                    document.getElementById('banking-total-amount').style.color = '#ef4444';
+                } else {
+                    document.getElementById('banking-total-amount').style.color = '#1e293b';
+                }
+            }
+
             if(window.lucide) window.lucide.createIcons();
         }
 
