@@ -1,6 +1,6 @@
 // Vanilla JS adaptation of canvas-based Liquid Button
-document.addEventListener('CloudDataLoaded', () => {
-    
+// CloudDataLoaded removed, running instantly
+
     // Global mouse tracking
     let mouseX = 0, mouseY = 0;
     let mouseLastX = 0, mouseLastY = 0;
@@ -33,14 +33,14 @@ document.addEventListener('CloudDataLoaded', () => {
     // Map button classes to their respective colors
     const colorMap = {
         'btn-primary': {
-            bg: 'rgba(37, 99, 235, 0.4)',
-            grad1: 'rgba(37, 99, 235, 0.8)',
-            grad2: 'rgba(30, 64, 175, 0.7)'
+            bg: 'rgba(37, 99, 235, 0.9)',
+            grad1: 'rgba(29, 78, 216, 1.0)',
+            grad2: 'rgba(30, 64, 175, 0.9)'
         },
         'btn-secondary': {
-            bg: 'rgba(71, 85, 105, 0.5)',
-            grad1: 'rgba(71, 85, 105, 0.9)',
-            grad2: 'rgba(30, 41, 59, 0.8)'
+            bg: 'rgba(71, 85, 105, 0.8)',
+            grad1: 'rgba(51, 65, 85, 1.0)',
+            grad2: 'rgba(30, 41, 59, 1.0)'
         },
         'btn-outline': {
             bg: 'rgba(255, 255, 255, 0.05)',
@@ -48,7 +48,7 @@ document.addEventListener('CloudDataLoaded', () => {
             grad2: 'rgba(255, 255, 255, 0.05)'
         },
         'default': {
-            bg: 'rgba(37, 99, 235, 0.4)',
+            bg: 'rgba(37, 99, 235, 0.9)',
             grad1: '#2563eb',
             grad2: '#1e40af'
         }
@@ -97,14 +97,17 @@ document.addEventListener('CloudDataLoaded', () => {
             this.renderCanvas = this.renderCanvas.bind(this);
             this.renderCanvas();
 
-            // Handle Resize
-            window.addEventListener('resize', () => {
-                this.buttonWidth = this.button.offsetWidth;
-                this.buttonHeight = this.button.offsetHeight;
-                this.canvas.width = this.buttonWidth + 100;
-                this.canvas.height = this.buttonHeight + 100;
-                this.initPoints();
+            // Handle Resize & Visibility Changes
+            const resizeObserver = new ResizeObserver(() => {
+                if (this.button.offsetWidth > 0 && this.button.offsetHeight > 0) {
+                    this.buttonWidth = this.button.offsetWidth;
+                    this.buttonHeight = this.button.offsetHeight;
+                    this.canvas.width = this.buttonWidth + 100;
+                    this.canvas.height = this.buttonHeight + 100;
+                    this.initPoints();
+                }
             });
+            resizeObserver.observe(this.button);
         }
 
         getOffset() {
@@ -240,8 +243,26 @@ document.addEventListener('CloudDataLoaded', () => {
         }
     }
 
-    // Initialize all liquid buttons
-    document.querySelectorAll('.btn-liquid').forEach(btn => {
-        new LiquidButton(btn);
+    function initLiquidButtons() {
+        document.querySelectorAll('.btn-liquid:not(.liquid-initialized)').forEach(btn => {
+            btn.classList.add('liquid-initialized');
+            new LiquidButton(btn);
+        });
+    }
+
+    // Initialize immediately for buttons already in the DOM
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLiquidButtons);
+    } else {
+        initLiquidButtons();
+    }
+
+    // Watch for dynamically added buttons (e.g., after data loads)
+    const observer = new MutationObserver((mutations) => {
+        let shouldInit = false;
+        mutations.forEach(m => {
+            if (m.addedNodes.length > 0) shouldInit = true;
+        });
+        if (shouldInit) initLiquidButtons();
     });
-});
+    observer.observe(document.body, { childList: true, subtree: true });

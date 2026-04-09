@@ -369,6 +369,20 @@ async function syncKeyToSupabase(key, data) {
             } else {
                 await supabase.from('snapshots').delete().neq('id', 'NON_EXISTENT');
             }
+        } else if (key === 'manti_designs') {
+            const dbDesigns = data.map(d => ({
+                id: d.id, category: d.category, sub_category: d.subCategory || null,
+                weight: parseFloat(d.weight) || 0, size: d.size || null,
+                image_url: d.imageUrl || null
+            }));
+            if (dbDesigns.length > 0) {
+                const idList = dbDesigns.map(d => `"${d.id}"`).join(',');
+                await supabase.from('designs').delete().not('id', 'in', `(${idList})`);
+                const { error } = await supabase.from('designs').upsert(dbDesigns, { onConflict: 'id' });
+                if (error) { console.error("Designs Sync Error:", error); alert("Failed to save Designs to Cloud."); }
+            } else {
+                await supabase.from('designs').delete().neq('id', 'NON_EXISTENT');
+            }
         } else {
             const { error } = await supabase.from('settings').upsert({
                 setting_key: key, setting_value: data, updated_at: new Date().toISOString()
@@ -390,7 +404,7 @@ window.fetchEverythingFromCloud = async function () {
             ordersRes, jobsRes, invoicesRes, vendorRes,
             supplierRes, staffRes, assetsRes, challansRes,
             paymentsRes, expensesRes, journalsRes, accountsRes,
-            stockRes, snapsRes, settingsRes
+            stockRes, snapsRes, settingsRes, designsRes
         ] = await Promise.all([
             supabase.from('orders').select('*'),
             supabase.from('job_works').select('*'),
@@ -406,7 +420,8 @@ window.fetchEverythingFromCloud = async function () {
             supabase.from('bank_accounts').select('*'),
             supabase.from('stock_history').select('*'),
             supabase.from('snapshots').select('*'),
-            supabase.from('settings').select('*')
+            supabase.from('settings').select('*'),
+            supabase.from('designs').select('*')
         ]);
 
         // 1. Orders
@@ -569,6 +584,15 @@ window.fetchEverythingFromCloud = async function () {
                     window.ERP_MEMORY.set(s.setting_key, JSON.stringify(s.setting_value));
                 }
             });
+        }
+
+        // 16. Designs
+        if (designsRes && designsRes.data) {
+            const mappedDesigns = designsRes.data.map(d => ({
+                id: d.id, category: d.category, subCategory: d.sub_category,
+                weight: d.weight, size: d.size, imageUrl: d.image_url, timestamp: d.created_at
+            }));
+            window.ERP_MEMORY.set('manti_designs', JSON.stringify(mappedDesigns));
         }
     } catch (e) {
         console.error("Cloud Fetch Failed!", e);

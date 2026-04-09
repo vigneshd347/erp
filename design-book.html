@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Book - Manti ERP</title>
+    <link rel="stylesheet" href="style.css?v=18">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #f1f5f9; }
+        
+        .design-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding-bottom: 24px;
+        }
+
+        .design-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .design-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .design-image {
+            width: 100%;
+            height: 200px;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #e5e7eb;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .design-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #fff;
+        }
+
+        .design-info {
+            padding: 16px;
+            flex: 1;
+        }
+
+        .design-id {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .design-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #e5e7eb;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .meta-label {
+            font-size: 0.7rem;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .meta-value {
+            font-size: 0.85rem;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .design-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+            background: #f8fafc;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            display: none;
+            margin-top: 12px;
+            object-fit: contain;
+        }
+        
+    </style>
+    <!-- Supabase Cloud Sync -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js?v=2"></script>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group active">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron" style="transform: rotate(180deg);"></i>
+                    </div>
+                    <div class="nav-group-content" style="display: block;">
+                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                        <a href="design-book.html" class="nav-item nested active">Design Book</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                        <a href="expenses.html" class="nav-item nested ">Expenses</a>
+                    </div>
+                </div>
+
+                <div class="nav-group ">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested ">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item ">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content" style="flex: 1; overflow-y: auto; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+                <div>
+                    <h1 style="font-size: 1.4rem; font-weight: 800; color: #1f2937; margin: 0;">Design Book</h1>
+                    <p style="font-size: 0.85rem; color: #6b7280; margin-top: 4px;">Manage your jewelry master designs and templates</p>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <div style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:8px; padding:8px 14px; width: 260px;">
+                        <i data-lucide="search" style="width:16px;height:16px;color:var(--text-muted);"></i>
+                        <input type="text" id="search-designs" placeholder="Search designs..." oninput="renderGrid()" style="border:none; background:transparent; outline:none; font-size:0.85rem; width:100%;">
+                    </div>
+                    <select id="filter-category" onchange="renderGrid()" style="padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.85rem; font-weight: 500; cursor: pointer; background: #fff;">
+                        <option value="All">All Categories</option>
+                        <option value="Ring">Rings</option>
+                        <option value="Bangle">Bangles</option>
+                        <option value="Earring">Earrings</option>
+                        <option value="Necklace">Necklaces</option>
+                    </select>
+                    <button class="btn-liquid btn-primary" onclick="openDesignModal()">
+                        <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 6px;"></i> New Design
+                    </button>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" style="display: none; text-align: center; padding: 80px 24px; background: #fff; border-radius: 16px; border: 1px dashed #cbd5e1;">
+                <div style="width: 64px; height: 64px; background: #f1f5f9; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                    <i data-lucide="gem" style="width: 32px; height: 32px; color: #94a3b8;"></i>
+                </div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 8px;">No Designs Yet</h3>
+                <p style="color: #64748b; margin-bottom: 24px;">Start building your catalog by adding your first jewelry design.</p>
+                <button class="btn-liquid btn-primary" onclick="openDesignModal()">Create Design</button>
+            </div>
+
+            <!-- Grid View -->
+            <div class="design-grid" id="design-grid">
+                <!-- Dynamically injected -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Modal (Admin Style) -->
+    <div id="design-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+        <div style="background:#fff; width:100%; max-width:560px; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; max-height: 90vh;">
+            <div style="padding:16px 24px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+                <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:#1f2937;" id="modal-title">New Design</h3>
+                <button onclick="closeDesignModal()" style="background:none; border:none; cursor:pointer; color:#6b7280; display:flex;">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+            <div style="padding:24px; overflow-y: auto; flex: 1;">
+                <form id="design-form">
+                    <input type="hidden" id="design-existing-id">
+                    
+                    <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                        <div style="flex: 1;">
+                            <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Design NO. (Auto)</label>
+                            <input type="text" id="design-id" readonly style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-weight: 700; color: var(--primary); background: #f3f4f6; box-sizing:border-box;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                        <div style="flex: 1;">
+                            <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Category *</label>
+                            <select id="design-category" required onchange="handleCategoryChange()" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; font-family:inherit; box-sizing:border-box;">
+                                <option value="" disabled selected>Select Category</option>
+                                <option value="Ring">Ring</option>
+                                <option value="Bangle">Bangle</option>
+                                <option value="Earring">Earring</option>
+                                <option value="Necklace">Necklace</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;" id="subcat-container">
+                            <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Sub Category</label>
+                            <select id="design-subcategory" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; font-family:inherit; box-sizing:border-box; background: #f3f4f6;" disabled>
+                                <option value="">N/A</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                        <div style="flex: 1;">
+                            <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Weight (g) *</label>
+                            <input type="number" id="design-weight" step="0.01" min="0" required placeholder="0.00" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box;">
+                        </div>
+                        <div style="flex: 1;" id="size-container">
+                            <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Size</label>
+                            <input type="text" id="design-size" placeholder="Enter Size (e.g. 14, 2x6)" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box; background: #f3f4f6;" disabled>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Design Image *</label>
+                        <div class="upload-area" onclick="document.getElementById('design-file').click()">
+                            <i data-lucide="image-plus" style="width: 32px; height: 32px; color: #94a3b8; margin-bottom: 8px;"></i>
+                            <div style="font-size: 0.85rem; color: #475569; font-weight: 500;">Click to upload image</div>
+                            <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 4px;">Supports JPG, PNG, WEBP</div>
+                            <input type="file" id="design-file" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                            <img id="design-preview" class="image-preview" src="" alt="Preview">
+                            <input type="hidden" id="design-existing-image">
+                        </div>
+                        <div id="uploading-text" style="display:none; color: var(--primary); font-size: 0.8rem; font-weight: 600; text-align: center;">Uploading securely to Supabase... <i data-lucide="loader" class="spinning" style="width: 14px; height: 14px;"></i></div>
+                    </div>
+
+                </form>
+            </div>
+            <div style="padding:16px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:12px; background:#f8fafc;">
+                <button type="button" class="btn-liquid btn-outline" onclick="closeDesignModal()">Cancel</button>
+                <button type="submit" form="design-form" class="btn-liquid btn-primary" id="btn-save-design">Save Design</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="liquid-button.js"></script>
+    <script src="script.js?v=25"></script>
+    <script>
+        lucide.createIcons();
+
+        let designs = [];
+        let isUploading = false;
+
+        document.addEventListener('CloudDataLoaded', () => {
+            designs = JSON.parse(localStorage.getItem('manti_designs') || '[]');
+            renderGrid();
+        });
+
+        function generateDesignId() {
+            let prefix = 'DSG-';
+            let maxId = 0;
+            designs.forEach(d => {
+                if (d.id && d.id.startsWith(prefix)) {
+                    const num = parseInt(d.id.replace(prefix, ''), 10);
+                    if (!isNaN(num) && num > maxId) maxId = num;
+                }
+            });
+            return prefix + ((maxId + 1).toString().padStart(4, '0'));
+        }
+
+        function handleCategoryChange() {
+            const cat = document.getElementById('design-category').value;
+            const subcatSelect = document.getElementById('design-subcategory');
+            const sizeInput = document.getElementById('design-size');
+
+            // Handle Sub Category (Only for Ring)
+            if (cat === 'Ring') {
+                subcatSelect.disabled = false;
+                subcatSelect.style.background = '#fff';
+                subcatSelect.innerHTML = `
+                    <option value="" disabled selected>Select Sub-category</option>
+                    <option value="Ladies ring">Ladies ring</option>
+                    <option value="Gents ring">Gents ring</option>
+                `;
+                subcatSelect.required = true;
+            } else {
+                subcatSelect.disabled = true;
+                subcatSelect.style.background = '#f3f4f6';
+                subcatSelect.innerHTML = `<option value="">N/A</option>`;
+                subcatSelect.required = false;
+            }
+
+            // Handle Size (Ring or Bangle)
+            if (cat === 'Ring' || cat === 'Bangle') {
+                sizeInput.disabled = false;
+                sizeInput.style.background = '#fff';
+                sizeInput.required = true;
+            } else {
+                sizeInput.disabled = true;
+                sizeInput.style.background = '#f3f4f6';
+                sizeInput.value = '';
+                sizeInput.required = false;
+            }
+        }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('design-preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'inline-block';
+                    document.getElementById('design-existing-image').value = ''; // They are selecting a new one
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function openDesignModal(id = null) {
+            const modal = document.getElementById('design-modal');
+            const form = document.getElementById('design-form');
+            form.reset();
+            document.getElementById('design-preview').style.display = 'none';
+            document.getElementById('design-preview').src = '';
+            document.getElementById('design-existing-image').value = '';
+
+            if (id) {
+                document.getElementById('modal-title').textContent = 'Edit Design';
+                const d = designs.find(x => x.id === id);
+                if (d) {
+                    document.getElementById('design-existing-id').value = d.id;
+                    document.getElementById('design-id').value = d.id;
+                    document.getElementById('design-category').value = d.category;
+                    handleCategoryChange(); // Trigger state morphing
+                    
+                    if (d.subCategory) document.getElementById('design-subcategory').value = d.subCategory;
+                    document.getElementById('design-weight').value = d.weight;
+                    if (d.size) document.getElementById('design-size').value = d.size;
+                    
+                    if (d.imageUrl) {
+                        document.getElementById('design-preview').src = d.imageUrl;
+                        document.getElementById('design-preview').style.display = 'inline-block';
+                        document.getElementById('design-existing-image').value = d.imageUrl;
+                    }
+                }
+            } else {
+                document.getElementById('modal-title').textContent = 'New Design';
+                document.getElementById('design-existing-id').value = '';
+                document.getElementById('design-id').value = generateDesignId();
+                handleCategoryChange(); // Set disabled states
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeDesignModal() {
+            document.getElementById('design-modal').style.display = 'none';
+        }
+
+        document.getElementById('design-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isUploading) return;
+
+            const btn = document.getElementById('btn-save-design');
+            const uploadTxt = document.getElementById('uploading-text');
+            const fileInput = document.getElementById('design-file');
+            
+            let imageUrl = document.getElementById('design-existing-image').value;
+            const file = fileInput.files[0];
+
+            // If it's a new design, user MUST select an image
+            if (!document.getElementById('design-existing-id').value && !file && !imageUrl) {
+                alert("Please select a design image.");
+                return;
+            }
+
+            isUploading = true;
+            btn.disabled = true;
+            btn.style.opacity = 0.5;
+            
+            try {
+                // Upload image if a new file is selected
+                if (file) {
+                    uploadTxt.style.display = 'block';
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                    const filePath = `uploads/${fileName}`;
+
+                    // Will attempt to upload to "designs" bucket. If you haven't created it, please create a public bucket named "designs".
+                    const { data, error } = await window.supabase.storage.from('designs').upload(filePath, file);
+                    if (error) {
+                        console.error('Storage error:', error);
+                        alert("Warning: Could not upload to Supabase 'designs' bucket. Please ensure the bucket exists and is public. Saving without image link for now.\nError: " + error.message);
+                    } else {
+                        const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(filePath);
+                        imageUrl = urlData.publicUrl;
+                    }
+                }
+
+                const cat = document.getElementById('design-category').value;
+                const subCat = document.getElementById('design-subcategory').disabled ? null : document.getElementById('design-subcategory').value;
+                const size = document.getElementById('design-size').disabled ? null : document.getElementById('design-size').value;
+
+                const payload = {
+                    id: document.getElementById('design-id').value,
+                    category: cat,
+                    subCategory: subCat,
+                    weight: parseFloat(document.getElementById('design-weight').value) || 0,
+                    size: size,
+                    imageUrl: imageUrl || ''
+                };
+
+                const existingIdx = designs.findIndex(d => d.id === payload.id);
+                if (existingIdx > -1) {
+                    designs[existingIdx] = { ...designs[existingIdx], ...payload };
+                } else {
+                    designs.unshift(payload);
+                }
+
+                // Trigger Supabase Sync Interceptor
+                localStorage.setItem('manti_designs', JSON.stringify(designs));
+                
+                closeDesignModal();
+                renderGrid();
+            } catch (err) {
+                alert("An error occurred: " + err.message);
+            } finally {
+                isUploading = false;
+                btn.disabled = false;
+                btn.style.opacity = 1;
+                uploadTxt.style.display = 'none';
+            }
+        });
+
+        window.deleteDesign = function(id) {
+            if (confirm("Are you sure you want to completely destroy this design?")) {
+                designs = designs.filter(d => d.id !== id);
+                localStorage.setItem('manti_designs', JSON.stringify(designs));
+                renderGrid();
+            }
+        };
+
+        function renderGrid() {
+            const grid = document.getElementById('design-grid');
+            const emptyState = document.getElementById('empty-state');
+            const searchTerm = (document.getElementById('search-designs').value || '').toLowerCase();
+            const catFilter = document.getElementById('filter-category').value;
+
+            const filtered = designs.filter(d => {
+                if (catFilter !== 'All' && d.category !== catFilter) return false;
+                if (searchTerm) {
+                    const str = `${d.id} ${d.category} ${d.subCategory} ${d.size}`.toLowerCase();
+                    if (!str.includes(searchTerm)) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                grid.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            emptyState.style.display = 'none';
+            grid.innerHTML = '';
+
+            filtered.forEach(d => {
+                const card = document.createElement('div');
+                card.className = 'design-card';
+                
+                const imgSrc = d.imageUrl ? d.imageUrl : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+
+                card.innerHTML = `
+                    <div class="design-image">
+                        <img src="${imgSrc}" alt="${d.category} Design" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%23cbd5e1\\' stroke-width=\\'2\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'></circle><line x1=\\'12\\' y1=\\'8\\' x2=\\'12\\' y2=\\'12\\'></line><line x1=\\'12\\' y1=\\'16\\' x2=\\'12.01\\' y2=\\'16\\'></line></svg>'">
+                    </div>
+                    <div class="design-info">
+                        <div class="design-id">${d.id}</div>
+                        <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 700;">${d.category}</h3>
+                        ${d.subCategory ? `<p style="margin: 4px 0 0; font-size: 0.8rem; color: #64748b;">${d.subCategory}</p>` : ''}
+                        
+                        <div class="design-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Weight</span>
+                                <span class="meta-value">${parseFloat(d.weight).toFixed(2)} g</span>
+                            </div>
+                            ${d.size ? `
+                            <div class="meta-item">
+                                <span class="meta-label">Size</span>
+                                <span class="meta-value">${d.size}</span>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                    <div class="design-actions">
+                        <button onclick="openDesignModal('${d.id}')" class="btn-edit" title="Edit Option">
+                            <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
+                        </button>
+                        <button onclick="deleteDesign('${d.id}')" class="btn-remove" title="Destroy Option">
+                            <svg viewBox="0 0 448 512" class="del-icon"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path></svg>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+    </script>
+</body>
+
+</html>

@@ -291,3 +291,19 @@ ALTER TABLE public.journal_entries DROP CONSTRAINT IF EXISTS journal_entries_pke
 ALTER TABLE public.journal_entries ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.journal_entries ALTER COLUMN id TYPE TEXT USING id::text;
 ALTER TABLE public.journal_entries ADD PRIMARY KEY (id);
+
+-- 16. Create Designs table
+CREATE TABLE IF NOT EXISTS public.designs (
+    id TEXT PRIMARY KEY,
+    category TEXT NOT NULL,
+    sub_category TEXT,
+    weight NUMERIC,
+    size TEXT,
+    image_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.designs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all for anon" ON public.designs;
+CREATE POLICY "Enable all for anon" ON public.designs FOR ALL USING (true) WITH CHECK (true);
+
