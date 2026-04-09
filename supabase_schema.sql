@@ -307,3 +307,27 @@ ALTER TABLE public.designs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Enable all for anon" ON public.designs;
 CREATE POLICY "Enable all for anon" ON public.designs FOR ALL USING (true) WITH CHECK (true);
 
+-- 17. Create Trees table (Design Production)
+CREATE TABLE IF NOT EXISTS public.trees (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tree_no TEXT UNIQUE NOT NULL,
+    date DATE NOT NULL,
+    total_weight NUMERIC DEFAULT 0,
+    designs JSONB NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.trees ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all admin" ON public.trees;
+CREATE POLICY "Enable all admin" ON public.trees FOR ALL USING (true) WITH CHECK (true);
+
+-- 18. Storage Bucket for Designs
+INSERT INTO storage.buckets (id, name, public) VALUES ('designs', 'designs', true) ON CONFLICT (id) DO NOTHING;
+
+-- Storage Objects Policies for 'designs' bucket
+-- Note: 'storage.objects' policies govern who can upload/read the actual files
+CREATE POLICY "Public Read Access" ON storage.objects FOR SELECT USING (bucket_id = 'designs');
+CREATE POLICY "Public Insert Access" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'designs');
+CREATE POLICY "Public Update Access" ON storage.objects FOR UPDATE USING (bucket_id = 'designs') WITH CHECK (bucket_id = 'designs');
+CREATE POLICY "Public Delete Access" ON storage.objects FOR DELETE USING (bucket_id = 'designs');

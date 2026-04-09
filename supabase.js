@@ -383,6 +383,21 @@ async function syncKeyToSupabase(key, data) {
             } else {
                 await supabase.from('designs').delete().neq('id', 'NON_EXISTENT');
             }
+        } else if (key === 'manti_trees') {
+            const dbTrees = data.map(t => ({
+                id: t.id, tree_no: t.treeNo, date: t.date,
+                total_weight: parseFloat(t.totalWeight) || 0,
+                designs: t.designs || [],
+                notes: t.notes || null
+            }));
+            if (dbTrees.length > 0) {
+                const idList = dbTrees.map(t => `'${t.id}'`).join(',');
+                await supabase.from('trees').delete().not('id', 'in', `(${idList})`);
+                const { error } = await supabase.from('trees').upsert(dbTrees, { onConflict: 'id' });
+                if (error) { console.error("Trees Sync Error:", error); alert("Failed to save Trees to Cloud."); }
+            } else {
+                await supabase.from('trees').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            }
         } else {
             const { error } = await supabase.from('settings').upsert({
                 setting_key: key, setting_value: data, updated_at: new Date().toISOString()
@@ -404,7 +419,7 @@ window.fetchEverythingFromCloud = async function () {
             ordersRes, jobsRes, invoicesRes, vendorRes,
             supplierRes, staffRes, assetsRes, challansRes,
             paymentsRes, expensesRes, journalsRes, accountsRes,
-            stockRes, snapsRes, settingsRes, designsRes
+            stockRes, snapsRes, settingsRes, designsRes, treesRes
         ] = await Promise.all([
             supabase.from('orders').select('*'),
             supabase.from('job_works').select('*'),
@@ -421,7 +436,8 @@ window.fetchEverythingFromCloud = async function () {
             supabase.from('stock_history').select('*'),
             supabase.from('snapshots').select('*'),
             supabase.from('settings').select('*'),
-            supabase.from('designs').select('*')
+            supabase.from('designs').select('*'),
+            supabase.from('trees').select('*')
         ]);
 
         // 1. Orders
@@ -593,6 +609,15 @@ window.fetchEverythingFromCloud = async function () {
                 weight: d.weight, size: d.size, imageUrl: d.image_url, timestamp: d.created_at
             }));
             window.ERP_MEMORY.set('manti_designs', JSON.stringify(mappedDesigns));
+        }
+
+        // 17. Trees
+        if (treesRes && treesRes.data) {
+            const mappedTrees = treesRes.data.map(t => ({
+                id: t.id, treeNo: t.tree_no, date: t.date,
+                totalWeight: t.total_weight, designs: t.designs, notes: t.notes, timestamp: t.created_at
+            }));
+            window.ERP_MEMORY.set('manti_trees', JSON.stringify(mappedTrees));
         }
     } catch (e) {
         console.error("Cloud Fetch Failed!", e);

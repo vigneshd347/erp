@@ -13,9 +13,9 @@
         body { background-color: #f1f5f9; }
         
         .design-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
             padding-bottom: 24px;
         }
 
@@ -25,39 +25,46 @@
             border: 1px solid #e5e7eb;
             overflow: hidden;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            align-items: center;
+            padding: 16px 24px;
             transition: all 0.2s;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .design-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             border-color: var(--primary);
         }
 
         .design-image {
-            width: 100%;
-            height: 200px;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
             background: #f8fafc;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-bottom: 1px solid #e5e7eb;
+            border: 1px solid #e5e7eb;
             position: relative;
             overflow: hidden;
+            flex-shrink: 0;
+            margin-right: 24px;
         }
 
         .design-image img {
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: cover;
             background: #fff;
         }
 
         .design-info {
-            padding: 16px;
             flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .design-id {
@@ -68,22 +75,19 @@
             padding: 2px 8px;
             border-radius: 6px;
             display: inline-block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .design-meta {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px dashed #e5e7eb;
+            display: flex;
+            gap: 32px;
         }
 
         .meta-item {
             display: flex;
             flex-direction: column;
             gap: 2px;
+            text-align: left;
         }
 
         .meta-label {
@@ -103,9 +107,9 @@
             display: flex;
             gap: 8px;
             justify-content: flex-end;
-            padding: 12px 16px;
-            background: #f8fafc;
-            border-top: 1px solid #e5e7eb;
+            padding-left: 24px;
+            margin-left: 24px;
+            border-left: 1px solid #e5e7eb;
         }
 
         .upload-area {
@@ -148,22 +152,23 @@
                 <span>Manti ERP</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="index.html" class="nav-item">
+                <a href="index.html" class="nav-item ">
                     <div class="icon"><i data-lucide="layout-dashboard"></i></div>
                     <span class="label">Dashboard</span>
                 </a>
                 
-                <div class="nav-group active">
+                <div class="nav-group">
                     <div class="nav-group-header" onclick="toggleNavGroup(this)">
                         <div class="icon"><i data-lucide="box"></i></div>
                         <span class="label">Items</span>
-                        <i data-lucide="chevron-down" class="chevron" style="transform: rotate(180deg);"></i>
+                        <i data-lucide="chevron-down" class="chevron"></i>
                     </div>
-                    <div class="nav-group-content" style="display: block;">
-                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested">Inventory</a>
                         <a href="jobwork.html" class="nav-item nested ">Job Work</a>
                         <a href="design-book.html" class="nav-item nested active">Design Book</a>
-                    </div>
+                                            <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
+</div>
                 </div>
 
                 <a href="assets.html" class="nav-item">
@@ -317,11 +322,11 @@
                     <div style="display: flex; gap: 16px; margin-bottom: 24px;">
                         <div style="flex: 1;">
                             <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Weight (g) *</label>
-                            <input type="number" id="design-weight" step="0.01" min="0" required placeholder="0.00" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box;">
+                            <input type="number" id="design-weight" step="0.01" min="0" required placeholder="0.00" oninput="updateDynamicDesignId()" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box;">
                         </div>
                         <div style="flex: 1;" id="size-container">
                             <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Size</label>
-                            <input type="text" id="design-size" placeholder="Enter Size (e.g. 14, 2x6)" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box; background: #f3f4f6;" disabled>
+                            <input type="text" id="design-size" placeholder="Enter Size (e.g. 14, 2x6)" oninput="updateDynamicDesignId()" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box; background: #f3f4f6;" disabled>
                         </div>
                     </div>
 
@@ -360,16 +365,43 @@
             renderGrid();
         });
 
-        function generateDesignId() {
-            let prefix = 'DSG-';
+        function updateDynamicDesignId() {
+            if (document.getElementById('design-existing-id').value) return; // Don't auto-update if editing existing
+
+            const cat = document.getElementById('design-category').value;
+            const weight = document.getElementById('design-weight').value;
+            const size = document.getElementById('design-size').disabled ? null : document.getElementById('design-size').value;
+
+            if (!cat) {
+                document.getElementById('design-id').value = '';
+                return;
+            }
+
+            let prefix = 'DSG';
+            if (cat === 'Bangle') prefix = 'BG';
+            else if (cat === 'Ring') prefix = 'RG';
+            else if (cat === 'Earring') prefix = 'ER';
+            else if (cat === 'Necklace') prefix = 'NK';
+
             let maxId = 0;
             designs.forEach(d => {
                 if (d.id && d.id.startsWith(prefix)) {
-                    const num = parseInt(d.id.replace(prefix, ''), 10);
-                    if (!isNaN(num) && num > maxId) maxId = num;
+                    // Extract numeric part right after prefix
+                    const match = d.id.match(new RegExp(`^${prefix}(\\d+)`));
+                    if (match) {
+                        const num = parseInt(match[1], 10);
+                        if (!isNaN(num) && num > maxId) maxId = num;
+                    }
                 }
             });
-            return prefix + ((maxId + 1).toString().padStart(4, '0'));
+
+            const countStr = (maxId + 1).toString().padStart(2, '0');
+            let idStr = `${prefix}${countStr}`;
+            
+            if (weight) idStr += `-${weight}`;
+            if (size) idStr += `-${size}`;
+            
+            document.getElementById('design-id').value = idStr;
         }
 
         function handleCategoryChange() {
@@ -405,6 +437,8 @@
                 sizeInput.value = '';
                 sizeInput.required = false;
             }
+            
+            updateDynamicDesignId();
         }
 
         function previewImage(input) {
@@ -450,8 +484,11 @@
             } else {
                 document.getElementById('modal-title').textContent = 'New Design';
                 document.getElementById('design-existing-id').value = '';
-                document.getElementById('design-id').value = generateDesignId();
+                document.getElementById('design-category').value = '';
+                document.getElementById('design-weight').value = '';
+                document.getElementById('design-size').value = '';
                 handleCategoryChange(); // Set disabled states
+                updateDynamicDesignId();
             }
 
             modal.style.display = 'flex';
@@ -580,9 +617,11 @@
                         <img src="${imgSrc}" alt="${d.category} Design" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%23cbd5e1\\' stroke-width=\\'2\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'></circle><line x1=\\'12\\' y1=\\'8\\' x2=\\'12\\' y2=\\'12\\'></line><line x1=\\'12\\' y1=\\'16\\' x2=\\'12.01\\' y2=\\'16\\'></line></svg>'">
                     </div>
                     <div class="design-info">
-                        <div class="design-id">${d.id}</div>
-                        <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 700;">${d.category}</h3>
-                        ${d.subCategory ? `<p style="margin: 4px 0 0; font-size: 0.8rem; color: #64748b;">${d.subCategory}</p>` : ''}
+                        <div>
+                            <div class="design-id">${d.id}</div>
+                            <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 700;">${d.category}</h3>
+                            ${d.subCategory ? `<p style="margin: 4px 0 0; font-size: 0.8rem; color: #64748b;">${d.subCategory}</p>` : ''}
+                        </div>
                         
                         <div class="design-meta">
                             <div class="meta-item">
