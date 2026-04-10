@@ -508,11 +508,23 @@
 
             toAdd.forEach((id, idx) => {
                 const count = window.gallerySelections[id];
-                if (idx === 0 && emptyRow) {
+                
+                // Check if already in the tree
+                const rows = Array.from(document.querySelectorAll('#tree-designs-container .tree-row'));
+                const existing = rows.find(r => {
+                    const s = r.querySelector('.tree-sel-design');
+                    return s && s.value === id;
+                });
+                
+                if (existing) {
+                    const inp = existing.querySelector('.tree-inp-count');
+                    inp.value = parseInt(inp.value || 0) + count;
+                } else if (emptyRow) {
                     const sel = emptyRow.querySelector('.tree-sel-design');
                     const inpCount = emptyRow.querySelector('.tree-inp-count');
                     if (sel) sel.value = id;
                     if (inpCount) inpCount.value = count;
+                    emptyRow = null; // Used it
                 } else {
                     addDesignRow(id, count);
                 }
@@ -643,23 +655,33 @@
                 const count = parseInt(document.getElementById('max-design-count').value) || 1;
                 
                 // Add to tree logic
-                const existingRows = document.querySelectorAll('#tree-designs-container .tree-row');
-                let emptyRow = null;
-                if (existingRows.length === 1) {
-                    const sel = existingRows[0].querySelector('.tree-sel-design');
-                    if (sel && sel.value === "") {
-                        emptyRow = existingRows[0];
-                    }
-                }
-                
-                if (emptyRow) {
-                    const sel = emptyRow.querySelector('.tree-sel-design');
-                    const inpCount = emptyRow.querySelector('.tree-inp-count');
-                    sel.value = d.id;
-                    inpCount.value = count;
+                const rows = Array.from(document.querySelectorAll('#tree-designs-container .tree-row'));
+                const existing = rows.find(r => {
+                    const s = r.querySelector('.tree-sel-design');
+                    return s && s.value === d.id;
+                });
+
+                if (existing) {
+                    const inp = existing.querySelector('.tree-inp-count');
+                    inp.value = parseInt(inp.value || 0) + count;
                     calculateTreeWeight();
                 } else {
-                    addDesignRow(d.id, count);
+                    let emptyRow = null;
+                    if (rows.length === 1) {
+                        const sel = rows[0].querySelector('.tree-sel-design');
+                        if (sel && sel.value === "") {
+                            emptyRow = rows[0];
+                        }
+                    }
+                    if (emptyRow) {
+                        const sel = emptyRow.querySelector('.tree-sel-design');
+                        const inpCount = emptyRow.querySelector('.tree-inp-count');
+                        sel.value = d.id;
+                        inpCount.value = count;
+                        calculateTreeWeight();
+                    } else {
+                        addDesignRow(d.id, count);
+                    }
                 }
                 
                 const originalText = btnAdd.innerHTML;
