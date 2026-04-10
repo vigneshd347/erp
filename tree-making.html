@@ -193,15 +193,15 @@
                     <div style="margin-bottom: 1.5rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
                             <label style="font-size: 0.95rem; font-weight: 700; color: #1e293b;">Designs Included</label>
-                            <div style="display: flex; gap: 8px;">
-                                <button type="button" onclick="openDesignPickerModal()" style="font-size: 0.8rem; background: #fff; border: 1px solid #cbd5e1; color: #475569; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
-                                    <i data-lucide="image" style="width: 14px; height: 14px;"></i> Browse Gallery
-                                </button>
-                                <button type="button" onclick="addDesignRow()" style="font-size: 0.8rem; background: #eef2ff; color: #4f46e5; border: none; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">+ Add Design</button>
-                            </div>
                         </div>
                         <div id="tree-designs-container" style="display: flex; flex-direction: column; gap: 10px;">
                             <!-- Design lines go here -->
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 10px;">
+                            <button type="button" onclick="addDesignRow()" style="font-size: 0.85rem; background: #eef2ff; color: #4f46e5; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='#eef2ff'">+ Add Design manually</button>
+                            <button type="button" onclick="openDesignPickerModal()" style="font-size: 0.85rem; background: #fff; border: 1px solid #cbd5e1; color: #475569; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
+                                <i data-lucide="image" style="width: 14px; height: 14px;"></i> Browse Gallery
+                            </button>
                         </div>
                         <div style="margin-top: 1rem; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; display: flex; justify-content: flex-end; gap: 20px;">
                             <div>
@@ -265,6 +265,15 @@
                 </div>
                 <div id="design-gallery-empty" style="display: none; text-align: center; padding: 40px; color: #64748b;">
                     No designs found matching your search.
+                </div>
+            </div>
+            <div class="premium-modal-footer" style="padding: 15px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fff;">
+                <div style="font-size: 0.9rem; font-weight: 600; color: #475569;">
+                    Selected: <span id="gallery-selected-count" style="color: var(--primary);">0</span> designs
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-liquid btn-outline" onclick="closeDesignPickerModal()">Cancel</button>
+                    <button class="btn-liquid btn-primary" onclick="addSelectedFromGalleryToTree()">Add to Tree</button>
                 </div>
             </div>
         </div>
@@ -468,9 +477,49 @@
 
         // Visual Design Picker
         function openDesignPickerModal() {
+            window.gallerySelections = {};
             document.getElementById('design-search-input').value = '';
             renderDesignGallery();
             document.getElementById('design-picker-overlay').classList.add('active');
+        }
+
+        function updateGallerySelection(id, value) {
+            if (!window.gallerySelections) window.gallerySelections = {};
+            window.gallerySelections[id] = parseInt(value) || 0;
+            const selectedCount = Object.keys(window.gallerySelections).filter(k => window.gallerySelections[k] > 0).length;
+            const el = document.getElementById('gallery-selected-count');
+            if (el) el.textContent = selectedCount;
+        }
+
+        function addSelectedFromGalleryToTree() {
+            if (!window.gallerySelections) return;
+            const toAdd = Object.keys(window.gallerySelections).filter(k => window.gallerySelections[k] > 0);
+            if (toAdd.length === 0) {
+                alert("No designs selected.");
+                return;
+            }
+
+            const existingRows = document.querySelectorAll('#tree-designs-container .tree-row');
+            let emptyRow = null;
+            if (existingRows.length === 1) {
+                const sel = existingRows[0].querySelector('.tree-sel-design');
+                if (sel && sel.value === "") emptyRow = existingRows[0];
+            }
+
+            toAdd.forEach((id, idx) => {
+                const count = window.gallerySelections[id];
+                if (idx === 0 && emptyRow) {
+                    const sel = emptyRow.querySelector('.tree-sel-design');
+                    const inpCount = emptyRow.querySelector('.tree-inp-count');
+                    if (sel) sel.value = id;
+                    if (inpCount) inpCount.value = count;
+                } else {
+                    addDesignRow(id, count);
+                }
+            });
+            
+            calculateTreeWeight();
+            closeDesignPickerModal();
         }
 
         function closeDesignPickerModal() {
@@ -488,6 +537,8 @@
                 (d.category && d.category.toLowerCase().includes(lowerQuery))
             );
             
+            if (!window.gallerySelections) window.gallerySelections = {};
+            
             if (currentFilteredDesigns.length === 0) {
                 grid.style.display = 'none';
                 emptyState.style.display = 'block';
@@ -499,35 +550,47 @@
 
             currentFilteredDesigns.forEach((d, index) => {
                 const card = document.createElement('div');
+                const curVal = window.gallerySelections[d.id] || 0;
                 card.style.cssText = `
-                    background: #fff; 
-                    border: 1px solid #e2e8f0; 
+                    background: ${curVal > 0 ? '#f0fdf4' : '#fff'}; 
+                    border: 1px solid ${curVal > 0 ? '#22c55e' : '#e2e8f0'}; 
                     border-radius: 8px; 
                     overflow: hidden; 
-                    cursor: pointer; 
                     transition: all 0.2s;
                     display: flex;
                     flex-direction: column;
                 `;
-                card.onmouseover = () => { card.style.borderColor = '#4f46e5'; card.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1)'; };
-                card.onmouseout = () => { card.style.borderColor = '#e2e8f0'; card.style.boxShadow = 'none'; };
-                card.onclick = () => selectDesignFromGallery(index);
 
                 const imgHtml = d.imageUrl 
                     ? `<img src="${d.imageUrl}" style="width: 100%; height: 110px; object-fit: cover;">`
                     : `<div style="width: 100%; height: 110px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #cbd5e1;"><i data-lucide="image" style="width: 32px; height: 32px;"></i></div>`;
 
                 card.innerHTML = `
-                    ${imgHtml}
+                    <div style="position:relative; cursor:pointer;" onclick="selectDesignFromGallery(${index})">
+                        ${imgHtml}
+                    </div>
                     <div style="padding: 10px;">
                         <div style="font-size: 0.8rem; font-weight: 700; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${d.id}</div>
                         <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">${d.category}</div>
-                        <div style="font-size: 0.75rem; color: var(--primary); font-weight: 600; margin-top: 6px;">${parseFloat(d.weight).toFixed(3)}g</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 6px;">
+                            <div style="font-size: 0.75rem; color: var(--primary); font-weight: 600;">${parseFloat(d.weight).toFixed(3)}g</div>
+                            <div style="display:flex; align-items:center;">
+                                <input type="number" min="0" value="${curVal}" 
+                                    onclick="event.stopPropagation()" 
+                                    onchange="updateGallerySelection('${d.id}', this.value); filterDesignGallery();" 
+                                    oninput="updateGallerySelection('${d.id}', this.value);" 
+                                    style="width: 45px; padding: 2px 4px; font-size: 0.8rem; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; margin: 0;">
+                            </div>
+                        </div>
                     </div>
                 `;
                 grid.appendChild(card);
             });
             if (window.lucide) window.lucide.createIcons();
+            
+            // update selection count
+            const selectedCount = Object.keys(window.gallerySelections).filter(k => window.gallerySelections[k] > 0).length;
+            document.getElementById('gallery-selected-count').textContent = selectedCount;
         }
 
         function filterDesignGallery() {
@@ -599,8 +662,15 @@
                     addDesignRow(d.id, count);
                 }
                 
-                document.getElementById('maximized-design-overlay').classList.remove('active');
-                closeDesignPickerModal();
+                const originalText = btnAdd.innerHTML;
+                btnAdd.innerHTML = `<i data-lucide="check" style="width: 20px; height: 20px;"></i> Added ${count} pcs!`;
+                btnAdd.style.background = '#10b981';
+                if (window.lucide) window.lucide.createIcons();
+                setTimeout(() => {
+                    btnAdd.innerHTML = originalText;
+                    btnAdd.style.background = '';
+                    if (window.lucide) window.lucide.createIcons();
+                }, 1500);
             };
             
             document.getElementById('maximized-design-overlay').classList.add('active');
