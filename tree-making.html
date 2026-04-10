@@ -193,14 +193,25 @@
                     <div style="margin-bottom: 1.5rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
                             <label style="font-size: 0.95rem; font-weight: 700; color: #1e293b;">Designs Included</label>
-                            <button type="button" onclick="addDesignRow()" style="font-size: 0.8rem; background: #eef2ff; color: #4f46e5; border: none; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">+ Add Design</button>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" onclick="openDesignPickerModal()" style="font-size: 0.8rem; background: #fff; border: 1px solid #cbd5e1; color: #475569; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
+                                    <i data-lucide="image" style="width: 14px; height: 14px;"></i> Browse Gallery
+                                </button>
+                                <button type="button" onclick="addDesignRow()" style="font-size: 0.8rem; background: #eef2ff; color: #4f46e5; border: none; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">+ Add Design</button>
+                            </div>
                         </div>
                         <div id="tree-designs-container" style="display: flex; flex-direction: column; gap: 10px;">
                             <!-- Design lines go here -->
                         </div>
-                        <div style="margin-top: 1rem; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; text-align: right;">
-                            <span style="font-size: 0.85rem; color: #64748b; font-weight: 600; margin-right: 15px;">Total Estimated Weight:</span>
-                            <span id="tree-calc-weight" style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">0.000 g</span>
+                        <div style="margin-top: 1rem; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; display: flex; justify-content: flex-end; gap: 20px;">
+                            <div>
+                                <span style="font-size: 0.85rem; color: #64748b; font-weight: 600; margin-right: 10px;">Total Pieces:</span>
+                                <span id="tree-calc-count" style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">0</span>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.85rem; color: #64748b; font-weight: 600; margin-right: 10px;">Total Est. Weight:</span>
+                                <span id="tree-calc-weight" style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">0.000 g</span>
+                            </div>
                         </div>
                     </div>
                     
@@ -233,6 +244,70 @@
         </div>
     </div>
 
+    <!-- Design Picker Modal (Visual Selection) -->
+    <div class="modal-overlay" id="design-picker-overlay" style="z-index: 1000;">
+        <div class="premium-modal" style="width: 800px; max-width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="premium-modal-header" style="border-bottom: 1px solid #e2e8f0; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Select Design to Add</h2>
+                    <button class="btn-close-modal" onclick="closeDesignPickerModal()">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div style="margin-top: 15px; position: relative;">
+                    <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #94a3b8;"></i>
+                    <input type="text" id="design-search-input" class="input-wrapper" placeholder="Search by ID or Category..." onkeyup="filterDesignGallery()" style="width: 100%; padding-left: 36px; margin: 0; box-sizing: border-box;">
+                </div>
+            </div>
+            <div class="premium-modal-body" style="flex: 1; overflow-y: auto; padding: 20px; background: #f8fafc;">
+                <div id="design-gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px;">
+                    <!-- Cards populated via JS -->
+                </div>
+                <div id="design-gallery-empty" style="display: none; text-align: center; padding: 40px; color: #64748b;">
+                    No designs found matching your search.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maximized Design Selection Modal -->
+    <div class="modal-overlay" id="maximized-design-overlay" style="z-index: 1010; background: rgba(15, 23, 42, 0.8);">
+        <div class="premium-modal" style="width: 450px; max-width: 95%;">
+            <div class="premium-modal-header" style="border-bottom: none; padding-bottom: 0;">
+                <h2 id="max-design-title">Design ID</h2>
+                <button class="btn-close-modal" onclick="document.getElementById('maximized-design-overlay').classList.remove('active')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="premium-modal-body" style="padding: 20px; text-align: center;">
+                <div style="position: relative; margin-bottom: 20px;">
+                    <button id="max-btn-prev" onclick="galleryPrev()" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 10; color: #475569;"><i data-lucide="chevron-left"></i></button>
+                    
+                    <div id="max-design-img" style="width: 100%; height: 280px; border-radius: 12px; background: #000; display: flex; align-items: center; justify-content: center; overflow: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative;">
+                        <!-- Image populated via JS -->
+                    </div>
+                    
+                    <button id="max-btn-zoom" onclick="toggleZoom(event)" style="position: absolute; right: 10px; top: 10px; background: rgba(255,255,255,0.9); border: none; width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 10; color: #475569;"><i data-lucide="zoom-in" id="zoom-icon" style="width: 18px; height: 18px;"></i></button>
+
+                    <button id="max-btn-next" onclick="galleryNext()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 10; color: #475569;"><i data-lucide="chevron-right"></i></button>
+                </div>
+                
+                <div style="display: flex; gap: 15px; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <label style="font-size: 0.9rem; font-weight: 600; color: #475569;">Quantity</label>
+                    <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;">
+                        <button type="button" onclick="const e = document.getElementById('max-design-count'); e.value = Math.max(1, parseInt(e.value) - 1);" style="background: #f1f5f9; border: none; border-right: 1px solid #cbd5e1; width: 40px; height: 40px; cursor: pointer; font-size: 1.2rem; font-weight: bold; color: #475569;">-</button>
+                        <input type="number" id="max-design-count" value="1" min="1" style="width: 60px; height: 40px; text-align: center; font-size: 1.1rem; font-weight: 700; border: none; outline: none; margin: 0; -moz-appearance: textfield;">
+                        <button type="button" onclick="const e = document.getElementById('max-design-count'); e.value = parseInt(e.value) + 1;" style="background: #f1f5f9; border: none; border-left: 1px solid #cbd5e1; width: 40px; height: 40px; cursor: pointer; font-size: 1.2rem; font-weight: bold; color: #475569;">+</button>
+                    </div>
+                </div>
+                
+                <button id="max-btn-add" class="btn-liquid btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.1rem; padding: 12px;">
+                    <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i> Add to Tree
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="liquid-button.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/lucide.min.js"></script>
     <script>
@@ -240,6 +315,9 @@
 
         let trees = [];
         let allDesigns = [];
+        let currentFilteredDesigns = [];
+        let currentGalleryIndex = 0;
+        let isImageZoomed = false;
         
         document.addEventListener('CloudDataLoaded', () => {
             trees = JSON.parse(localStorage.getItem('manti_trees')) || [];
@@ -299,21 +377,24 @@
             const container = document.getElementById('tree-designs-container');
             const row = document.createElement('div');
             row.className = 'tree-row';
-            row.style.cssText = 'display: grid; grid-template-columns: 1fr 100px 100px auto; gap: 10px; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px;';
+            row.style.cssText = 'display: grid; grid-template-columns: 46px 1fr 100px 100px auto; gap: 10px; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px;';
             
             // Build options
             let options = '<option value="" disabled selected>Select Design...</option>';
             allDesigns.forEach(d => {
                 const sub = d.subCategory ? ` (${d.subCategory})` : '';
-                options += `<option value="${d.id}" data-wt="${d.weight}" ${d.id === designId ? 'selected' : ''}>${d.id} - ${d.category}${sub} [${d.weight}g]</option>`;
+                options += `<option value="${d.id}" data-wt="${d.weight}" data-img="${d.imageUrl || ''}" ${d.id === designId ? 'selected' : ''}>${d.id} - ${d.category}${sub} [${d.weight}g]</option>`;
             });
 
             row.innerHTML = `
+                <div class="tree-design-thumb" style="width: 46px; height: 46px; border-radius: 6px; background: #f1f5f9; border: 1px solid #e2e8f0; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="image" style="color: #cbd5e1; width: 18px; height: 18px;"></i>
+                </div>
                 <select class="input-wrapper tree-sel-design" required onchange="calculateTreeWeight()" style="margin: 0;">
                     ${options}
                 </select>
                 <div>
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 600;">Weight/pc</label>
+                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 600;">Weight/pc (g)</label>
                     <input type="number" step="0.001" class="input-wrapper tree-inp-wt" value="0.000" readonly style="margin: 0; background: #f8fafc; font-size: 0.9rem;">
                 </div>
                 <div>
@@ -331,21 +412,34 @@
         }
 
         function calculateTreeWeight() {
-            let total = 0;
+            let totalWt = 0;
+            let totalPcs = 0;
             const rows = document.querySelectorAll('#tree-designs-container .tree-row');
             rows.forEach(row => {
                 const sel = row.querySelector('.tree-sel-design');
                 const inpWt = row.querySelector('.tree-inp-wt');
                 const inpCount = row.querySelector('.tree-inp-count');
+                const thumb = row.querySelector('.tree-design-thumb');
                 
                 if(sel.options[sel.selectedIndex] && !sel.options[sel.selectedIndex].disabled) {
                     const baseWt = parseFloat(sel.options[sel.selectedIndex].getAttribute('data-wt')) || 0;
+                    const imgUrl = sel.options[sel.selectedIndex].getAttribute('data-img');
+                    
                     inpWt.value = baseWt.toFixed(3);
                     const qty = parseInt(inpCount.value) || 0;
-                    total += (baseWt * qty);
+                    totalWt += (baseWt * qty);
+                    totalPcs += qty;
+                    
+                    if (imgUrl) {
+                        thumb.innerHTML = `<img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    } else {
+                        thumb.innerHTML = `<i data-lucide="image" style="color: #cbd5e1; width: 18px; height: 18px;"></i>`;
+                        if (window.lucide) window.lucide.createIcons();
+                    }
                 }
             });
-            document.getElementById('tree-calc-weight').textContent = total.toFixed(3) + ' g';
+            document.getElementById('tree-calc-weight').textContent = totalWt.toFixed(3) + ' g';
+            document.getElementById('tree-calc-count').textContent = totalPcs;
         }
 
         function generateUniqueTreeId() {
@@ -370,6 +464,185 @@
             addDesignRow();
 
             document.getElementById('tree-modal-overlay').classList.add('active');
+        }
+
+        // Visual Design Picker
+        function openDesignPickerModal() {
+            document.getElementById('design-search-input').value = '';
+            renderDesignGallery();
+            document.getElementById('design-picker-overlay').classList.add('active');
+        }
+
+        function closeDesignPickerModal() {
+            document.getElementById('design-picker-overlay').classList.remove('active');
+        }
+
+        function renderDesignGallery(query = '') {
+            const grid = document.getElementById('design-gallery-grid');
+            const emptyState = document.getElementById('design-gallery-empty');
+            grid.innerHTML = '';
+            
+            const lowerQuery = query.toLowerCase().trim();
+            currentFilteredDesigns = allDesigns.filter(d => 
+                (d.id && d.id.toLowerCase().includes(lowerQuery)) || 
+                (d.category && d.category.toLowerCase().includes(lowerQuery))
+            );
+            
+            if (currentFilteredDesigns.length === 0) {
+                grid.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            grid.style.display = 'grid';
+            emptyState.style.display = 'none';
+
+            currentFilteredDesigns.forEach((d, index) => {
+                const card = document.createElement('div');
+                card.style.cssText = `
+                    background: #fff; 
+                    border: 1px solid #e2e8f0; 
+                    border-radius: 8px; 
+                    overflow: hidden; 
+                    cursor: pointer; 
+                    transition: all 0.2s;
+                    display: flex;
+                    flex-direction: column;
+                `;
+                card.onmouseover = () => { card.style.borderColor = '#4f46e5'; card.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1)'; };
+                card.onmouseout = () => { card.style.borderColor = '#e2e8f0'; card.style.boxShadow = 'none'; };
+                card.onclick = () => selectDesignFromGallery(index);
+
+                const imgHtml = d.imageUrl 
+                    ? `<img src="${d.imageUrl}" style="width: 100%; height: 110px; object-fit: cover;">`
+                    : `<div style="width: 100%; height: 110px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #cbd5e1;"><i data-lucide="image" style="width: 32px; height: 32px;"></i></div>`;
+
+                card.innerHTML = `
+                    ${imgHtml}
+                    <div style="padding: 10px;">
+                        <div style="font-size: 0.8rem; font-weight: 700; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${d.id}</div>
+                        <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">${d.category}</div>
+                        <div style="font-size: 0.75rem; color: var(--primary); font-weight: 600; margin-top: 6px;">${parseFloat(d.weight).toFixed(3)}g</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function filterDesignGallery() {
+            const query = document.getElementById('design-search-input').value;
+            renderDesignGallery(query);
+        }
+
+        function selectDesignFromGallery(index) {
+            currentGalleryIndex = index;
+            isImageZoomed = false; // Reset zoom state when navigating
+            
+            const modal = document.querySelector('#maximized-design-overlay .premium-modal');
+            const imgCont = document.getElementById('max-design-img');
+            const btnZoom = document.getElementById('max-btn-zoom');
+            
+            if(modal && imgCont) {
+                modal.style.transition = 'width 0.3s ease, max-width 0.3s ease';
+                imgCont.style.transition = 'height 0.3s ease';
+                modal.style.width = '450px';
+                modal.style.maxWidth = '95%';
+                imgCont.style.height = '280px';
+            }
+            if(btnZoom) {
+                btnZoom.innerHTML = `<i data-lucide="zoom-in" style="width: 18px; height: 18px;"></i>`;
+            }
+            
+            const d = currentFilteredDesigns[index];
+            if (!d) return;
+            
+            // Previous / Next button visibility
+            document.getElementById('max-btn-prev').style.display = index > 0 ? 'flex' : 'none';
+            document.getElementById('max-btn-next').style.display = index < currentFilteredDesigns.length - 1 ? 'flex' : 'none';
+            
+            document.getElementById('max-design-title').textContent = d.id + (d.category ? ` - ${d.category}` : '');
+            
+            imgCont.scrollTop = 0;
+            imgCont.scrollLeft = 0;
+            
+            if (d.imageUrl) {
+                imgCont.innerHTML = `<img src="${d.imageUrl}" id="max-img-el" style="width: 100%; height: 100%; object-fit: contain; transition: all 0.2s;">`;
+            } else {
+                imgCont.innerHTML = `<i data-lucide="image" style="width: 48px; height: 48px; color: #334155;"></i>`;
+            }
+            if (window.lucide) window.lucide.createIcons();
+            
+            document.getElementById('max-design-count').value = 1;
+            
+            const btnAdd = document.getElementById('max-btn-add');
+            btnAdd.onclick = function() {
+                const count = parseInt(document.getElementById('max-design-count').value) || 1;
+                
+                // Add to tree logic
+                const existingRows = document.querySelectorAll('#tree-designs-container .tree-row');
+                let emptyRow = null;
+                if (existingRows.length === 1) {
+                    const sel = existingRows[0].querySelector('.tree-sel-design');
+                    if (sel && sel.value === "") {
+                        emptyRow = existingRows[0];
+                    }
+                }
+                
+                if (emptyRow) {
+                    const sel = emptyRow.querySelector('.tree-sel-design');
+                    const inpCount = emptyRow.querySelector('.tree-inp-count');
+                    sel.value = d.id;
+                    inpCount.value = count;
+                    calculateTreeWeight();
+                } else {
+                    addDesignRow(d.id, count);
+                }
+                
+                document.getElementById('maximized-design-overlay').classList.remove('active');
+                closeDesignPickerModal();
+            };
+            
+            document.getElementById('maximized-design-overlay').classList.add('active');
+        }
+
+        function galleryPrev() {
+            if (currentGalleryIndex > 0) {
+                selectDesignFromGallery(currentGalleryIndex - 1);
+            }
+        }
+
+        function galleryNext() {
+            if (currentGalleryIndex < currentFilteredDesigns.length - 1) {
+                selectDesignFromGallery(currentGalleryIndex + 1);
+            }
+        }
+        
+        function toggleZoom(event) {
+            if (event) event.stopPropagation();
+            
+            const img = document.getElementById('max-img-el');
+            const modal = document.querySelector('#maximized-design-overlay .premium-modal');
+            const imgCont = document.getElementById('max-design-img');
+            const btnZoom = document.getElementById('max-btn-zoom');
+            
+            if (!modal || !imgCont) return;
+            
+            isImageZoomed = !isImageZoomed;
+            if (isImageZoomed) {
+                modal.style.width = '60vw';
+                modal.style.maxWidth = '90vw';
+                imgCont.style.height = '60vh'; 
+                if (img) img.style.objectFit = 'contain';
+                if (btnZoom) btnZoom.innerHTML = `<i data-lucide="zoom-out" style="width: 18px; height: 18px;"></i>`;
+            } else {
+                modal.style.width = '450px';
+                modal.style.maxWidth = '95%';
+                imgCont.style.height = '280px';
+                if (img) img.style.objectFit = 'contain';
+                if (btnZoom) btnZoom.innerHTML = `<i data-lucide="zoom-in" style="width: 18px; height: 18px;"></i>`;
+            }
+            if (window.lucide) window.lucide.createIcons();
         }
 
         function closeTreeModal() {
@@ -426,8 +699,9 @@
                 const inpCount = row.querySelector('.tree-inp-count');
                 if(sel.value && sel.value !== "") {
                     const wt = parseFloat(sel.options[sel.selectedIndex].getAttribute('data-wt')) || 0;
+                    const imgUrl = sel.options[sel.selectedIndex].getAttribute('data-img');
                     const c = parseInt(inpCount.value) || 1;
-                    dList.push({ design_id: sel.value, count: c, unit_weight: wt });
+                    dList.push({ design_id: sel.value, count: c, unit_weight: wt, imageUrl: imgUrl });
                     tWt += (wt * c);
                 }
             });
@@ -484,14 +758,21 @@
             
             html += `<table style="width:100%; border-collapse: collapse; font-size: 0.9rem;">
                 <tr style="border-bottom:2px solid #e2e8f0; text-align:left;">
+                    <th style="padding:10px; width: 50px;">Pic</th>
                     <th style="padding:10px;">Design ID</th>
                     <th style="padding:10px;">Qty</th>
                     <th style="padding:10px;">Unit Wt</th>
                     <th style="padding:10px;text-align:right;">Subtotal</th>
                 </tr>`;
             
+            let tPcs = 0;
             t.designs.forEach(d => {
+                tPcs += d.count;
+                const imgThumb = d.imageUrl 
+                    ? `<img src="${d.imageUrl}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0;">` 
+                    : '-';
                 html += `<tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:10px;">${imgThumb}</td>
                     <td style="padding:10px;font-weight:600;">${d.design_id}</td>
                     <td style="padding:10px;">${d.count}</td>
                     <td style="padding:10px;color:#64748b;">${d.unit_weight.toFixed(3)}g</td>
@@ -499,7 +780,12 @@
                 </tr>`;
             });
             
-            html += `<tr><td colspan="4" style="text-align:right;padding:15px 10px;font-size:1.1rem;"><strong>Total: <span style="color:var(--primary);">${t.totalWeight.toFixed(3)}g</span></strong></td></tr>`;
+            html += `<tr>
+                <td colspan="5" style="text-align:right;padding:15px 10px;font-size:1.1rem;">
+                    <span style="font-size: 0.85rem; color: #64748b; font-weight: 600; margin-right: 15px;">Pieces: <span style="font-size:1.1rem; color:#1e293b;">${tPcs}</span></span>
+                    <strong>Total Weight: <span style="color:var(--primary);">${t.totalWeight.toFixed(3)}g</span></strong>
+                </td>
+            </tr>`;
             html += `</table>`;
             
             if(t.notes) html += `<div style="margin-top:15px;padding:10px;background:#f8fafc;border-radius:6px;font-size:0.85rem;color:#475569;"><strong>Notes:</strong> ${t.notes}</div>`;
