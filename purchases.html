@@ -231,7 +231,7 @@
                     </div>
 
                     <div style="margin-top: 3rem;">
-                        <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                        <table data-no-filter="true" style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
                             <thead style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
                                 <tr>
                                     <th class="item-details-col" style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Item Details</th>
@@ -446,7 +446,10 @@
                         <textarea class="po-desc input-wrapper" placeholder="Type items or descriptions..." style="width: 100%; border: none; resize: none; background: transparent; padding: 0; min-height: 40px; font-size: 0.9rem;">${itemData.desc || ''}</textarea>
                     </td>
                     <td class="design-img-cell" style="display: none; padding: 12px; vertical-align: top; width: 140px;">
-                        <input type="file" class="po-design-photo" accept="image/*" style="font-size: 0.7rem; width: 100%; margin-bottom: 4px;">
+                        <div class="po-design-preview-container" style="display: ${itemData.designImageUrl ? 'block' : 'none'}; margin-bottom: 8px;">
+                            <img src="${itemData.designImageUrl || ''}" class="po-design-preview" style="width: 100%; max-height: 80px; object-fit: contain; border-radius: 4px; border: 1px solid #d1d5db;">
+                        </div>
+                        <input type="file" class="po-design-photo" accept="image/*" style="font-size: 0.7rem; width: 100%; margin-bottom: 4px;" title="Change Design">
                         <input type="hidden" class="po-design-imageUrl" value="${itemData.designImageUrl || ''}">
                         <div class="po-design-status" style="font-size: 0.7rem; color: #0284c7; font-weight: 600;"></div>
                     </td>
@@ -488,24 +491,17 @@
                     fileInput.addEventListener('change', async (e) => {
                         const file = e.target.files[0];
                         if (!file) return;
-                        statusDiv.textContent = 'Uploading...';
-                        try {
-                            const fileExt = file.name.split('.').pop();
-                            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-                            const filePath = `uploads/${fileName}`;
-
-                            const { data, error } = await window.supabase.storage.from('designs').upload(filePath, file);
-                            if (error) throw error;
-                            
-                            const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(filePath);
-                            urlInput.value = urlData.publicUrl;
-                            statusDiv.textContent = 'Uploaded ✓';
-                            statusDiv.style.color = '#16a34a';
-                        } catch (err) {
-                            console.error(err);
-                            statusDiv.textContent = 'Error ×';
-                            statusDiv.style.color = '#dc2626';
+                        
+                        const objectUrl = URL.createObjectURL(file);
+                        const previewContainer = tr.querySelector('.po-design-preview-container');
+                        const previewImg = tr.querySelector('.po-design-preview');
+                        if (previewContainer && previewImg) {
+                            previewImg.src = objectUrl;
+                            previewContainer.style.display = 'block';
                         }
+                        
+                        statusDiv.textContent = 'Pending save & upload';
+                        statusDiv.style.color = '#ca8a04';
                     });
                 }
                 
@@ -1086,7 +1082,7 @@
                 editIndex = -1;
             });
 
-            form.addEventListener('submit', (e) => {
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
                 const ordType = document.getElementById('ord-type').value;
@@ -1118,9 +1114,52 @@
                     return;
                 }
 
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.style.pointerEvents = 'none';
+                    submitBtn.style.opacity = '0.7';
+                }
+
+                // Upload pending images
+                const rows = poItemsBody.querySelectorAll('.po-item-row');
+                try {
+                    for (let row of rows) {
+                        const fileInput = row.querySelector('.po-design-photo');
+                        const urlInput = row.querySelector('.po-design-imageUrl');
+                        const statusDiv = row.querySelector('.po-design-status');
+                        
+                        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                            const file = fileInput.files[0];
+                            statusDiv.textContent = 'Uploading...';
+                            statusDiv.style.color = '#0284c7';
+                            
+                            const fileExt = file.name.split('.').pop();
+                            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                            const filePath = `uploads/${fileName}`;
+
+                            const { data, error } = await window.supabase.storage.from('designs').upload(filePath, file);
+                            if (error) throw error;
+                            
+                            const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(filePath);
+                            urlInput.value = urlData.publicUrl;
+                            statusDiv.textContent = 'Uploaded ✓';
+                            statusDiv.style.color = '#16a34a';
+                            
+                            fileInput.value = ''; // clear input so we don't upload again if form errors later
+                        }
+                    }
+                } catch (err) {
+                    console.error("Upload error:", err);
+                    alert("Error uploading design image: " + err.message);
+                    if (submitBtn) {
+                        submitBtn.style.pointerEvents = 'auto';
+                        submitBtn.style.opacity = '1';
+                    }
+                    return;
+                }
+
                 // Collect items from table
                 const items = [];
-                const rows = poItemsBody.querySelectorAll('.po-item-row');
                 let totalAmount = 0;
                 let totalQty = 0;
                 
@@ -1175,6 +1214,12 @@
 
                 localStorage.setItem('manti_order_records', JSON.stringify(records));
                 form.style.display = 'none';
+                
+                if (submitBtn) {
+                    submitBtn.style.pointerEvents = 'auto';
+                    submitBtn.style.opacity = '1';
+                }
+                
                 renderTable();
             });
 

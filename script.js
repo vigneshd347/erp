@@ -93,6 +93,10 @@ function applyExcelFilters(table) {
     if (typeof window.calculateReportTotals === 'function') {
         window.calculateReportTotals();
     }
+    
+    if (typeof updateTableTotals === 'function') {
+        updateTableTotals(table);
+    }
 }
 
 function attachExcelFilters() {
@@ -207,12 +211,217 @@ function attachExcelFilters() {
         }
 
         if (isNewRow) thead.appendChild(filterRow);
+        
+        if (typeof updateTableTotals === 'function') {
+            updateTableTotals(table);
+        }
+    });
+}
+
+// Dynamic Table Totals
+function updateTableTotals(table) {
+    if (table.dataset.noTotal === "true" || table.dataset.noFilter === "true") return;
+
+    const thead = table.querySelector('thead');
+    if (!thead) return;
+
+    let headerRow = null;
+    for (let r of thead.querySelectorAll('tr')) {
+        if (!r.classList.contains('excel-filter-row')) {
+            headerRow = r;
+            break;
+        }
+    }
+    if (!headerRow) return;
+
+    const keywords = ['amount', 'total', 'gst', 'qty', 'quantity', 'weight', 'bal', 'due', 'paid', 'tax', 'value', 'cost'];
+    const skipKeywords = ['phone', 'date', 'id', 'no.', '#', 'account', 'bank', 'number', 'rate', 'price', 'unit/rate']; 
+    
+    const ths = headerRow.querySelectorAll('th');
+    const colsToSum = [];
+    
+    ths.forEach((th, index) => {
+        const text = (th.textContent || '').toLowerCase().trim();
+        // Exception: if column title strictly is just "action" etc.
+        if (text === "action" || text === "") return;
+        
+        const hasKeyword = keywords.some(kw => text.includes(kw));
+        const hasSkip = skipKeywords.some(sw => text === sw || text.includes(sw));
+        
+        if (hasKeyword && !hasSkip) {
+            colsToSum.push(index);
+        }
+    });
+
+    if (colsToSum.length === 0) return;
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+
+    const rows = tbody.querySelectorAll('tr');
+    let sums = Array(ths.length).fill(0);
+    
+    rows.forEach(row => {
+        if (row.style.display === 'none') return;
+        if (row.cells.length === 1 && row.cells[0].colSpan > 1) return; // Skip "no records" row
+
+        colsToSum.forEach(colIdx => {
+            const cell = row.cells[colIdx];
+            if (cell) {
+                const text = (cell.textContent || '').trim();
+                const cleaned = text.replace(/,/g, '').match(/-?[\d.]+/);
+                if (cleaned && cleaned[0]) {
+                    sums[colIdx] += parseFloat(cleaned[0]) || 0;
+                }
+            }
+        });
+    });
+
+    let tfoot = table.querySelector('tfoot.dynamic-totals-footer');
+    if (!tfoot) {
+        tfoot = document.createElement('tfoot');
+        tfoot.className = 'dynamic-totals-footer';
+        tfoot.style.position = 'sticky';
+        tfoot.style.bottom = '0';
+        tfoot.style.background = '#f8fafc';
+        tfoot.style.backdropFilter = 'blur(10px)';
+        tfoot.style.zIndex = '5';
+        tfoot.style.boxShadow = '0 -4px 6px -1px rgba(0, 0, 0, 0.05)';
+        table.appendChild(tfoot);
+    }
+    
+    let tr = tfoot.querySelector('tr');
+    if (!tr) {
+        tr = document.createElement('tr');
+        tfoot.appendChild(tr);
+    }
+    
+    tr.innerHTML = '';
+    
+    for(let i = 0; i < ths.length; i++) {
+        const td = document.createElement('td');
+        td.style.padding = '12px 16px';
+        td.style.borderTop = '2px solid #cbd5e1';
+        td.style.fontWeight = '700';
+        td.style.fontSize = '0.9rem';
+        td.style.color = '#0f172a';
+        
+        if (i === 0) {
+            td.textContent = 'TOTALS';
+        } else if (colsToSum.includes(i)) {
+            const headerText = (ths[i].textContent || '').trim().toLowerCase();
+            const isCurrency = headerText.includes('amount') || headerText.includes('total') || headerText.includes('due') || headerText.includes('paid') || headerText.includes('value') || headerText.includes('cost');
+            
+            let val = sums[i].toLocaleString('en-IN', { maximumFractionDigits: 3 });
+            if (isCurrency && sums[i] !== 0) val = '₹ ' + sums[i].toLocaleString('en-IN', { maximumFractionDigits: 2 });
+            else if (headerText.includes('weight')) val = val + ' g';
+            
+            td.textContent = val;
+            td.style.textAlign = 'right';
+        } else {
+            td.textContent = '';
+        }
+        tr.appendChild(td);
+    }
+}
+
+// Generic Table Sorting
+function attachTableSorting() {
+    const tables = document.querySelectorAll('table');
+    tables.forEach(table => {
+        if (table.dataset.noSort === "true") return;
+        
+        const thead = table.querySelector('thead');
+        if (!thead) return;
+
+        let headerRow = null;
+        for (let r of thead.querySelectorAll('tr')) {
+            if (!r.classList.contains('excel-filter-row')) {
+                headerRow = r;
+                break;
+            }
+        }
+        if (!headerRow) return;
+
+        const ths = headerRow.querySelectorAll('th');
+        ths.forEach((th, index) => {
+            if (th.dataset.sortAttached === "true") return;
+            
+            // Skip styling if width is very small or action columns
+            const headerText = (th.textContent || th.innerText).trim().toLowerCase();
+            if (headerText === "action" || headerText === "actions" || headerText === "edit" || headerText === "delete" || headerText === "") return;
+
+            th.dataset.sortAttached = "true";
+            th.style.cursor = "pointer";
+            th.title = "Click to sort";
+
+            th.addEventListener('click', () => {
+                const tbody = table.querySelector('tbody');
+                if (!tbody) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                if (rows.length <= 1 && rows[0] && rows[0].cells.length === 1 && rows[0].cells[0].colSpan > 1) return;
+
+                const isAscending = th.dataset.sortOrder === 'asc';
+                const multiplier = isAscending ? -1 : 1;
+                th.dataset.sortOrder = isAscending ? 'desc' : 'asc';
+
+                ths.forEach(otherTh => {
+                    let ind = otherTh.querySelector('.sort-indicator');
+                    if (ind) ind.textContent = '';
+                    if (otherTh !== th) otherTh.dataset.sortOrder = '';
+                });
+
+                let indicator = th.querySelector('.sort-indicator');
+                if (!indicator) {
+                    indicator = document.createElement('span');
+                    indicator.className = 'sort-indicator';
+                    indicator.style.marginLeft = '4px';
+                    indicator.style.fontSize = '0.85em';
+                    th.appendChild(indicator);
+                }
+                indicator.textContent = isAscending ? ' ▼' : ' ▲';
+
+                rows.sort((a, b) => {
+                    const aCell = a.cells[index];
+                    const bCell = b.cells[index];
+                    
+                    const aText = aCell ? (aCell.textContent || aCell.innerText).trim() : '';
+                    const bText = bCell ? (bCell.textContent || bCell.innerText).trim() : '';
+                    
+                    const aClean = aText.replace(/,/g, '');
+                    const bClean = bText.replace(/,/g, '');
+                    
+                    const aNum = parseFloat((aClean.match(/-?[\d.]+/) || [])[0]);
+                    const bNum = parseFloat((bClean.match(/-?[\d.]+/) || [])[0]);
+                    
+                    if (!isNaN(aNum) && !isNaN(bNum) && (aText.includes('₹') || aText.match(/^[0-9.-]+$/) || aText.match(/^[0-9.-]+[a-zA-Z%]+$/))) {
+                        return (aNum - bNum) * multiplier;
+                    }
+                    
+                    const aDate = Date.parse(aText);
+                    const bDate = Date.parse(bText);
+                    if (!isNaN(aDate) && !isNaN(bDate) && aText.length > 5) {
+                        return (aDate - bDate) * multiplier;
+                    }
+                    
+                    return aText.localeCompare(bText, undefined, {numeric: true}) * multiplier;
+                });
+
+                rows.forEach(row => tbody.appendChild(row));
+                
+                if (typeof applyExcelFilters === 'function') {
+                    applyExcelFilters(table);
+                }
+            });
+        });
     });
 }
 
 // Observe dynamic table rebuilds (like on Reports page)
 document.addEventListener('CloudDataLoaded', () => {
     attachExcelFilters();
+    attachTableSorting();
 
     const observer = new MutationObserver((mutations) => {
         let shouldReattach = false;
@@ -226,7 +435,10 @@ document.addEventListener('CloudDataLoaded', () => {
         });
         if (shouldReattach) {
             // setTimeout prevents infinite loops
-            setTimeout(attachExcelFilters, 100);
+            setTimeout(() => {
+                attachExcelFilters();
+                attachTableSorting();
+            }, 100);
         }
     });
 
