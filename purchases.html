@@ -516,7 +516,7 @@
                 if (ordCat && ordCat.value === 'Design') {
                     tr.querySelector('.design-img-cell').style.display = 'table-cell';
                     tr.querySelector('.design-wt-cell').style.display = 'table-cell';
-                    tr.querySelector('.item-details-cell').style.display = 'none';
+                    tr.querySelector('.item-details-cell').style.display = 'table-cell';
                     tr.querySelector('.qty-cell').style.display = 'none';
                     tr.querySelector('.po-qty').value = tr.querySelector('.po-qty').value || '1';
                     tr.querySelector('.po-desc').value = tr.querySelector('.po-desc').value || ordSubCat?.value || 'Design Item';
@@ -616,7 +616,7 @@
                     document.getElementById('ord-main-metal-type').required = false;
                     
                     document.querySelectorAll('.design-img-col, .design-img-cell, .design-wt-col, .design-wt-cell').forEach(el => el.style.display = 'table-cell');
-                    document.querySelectorAll('.item-details-col, .item-details-cell').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('.item-details-col, .item-details-cell').forEach(el => el.style.display = 'table-cell');
                     document.querySelectorAll('.qty-col, .qty-cell').forEach(el => el.style.display = 'none');
                     
                     document.querySelectorAll('.po-qty').forEach(el => { el.required = false; if(!el.value) el.value = '1'; });
