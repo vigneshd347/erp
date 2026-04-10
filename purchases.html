@@ -193,6 +193,18 @@
                                         <option value="Assets">2. Assets</option>
                                         <option value="Consumables">3. Consumables</option>
                                         <option value="Others">4. Others</option>
+                                        <option value="Design">5. Design</option>
+                                    </select>
+                                </div>
+                                <div id="ord-design-sub-category-container" style="display: none; grid-column: span 2;">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Design Sub Category <span style="color:#ef4444;">*</span></label>
+                                    <select id="ord-design-sub-category" class="input-wrapper" style="border-color: #d1d5db;">
+                                        <option value="" disabled selected>Select Sub Category</option>
+                                        <option value="Ring">1. Ring</option>
+                                        <option value="Bangle">2. Bangle</option>
+                                        <option value="Earring">3. Earrings</option>
+                                        <option value="Necklace">4. Necklace</option>
+                                        <option value="Bracelet">5. Bracelet</option>
                                     </select>
                                 </div>
                                 <div id="ord-asset-type-container" style="display: none;">
@@ -222,8 +234,11 @@
                         <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
                             <thead style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
                                 <tr>
-                                    <th style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Item Details</th>
-                                    <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Quantity</th>
+                                    <th class="item-details-col" style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Item Details</th>
+                                    <th class="design-img-col" style="display: none; padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Design Image</th>
+                                    <th class="design-size-col" style="display: none; padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Size</th>
+                                    <th class="design-wt-col" style="display: none; padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Weight</th>
+                                    <th class="qty-col" style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Quantity</th>
                                     <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Rate</th>
                                     <th style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">GST %</th>
                                     <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Amount</th>
@@ -427,11 +442,22 @@
                 const rowCount = poItemsBody.rows.length + 1;
                 
                 tr.innerHTML = `
-                    <td style="padding: 12px; vertical-align: top;">
-                        <textarea class="po-desc input-wrapper" placeholder="Type items or descriptions..." required style="width: 100%; border: none; resize: none; background: transparent; padding: 0; min-height: 40px; font-size: 0.9rem;">${itemData.desc || ''}</textarea>
+                    <td class="item-details-cell" style="padding: 12px; vertical-align: top;">
+                        <textarea class="po-desc input-wrapper" placeholder="Type items or descriptions..." style="width: 100%; border: none; resize: none; background: transparent; padding: 0; min-height: 40px; font-size: 0.9rem;">${itemData.desc || ''}</textarea>
                     </td>
-                    <td style="padding: 12px; vertical-align: top;">
-                        <input type="number" step="0.001" class="po-qty input-wrapper" placeholder="0.000" required value="${itemData.qty || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0;">
+                    <td class="design-img-cell" style="display: none; padding: 12px; vertical-align: top; width: 140px;">
+                        <input type="file" class="po-design-photo" accept="image/*" style="font-size: 0.7rem; width: 100%; margin-bottom: 4px;">
+                        <input type="hidden" class="po-design-imageUrl" value="${itemData.designImageUrl || ''}">
+                        <div class="po-design-status" style="font-size: 0.7rem; color: #0284c7; font-weight: 600;"></div>
+                    </td>
+                    <td class="design-size-cell" style="display: none; padding: 12px; vertical-align: top; width: 100px;">
+                        <input type="text" class="po-design-size input-wrapper" placeholder="Size (e.g. 14)" value="${itemData.designSize || ''}" style="width: 100%; border:1px solid #d1d5db; background: #fff; padding: 6px; font-size: 0.8rem; border-radius:4px;">
+                    </td>
+                    <td class="design-wt-cell" style="display: none; padding: 12px; vertical-align: top; width: 100px;">
+                        <input type="number" step="0.01" class="po-design-wt input-wrapper" placeholder="Wt (g)" value="${itemData.designWt || ''}" style="width: 100%; border: 1px solid #d1d5db; background: #fff; padding: 6px; font-size: 0.8rem; border-radius:4px;">
+                    </td>
+                    <td class="qty-cell" style="padding: 12px; vertical-align: top;">
+                        <input type="number" step="0.001" class="po-qty input-wrapper" placeholder="0.000" value="${itemData.qty || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0;">
                     </td>
                     <td style="padding: 12px; vertical-align: top;">
                         <input type="number" step="0.01" class="po-rate input-wrapper" placeholder="0.00" value="${itemData.rate || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0;">
@@ -453,6 +479,56 @@
                 tr.querySelectorAll('input, textarea').forEach(input => {
                     input.addEventListener('input', calculatePOTotals);
                 });
+                
+                const fileInput = tr.querySelector('.po-design-photo');
+                const urlInput = tr.querySelector('.po-design-imageUrl');
+                const statusDiv = tr.querySelector('.po-design-status');
+                
+                if (fileInput) {
+                    fileInput.addEventListener('change', async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        statusDiv.textContent = 'Uploading...';
+                        try {
+                            const fileExt = file.name.split('.').pop();
+                            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                            const filePath = `uploads/${fileName}`;
+
+                            const { data, error } = await window.supabase.storage.from('designs').upload(filePath, file);
+                            if (error) throw error;
+                            
+                            const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(filePath);
+                            urlInput.value = urlData.publicUrl;
+                            statusDiv.textContent = 'Uploaded ✓';
+                            statusDiv.style.color = '#16a34a';
+                        } catch (err) {
+                            console.error(err);
+                            statusDiv.textContent = 'Error ×';
+                            statusDiv.style.color = '#dc2626';
+                        }
+                    });
+                }
+                
+
+                // Show size conditionally immediately if creating from data
+                const ordCat = document.getElementById('ord-category');
+                const ordSubCat = document.getElementById('ord-design-sub-category');
+                if (ordCat && ordCat.value === 'Design') {
+                    tr.querySelector('.design-img-cell').style.display = 'table-cell';
+                    tr.querySelector('.design-wt-cell').style.display = 'table-cell';
+                    tr.querySelector('.item-details-cell').style.display = 'none';
+                    tr.querySelector('.qty-cell').style.display = 'none';
+                    tr.querySelector('.po-qty').value = tr.querySelector('.po-qty').value || '1';
+                    tr.querySelector('.po-desc').value = tr.querySelector('.po-desc').value || ordSubCat?.value || 'Design Item';
+                    if (ordSubCat && ['Ring', 'Bangle', 'Bracelet'].includes(ordSubCat.value)) {
+                        tr.querySelector('.design-size-cell').style.display = 'table-cell';
+                    }
+                } else {
+                    tr.querySelector('.po-desc').required = true;
+                    tr.querySelector('.po-qty').required = true;
+                }
+
+
                 
                 calculatePOTotals();
             }
@@ -529,6 +605,39 @@
 
                 if (poCategoryContainer) poCategoryContainer.style.display = 'block';
                 
+                const designSubCategoryContainer = document.getElementById('ord-design-sub-category-container');
+                const designSubCatEl = document.getElementById('ord-design-sub-category');
+
+                if (ordCategory && ordCategory.value === 'Design') {
+                    if (designSubCategoryContainer) designSubCategoryContainer.style.display = 'block';
+                    if (designSubCatEl) designSubCatEl.required = true;
+                    if (metalTypeContainer) metalTypeContainer.style.display = 'none';
+                    if (document.getElementById('ord-asset-type-container')) document.getElementById('ord-asset-type-container').style.display = 'none';
+                    document.getElementById('ord-main-metal-type').required = false;
+                    
+                    document.querySelectorAll('.design-img-col, .design-img-cell, .design-wt-col, .design-wt-cell').forEach(el => el.style.display = 'table-cell');
+                    document.querySelectorAll('.item-details-col, .item-details-cell').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('.qty-col, .qty-cell').forEach(el => el.style.display = 'none');
+                    
+                    document.querySelectorAll('.po-qty').forEach(el => { el.required = false; if(!el.value) el.value = '1'; });
+                    document.querySelectorAll('.po-desc').forEach(el => { 
+                        el.required = false; 
+                        if(!el.value || el.value === 'Design Item') el.value = designSubCatEl?.value || 'Design Item'; 
+                    });
+                    
+                    const showSize = designSubCatEl && ['Ring', 'Bangle', 'Bracelet'].includes(designSubCatEl.value);
+                    document.querySelectorAll('.design-size-col, .design-size-cell').forEach(el => el.style.display = showSize ? 'table-cell' : 'none');
+                } else {
+                    if (designSubCategoryContainer) designSubCategoryContainer.style.display = 'none';
+                    if (designSubCatEl) { designSubCatEl.required = false; designSubCatEl.value = ''; }
+                    document.querySelectorAll('.design-img-col, .design-img-cell, .design-wt-col, .design-wt-cell, .design-size-col, .design-size-cell').forEach(el => el.style.display = 'none');
+                    
+                    document.querySelectorAll('.item-details-col, .item-details-cell').forEach(el => el.style.display = 'table-cell');
+                    document.querySelectorAll('.qty-col, .qty-cell').forEach(el => el.style.display = 'table-cell');
+                    document.querySelectorAll('.po-desc').forEach(el => { el.required = true; });
+                    document.querySelectorAll('.po-qty').forEach(el => { el.required = true; });
+                }
+
                 if (ordCategory && ordCategory.value === 'Stock') {
                     if (metalTypeContainer) metalTypeContainer.style.display = 'block';
                     mainMetalSelect.required = true;
@@ -556,6 +665,12 @@
                     toggleTypeDetails();
                 });
             }
+            if (document.getElementById('ord-design-sub-category')) {
+                document.getElementById('ord-design-sub-category').addEventListener('change', () => {
+                    toggleTypeDetails();
+                });
+            }
+
 
             if (typeSelect) {
                 typeSelect.value = 'Purchase Order';
@@ -705,6 +820,9 @@
                 if (document.getElementById('ord-category')) {
                     document.getElementById('ord-category').value = rec.category || '';
                 }
+                if (document.getElementById('ord-design-sub-category')) {
+                    document.getElementById('ord-design-sub-category').value = rec.designSubCategory || '';
+                }
                 
                 document.getElementById('ord-main-metal-type').value = rec.mainMetalType || '';
                 document.getElementById('ord-remark').value = rec.remark || '';
@@ -765,7 +883,71 @@
             function syncCompletedPO(rec) {
                 if (rec.status !== 'Completed') return;
 
-                if (rec.category === 'Assets' && rec.items && rec.items.length > 0) {
+                if (rec.category === 'Design' && rec.items && rec.items.length > 0) {
+                    let designs = JSON.parse(localStorage.getItem('manti_designs')) || [];
+                    const noteStr = 'Auto-added from PO: ' + rec.id;
+                    
+                    // Prevent duplicate sync
+                    // We don't have a remarks/notes field per design natively in the schema, but we can store it or check if items exist.
+                    // For safety, let's look if a design with this generated ID or source note exists.
+                    if (designs.some(d => d._sourcePO === rec.id)) {
+                        return; // already synced
+                    }
+
+                    let addedCount = 0;
+                    
+                    rec.items.forEach((it) => {
+                        const q = parseInt(it.qty, 10) || 1;
+                        for(let k = 0; k < q; k++) {
+                            // Find next ID based on category prefixes (DSG, BG, RG, ER, NK...)
+                            const subCat = rec.designSubCategory || 'Other';
+                            
+                            let prefix = 'DSG';
+                            if (subCat === 'Bangle' || subCat === 'Bracelet') prefix = 'BG';
+                            else if (subCat === 'Ring') prefix = 'RG';
+                            else if (subCat === 'Earring') prefix = 'ER';
+                            else if (subCat === 'Necklace') prefix = 'NK';
+
+                            let maxIdNum = 0;
+                            designs.forEach(d => {
+                                if (d.id && d.id.startsWith(prefix)) {
+                                    const match = d.id.match(new RegExp(`^${prefix}(\\d+)`));
+                                    if (match) {
+                                        const num = parseInt(match[1], 10);
+                                        if (!isNaN(num) && num > maxIdNum) maxIdNum = num;
+                                    }
+                                }
+                            });
+
+                            const countStr = (maxIdNum + 1).toString().padStart(2, '0');
+                            let idStr = `${prefix}${countStr}`;
+                            
+                            const wt = parseFloat(it.designWt) || 0;
+                            if (wt > 0) idStr += `-${wt}`;
+                            if (it.designSize) idStr += `-${it.designSize}`;
+
+                            designs.unshift({
+                                id: idStr,
+                                category: subCat === 'Bracelet' ? 'Bangle' : subCat, // Map bracelet to Bangle or keep it? Mapped to subCat.
+                                subCategory: subCat === 'Ring' ? 'Ladies ring' : null, // Default
+                                weight: wt,
+                                size: it.designSize || '',
+                                imageUrl: it.designImageUrl || '',
+                                _sourcePO: rec.id 
+                            });
+                            addedCount++;
+                        }
+                    });
+
+                    if (addedCount > 0) {
+                        localStorage.setItem('manti_designs', JSON.stringify(designs));
+                        alert(`${addedCount} new Design(s) routed to Design Book!`);
+                        if(window.supabase && window.syncKeyToSupabase) {
+                            window.syncKeyToSupabase('manti_designs', designs);
+                        }
+                    }
+
+                } else if (rec.category === 'Assets' && rec.items && rec.items.length > 0) {
                     let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
                     const noteStr = 'Auto-added from PO: ' + rec.id;
                     
@@ -948,7 +1130,10 @@
                         qty: row.querySelector('.po-qty').value,
                         rate: row.querySelector('.po-rate').value,
                         gst: row.querySelector('.po-gst').value,
-                        total: row.querySelector('.po-row-amount').value
+                        total: row.querySelector('.po-row-amount').value,
+                        designWt: row.querySelector('.po-design-wt')?.value || '',
+                        designSize: row.querySelector('.po-design-size')?.value || '',
+                        designImageUrl: row.querySelector('.po-design-imageUrl')?.value || ''
                     };
                     items.push(it);
                     totalAmount += parseFloat(it.total) || 0;
@@ -969,6 +1154,8 @@
                     billNo: document.getElementById('ord-bill-no').value,
                     category: categoryVal,
                     assetType: document.getElementById('ord-asset-type')?.value || 'Other',
+                    designSubCategory: document.getElementById('ord-design-sub-category')?.value || '',
+
                     items: items,
                     qty: totalQty,
                     amount: totalAmount.toFixed(2),
