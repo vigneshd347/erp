@@ -167,6 +167,15 @@
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Bill No. / Reference</label>
                                     <input type="text" id="ord-bill-no" placeholder="e.g. INV-123" class="input-wrapper" style="width: 100%; border-color: #d1d5db;">
                                 </div>
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Bill Image / Document</label>
+                                    <div id="ord-bill-preview-container" style="display: none; margin-bottom: 8px;">
+                                        <img id="ord-bill-preview" src="" style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #d1d5db; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                    </div>
+                                    <input type="file" id="ord-bill-photo" accept="image/*" class="input-wrapper" style="font-size: 0.8rem; width: 100%; margin-bottom: 4px; padding: 6px;" title="Upload Bill Image">
+                                    <input type="hidden" id="ord-bill-imageUrl" value="">
+                                    <div id="ord-bill-status" style="font-size: 0.75rem; color: #0284c7; font-weight: 600;"></div>
+                                </div>
                             </div>
                         </section>
 
@@ -234,14 +243,14 @@
                         <table data-no-filter="true" style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
                             <thead style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
                                 <tr>
-                                    <th class="item-details-col" style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Item Details</th>
-                                    <th class="design-img-col" style="display: none; padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Design Image</th>
-                                    <th class="design-size-col" style="display: none; padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Size</th>
-                                    <th class="design-wt-col" style="display: none; padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Weight</th>
-                                    <th class="qty-col" style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Quantity</th>
-                                    <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Rate</th>
-                                    <th style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">GST %</th>
-                                    <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Amount</th>
+                                    <th class="item-details-col" style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Item Details</th>
+                                    <th class="design-img-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Design Image</th>
+                                    <th class="design-size-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Size</th>
+                                    <th class="design-wt-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Weight</th>
+                                    <th class="qty-col" style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Quantity</th>
+                                    <th style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Rate</th>
+                                    <th style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">GST %</th>
+                                    <th style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Amount</th>
                                     <th style="padding: 12px; width: 40px;"></th>
                                 </tr>
                             </thead>
@@ -443,35 +452,51 @@
                 
                 tr.innerHTML = `
                     <td class="item-details-cell" style="padding: 12px; vertical-align: top;">
-                        <textarea class="po-desc input-wrapper" placeholder="Type items or descriptions..." style="width: 100%; border: none; resize: none; background: transparent; padding: 0; min-height: 40px; font-size: 0.9rem;">${itemData.desc || ''}</textarea>
+                        <div style="display: flex; gap: 16px; align-items: flex-start;">
+                            <div class="po-detail-image-upload-wrapper" style="position: relative; width: 64px; height: 64px; border: 1px solid #d1d5db; border-radius: 6px; background: #f9fafb; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                <div class="po-detail-preview-container" style="display: ${itemData.detailImageUrl ? 'block' : 'none'}; width: 100%; height: 100%;">
+                                    <img src="${itemData.detailImageUrl || ''}" class="po-detail-preview" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <div class="upload-placeholder" style="display: ${itemData.detailImageUrl ? 'none' : 'block'}; color: #9ca3af;">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                </div>
+                                <input type="file" class="po-detail-photo" accept="image/*" style="opacity: 0; position: absolute; inset: 0; cursor: pointer; width: 100%; height: 100%;" title="Upload Detail Image">
+                            </div>
+                            
+                            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+                                <textarea class="po-desc input-wrapper" placeholder="Add a description to your item" style="width: 100%; border: none; background: transparent; padding: 4px; min-height: 48px; font-size: 0.95rem; resize: none; color: #1f2937;">${itemData.desc || ''}</textarea>
+                                <input type="hidden" class="po-detail-imageUrl" value="${itemData.detailImageUrl || ''}">
+                                <div class="po-detail-status" style="font-size: 0.72rem; color: #0284c7; font-weight: 600;"></div>
+                            </div>
+                        </div>
                     </td>
                     <td class="design-img-cell" style="display: none; padding: 12px; vertical-align: top; width: 140px;">
                         <div class="po-design-preview-container" style="display: ${itemData.designImageUrl ? 'block' : 'none'}; margin-bottom: 8px;">
-                            <img src="${itemData.designImageUrl || ''}" class="po-design-preview" style="width: 100%; max-height: 80px; object-fit: contain; border-radius: 4px; border: 1px solid #d1d5db;">
+                            <img src="${itemData.designImageUrl || ''}" class="po-design-preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #d1d5db; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         </div>
                         <input type="file" class="po-design-photo" accept="image/*" style="font-size: 0.7rem; width: 100%; margin-bottom: 4px;" title="Change Design">
                         <input type="hidden" class="po-design-imageUrl" value="${itemData.designImageUrl || ''}">
                         <div class="po-design-status" style="font-size: 0.7rem; color: #0284c7; font-weight: 600;"></div>
                     </td>
-                    <td class="design-size-cell" style="display: none; padding: 12px; vertical-align: top; width: 100px;">
-                        <input type="text" class="po-design-size input-wrapper" placeholder="Size (e.g. 14)" value="${itemData.designSize || ''}" style="width: 100%; border:1px solid #d1d5db; background: #fff; padding: 6px; font-size: 0.8rem; border-radius:4px;">
+                    <td class="design-size-cell" style="display: none; padding: 12px; vertical-align: middle; width: 100px;">
+                        <input type="text" class="po-design-size input-wrapper" placeholder="Size (e.g. 14)" value="${itemData.designSize || ''}" style="width: 100%; text-align: center; border:1px solid #d1d5db; background: #fff; padding: 6px; font-size: 0.8rem; border-radius:4px;">
                     </td>
-                    <td class="design-wt-cell" style="display: none; padding: 12px; vertical-align: top; width: 100px;">
-                        <input type="number" step="0.01" class="po-design-wt input-wrapper" placeholder="Wt (g)" value="${itemData.designWt || ''}" style="width: 100%; border: 1px solid #d1d5db; background: #fff; padding: 6px; font-size: 0.8rem; border-radius:4px;">
+                    <td class="design-wt-cell" style="display: none; padding: 12px; vertical-align: middle; width: 100px;">
+                        <input type="number" step="0.01" class="po-design-wt input-wrapper" placeholder="Wt (g)" value="${itemData.designWt || ''}" style="width: 100%; text-align: center; border: 1px solid #d1d5db; background: #fff; padding: 6px; font-size: 0.8rem; border-radius:4px;">
                     </td>
-                    <td class="qty-cell" style="padding: 12px; vertical-align: top;">
-                        <input type="number" step="0.001" class="po-qty input-wrapper" placeholder="0.000" value="${itemData.qty || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0;">
+                    <td class="qty-cell" style="padding: 12px; vertical-align: middle;">
+                        <input type="number" step="0.001" class="po-qty input-wrapper" placeholder="0.000" value="${itemData.qty || ''}" style="width: 100%; text-align: center; border: none; background: transparent; padding: 0;">
                     </td>
-                    <td style="padding: 12px; vertical-align: top;">
-                        <input type="number" step="0.01" class="po-rate input-wrapper" placeholder="0.00" value="${itemData.rate || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0;">
+                    <td style="padding: 12px; vertical-align: middle;">
+                        <input type="number" step="0.01" class="po-rate input-wrapper" placeholder="0.00" value="${itemData.rate || ''}" style="width: 100%; text-align: center; border: none; background: transparent; padding: 0;">
                     </td>
-                    <td style="padding: 12px; vertical-align: top;">
-                        <input type="number" step="0.1" class="po-gst input-wrapper" placeholder="3" value="${itemData.gst || '3'}" style="width: 100%; border: none; background: transparent; padding: 0;">
+                    <td style="padding: 12px; vertical-align: middle;">
+                        <input type="number" step="0.1" class="po-gst input-wrapper" placeholder="3" value="${itemData.gst || '3'}" style="width: 100%; text-align: center; border: none; background: transparent; padding: 0;">
                     </td>
-                    <td style="padding: 12px; vertical-align: top;">
-                        <input type="text" class="po-row-amount input-wrapper" placeholder="0.00" readonly style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; font-weight: 600;">
+                    <td style="padding: 12px; vertical-align: middle;">
+                        <input type="text" class="po-row-amount input-wrapper" placeholder="0.00" readonly style="width: 100%; text-align: center; border: none; background: transparent; padding: 0; font-weight: 600;">
                     </td>
-                    <td style="padding: 12px; vertical-align: top; text-align: center;">
+                    <td style="padding: 12px; vertical-align: middle; text-align: center;">
                         <button type="button" class="btn-remove-sm" onclick="this.closest('tr').remove(); calculatePOTotals();">×</button>
                     </td>
                 `;
@@ -502,6 +527,31 @@
                         
                         statusDiv.textContent = 'Pending save & upload';
                         statusDiv.style.color = '#ca8a04';
+                    });
+                }
+                
+                const detailFileInput = tr.querySelector('.po-detail-photo');
+                const detailStatusDiv = tr.querySelector('.po-detail-status');
+
+                if (detailFileInput) {
+                    detailFileInput.addEventListener('change', async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        
+                        const objectUrl = URL.createObjectURL(file);
+                        const previewContainer = tr.querySelector('.po-detail-preview-container');
+                        const previewImg = tr.querySelector('.po-detail-preview');
+                        if (previewContainer && previewImg) {
+                            previewImg.src = objectUrl;
+                            previewContainer.style.display = 'block';
+                            const placeholder = tr.querySelector('.upload-placeholder');
+                            if (placeholder) placeholder.style.display = 'none';
+                        }
+                        
+                        if(detailStatusDiv) {
+                            detailStatusDiv.textContent = 'Pending save & upload';
+                            detailStatusDiv.style.color = '#ca8a04';
+                        }
                     });
                 }
                 
@@ -611,7 +661,7 @@
                     if (document.getElementById('ord-asset-type-container')) document.getElementById('ord-asset-type-container').style.display = 'none';
                     document.getElementById('ord-main-metal-type').required = false;
                     
-                    document.querySelectorAll('.design-img-col, .design-img-cell, .design-wt-col, .design-wt-cell').forEach(el => el.style.display = 'table-cell');
+                    document.querySelectorAll('.design-wt-col, .design-wt-cell').forEach(el => el.style.display = 'table-cell');
                     document.querySelectorAll('.item-details-col, .item-details-cell').forEach(el => el.style.display = 'table-cell');
                     document.querySelectorAll('.qty-col, .qty-cell').forEach(el => el.style.display = 'none');
                     
@@ -626,7 +676,7 @@
                 } else {
                     if (designSubCategoryContainer) designSubCategoryContainer.style.display = 'none';
                     if (designSubCatEl) { designSubCatEl.required = false; designSubCatEl.value = ''; }
-                    document.querySelectorAll('.design-img-col, .design-img-cell, .design-wt-col, .design-wt-cell, .design-size-col, .design-size-cell').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('.design-wt-col, .design-wt-cell, .design-size-col, .design-size-cell').forEach(el => el.style.display = 'none');
                     
                     document.querySelectorAll('.item-details-col, .item-details-cell').forEach(el => el.style.display = 'table-cell');
                     document.querySelectorAll('.qty-col, .qty-cell').forEach(el => el.style.display = 'table-cell');
@@ -760,6 +810,7 @@
                         <td style="padding:13px 16px;">
                             <div style="font-weight:700;color:#0284c7;font-size:0.9rem;">${rec.id || '—'}</div>
                             ${rec.billNo ? `<div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">Bill: ${rec.billNo}</div>` : ''}
+                            ${rec.billImageUrl ? `<div style="margin-top:4px;"><a href="${rec.billImageUrl}" target="_blank" style="font-size:0.7rem;color:#0ea5e9;text-decoration:underline;display:inline-flex;align-items:center;gap:3px;"><i data-lucide="paperclip" style="width:10px;height:10px;"></i> View Bill</a></div>` : ''}
                         </td>
                         <td style="padding:13px 16px;">
                             <div style="font-size:0.85rem;color:#374151;">${rec.date || '—'}</div>
@@ -812,6 +863,25 @@
                 document.getElementById('ord-due-date').value = rec.dueDate;
                 document.getElementById('ord-vendor').value = rec.vendor;
                 document.getElementById('ord-bill-no').value = rec.billNo || '';
+
+                const billPhotoInput = document.getElementById('ord-bill-photo');
+                const billUrlInput = document.getElementById('ord-bill-imageUrl');
+                const billPreviewContainer = document.getElementById('ord-bill-preview-container');
+                const billPreview = document.getElementById('ord-bill-preview');
+                const billStatus = document.getElementById('ord-bill-status');
+                
+                if (billPhotoInput) billPhotoInput.value = '';
+                if (billStatus) billStatus.textContent = '';
+                if (billUrlInput) billUrlInput.value = rec.billImageUrl || '';
+                if (billPreviewContainer && billPreview) {
+                    if (rec.billImageUrl) {
+                        billPreview.src = rec.billImageUrl;
+                        billPreviewContainer.style.display = 'block';
+                    } else {
+                        billPreview.src = '';
+                        billPreviewContainer.style.display = 'none';
+                    }
+                }
                 
                 if (document.getElementById('ord-category')) {
                     document.getElementById('ord-category').value = rec.category || '';
@@ -928,7 +998,7 @@
                                 subCategory: subCat === 'Ring' ? 'Ladies ring' : null, // Default
                                 weight: wt,
                                 size: it.designSize || '',
-                                imageUrl: it.designImageUrl || '',
+                                imageUrl: it.detailImageUrl || it.designImageUrl || '',
                                 _sourcePO: rec.id 
                             });
                             addedCount++;
@@ -1047,10 +1117,37 @@
                 }
             };
 
+            const billPhotoInputListener = document.getElementById('ord-bill-photo');
+            if (billPhotoInputListener) {
+                billPhotoInputListener.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const objectUrl = URL.createObjectURL(file);
+                    const previewContainer = document.getElementById('ord-bill-preview-container');
+                    const previewImg = document.getElementById('ord-bill-preview');
+                    if (previewContainer && previewImg) {
+                        previewImg.src = objectUrl;
+                        previewContainer.style.display = 'block';
+                    }
+                    const statusDiv = document.getElementById('ord-bill-status');
+                    if(statusDiv) {
+                        statusDiv.textContent = 'Pending save & upload';
+                        statusDiv.style.color = '#ca8a04';
+                    }
+                });
+            }
+
             toggleBtn.addEventListener('click', () => {
                 form.reset();
 
                 if (isFixedCb) isFixedCb.checked = false;
+
+                const billPreviewContainer = document.getElementById('ord-bill-preview-container');
+                if (billPreviewContainer) billPreviewContainer.style.display = 'none';
+                const billStatus = document.getElementById('ord-bill-status');
+                if (billStatus) billStatus.textContent = '';
+                const billUrlInput = document.getElementById('ord-bill-imageUrl');
+                if (billUrlInput) billUrlInput.value = '';
 
                 document.getElementById('ord-date').valueAsDate = new Date();
                 
@@ -1120,6 +1217,43 @@
                     submitBtn.style.opacity = '0.7';
                 }
 
+                // Upload pending Bill Image
+                const billPhotoInput = document.getElementById('ord-bill-photo');
+                const billUrlInput = document.getElementById('ord-bill-imageUrl');
+                const billStatus = document.getElementById('ord-bill-status');
+                try {
+                    if (billPhotoInput && billPhotoInput.files && billPhotoInput.files.length > 0) {
+                        const file = billPhotoInput.files[0];
+                        if (billStatus) {
+                            billStatus.textContent = 'Uploading...';
+                            billStatus.style.color = '#0284c7';
+                        }
+                        
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `bill_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                        const filePath = `uploads/${fileName}`;
+
+                        const { data, error } = await window.supabase.storage.from('designs').upload(filePath, file);
+                        if (error) throw error;
+                        
+                        const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(filePath);
+                        if (billUrlInput) billUrlInput.value = urlData.publicUrl;
+                        if (billStatus) {
+                            billStatus.textContent = 'Uploaded ✓';
+                            billStatus.style.color = '#16a34a';
+                        }
+                        billPhotoInput.value = ''; // clear input so we don't upload again if form errors later
+                    }
+                } catch (err) {
+                    console.error("Upload error:", err);
+                    alert("Error uploading bill image: " + err.message);
+                    if (submitBtn) {
+                        submitBtn.style.pointerEvents = 'auto';
+                        submitBtn.style.opacity = '1';
+                    }
+                    return;
+                }
+
                 // Upload pending images
                 const rows = poItemsBody.querySelectorAll('.po-item-row');
                 try {
@@ -1147,6 +1281,35 @@
                             
                             fileInput.value = ''; // clear input so we don't upload again if form errors later
                         }
+
+                        // Detailed Image Upload
+                        const detailFileInput = row.querySelector('.po-detail-photo');
+                        const detailUrlInput = row.querySelector('.po-detail-imageUrl');
+                        const detailStatusDiv = row.querySelector('.po-detail-status');
+                        
+                        if (detailFileInput && detailFileInput.files && detailFileInput.files.length > 0) {
+                            const detailFile = detailFileInput.files[0];
+                            if(detailStatusDiv) {
+                                detailStatusDiv.textContent = 'Uploading...';
+                                detailStatusDiv.style.color = '#0284c7';
+                            }
+                            
+                            const fileExt = detailFile.name.split('.').pop();
+                            const fileName = `detail_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                            const filePath = `uploads/${fileName}`;
+
+                            const { data, error } = await window.supabase.storage.from('designs').upload(filePath, detailFile);
+                            if (error) throw error;
+                            
+                            const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(filePath);
+                            if (detailUrlInput) detailUrlInput.value = urlData.publicUrl;
+                            if(detailStatusDiv) {
+                                detailStatusDiv.textContent = 'Uploaded ✓';
+                                detailStatusDiv.style.color = '#16a34a';
+                            }
+                            
+                            detailFileInput.value = ''; // clear input
+                        }
                     }
                 } catch (err) {
                     console.error("Upload error:", err);
@@ -1172,7 +1335,8 @@
                         total: row.querySelector('.po-row-amount').value,
                         designWt: row.querySelector('.po-design-wt')?.value || '',
                         designSize: row.querySelector('.po-design-size')?.value || '',
-                        designImageUrl: row.querySelector('.po-design-imageUrl')?.value || ''
+                        designImageUrl: row.querySelector('.po-design-imageUrl')?.value || '',
+                        detailImageUrl: row.querySelector('.po-detail-imageUrl')?.value || ''
                     };
                     items.push(it);
                     totalAmount += parseFloat(it.total) || 0;
@@ -1191,6 +1355,7 @@
                     dueDate: document.getElementById('ord-due-date').value,
                     vendor: document.getElementById('ord-vendor').value,
                     billNo: document.getElementById('ord-bill-no').value,
+                    billImageUrl: document.getElementById('ord-bill-imageUrl')?.value || '',
                     category: categoryVal,
                     assetType: document.getElementById('ord-asset-type')?.value || 'Other',
                     designSubCategory: document.getElementById('ord-design-sub-category')?.value || '',
