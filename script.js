@@ -1820,3 +1820,36 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+
+// Mobile Hamburger menu injection
+document.addEventListener('DOMContentLoaded', () => {
+    const headerFlex = document.querySelector('.header-flex');
+    const generatorHeader = document.querySelector('.generator-header');
+    const dashboardHeader = document.querySelector('.dashboard-header');
+    const contentHeader = document.querySelector('.content-header');
+    const anyHeaderWrapper = document.querySelector('.header-content');
+    
+    // We try to attach to header-flex, or just the main header containers if header-flex isn't present
+    const targetHeader = headerFlex || dashboardHeader || generatorHeader || contentHeader || anyHeaderWrapper;
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (targetHeader && sidebar && !document.querySelector('.mobile-menu-btn')) {
+        const menuBtn = document.createElement('button');
+        menuBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
+        menuBtn.className = 'mobile-menu-btn';
+        menuBtn.onclick = () => {
+             sidebar.classList.toggle('open');
+        };
+        targetHeader.prepend(menuBtn);
+    }
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('open')) {
+            if (!sidebar.contains(e.target) && !e.target.closest('.mobile-menu-btn')) {
+                sidebar.classList.remove('open');
+            }
+        }
+    });
+});
