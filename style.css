@@ -2140,7 +2140,7 @@ td {
     /* Main Content */
     .main-content {
         padding: 1rem !important;
-        padding-bottom: 80px !important; /* give space for bottom nav */
+        padding-bottom: 2rem !important;
     }
 
     .generator-header, .dashboard-header {
@@ -2155,8 +2155,12 @@ td {
     }
 
     /* Grids */
-    .module-grid, .metrics-grid, .kpi-grid, .dashboard-cols, .quick-link-grid {
+    .module-grid, .metrics-grid, .dashboard-cols {
         grid-template-columns: 1fr !important;
+    }
+    
+    .kpi-grid, .quick-link-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
     }
 
     /* Table Responsiveness */
