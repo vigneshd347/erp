@@ -352,6 +352,7 @@
         </main>
     </div>
 
+    <script src="manti_repair.js"></script>
     <script src="script.js?v=25"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -395,49 +396,35 @@
             // KPI: Bank & Cash Balance
             const mantiBankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
             const mantiJournals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
-            const mantiExpenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
-
-            // Real account names (from Banking module)
-            const knownAcctNames = new Set(mantiBankAccounts.map(a => (a.name || '').toLowerCase()));
-            // Generic aliases used in legacy / default expense entries
-            const genericPaymentAccts = new Set(['petty cash', 'cash', 'cash / petty cash', 'bank account', 'bank']);
-
-            // Start from sum of all opening balances
-            let totalBankBalance = mantiBankAccounts.reduce((s, a) => s + (parseFloat(a.openingBalance) || 0), 0);
-
-            // Apply all journal movements that touch a payment account (real name OR generic alias)
-            mantiJournals.forEach(j => {
-                if (!j.lines) return;
-                j.lines.forEach(l => {
-                    const la = (l.account || '').toLowerCase();
-                    if (knownAcctNames.has(la) || genericPaymentAccts.has(la)) {
-                        totalBankBalance += (parseFloat(l.debit) || 0) - (parseFloat(l.credit) || 0);
-                    }
+            
+            let totalBankBalance = 0;
+            
+            mantiBankAccounts.forEach(acc => {
+                let bal = parseFloat(acc.openingBalance) || 0;
+                const isLiability = (acc.type === 'Credit Card' || acc.type === 'Other');
+                
+                mantiJournals.forEach(j => {
+                    if (!j.lines) return;
+                    j.lines.forEach(l => {
+                        if ((l.account || '').toLowerCase() === (acc.name || '').toLowerCase()) {
+                            const deb = parseFloat(l.debit) || 0;
+                            const cre = parseFloat(l.credit) || 0;
+                            if (isLiability) {
+                                bal += (cre - deb); // Credit increases liability
+                            } else {
+                                bal += (deb - cre); // Debit increases asset
+                            }
+                        }
+                    });
                 });
-            });
-
-            // Safety net: directly deduct any expense whose paidThrough didn't get captured by journals
-            // (prevents balance staying flat if journal entries are missing or unmatched)
-            mantiExpenses.forEach(e => {
-                const pt = (e.paidThrough || '').toLowerCase();
-                const alreadyCounted = knownAcctNames.has(pt) || genericPaymentAccts.has(pt);
-                if (!alreadyCounted) {
-                    totalBankBalance -= parseFloat(e.total || e.amount) || 0;
-                }
-            });
-
-            // Also directly deduct any specific Payments Made to Vendors
-            const mantiPaymentsMade = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
-            mantiPaymentsMade.forEach(pm => {
-                const pt = (pm.paidThrough || pm.paymentMode || '').toLowerCase();
-                const alreadyCounted = knownAcctNames.has(pt) || genericPaymentAccts.has(pt);
-                if (!alreadyCounted) {
-                    totalBankBalance -= parseFloat(pm.amount) || 0;
-                }
+                
+                // Add to net worth (assets are positive, liabilities are negative)
+                if (isLiability) totalBankBalance -= bal;
+                else totalBankBalance += bal;
             });
 
             document.getElementById('kpi-bank-balance').textContent = `₹ ${totalBankBalance.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-            document.getElementById('kpi-bank-meta').textContent = `Across ${mantiBankAccounts.length} account(s) • Expenses deducted`;
+            document.getElementById('kpi-bank-meta').textContent = `Across ${mantiBankAccounts.length} account(s)`;
 
             // Unpaid Orders Table
             const tbody = document.getElementById('recent-orders-body');

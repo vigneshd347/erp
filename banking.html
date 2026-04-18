@@ -629,16 +629,23 @@
         function saveAccounts(arr) { localStorage.setItem('manti_bank_accounts', JSON.stringify(arr)); }
         function getJournals() { return JSON.parse(localStorage.getItem('manti_journal_entries') || '[]'); }
 
-        // ---- Compute Balance for an account name ----
-        function computeBalance(accountName, openingBalance) {
+        // ---- Compute Balance for an account name (handles Liability vs Asset logic) ----
+        function computeBalance(accountName, openingBalance, accountType) {
             const journals = getJournals();
             let balance = parseFloat(openingBalance) || 0;
+            const isLiability = (accountType === 'Credit Card' || accountType === 'Other'); // 'Other' often used for loans
+            
             journals.forEach(j => {
                 if (!j.lines) return;
                 j.lines.forEach(line => {
-                    if ((line.account || '').toLowerCase() === accountName.toLowerCase() ||
-                        (line.account || '') === 'Bank') {
-                        balance += (parseFloat(line.debit) || 0) - (parseFloat(line.credit) || 0);
+                    if ((line.account || '').toLowerCase() === accountName.toLowerCase()) {
+                        const deb = parseFloat(line.debit) || 0;
+                        const cre = parseFloat(line.credit) || 0;
+                        if (isLiability) {
+                            balance += (cre - deb); // Credit increases debt
+                        } else {
+                            balance += (deb - cre); // Debit increases asset
+                        }
                     }
                 });
             });
@@ -698,8 +705,9 @@
                 const grid = section.querySelector('.group-grid');
 
                 groupAccs.forEach(acc => {
-                    const balance = computeBalance(acc.name, acc.openingBalance);
-                    grandTotal += balance;
+                    const balance = computeBalance(acc.name, acc.openingBalance, acc.type);
+                    const isLiability = (acc.type === 'Credit Card' || acc.type === 'Other');
+                    grandTotal += isLiability ? -balance : balance; // Liabilities subtract from net worth
                     const iconClass = acc.type === 'Credit Card' ? 'credit-type' : acc.type === 'Cash' ? 'cash-type' : 'bank-type';
                     const iconName = acc.type === 'Credit Card' ? 'credit-card' : acc.type === 'Cash' ? 'banknote' : 'landmark';
 
@@ -730,8 +738,10 @@
                             </div>
                         </div>
                         <div>
-                            <p style="margin: 0; font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Current Balance</p>
-                            <h2 style="margin: 4px 0 0; font-size: 1.8rem; font-weight: 800; color: ${balance < 0 ? '#ef4444' : '#0ea5e9'};">
+                            <p style="margin: 0; font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                ${isLiability ? 'Current Debt / Due' : 'Current Balance'}
+                            </p>
+                            <h2 style="margin: 4px 0 0; font-size: 1.8rem; font-weight: 800; color: ${isLiability ? '#f59e0b' : (balance < 0 ? '#ef4444' : '#0ea5e9')};">
                                 ₹ ${balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                             </h2>
                         </div>
@@ -783,18 +793,27 @@
 
             renderAccountsList(); // re-render to apply active state
 
+            // Update Ledger Total Balance
+            if(document.getElementById('txn-balance')) {
+                const finalBalance = computeBalance(acc.name, acc.openingBalance, acc.type);
+                const isLiability = (acc.type === 'Credit Card' || acc.type === 'Other');
+                document.getElementById('txn-balance').textContent = `₹ ${finalBalance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('txn-balance').style.color = isLiability ? '#f59e0b' : (finalBalance < 0 ? '#ef4444' : '#0ea5e9');
+            }
+
             // Build ledger lines for this account
             const journals = getJournals();
             let ledgerLines = [];
 
             // Opening balance entry if any
             if (parseFloat(acc.openingBalance) > 0) {
+                const isLiability = (acc.type === 'Credit Card' || acc.type === 'Other');
                 ledgerLines.push({
                     date: acc.openingDate || acc.createdAt,
                     desc: 'Opening Balance',
                     type: 'Opening',
-                    moneyIn: parseFloat(acc.openingBalance),
-                    moneyOut: 0,
+                    moneyIn: isLiability ? 0 : parseFloat(acc.openingBalance),
+                    moneyOut: isLiability ? parseFloat(acc.openingBalance) : 0,
                     timestamp: acc.openingDate || acc.createdAt
                 });
             }
@@ -804,7 +823,7 @@
                 j.lines.forEach(line => {
                     const lAccount = (line.account || '').toLowerCase();
                     const aName = acc.name.toLowerCase();
-                    if (lAccount === aName || lAccount === 'bank') {
+                    if (lAccount === aName) {
                         ledgerLines.push({
                             id: j.id,
                             date: j.date,
@@ -827,8 +846,13 @@
             if (ledgerLines.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#9ca3af; padding: 60px;">No transactions recorded. Create a deposit or expense.</td></tr>`;
             } else {
+                const isLiability = (acc.type === 'Credit Card' || acc.type === 'Other');
                 ledgerLines.forEach((line, i) => {
-                    runningBalance += line.moneyIn - line.moneyOut;
+                    if (isLiability) {
+                        runningBalance += line.moneyOut - line.moneyIn; // Credit increases debt
+                    } else {
+                        runningBalance += line.moneyIn - line.moneyOut; // Debit increases asset
+                    }
                     
                     let actionHtml = '';
                     if (line.id) {

@@ -15,6 +15,7 @@
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=2"></script>
+    <script src="image-cropper.js"></script>
 </head>
 
 <body>
@@ -156,10 +157,12 @@
                     <thead>
                         <tr>
                             <th id="th-select-all" width="40" style="text-align: center;"><input type="checkbox" id="select-all-pending" onchange="toggleSelectAllPending(this)"></th>
-                            <th width="50">Sr</th>
-                            <th width="150">Purchase Date</th>
-                            <th>Asset Name / Description</th>
-                            <th width="150">Category</th>
+                            <th width="40">Sr</th>
+                            <th width="100">AST No</th>
+                            <th width="100">PO No</th>
+                            <th width="120">Date</th>
+                            <th>Asset Name / Desc</th>
+                            <th width="120">Category</th>
                             <th width="120">Purchase Value</th>
                             <th width="120">Current Value</th>
                             <th width="120">Status</th>
@@ -237,8 +240,6 @@
                         <div style="flex: 1;">
                             <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Paid Through</label>
                             <select id="a-paidthrough" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                                <option value="Bank">Bank Account</option>
-                                <option value="Cash">Cash / Petty Cash</option>
                                 <option value="">Not Paid (Credit / Existing)</option>
                             </select>
                         </div>
@@ -297,13 +298,33 @@
                 return 'AST-' + (maxId + 1).toString().padStart(4, '0');
             }
 
+            // Populate Bank Accounts for Payment
+            function populateAccounts() {
+                const select = document.getElementById('a-paidthrough');
+                if (!select) return;
+                
+                select.innerHTML = '<option value="">Not Paid (Credit / Existing)</option>';
+                
+                const accounts = JSON.parse(localStorage.getItem('manti_bank_accounts')) || [];
+                if (accounts.length > 0) {
+                    accounts.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.name; // Real account name matches strictly in banking
+                        opt.textContent = `${a.name} (${a.type})`;
+                        select.appendChild(opt);
+                    });
+                } else {
+                    select.innerHTML += '<option value="Cash">Cash / Petty Cash</option><option value="Bank">Bank Account</option>';
+                }
+            }
+
             // Load from storage
             function loadAssets() {
                 const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
                 tbody.innerHTML = '';
                 
                 if (assets.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No assets found. Click Add New Asset.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">No assets found. Click Add New Asset.</td></tr>';
                     const bulkBtn = document.getElementById('bulk-approve-btn');
                     if (bulkBtn) bulkBtn.style.display = 'none';
                     return;
@@ -321,6 +342,9 @@
                     bulkBtn.style.display = pendingCount > 0 ? 'inline-block' : 'none';
                     bulkBtn.innerHTML = `Approve Pending (${pendingCount})`;
                 }
+
+                // Sort ascending by date (oldest first)
+                assets.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 
                 assets.forEach((a, index) => {
                     let statusColor = 'var(--success)'; // Active
@@ -343,16 +367,44 @@
                     const hasCheckbox = a.status === 'Pending Approval' ? `<input type="checkbox" class="asset-select-cb" value="${a.id}" onchange="updateBulkApproveBtn()">` : '';
                     const cbColDisplay = pendingCount > 0 ? '' : 'display:none;';
 
+                    let poNoMatch = '-';
+                    let linkedPO = null;
+                    if (a.notes && a.notes.includes('Auto-added from PO: ')) {
+                        const match = a.notes.match(/PO-\d+/);
+                        if (match) poNoMatch = match[0];
+                    }
+                    
+                    if (poNoMatch !== '-') {
+                        const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+                        linkedPO = orders.find(o => o.id === poNoMatch);
+                    }
+
+                    let billBadge = '';
+                    if (linkedPO && linkedPO.billImageUrl) {
+                        billBadge = `<div style="margin-top: 4px;"><a href="${linkedPO.billImageUrl}" target="_blank" style="font-size:0.75rem; color:#3b82f6; text-decoration:none; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:2px 6px; border-radius:4px; font-weight:500;"><i data-lucide="paperclip" style="width:12px;height:12px;"></i> View PO Bill</a></div>`;
+                    }
+
+                    let finalThumbnail = a.imageUrl || '';
+                    if (!finalThumbnail && linkedPO && linkedPO.items) {
+                        const matchedItem = linkedPO.items.find(it => a.name && (a.name.includes(it.desc) || (it.desc && it.desc.includes(a.name.split(' (#')[0]))));
+                        if (matchedItem) {
+                            finalThumbnail = matchedItem.detailImageUrl || matchedItem.designImageUrl || '';
+                        }
+                    }
+
                     tbody.innerHTML += `
                         <tr>
                             <td style="text-align: center; ${cbColDisplay}">${hasCheckbox}</td>
                             <td>${index + 1}</td>
+                            <td><strong style="color: var(--primary);">${a.id}</strong></td>
+                            <td>${poNoMatch !== '-' ? `<span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; border: 1px solid #e2e8f0;">${poNoMatch}</span>` : '-'}</td>
                             <td>${a.date}</td>
                             <td style="text-align: left; padding-left: 15px;">
                                 <div style="display:flex; align-items:flex-start; gap:12px;">
-                                    ${a.imageUrl ? `<a href="${a.imageUrl}" target="_blank"><img src="${a.imageUrl}" style="width:40px; height:40px; border-radius:4px; object-fit:cover; border:1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" title="View Image"></a>` : ''}
-                                    <div>
-                                        <strong>${a.name}</strong><br><span style="font-size:0.75rem; color:#666;">ID: ${a.id}</span>
+                                    ${finalThumbnail ? `<a href="${finalThumbnail}" target="_blank"><img src="${finalThumbnail}" style="width:40px; height:40px; border-radius:4px; object-fit:cover; border:1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" title="View Image"></a>` : ''}
+                                    <div style="align-self: center;">
+                                        <strong>${a.name}</strong>
+                                        ${billBadge}
                                     </div>
                                 </div>
                             </td>
@@ -649,8 +701,21 @@
             const photoInput = document.getElementById('a-photo');
             if (photoInput) {
                 photoInput.addEventListener('change', async (e) => {
-                    const file = e.target.files[0];
+                    let file = e.target.files[0];
                     if (!file) return;
+
+                    try {
+                        if (window.openCropper) {
+                            file = await window.openCropper(file, NaN);
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(file);
+                            e.target.files = dataTransfer.files;
+                        }
+                    } catch (err) {
+                        e.target.value = '';
+                        return; // Cancelled crop
+                    }
+
                     const statusDiv = document.getElementById('a-photo-status');
                     statusDiv.textContent = 'Uploading...';
                     statusDiv.style.color = '#0284c7';
@@ -672,6 +737,7 @@
             }
 
             // Initial Load
+            populateAccounts();
             loadAssets();
         });
     </script>

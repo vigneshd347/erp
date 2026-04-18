@@ -425,7 +425,8 @@
             const tbody = document.getElementById('challan-list-body');
             tbody.innerHTML = '';
 
-            challans.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate)).forEach(c => {
+            // Sort ascending by date (oldest first)
+            challans.sort((a, b) => new Date(a.createdDate || a.date) - new Date(b.createdDate || b.date)).forEach(c => {
                 const tr = document.createElement('tr');
                 
                 let statusColor = 'var(--text-muted)'; // Draft (gray)

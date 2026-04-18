@@ -15,6 +15,7 @@
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=2"></script>
+    <script src="image-cropper.js"></script>
 </head>
 
 <body>
@@ -205,18 +206,7 @@
                                         <option value="Design">5. Design</option>
                                     </select>
                                 </div>
-                                <div id="ord-design-sub-category-container" style="display: none; grid-column: span 2;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Design Sub Category <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-design-sub-category" class="input-wrapper" style="border-color: #d1d5db;">
-                                        <option value="" disabled selected>Select Sub Category</option>
-                                        <option value="Ring">1. Ring</option>
-                                        <option value="Bangle">2. Bangle</option>
-                                        <option value="Earring">3. Earrings</option>
-                                        <option value="Necklace">4. Necklace</option>
-                                        <option value="Bracelet">5. Bracelet</option>
-                                        <option value="Mix">6. Mix</option>
-                                    </select>
-                                </div>
+
                                 <div id="ord-asset-type-container" style="display: none;">
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Asset Type <span style="color:#ef4444;">*</span></label>
                                     <select id="ord-asset-type" class="input-wrapper" style="border-color: #d1d5db;">
@@ -227,13 +217,19 @@
                                         <option value="Electronics">5. Electronics</option>
                                     </select>
                                 </div>
-                                <div id="ord-metal-type-container" style="display: none; grid-column: span 2;">
+                                <div id="ord-metal-type-container" style="display: none;">
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Metal Type <span style="color:#ef4444;">*</span></label>
                                     <select id="ord-main-metal-type" class="input-wrapper" style="border-color: #d1d5db;">
                                         <option value="" disabled selected>Select Metal Type</option>
                                         <option value="Gold">1. Gold</option>
                                         <option value="Silver">2. Silver</option>
                                         <option value="Others">3. others</option>
+                                    </select>
+                                </div>
+                                <div id="ord-paid-through-container">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Paid Through</label>
+                                    <select id="ord-paid-through" class="input-wrapper" style="border-color: #d1d5db;">
+                                        <option value="">Accounts Payable (Pay Later)</option>
                                     </select>
                                 </div>
                             </div>
@@ -245,7 +241,6 @@
                             <thead style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
                                 <tr>
                                     <th class="item-details-col" style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Item Details</th>
-                                    <th class="design-img-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Design Image</th>
                                     <th class="design-size-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Size</th>
                                     <th class="design-wt-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Weight</th>
                                     <th class="qty-col" style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Quantity</th>
@@ -460,6 +455,29 @@
                 });
             }
 
+            // Populate Paid Through dropdown dynamically from Bank Accounts
+            const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
+            const paidThroughSelect = document.getElementById('ord-paid-through');
+            if (paidThroughSelect) {
+                paidThroughSelect.innerHTML = '<option value="">Accounts Payable (Pay Later)</option>';
+                
+                let cashGroup = document.createElement('optgroup');
+                cashGroup.label = "Cash Accounts";
+                let bankGroup = document.createElement('optgroup');
+                bankGroup.label = "Bank & Credit Cards";
+
+                bankAccounts.forEach(acc => {
+                    const opt = document.createElement('option');
+                    opt.value = acc.name;
+                    opt.textContent = acc.name;
+                    if (acc.type === 'Cash') cashGroup.appendChild(opt);
+                    else bankGroup.appendChild(opt);
+                });
+
+                if (cashGroup.children.length > 0) paidThroughSelect.appendChild(cashGroup);
+                if (bankGroup.children.length > 0) paidThroughSelect.appendChild(bankGroup);
+            }
+
             // Multi-Item PO Table Logic
             const poItemsBody = document.getElementById('po-items-body');
             const addPoItemBtn = document.getElementById('add-po-item');
@@ -484,18 +502,18 @@
                             
                             <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
                                 <textarea class="po-desc input-wrapper" placeholder="Add a description to your item" style="width: 100%; border: none; background: transparent; padding: 4px; min-height: 48px; font-size: 0.95rem; resize: none; color: #1f2937;">${itemData.desc || ''}</textarea>
+                                <select class="po-design-subcat input-wrapper" style="display: none; width: 100%; border: 1px solid #d1d5db; padding: 4px; font-size: 0.8rem; border-radius: 4px; background: #fff;">
+                                    <option value="" disabled ${!itemData.designSubCat ? 'selected' : ''}>Sub Category (Ring, Bangle...)</option>
+                                    <option value="Ring" ${itemData.designSubCat === 'Ring' ? 'selected' : ''}>1. Ring</option>
+                                    <option value="Bangle" ${itemData.designSubCat === 'Bangle' ? 'selected' : ''}>2. Bangle</option>
+                                    <option value="Earring" ${itemData.designSubCat === 'Earring' ? 'selected' : ''}>3. Earrings</option>
+                                    <option value="Necklace" ${itemData.designSubCat === 'Necklace' ? 'selected' : ''}>4. Necklace</option>
+                                    <option value="Bracelet" ${itemData.designSubCat === 'Bracelet' ? 'selected' : ''}>5. Bracelet</option>
+                                </select>
                                 <input type="hidden" class="po-detail-imageUrl" value="${itemData.detailImageUrl || ''}">
                                 <div class="po-detail-status" style="font-size: 0.72rem; color: #0284c7; font-weight: 600;"></div>
                             </div>
                         </div>
-                    </td>
-                    <td class="design-img-cell" style="display: none; padding: 12px; vertical-align: top; width: 140px;">
-                        <div class="po-design-preview-container" style="display: ${itemData.designImageUrl ? 'block' : 'none'}; margin-bottom: 8px;">
-                            <img src="${itemData.designImageUrl || ''}" class="po-design-preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #d1d5db; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                        </div>
-                        <input type="file" class="po-design-photo" accept="image/*" style="font-size: 0.7rem; width: 100%; margin-bottom: 4px;" title="Change Design">
-                        <input type="hidden" class="po-design-imageUrl" value="${itemData.designImageUrl || ''}">
-                        <div class="po-design-status" style="font-size: 0.7rem; color: #0284c7; font-weight: 600;"></div>
                     </td>
                     <td class="design-size-cell" style="display: none; padding: 12px; vertical-align: middle; width: 100px;">
                         <input type="text" class="po-design-size input-wrapper" placeholder="Size (e.g. 14)" value="${itemData.designSize || ''}" style="width: 100%; text-align: center; border:1px solid #d1d5db; background: #fff; padding: 6px; font-size: 0.8rem; border-radius:4px;">
@@ -510,7 +528,7 @@
                         <input type="number" step="0.01" class="po-rate input-wrapper" placeholder="0.00" value="${itemData.rate || ''}" style="width: 100%; text-align: center; border: none; background: transparent; padding: 0;">
                     </td>
                     <td style="padding: 12px; vertical-align: middle;">
-                        <input type="number" step="0.1" class="po-gst input-wrapper" placeholder="3" value="${itemData.gst || '3'}" style="width: 100%; text-align: center; border: none; background: transparent; padding: 0;">
+                        <input type="number" step="0.1" class="po-gst input-wrapper" placeholder="0" value="${itemData.gst !== undefined ? itemData.gst : ''}" style="width: 100%; text-align: center; border: none; background: transparent; padding: 0;">
                     </td>
                     <td style="padding: 12px; vertical-align: middle;">
                         <input type="text" class="po-row-amount input-wrapper" placeholder="0.00" readonly style="width: 100%; text-align: center; border: none; background: transparent; padding: 0; font-weight: 600;">
@@ -554,8 +572,20 @@
 
                 if (detailFileInput) {
                     detailFileInput.addEventListener('change', async (e) => {
-                        const file = e.target.files[0];
+                        let file = e.target.files[0];
                         if (!file) return;
+                        
+                        try {
+                            if (window.openCropper) {
+                                file = await window.openCropper(file, NaN);
+                                const dataTransfer = new DataTransfer();
+                                dataTransfer.items.add(file);
+                                e.target.files = dataTransfer.files;
+                            }
+                        } catch (err) {
+                            e.target.value = '';
+                            return; // User cancelled crop
+                        }
                         
                         const objectUrl = URL.createObjectURL(file);
                         const previewContainer = tr.querySelector('.po-detail-preview-container');
@@ -577,17 +607,15 @@
 
                 // Show size conditionally immediately if creating from data
                 const ordCat = document.getElementById('ord-category');
-                const ordSubCat = document.getElementById('ord-design-sub-category');
                 if (ordCat && ordCat.value === 'Design') {
-                    tr.querySelector('.design-img-cell').style.display = 'table-cell';
                     tr.querySelector('.design-wt-cell').style.display = 'table-cell';
                     tr.querySelector('.item-details-cell').style.display = 'table-cell';
                     tr.querySelector('.qty-cell').style.display = 'none';
                     tr.querySelector('.po-qty').value = tr.querySelector('.po-qty').value || '1';
-                    tr.querySelector('.po-desc').value = tr.querySelector('.po-desc').value || ordSubCat?.value || 'Design Item';
-                    if (ordSubCat && ['Ring', 'Bangle', 'Bracelet'].includes(ordSubCat.value)) {
-                        tr.querySelector('.design-size-cell').style.display = 'table-cell';
-                    }
+                    tr.querySelector('.po-desc').value = tr.querySelector('.po-desc').value || 'Design Item';
+                    const dsSelect = tr.querySelector('.po-design-subcat');
+                    if (dsSelect) { dsSelect.style.display = 'block'; dsSelect.required = true; }
+                    tr.querySelector('.design-size-cell').style.display = 'table-cell';
                 } else {
                     tr.querySelector('.po-desc').required = true;
                     tr.querySelector('.po-qty').required = true;
@@ -598,7 +626,11 @@
                 calculatePOTotals();
             }
 
-            function calculatePOTotals(sourceInput = null) {
+            let lastDiscountAnchor = 'amount';
+
+            function calculatePOTotals(e = null) {
+                let sourceElement = (e && e.target) ? e.target : e;
+                
                 let subtotal = 0;
                 let gstTotal = 0;
                 
@@ -623,7 +655,10 @@
                 let discountAmount = 0;
 
                 if (discPercentInput && discAmountInput) {
-                    if (sourceInput === discPercentInput) {
+                    if (sourceElement === discPercentInput) lastDiscountAnchor = 'percent';
+                    if (sourceElement === discAmountInput) lastDiscountAnchor = 'amount';
+
+                    if (lastDiscountAnchor === 'percent') {
                         const pct = parseFloat(discPercentInput.value) || 0;
                         discountAmount = subtotal * (pct / 100);
                         if (discPercentInput.value !== '') {
@@ -632,24 +667,17 @@
                             discAmountInput.value = '';
                             discountAmount = 0;
                         }
-                    } else if (sourceInput === discAmountInput) {
+                    } else {
                         discountAmount = parseFloat(discAmountInput.value) || 0;
                         if (subtotal > 0 && discAmountInput.value !== '') {
                             discPercentInput.value = ((discountAmount / subtotal) * 100).toFixed(2);
                         } else {
                             discPercentInput.value = '';
                         }
-                    } else {
-                        discountAmount = parseFloat(discAmountInput.value) || 0;
-                        if (subtotal > 0 && discAmountInput.value !== '') {
-                            discPercentInput.value = ((discountAmount / subtotal) * 100).toFixed(2);
-                        } else if (discPercentInput.value !== '') {
-                            const pct = parseFloat(discPercentInput.value) || 0;
-                            discountAmount = subtotal * (pct / 100);
-                            discAmountInput.value = discountAmount.toFixed(2);
-                        }
                     }
                 }
+
+
                 
                 const roundOffInput = document.getElementById('po-round-off');
                 const roundOffAmount = parseFloat(roundOffInput?.value) || 0;
@@ -705,13 +733,8 @@
                 const metalTypeContainer = document.getElementById('ord-metal-type-container');
 
                 if (poCategoryContainer) poCategoryContainer.style.display = 'block';
-                
-                const designSubCategoryContainer = document.getElementById('ord-design-sub-category-container');
-                const designSubCatEl = document.getElementById('ord-design-sub-category');
 
                 if (ordCategory && ordCategory.value === 'Design') {
-                    if (designSubCategoryContainer) designSubCategoryContainer.style.display = 'block';
-                    if (designSubCatEl) designSubCatEl.required = true;
                     if (metalTypeContainer) metalTypeContainer.style.display = 'none';
                     if (document.getElementById('ord-asset-type-container')) document.getElementById('ord-asset-type-container').style.display = 'none';
                     document.getElementById('ord-main-metal-type').required = false;
@@ -719,19 +742,17 @@
                     document.querySelectorAll('.design-wt-col, .design-wt-cell').forEach(el => el.style.display = 'table-cell');
                     document.querySelectorAll('.item-details-col, .item-details-cell').forEach(el => el.style.display = 'table-cell');
                     document.querySelectorAll('.qty-col, .qty-cell').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('.po-design-subcat').forEach(el => { el.style.display = 'block'; el.required = true; });
                     
                     document.querySelectorAll('.po-qty').forEach(el => { el.required = false; if(!el.value) el.value = '1'; });
                     document.querySelectorAll('.po-desc').forEach(el => { 
                         el.required = false; 
-                        if(!el.value || el.value === 'Design Item') el.value = designSubCatEl?.value || 'Design Item'; 
                     });
                     
-                    const showSize = designSubCatEl && ['Ring', 'Bangle', 'Bracelet'].includes(designSubCatEl.value);
-                    document.querySelectorAll('.design-size-col, .design-size-cell').forEach(el => el.style.display = showSize ? 'table-cell' : 'none');
+                    document.querySelectorAll('.design-size-col, .design-size-cell').forEach(el => el.style.display = 'table-cell');
                 } else {
-                    if (designSubCategoryContainer) designSubCategoryContainer.style.display = 'none';
-                    if (designSubCatEl) { designSubCatEl.required = false; designSubCatEl.value = ''; }
                     document.querySelectorAll('.design-wt-col, .design-wt-cell, .design-size-col, .design-size-cell').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('.po-design-subcat').forEach(el => { el.style.display = 'none'; el.required = false; });
                     
                     document.querySelectorAll('.item-details-col, .item-details-cell').forEach(el => el.style.display = 'table-cell');
                     document.querySelectorAll('.qty-col, .qty-cell').forEach(el => el.style.display = 'table-cell');
@@ -766,11 +787,7 @@
                     toggleTypeDetails();
                 });
             }
-            if (document.getElementById('ord-design-sub-category')) {
-                document.getElementById('ord-design-sub-category').addEventListener('change', () => {
-                    toggleTypeDetails();
-                });
-            }
+
 
 
             if (typeSelect) {
@@ -826,6 +843,9 @@
                     return;
                 }
                 if (emptyState) emptyState.style.display = 'none';
+
+                // Sort ascending by date (oldest first)
+                filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 
                 filtered.forEach((rec) => {
                     const index = records.indexOf(rec);
@@ -922,6 +942,8 @@
                                 <button onclick="editRecord(${index})" class="btn-edit" title="Edit">
                                     <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
                                 </button>
+                                ${derivedStatus === 'Payment Pending' ? `
+                                <button onclick="window.location.href='payment-made.html?po=${rec.id}&vendor=${rec.vendor}'" class="action-btn" style="padding:4px 8px; font-size:0.7rem; background:#f0f9ff; color:#0284c7; border:1px solid #bae6fd; border-radius:6px; cursor:pointer;" title="Pay Now">Pay</button>` : ''}
                                 <button onclick="deleteRecord(${index})" class="btn-remove" title="Delete">
                                     <svg viewBox="0 0 448 512" class="del-icon"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path></svg>
                                 </button>
@@ -966,11 +988,13 @@
                 if (document.getElementById('ord-category')) {
                     document.getElementById('ord-category').value = rec.category || '';
                 }
-                if (document.getElementById('ord-design-sub-category')) {
-                    document.getElementById('ord-design-sub-category').value = rec.designSubCategory || '';
+                if (document.getElementById('ord-asset-type')) {
+                    document.getElementById('ord-asset-type').value = rec.assetType || '';
                 }
                 
+                
                 document.getElementById('ord-main-metal-type').value = rec.mainMetalType || '';
+                document.getElementById('ord-paid-through').value = rec.paidThrough || '';
                 document.getElementById('ord-remark').value = rec.remark || '';
                 document.getElementById('ord-status').value = rec.status || 'Open';
 
@@ -991,13 +1015,16 @@
                         desc: rec.product,
                         qty: rec.qty,
                         rate: (parseFloat(rec.amount) / parseFloat(rec.qty)) || 0,
-                        gst: 3
+                        gst: ''
                     });
                 }
 
                 editIndex = index;
                 form.style.display = 'block';
+                editIndex = index;
+                form.style.display = 'block';
                 toggleTypeDetails();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
             window.deleteRecord = function (index) {
@@ -1009,15 +1036,17 @@
                         const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
                         const hasAsset = assets.some(a => a.notes && a.notes.includes(rec.id));
                         if (hasAsset) {
-                            alert("Cannot delete this completed Purchase Order. You must first delete the corresponding auto-created Asset(s) from the Asset Management page.");
-                            return;
+                            if (!confirm("Warning: This completed Purchase Order has auto-generated Assets in Asset Management. Deleting it will leave those assets orphaned. Are you absolutely sure you want to force-delete this order?")) {
+                                return;
+                            }
                         }
                     } else if (rec.category === 'Stock') {
                         const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
                         const hasStock = history.some(h => (h.note && h.note.includes(rec.id)) || (h.details && h.details.includes(rec.id)));
                         if (hasStock) {
-                            alert("Cannot delete this completed Purchase Order. You must first delete the corresponding Stock entry from the Stock Management page.");
-                            return;
+                            if (!confirm("Warning: This completed Purchase Order has already added to your Stock balances. Deleting it will NOT automatically revert your stock balance. Are you absolutely sure you want to force-delete this order?")) {
+                                return;
+                            }
                         }
                     }
                 }
@@ -1052,15 +1081,14 @@
                     rec.items.forEach((it) => {
                         const q = parseInt(it.qty, 10) || 1;
                         for(let k = 0; k < q; k++) {
-                            // Find next ID based on category prefixes (DSG, BG, RG, ER, NK...)
-                            const subCat = rec.designSubCategory || 'Other';
-                            
+                            // Per-item category
+                            let effectiveSubCat = it.designSubCat || 'Other';
                             let prefix = 'DSG';
-                            if (subCat === 'Bangle' || subCat === 'Bracelet') prefix = 'BG';
-                            else if (subCat === 'Ring') prefix = 'RG';
-                            else if (subCat === 'Earring') prefix = 'ER';
-                            else if (subCat === 'Necklace') prefix = 'NK';
-                            else if (subCat === 'Mix') prefix = 'MX';
+                            if (effectiveSubCat === 'Bangle' || effectiveSubCat === 'Bracelet') prefix = 'BG';
+                            else if (effectiveSubCat === 'Ring') prefix = 'RG';
+                            else if (effectiveSubCat === 'Earring') prefix = 'ER';
+                            else if (effectiveSubCat === 'Necklace') prefix = 'NK';
+                            else if (effectiveSubCat === 'Mix') prefix = 'MX';
 
                             let maxIdNum = 0;
                             designs.forEach(d => {
@@ -1080,10 +1108,16 @@
                             if (wt > 0) idStr += `-${wt}`;
                             if (it.designSize) idStr += `-${it.designSize}`;
 
+                            let specificSub = null;
+                            if (effectiveSubCat === 'Ring') {
+                                const descL = String(it.desc || '').toLowerCase();
+                                specificSub = descL.includes('gents') ? 'Gents ring' : 'Ladies ring'; // default
+                            }
+
                             designs.unshift({
                                 id: idStr,
-                                category: subCat === 'Bracelet' ? 'Bangle' : subCat, // Map bracelet to Bangle or keep it? Mapped to subCat.
-                                subCategory: subCat === 'Ring' ? 'Ladies ring' : null, // Default
+                                category: effectiveSubCat === 'Bracelet' ? 'Bangle' : effectiveSubCat,
+                                subCategory: specificSub,
                                 weight: wt,
                                 size: it.designSize || '',
                                 imageUrl: it.detailImageUrl || it.designImageUrl || '',
@@ -1354,30 +1388,6 @@
                 const rows = poItemsBody.querySelectorAll('.po-item-row');
                 try {
                     for (let row of rows) {
-                        const fileInput = row.querySelector('.po-design-photo');
-                        const urlInput = row.querySelector('.po-design-imageUrl');
-                        const statusDiv = row.querySelector('.po-design-status');
-                        
-                        if (fileInput && fileInput.files && fileInput.files.length > 0) {
-                            const file = fileInput.files[0];
-                            statusDiv.textContent = 'Uploading...';
-                            statusDiv.style.color = '#0284c7';
-                            
-                            const fileExt = file.name.split('.').pop();
-                            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-                            const filePath = `uploads/${fileName}`;
-
-                            const { data, error } = await window.supabase.storage.from('designs').upload(filePath, file);
-                            if (error) throw error;
-                            
-                            const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(filePath);
-                            urlInput.value = urlData.publicUrl;
-                            statusDiv.textContent = 'Uploaded ✓';
-                            statusDiv.style.color = '#16a34a';
-                            
-                            fileInput.value = ''; // clear input so we don't upload again if form errors later
-                        }
-
                         // Detailed Image Upload
                         const detailFileInput = row.querySelector('.po-detail-photo');
                         const detailUrlInput = row.querySelector('.po-detail-imageUrl');
@@ -1432,7 +1442,7 @@
                         total: row.querySelector('.po-row-amount').value,
                         designWt: row.querySelector('.po-design-wt')?.value || '',
                         designSize: row.querySelector('.po-design-size')?.value || '',
-                        designImageUrl: row.querySelector('.po-design-imageUrl')?.value || '',
+                        designSubCat: row.querySelector('.po-design-subcat')?.value || '',
                         detailImageUrl: row.querySelector('.po-detail-imageUrl')?.value || ''
                     };
                     items.push(it);
@@ -1470,7 +1480,6 @@
                     billImageUrl: document.getElementById('ord-bill-imageUrl')?.value || '',
                     category: categoryVal,
                     assetType: document.getElementById('ord-asset-type')?.value || 'Other',
-                    designSubCategory: document.getElementById('ord-design-sub-category')?.value || '',
                     
                     discountPercent: dPercent,
                     discountAmount: dAmount,
@@ -1481,17 +1490,60 @@
                     amount: totalAmount.toFixed(2),
                     remark: document.getElementById('ord-remark').value,
                     mainMetalType: mainMetal,
+                    paidThrough: document.getElementById('ord-paid-through').value,
+                    paidAmount: editIndex >= 0 ? (records[editIndex].paidAmount || 0) : (document.getElementById('ord-paid-through').value ? parseFloat(totalAmount) : 0),
                     status: ordStatus
                 };
+
+                // Create Journal Entry if Paid Through is selected
+                if (rec.paidThrough) {
+                    let journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+                    // Remove old record payment journal if editing
+                    if (editIndex >= 0) journals = journals.filter(j => j.id !== 'PMT-' + rec.id);
+                    
+                    journals.push({
+                        id: 'PMT-' + rec.id,
+                        date: rec.date,
+                        reference: rec.id,
+                        notes: `Payment for Purchase ${rec.id} to ${rec.vendor}`,
+                        total: totalAmount,
+                        lines: [
+                            { account: 'Accounts Payable', desc: `Payment for ${rec.id}`, contact: rec.vendor, debit: totalAmount, credit: 0 },
+                            { account: rec.paidThrough, desc: `Payment for ${rec.id}`, contact: rec.vendor, debit: 0, credit: totalAmount }
+                        ],
+                        timestamp: new Date().toISOString()
+                    });
+                    localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+                }
+
+                // Create Purchase Journal Entry (Asset/Inventory/Expense vs Accounts Payable)
+                let journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+                if (editIndex >= 0) journals = journals.filter(j => j.id !== 'PUR-' + rec.id);
+
+                let debitAccount = 'Inventory';
+                if (rec.category === 'Assets') debitAccount = 'Fixed Assets';
+                else if (rec.category === 'Consumables' || rec.category === 'Others') debitAccount = 'Expenses';
+
+                journals.push({
+                    id: 'PUR-' + rec.id,
+                    date: rec.date,
+                    reference: rec.id,
+                    notes: `Purchase ${rec.id} from ${rec.vendor}`,
+                    total: totalAmount,
+                    lines: [
+                        { account: debitAccount, desc: `Purchase ${rec.id}`, contact: rec.vendor, debit: (totalAmount - rowGstSum - ro + da), credit: 0 },
+                        ...(rowGstSum > 0 ? [{ account: 'GST Input Tax', desc: `GST on ${rec.id}`, contact: rec.vendor, debit: rowGstSum, credit: 0 }] : []),
+                        { account: 'Accounts Payable', desc: `Purchase ${rec.id}`, contact: rec.vendor, debit: 0, credit: totalAmount }
+                    ],
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
 
                 if (editIndex >= 0) {
                     records[editIndex] = rec;
                 } else {
                     records.unshift(rec);
                 }
-
-                // Safe check & add for assets/stocks on save
-                syncCompletedPO(rec);
 
                 localStorage.setItem('manti_order_records', JSON.stringify(records));
                 form.style.display = 'none';
@@ -1505,6 +1557,13 @@
             });
 
             renderTable();
+
+            window.addEventListener('DOMContentLoaded', () => {
+                const billPhotoInput = document.getElementById('ord-bill-photo');
+                if (window.attachCropperToInput && billPhotoInput) {
+                    window.attachCropperToInput(billPhotoInput);
+                }
+            });
         });
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>

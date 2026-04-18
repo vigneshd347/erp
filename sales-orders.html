@@ -456,6 +456,9 @@
                 if (emptyState) emptyState.style.display = 'none';
                 if (tableEl) tableEl.style.display = 'table';
 
+                // Sort ascending by date (oldest first)
+                filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+
                 filtered.forEach((rec) => {
                     const index = records.indexOf(rec);
                     const status = rec.status || 'Open';

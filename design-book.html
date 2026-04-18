@@ -141,6 +141,7 @@
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=2"></script>
+    <script src="image-cropper.js"></script>
 </head>
 
 <body>
@@ -324,7 +325,7 @@
                                 <option value="Bangle">Bangle</option>
                                 <option value="Earring">Earring</option>
                                 <option value="Necklace">Necklace</option>
-                                <option value="Mix">Mix</option>
+                                <option value="Mix">Item details match</option>
                             </select>
                         </div>
                         <div style="flex: 1;" id="subcat-container">
@@ -481,8 +482,21 @@
             updateDynamicDesignId();
         }
 
-        function previewImage(input) {
+        async function previewImage(input) {
             if (input.files && input.files[0]) {
+                let file = input.files[0];
+                try {
+                    if (window.openCropper) {
+                        file = await window.openCropper(file, NaN);
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        input.files = dataTransfer.files;
+                    }
+                } catch (err) {
+                    input.value = '';
+                    return; // Cancelled
+                }
+
                 var reader = new FileReader();
                 reader.onload = function(e) {
                     const preview = document.getElementById('design-preview');
@@ -490,7 +504,7 @@
                     preview.style.display = 'inline-block';
                     document.getElementById('design-existing-image').value = ''; // They are selecting a new one
                 }
-                reader.readAsDataURL(input.files[0]);
+                reader.readAsDataURL(file);
             }
         }
 
@@ -678,7 +692,7 @@
             
             const treeData = JSON.parse(localStorage.getItem('manti_trees') || '[]');
 
-            filtered.forEach(d => {
+            filtered.forEach((d, index) => {
                 let usageCount = 0;
                 treeData.forEach(t => {
                     if (t.designs) {
@@ -687,6 +701,23 @@
                         });
                     }
                 });
+
+                let poInfo = '';
+                if (d._sourcePO) {
+                    let poBillUrl = null;
+                    const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+                    const sourcePO = orders.find(o => o.id === d._sourcePO);
+                    if (sourcePO && sourcePO.billImageUrl) {
+                        poBillUrl = sourcePO.billImageUrl;
+                    }
+                    
+                    poInfo = `
+                        <div class="meta-item" style="border-left: 1px dashed #e2e8f0; padding-left: 16px; margin-left: 16px;">
+                            <span class="meta-label">Source PO</span>
+                            <span class="meta-value" style="display:flex; align-items:center;">${d._sourcePO} ${poBillUrl ? `<a href="${poBillUrl}" target="_blank" style="margin-left:8px; font-size:0.75rem; color:#3b82f6; text-decoration:none; background:#eff6ff; padding:2px 6px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="paperclip" style="width:10px;height:10px;"></i> Bill</a>` : ''}</span>
+                        </div>
+                    `;
+                }
 
                 const card = document.createElement('div');
                 card.className = 'design-card';
@@ -699,7 +730,11 @@
                     </div>
                     <div class="design-info">
                         <div>
-                            <div class="design-id">${d.id}</div>
+                            <div class="design-id" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                <span style="background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.75rem;">#${index + 1}</span>
+                                ${d.id}
+                                ${d._sourcePO ? `<span style="background: #dbeafe; color: #1d4ed8; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.68rem;">${d._sourcePO}</span>` : ''}
+                            </div>
                             <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 700;">${d.category}</h3>
                             ${d.subCategory ? `<p style="margin: 4px 0 0; font-size: 0.8rem; color: #64748b;">${d.subCategory}</p>` : ''}
                         </div>
@@ -713,11 +748,16 @@
                                 <span class="meta-label">Weight</span>
                                 <span class="meta-value">${parseFloat(d.weight).toFixed(2)} g</span>
                             </div>
-                            ${d.size ? `
+                            ${(['Ring', 'Bangle', 'Bracelet'].includes(d.category)) || d.size ? `
                             <div class="meta-item">
                                 <span class="meta-label">Size</span>
-                                <span class="meta-value">${d.size}</span>
+                                <span class="meta-value">${d.size || '—'}</span>
                             </div>` : ''}
+                            <div class="meta-item">
+                                <span class="meta-label">Purchase Val</span>
+                                <span class="meta-value" style="color: #059669; font-weight: 700;">₹ ${parseFloat(d.purchaseValue || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                            </div>
+                            ${poInfo}
                         </div>
                     </div>
                     <div class="design-actions">

@@ -1131,8 +1131,7 @@
                         mantiJournals.forEach(j => {
                             if(!j.lines || !isWithinDateFilter(j.date)) return;
                             j.lines.forEach(l => {
-                                if ((l.account || '').toLowerCase() === (acc.name || '').toLowerCase() || 
-                                    (l.account || '').toLowerCase() === 'bank') {
+                                if ((l.account || '').toLowerCase() === (acc.name || '').toLowerCase()) {
                                     bal += (parseFloat(l.debit) || 0) - (parseFloat(l.credit) || 0);
                                 }
                             });
@@ -1249,8 +1248,7 @@
                             journals.forEach(j => {
                                 if(!j.lines) return;
                                 j.lines.forEach(l => {
-                                    if ((l.account || '').toLowerCase() === (acc.name || '').toLowerCase() || 
-                                        (l.account || '').toLowerCase() === 'bank') {
+                                    if ((l.account || '').toLowerCase() === (acc.name || '').toLowerCase()) {
                                         bal += (parseFloat(l.debit) || 0) - (parseFloat(l.credit) || 0);
                                     }
                                 });
@@ -2000,7 +1998,7 @@
                     `;
 
                     const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
-                    const payments = JSON.parse(localStorage.getItem('manti_payments_made')) || [];
+                    const journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
                     const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
 
                     let revenue = 0;
@@ -2016,9 +2014,40 @@
                         else if (o.type === 'Purchase Order') cogs += amt;
                     });
 
-                    payments.forEach(p => {
-                        if (!isWithinDateFilter(p.date)) return;
-                        opExpenses += parseFloat(p.amount) || 0;
+                    // Calculate Operating Expenses from Journals (Debit to Expense Accounts)
+                    const expenseAccountNames = [
+                        'Expenses', 'Salaries', 'Rent', 'Utilities', 'Marketing', 'Office Supplies', 
+                        'Commission Expense', 'Professional Fees', 'Travel Expense', 'Maintenance', 
+                        'Insurance', 'Taxes and Licenses', 'Miscellaneous', 'Telephone & Internet', 
+                        'Advertising', 'Repairs and Maintenance', 'Salary Expense', 'Salaries and Wages',
+                        'Rent Expense', 'Office Expense', 'Freight & Courier', 'Other Expenses'
+                    ];
+                    
+                    journals.forEach(j => {
+                        if (!isWithinDateFilter(j.date)) return;
+                        (j.lines || []).forEach(l => {
+                            const acc = (l.account || '').trim();
+                            if (expenseAccountNames.includes(acc)) {
+                                opExpenses += (parseFloat(l.debit) || 0);
+                            }
+                        });
+                    });
+
+                    // Also include Materials/COGS from Journals into COGS if not covered by POs
+                    const cogsAccountNames = ['Cost of Goods Sold', 'Materials', 'Purchases', 'Purchases Account'];
+                    journals.forEach(j => {
+                        if (!isWithinDateFilter(j.date)) return;
+                        (j.lines || []).forEach(l => {
+                            const acc = (l.account || '').trim();
+                            if (cogsAccountNames.includes(acc)) {
+                                // If it's a purchase record, it might already be in 'cogs' via POs. 
+                                // To avoid double counting, we usually prioritize POs, but if someone just adds a raw journal, we catch it here.
+                                // Logic: If the note includes 'PUR-', it's already counted via orders.
+                                if (!j.id || !j.id.startsWith('PUR-')) {
+                                    cogs += (parseFloat(l.debit) || 0);
+                                }
+                            }
+                        });
                     });
 
                     assets.forEach(ast => {
@@ -2123,16 +2152,26 @@
                     let totalBank = 0;
                     banks.forEach(b => {
                         let bal = parseFloat(b.openingBalance) || 0;
+                        const isLiability = (b.type === 'Credit Card' || b.type === 'Other');
+                        
                         journals.forEach(j => {
                             if(!j.lines) return;
                             j.lines.forEach(l => {
-                                if ((l.account || '').toLowerCase() === (b.name || '').toLowerCase() || 
-                                    (l.account || '').toLowerCase() === 'bank') {
-                                    bal += (parseFloat(l.debit) || 0) - (parseFloat(l.credit) || 0);
+                                if ((l.account || '').toLowerCase() === (b.name || '').toLowerCase()) {
+                                    const deb = parseFloat(l.debit) || 0;
+                                    const cre = parseFloat(l.credit) || 0;
+                                    if (isLiability) {
+                                        bal += (cre - deb);
+                                    } else {
+                                        bal += (deb - cre);
+                                    }
                                 }
                             });
                         });
-                        totalBank += bal;
+                        
+                        // For Valuation report, we subtract liability 'due' amounts from the net worth
+                        if (isLiability) totalBank -= bal;
+                        else totalBank += bal;
                     });
 
                     // 2. Fixed Assets
@@ -2253,7 +2292,17 @@
                         }
                     });
 
-                    const grandTotal = totalBank + totalAssets + totalInv + totalReceivables;
+                    // 5. Accounts Payable (Unpaid Purchases/Bills)
+                    let totalPayables = 0;
+                    journals.forEach(j => {
+                        (j.lines || []).forEach(l => {
+                            if (l.account === 'Accounts Payable') {
+                                totalPayables += (parseFloat(l.credit) || 0) - (parseFloat(l.debit) || 0);
+                            }
+                        });
+                    });
+
+                    const grandTotal = (totalBank + totalAssets + totalInv + totalReceivables) - totalPayables;
 
                     reportBody.innerHTML = `
                         <tr style="background: #f8fafc; font-weight: 700;">
@@ -2273,6 +2322,14 @@
                         </tr>
                         
                         <tr style="background: #f8fafc; font-weight: 700; margin-top: 10px;">
+                            <td colspan="2">CURRENT LIABILITIES</td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left: 30px; color: var(--danger);">Accounts Payable (Unpaid Bills)</td>
+                            <td style="text-align: right; color: var(--danger); font-weight: 600;">(${totalPayables.toLocaleString('en-IN', {minimumFractionDigits: 2})})</td>
+                        </tr>
+
+                        <tr style="background: #f8fafc; font-weight: 700; margin-top: 10px;">
                             <td colspan="2">FIXED ASSETS</td>
                         </tr>
                         <tr>
@@ -2281,7 +2338,7 @@
                         </tr>
 
                         <tr style="background: #e0f2fe; color: #0284c7; font-weight: 800; font-size: 1.1rem; border-top: 3px double #0284c7;">
-                            <td>TOTAL BUSINESS VALUATION</td>
+                            <td>NET BUSINESS VALUATION (Equity)</td>
                             <td style="text-align: right;">${grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
                     `;

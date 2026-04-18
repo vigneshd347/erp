@@ -84,6 +84,7 @@
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=2"></script>
+    <script src="image-cropper.js"></script>
 </head>
 
 <body>
@@ -259,7 +260,12 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <!-- Paid Through Field Removed for Accounts Payable workflow -->
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Paid Through</label>
+                                    <select id="exp-paid-through" class="input-wrapper" style="margin-top:0; width: 100%; height: 46px; padding: 0.75rem 1rem; box-sizing: border-box; border-color: #d1d5db;">
+                                        <option value="">Accounts Payable (Pay Later)</option>
+                                        <!-- Bank/Cash options will be populated by JS -->
+                                    </select>
+                                    <p style="font-size: 0.7rem; color: #64748b; margin-top: 4px;">Select to record immediate payment from Bank/Cash.</p>
                                 </div>
                             </div>
                         </section>
@@ -380,7 +386,28 @@
             document.getElementById('exp-date').valueAsDate = new Date();
             expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
             
-            // Paid Through dropdown logic removed. Expenses now route to Accounts Payable by default.
+            // Populate Paid Through dropdown dynamically from Bank Accounts
+            const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
+            const paidThroughSelect = document.getElementById('exp-paid-through');
+            if (paidThroughSelect) {
+                paidThroughSelect.innerHTML = '<option value="">Accounts Payable (Pay Later)</option>';
+                
+                let cashGroup = document.createElement('optgroup');
+                cashGroup.label = "Cash Accounts";
+                let bankGroup = document.createElement('optgroup');
+                bankGroup.label = "Bank & Credit Cards";
+
+                bankAccounts.forEach(acc => {
+                    const opt = document.createElement('option');
+                    opt.value = acc.name;
+                    opt.textContent = acc.name;
+                    if (acc.type === 'Cash') cashGroup.appendChild(opt);
+                    else bankGroup.appendChild(opt);
+                });
+
+                if (cashGroup.children.length > 0) paidThroughSelect.appendChild(cashGroup);
+                if (bankGroup.children.length > 0) paidThroughSelect.appendChild(bankGroup);
+            }
 
             // Populate Name/Business list from KYC records
             const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
@@ -490,8 +517,8 @@
                 return;
             }
 
-            // Sort by date descending
-            const sorted = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+            // Sort by date ascending (oldest first)
+            const sorted = [...expenses].sort((a,b) => new Date(a.date) - new Date(b.date));
 
             sorted.forEach(exp => {
                 const tr = document.createElement('tr');
@@ -626,8 +653,8 @@
                 gstPercent: null, // Legacy field
                 gstAmount: gstAmount > 0 ? gstAmount : null,
                 total: total,
-                paidThrough: existingExp && existingExp.paidThrough ? existingExp.paidThrough : '', // Legacy retention
-                paidAmount: window.editingExpenseId ? (existingExp.paidAmount !== undefined ? existingExp.paidAmount : total) : 0,
+                paidThrough: document.getElementById('exp-paid-through').value,
+                paidAmount: window.editingExpenseId ? (existingExp.paidAmount !== undefined ? existingExp.paidAmount : total) : (document.getElementById('exp-paid-through').value ? total : 0),
                 vendor: vendor,
                 reference: ref,
                 notes: notes,
@@ -665,7 +692,7 @@
                 lines: [
                     { account: account, desc: notes, contact: vendor, debit: amount, credit: 0 },
                     ...(gstAmount > 0 ? [{ account: 'GST Input Tax', desc: `GST on Expenses`, contact: vendor, debit: gstAmount, credit: 0 }] : []),
-                    { account: (existingExp && existingExp.paidThrough ? existingExp.paidThrough : 'Accounts Payable'), desc: notes, contact: vendor, debit: 0, credit: total }
+                    { account: (expenseRecord.paidThrough || 'Accounts Payable'), desc: notes, contact: vendor, debit: 0, credit: total }
                 ],
                 timestamp: new Date().toISOString()
             });
@@ -703,6 +730,7 @@
             
             document.getElementById('exp-date').value = exp.date;
             document.getElementById('exp-account').value = exp.account || '';
+            document.getElementById('exp-paid-through').value = exp.paidThrough || '';
             document.getElementById('exp-vendor').value = exp.vendor || '';
             document.getElementById('exp-ref').value = exp.reference || '';
             document.getElementById('exp-notes').value = exp.notes || '';
@@ -748,6 +776,13 @@
                 renderExpensesTable();
             }
         };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const expBill = document.getElementById('exp-bill');
+            if (window.attachCropperToInput && expBill) {
+                window.attachCropperToInput(expBill);
+            }
+        });
     </script>
 </body>
 </html>

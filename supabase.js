@@ -168,9 +168,14 @@ async function syncKeyToSupabase(key, data) {
                 const extendedData = {
                     items: o.items || [],
                     category: o.category || '',
+                    designSubCategory: o.designSubCategory || '',
                     assetType: o.assetType || '',
                     mainMetalType: o.mainMetalType || '',
                     billNo: o.billNo || '',
+                    billImageUrl: o.billImageUrl || '',
+                    discountPercent: o.discountPercent || '',
+                    discountAmount: o.discountAmount || '',
+                    roundOff: o.roundOff || '',
                     mcPercent: o.mcPercent || '',
                     mcAmount: o.mcAmount || '',
                     remark: o.remark || '-'
@@ -459,9 +464,14 @@ window.fetchEverythingFromCloud = async function () {
                     unit: o.weight_unit, remark: remark, timestamp: o.created_at,
                     items: extended.items || [],
                     category: extended.category || '',
+                    designSubCategory: extended.designSubCategory || '',
                     assetType: extended.assetType || '',
                     mainMetalType: extended.mainMetalType || '',
                     billNo: extended.billNo || '',
+                    billImageUrl: extended.billImageUrl || '',
+                    discountPercent: extended.discountPercent || '',
+                    discountAmount: extended.discountAmount || '',
+                    roundOff: extended.roundOff || '',
                     mcPercent: extended.mcPercent || '',
                     mcAmount: extended.mcAmount || ''
                 };

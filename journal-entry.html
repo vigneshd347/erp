@@ -325,16 +325,33 @@
         const jBody = document.getElementById('journal-table-body');
         
         function getAccountOptions() {
+            const accounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
+            let bankOptions = '';
+            let creditOptions = '';
+            let otherBankOptions = '';
+
+            accounts.forEach(acc => {
+                const option = `<option value="${acc.name}">${acc.name} (${acc.type})</option>`;
+                if (acc.type === 'Cash') bankOptions += option;
+                else if (acc.type === 'Credit Card') creditOptions += option;
+                else otherBankOptions += option;
+            });
+
+            // Fallback if no accounts created yet
+            if (!bankOptions && !otherBankOptions && !creditOptions) {
+                bankOptions = '<option value="Bank">Bank Account</option><option value="Cash">Petty Cash</option>';
+            }
+
             return `
-                <optgroup label="Assets">
-                    <option value="Bank">Bank Account</option>
-                    <option value="Cash">Petty Cash</option>
+                <optgroup label="Assets (Cash & Bank)">
+                    ${bankOptions}
+                    ${otherBankOptions}
                     <option value="Accounts Receivable">Accounts Receivable</option>
                     <option value="Inventory">Inventory Asset</option>
                 </optgroup>
-                <optgroup label="Liabilities & Equity">
+                <optgroup label="Liabilities (Credit Cards & Loans)">
+                    ${creditOptions}
                     <option value="Accounts Payable">Accounts Payable</option>
-                    <option value="Owner Equity">Owner Equity</option>
                 </optgroup>
                 <optgroup label="Income">
                     <option value="Sales">Sales Account</option>
@@ -346,6 +363,10 @@
                     <option value="Salary Expense">Salary Expense</option>
                     <option value="Office Expense">Office Expense</option>
                     <option value="Freight & Courier">Freight & Courier</option>
+                    <option value="Other Expenses">Other Expenses</option>
+                </optgroup>
+                <optgroup label="Equity">
+                    <option value="Owner Equity">Owner Equity</option>
                 </optgroup>
             `;
         }

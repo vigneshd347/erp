@@ -15,6 +15,7 @@
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=2"></script>
+    <script src="image-cropper.js"></script>
 </head>
 
 <body>
@@ -162,15 +163,26 @@
                         </button>
                         <input type="file" id="staff-photo-input" accept="image/*" style="display:none;"
                             onchange="
-                                const file = this.files[0];
-                                if (file) {
-                                    const reader = new FileReader();
-                                    reader.onload = e => {
-                                        document.getElementById('staff-photo-preview').src = e.target.result;
-                                        document.getElementById('staff-photo-data').value = e.target.result;
-                                    };
-                                    reader.readAsDataURL(file);
+                                async function handleStaffPhoto(input) {
+                                    let file = input.files[0];
+                                    if (file) {
+                                        if (window.openCropper) {
+                                            try {
+                                                file = await window.openCropper(file, 1); // 1:1 square ratio for staff
+                                                const dt = new DataTransfer();
+                                                dt.items.add(file);
+                                                input.files = dt.files;
+                                            } catch(e) { input.value = ''; return; }
+                                        }
+                                        const reader = new FileReader();
+                                        reader.onload = e => {
+                                            document.getElementById('staff-photo-preview').src = e.target.result;
+                                            document.getElementById('staff-photo-data').value = e.target.result;
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
                                 }
+                                handleStaffPhoto(this);
                             ">
                         <input type="hidden" id="staff-photo-data">
                     </div>
