@@ -1455,7 +1455,11 @@
                 const dPercent = document.getElementById('po-discount-percent')?.value || '';
                 const dAmount = document.getElementById('po-discount-amount')?.value || '';
                 const da = parseFloat(dAmount) || 0;
-                let totalAmount = rowSumWithoutGst - da + rowGstSum;
+                
+                const roundOffInputStr = document.getElementById('po-round-off')?.value || '';
+                const ro = parseFloat(roundOffInputStr) || 0;
+                
+                let totalAmount = rowSumWithoutGst - da + rowGstSum + ro;
 
                 const rec = {
                     id: document.getElementById('ord-id').value || generateOrderId('Purchase Order'),
@@ -1471,7 +1475,7 @@
                     
                     discountPercent: dPercent,
                     discountAmount: dAmount,
-                    roundOff: roundOff,
+                    roundOff: roundOffInputStr,
 
                     items: items,
                     qty: totalQty,
