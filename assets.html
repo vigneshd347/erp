@@ -70,7 +70,7 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
-                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments</a>
                         <a href="expenses.html" class="nav-item nested ">Expenses</a>
                     </div>
                 </div>
@@ -117,9 +117,9 @@
         <!-- Main Content -->
         <main class="main-content" style="flex: 1; padding: 2rem;">
             <header class="generator-header">
-                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                <div class="header-content header-flex">
                     <a href="index.html">
-                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                        <img src="Asset 23.png" alt="Manti Logo" class="header-logo">
                     </a>
                     <div>
                         <h1>Asset Management</h1>
@@ -249,6 +249,13 @@
                         <textarea id="a-notes" rows="3" placeholder="Model number, warranty info, etc..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
                     </div>
 
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Asset Image (Optional)</label>
+                        <input type="file" id="a-photo" accept="image/*" style="width: 100%; font-size: 0.8rem; padding: 6px; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="hidden" id="a-imageUrl">
+                        <div id="a-photo-status" style="font-size: 0.75rem; color: #0284c7; font-weight: 600; margin-top: 4px;"></div>
+                    </div>
+
                     <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
                         <button type="button" id="delete-asset" class="btn-text" style="display: none; color: var(--danger); font-weight: 600; text-decoration: underline;">Delete Asset</button>
                         <div style="display: flex; gap: 10px; margin-left: auto;">
@@ -341,7 +348,14 @@
                             <td style="text-align: center; ${cbColDisplay}">${hasCheckbox}</td>
                             <td>${index + 1}</td>
                             <td>${a.date}</td>
-                            <td style="text-align: left; padding-left: 15px;"><strong>${a.name}</strong><br><span style="font-size:0.75rem; color:#666;">ID: ${a.id}</span></td>
+                            <td style="text-align: left; padding-left: 15px;">
+                                <div style="display:flex; align-items:flex-start; gap:12px;">
+                                    ${a.imageUrl ? `<a href="${a.imageUrl}" target="_blank"><img src="${a.imageUrl}" style="width:40px; height:40px; border-radius:4px; object-fit:cover; border:1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" title="View Image"></a>` : ''}
+                                    <div>
+                                        <strong>${a.name}</strong><br><span style="font-size:0.75rem; color:#666;">ID: ${a.id}</span>
+                                    </div>
+                                </div>
+                            </td>
                             <td>${a.category}</td>
                             <td>${a.value ? '₹ ' + parseFloat(a.value).toFixed(2) : '-'}</td>
                             <td><strong>${displayCurrentValue}</strong></td>
@@ -506,6 +520,11 @@
                 document.getElementById('asset-id').value = '';
                 document.getElementById('modal-title').textContent = 'Add New Asset';
                 document.getElementById('a-date').valueAsDate = new Date();
+                
+                document.getElementById('a-imageUrl').value = '';
+                document.getElementById('a-photo').value = '';
+                document.getElementById('a-photo-status').textContent = '';
+                
                 btnDelete.style.display = 'none';
                 modal.style.display = 'flex';
             });
@@ -525,6 +544,10 @@
                 document.getElementById('a-depreciation').value = asset.depreciation || '';
                 document.getElementById('a-paidthrough').value = asset.paidThrough !== undefined ? asset.paidThrough : 'Bank';
                 document.getElementById('a-notes').value = asset.notes || '';
+                
+                document.getElementById('a-imageUrl').value = asset.imageUrl || '';
+                document.getElementById('a-photo').value = '';
+                document.getElementById('a-photo-status').textContent = asset.imageUrl ? 'Image previously uploaded' : '';
                 
                 document.getElementById('modal-title').textContent = 'Edit Asset';
                 btnDelete.style.display = 'inline-block';
@@ -577,7 +600,8 @@
                     value: document.getElementById('a-value').value,
                     depreciation: document.getElementById('a-depreciation').value,
                     paidThrough: document.getElementById('a-paidthrough').value,
-                    notes: document.getElementById('a-notes').value.trim()
+                    notes: document.getElementById('a-notes').value.trim(),
+                    imageUrl: document.getElementById('a-imageUrl').value
                 };
 
                 if (isEdit) {
@@ -620,6 +644,32 @@
                 closeModal();
                 loadAssets();
             });
+
+            // File upload listener
+            const photoInput = document.getElementById('a-photo');
+            if (photoInput) {
+                photoInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const statusDiv = document.getElementById('a-photo-status');
+                    statusDiv.textContent = 'Uploading...';
+                    statusDiv.style.color = '#0284c7';
+                    try {
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `asset_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                        const { data, error } = await window.supabase.storage.from('designs').upload(`uploads/${fileName}`, file);
+                        if (error) throw error;
+                        const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(`uploads/${fileName}`);
+                        document.getElementById('a-imageUrl').value = urlData.publicUrl;
+                        statusDiv.textContent = 'Uploaded ✓';
+                        statusDiv.style.color = '#16a34a';
+                    } catch(err) {
+                        console.error(err);
+                        statusDiv.textContent = 'Upload Failed';
+                        statusDiv.style.color = '#dc2626';
+                    }
+                });
+            }
 
             // Initial Load
             loadAssets();

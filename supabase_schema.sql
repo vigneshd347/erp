@@ -331,3 +331,12 @@ CREATE POLICY "Public Read Access" ON storage.objects FOR SELECT USING (bucket_i
 CREATE POLICY "Public Insert Access" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'designs');
 CREATE POLICY "Public Update Access" ON storage.objects FOR UPDATE USING (bucket_id = 'designs') WITH CHECK (bucket_id = 'designs');
 CREATE POLICY "Public Delete Access" ON storage.objects FOR DELETE USING (bucket_id = 'designs');
+
+-- 19. Storage Bucket for Expense Bills & Invoices
+INSERT INTO storage.buckets (id, name, public) VALUES ('bills', 'bills', true) ON CONFLICT (id) DO NOTHING;
+
+-- Storage Objects Policies for 'bills' bucket
+CREATE POLICY "Public Read Access Bills" ON storage.objects FOR SELECT USING (bucket_id = 'bills');
+CREATE POLICY "Public Insert Access Bills" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'bills');
+CREATE POLICY "Public Update Access Bills" ON storage.objects FOR UPDATE USING (bucket_id = 'bills') WITH CHECK (bucket_id = 'bills');
+CREATE POLICY "Public Delete Access Bills" ON storage.objects FOR DELETE USING (bucket_id = 'bills');

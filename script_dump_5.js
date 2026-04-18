@@ -1,411 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manti ERP - Orders & Purchases</title>
-    <link rel="stylesheet" href="style.css?v=17">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Supabase Cloud Sync -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=2"></script>
-</head>
-
-<body>
-    <div class="dashboard-container">
-        <!-- Sidebar / Navigation -->
-                <aside class="sidebar">
-            <div class="sidebar-logo">
-                <img src="Asset 23.png" alt="Manti Logo">
-                <span>Manti ERP</span>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="index.html" class="nav-item ">
-                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
-                    <span class="label">Dashboard</span>
-                </a>
-                
-                <div class="nav-group ">
-                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
-                        <div class="icon"><i data-lucide="box"></i></div>
-                        <span class="label">Items</span>
-                        <i data-lucide="chevron-down" class="chevron"></i>
-                    </div>
-                    <div class="nav-group-content">
-                        <a href="inventory.html" class="nav-item nested ">Inventory</a>
-                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
-                        <a href="design-book.html" class="nav-item nested ">Design Book</a>
-                                            <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
-</div>
-                </div>
-
-                <a href="assets.html" class="nav-item">
-                    <div class="icon"><i data-lucide="hard-drive"></i></div>
-                    <span class="label">Asset Management</span>
-                </a>
-
-                <div class="nav-group ">
-                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
-                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
-                        <span class="label">Sales</span>
-                        <i data-lucide="chevron-down" class="chevron"></i>
-                    </div>
-                    <div class="nav-group-content">
-                        <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
-                        <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
-                        <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
-                    </div>
-                </div>
-
-                <div class="nav-group">
-                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
-                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
-                        <span class="label">Purchases</span>
-                        <i data-lucide="chevron-down" class="chevron"></i>
-                    </div>
-                    <div class="nav-group-content">
-                        <a href="purchases.html" class="nav-item nested">Purchase Orders</a>
-                        <a href="payment-made.html" class="nav-item nested ">Payments</a>
-                        <a href="expenses.html" class="nav-item nested ">Expenses</a>
-                    </div>
-                </div>
-
-                <div class="nav-group ">
-                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
-                        <div class="icon"><i data-lucide="briefcase"></i></div>
-                        <span class="label">Accountant</span>
-                        <i data-lucide="chevron-down" class="chevron"></i>
-                    </div>
-                    <div class="nav-group-content">
-                        <a href="banking.html" class="nav-item nested ">Banking</a>
-                        <a href="journal-entry.html" class="nav-item nested ">Manual Journals</a>
-                    </div>
-                </div>
-                
-                <a href="staff.html" class="nav-item">
-                    <div class="icon"><i data-lucide="users"></i></div>
-                    <span class="label">Staff</span>
-                </a>
-                <a href="reports.html" class="nav-item ">
-                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
-                    <span class="label">Reports</span>
-                </a>
-                <a href="admin.html" class="nav-item ">
-                    <div class="icon"><i data-lucide="settings"></i></div>
-                    <span class="label">Settings</span>
-                </a>
-            </nav>
-
-            <div class="sidebar-user">
-                <div class="user-avatar">
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
-                </div>
-                <div class="user-info">
-                    <span class="name">Admin User</span>
-                    <span class="role">Administrator</span>
-                </div>
-            </div>
-        </aside>
-
-        <main class="main-content" style="flex: 1; padding: 2.5rem;">
-            <header class="content-header">
-                <div class="header-content">
-                    <h1>Purchase Order</h1>
-                </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                </div>
-            </header>
-
-            <div id="po-kpi-bar" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
-                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
-                    <div style="width:36px;height:36px;border-radius:8px;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;"><i data-lucide="shopping-cart" style="width:18px;height:18px;"></i></div>
-                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Total POs</div><div id="kpi-po-total" style="font-size:1.3rem;font-weight:800;color:#111827;">—</div></div>
-                </div>
-                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
-                    <div style="width:36px;height:36px;border-radius:8px;background:#fef9c3;color:#ca8a04;display:flex;align-items:center;justify-content:center;"><i data-lucide="clock" style="width:18px;height:18px;"></i></div>
-                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Open</div><div id="kpi-po-open" style="font-size:1.3rem;font-weight:800;color:#ca8a04;">—</div></div>
-                </div>
-                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
-                    <div style="width:36px;height:36px;border-radius:8px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;"><i data-lucide="check-circle" style="width:18px;height:18px;"></i></div>
-                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Completed</div><div id="kpi-po-completed" style="font-size:1.3rem;font-weight:800;color:#16a34a;">—</div></div>
-                </div>
-                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
-                    <div style="width:36px;height:36px;border-radius:8px;background:#fae8ff;color:#9333ea;display:flex;align-items:center;justify-content:center;"><i data-lucide="package" style="width:18px;height:18px;"></i></div>
-                    <div><div style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Asset POs</div><div id="kpi-po-assets" style="font-size:1.3rem;font-weight:800;color:#9333ea;">—</div></div>
-                </div>
-            </div>
-
-            <form id="order-form" class="invoice-form"
-                style="margin-bottom: 5rem; display: none; background: #fbfbfc; padding: 0; border-radius: 12px; border: 1px solid var(--border); position: relative;">
-                
-                <div style="padding: 2rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1.5rem;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="background: #008cd1; color: white; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🛒</div>
-                            <h2 style="margin: 0; color: #1f2937;">New Purchase Order</h2>
-                        </div>
-                    </div>
-
-                    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
-                        <section class="form-section">
-                            <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Supplier Information</h3>
-                            <div class="field-group">
-                                <div style="margin-bottom: 1rem;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Supplier Name <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-vendor" class="input-wrapper" required style="width: 100%; border-color: #d1d5db;">
-                                        <option value="" disabled selected>Select Supplier</option>
-                                        <!-- Dynamic options -->
-                                    </select>
-                                </div>
-                                <div style="margin-bottom: 1rem;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Bill No. / Reference</label>
-                                    <input type="text" id="ord-bill-no" placeholder="e.g. INV-123" class="input-wrapper" style="width: 100%; border-color: #d1d5db;">
-                                </div>
-                                <div style="margin-bottom: 1rem;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Bill Image / Document</label>
-                                    <div id="ord-bill-preview-container" style="display: none; margin-bottom: 8px;">
-                                        <img id="ord-bill-preview" src="" style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #d1d5db; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                                    </div>
-                                    <input type="file" id="ord-bill-photo" accept="image/*" class="input-wrapper" style="font-size: 0.8rem; width: 100%; margin-bottom: 4px; padding: 6px;" title="Upload Bill Image">
-                                    <input type="hidden" id="ord-bill-imageUrl" value="">
-                                    <div id="ord-bill-status" style="font-size: 0.75rem; color: #0284c7; font-weight: 600;"></div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section class="form-section">
-                            <h3 style="color: #6b7280; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1.5rem;">Order Details</h3>
-                            <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div>
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Purchase Order# <span style="color:#ef4444;">*</span></label>
-                                    <input type="text" id="ord-id" readonly style="background-color: #f3f4f6; border-color: #d1d5db; font-weight: 700; color: #008cd1;">
-                                </div>
-                                <div>
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">PO Date <span style="color:#ef4444;">*</span></label>
-                                    <input type="date" id="ord-date" required style="border-color: #d1d5db;">
-                                </div>
-                                <div>
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Expected Delivery Date</label>
-                                    <input type="date" id="ord-due-date" required style="border-color: #d1d5db;">
-                                </div>
-                                <div id="po-category-container">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Category <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-category" class="input-wrapper" style="border-color: #d1d5db;">
-                                        <option value="" disabled selected>Select Category</option>
-                                        <option value="Stock">1. Stock</option>
-                                        <option value="Assets">2. Assets</option>
-                                        <option value="Consumables">3. Consumables</option>
-                                        <option value="Others">4. Others</option>
-                                        <option value="Design">5. Design</option>
-                                    </select>
-                                </div>
-                                <div id="ord-design-sub-category-container" style="display: none; grid-column: span 2;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Design Sub Category <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-design-sub-category" class="input-wrapper" style="border-color: #d1d5db;">
-                                        <option value="" disabled selected>Select Sub Category</option>
-                                        <option value="Ring">1. Ring</option>
-                                        <option value="Bangle">2. Bangle</option>
-                                        <option value="Earring">3. Earrings</option>
-                                        <option value="Necklace">4. Necklace</option>
-                                        <option value="Bracelet">5. Bracelet</option>
-                                        <option value="Mix">6. Mix</option>
-                                    </select>
-                                </div>
-                                <div id="ord-asset-type-container" style="display: none;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Asset Type <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-asset-type" class="input-wrapper" style="border-color: #d1d5db;">
-                                        <option value="Other">1. Other</option>
-                                        <option value="Machinery">2. Machinery</option>
-                                        <option value="Tools">3. Tools</option>
-                                        <option value="Furniture">4. Furniture</option>
-                                        <option value="Electronics">5. Electronics</option>
-                                    </select>
-                                </div>
-                                <div id="ord-metal-type-container" style="display: none; grid-column: span 2;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Metal Type <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-main-metal-type" class="input-wrapper" style="border-color: #d1d5db;">
-                                        <option value="" disabled selected>Select Metal Type</option>
-                                        <option value="Gold">1. Gold</option>
-                                        <option value="Silver">2. Silver</option>
-                                        <option value="Others">3. others</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <div style="margin-top: 3rem;">
-                        <table data-no-filter="true" style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-                            <thead style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
-                                <tr>
-                                    <th class="item-details-col" style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Item Details</th>
-                                    <th class="design-img-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Design Image</th>
-                                    <th class="design-size-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Size</th>
-                                    <th class="design-wt-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Weight</th>
-                                    <th class="qty-col" style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Quantity</th>
-                                    <th style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Rate</th>
-                                    <th style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">GST %</th>
-                                    <th style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Amount</th>
-                                    <th style="padding: 12px; width: 40px;"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="po-items-body">
-                                <!-- Dynamic Rows -->
-                            </tbody>
-                        </table>
-                        <button type="button" id="add-po-item" class="btn-animated-add" style="margin-top: 15px;">
-                          <span class="add-text">Add New Row</span>
-                          <span class="add-icon-wrap">
-                            <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-                              <line x1="12" x2="12" y1="5" y2="19"></line>
-                              <line x1="5" x2="19" y1="12" y2="12"></line>
-                            </svg>
-                          </span>
-                        </button>
-                    </div>
-
-                    <div style="display: flex; justify-content: flex-end; margin-top: 3rem; gap: 3rem;">
-                        <div style="width: 100%; max-width: 400px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #4b5563;">
-                                <span>Sub Total</span>
-                                <span id="po-sub-total" style="font-weight: 600;">0.00</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #4b5563;">
-                                <span>Discount</span>
-                                <div style="display: flex; gap: 8px;">
-                                    <input type="number" id="po-discount-percent" placeholder="%" step="0.1" min="0" max="100" class="input-wrapper" style="width: 70px; padding: 4px 8px; text-align: right;" oninput="calculatePOTotals(this)">
-                                    <input type="number" id="po-discount-amount" placeholder="₹" step="0.01" min="0" class="input-wrapper" style="width: 100px; padding: 4px 8px; text-align: right;" oninput="calculatePOTotals(this)">
-                                </div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #4b5563;">
-                                <span>GST Total</span>
-                                <span id="po-gst-total" style="font-weight: 600;">0.00</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #4b5563;">
-                                <span>Round Off</span>
-                                <input type="number" id="po-round-off" placeholder="0.00" step="0.01" class="input-wrapper" style="width: 100px; padding: 4px 8px; text-align: right;" oninput="calculatePOTotals()">
-                            </div>
-                            <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 1px solid #eee; margin-top: 12px;">
-                                <strong style="font-size: 1.1rem; color: #111827;">Total (₹)</strong>
-                                <strong id="po-grand-total" style="font-size: 1.2rem; color: var(--primary);">0.00</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 2rem;">
-                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Notes / Remarks</label>
-                        <textarea id="ord-remark" class="input-wrapper" style="width: 100%; min-height: 80px; border-color: #d1d5db;" placeholder="Enter any specific instructions or notes..."></textarea>
-                    </div>
-
-                    <div style="margin-top: 1.5rem;">
-                        <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Status</label>
-                        <select id="ord-status" class="input-wrapper" style="width: 200px; border-color: #d1d5db;">
-                            <option value="Open">Open</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Sticky Footer -->
-                <div style="position: sticky; bottom: 0; background: white; padding: 1rem 2rem; border-top: 1px solid #e5e7eb; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: flex-start; gap: 12px; z-index: 100; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
-                    <button type="submit" class="btn-liquid btn-primary">Save and Send</button>
-                    <button type="button" class="btn-liquid btn-outline" id="cancel-order">Cancel</button>
-                </div>
-
-                <div style="display:none;">
-                    <!-- Obsolete / Hidden SO fields to maintain JS compatibility -->
-                    <select id="ord-type"><option value="Purchase Order">Purchase Order</option></select>
-                    <input type="checkbox" id="ord-is-fixed">
-                    <input type="number" id="ord-mc-percent">
-                    <input type="number" id="ord-mc-amount">
-                </div>
-            </form>
-
-            <!-- PO List section -->
-            <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
-                <!-- Toolbar: Search + Filter Tabs -->
-                <div style="padding:14px 20px; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-                    <!-- Status Filter Tabs -->
-                    <div id="po-filter-tabs" style="display:flex; gap:0; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
-                        <button class="po-tab active" data-filter="All"    onclick="filterPOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:var(--primary); color:#fff; cursor:pointer; transition:all 0.15s;">All</button>
-                        <button class="po-tab"        data-filter="Payment Pending"   onclick="filterPOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-muted); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Payment Pending</button>
-                        <button class="po-tab"        data-filter="Paid" onclick="filterPOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-muted); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Paid</button>
-                        <button class="po-tab"        data-filter="Completed" onclick="filterPOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-muted); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Completed</button>
-                        <button class="po-tab"        data-filter="Cancelled" onclick="filterPOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-muted); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Cancelled</button>
-                    </div>
-
-                    <!-- Search & Actions -->
-                    <div style="display:flex; align-items:center; gap:12px; flex:1; justify-content:flex-end;">
-                        <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:7px 12px; max-width:280px; width:100%;">
-                            <i data-lucide="search" style="width:15px;height:15px;color:#9ca3af;flex-shrink:0;"></i>
-                            <input type="text" id="search-purchases" placeholder="Search orders, suppliers..." 
-                                oninput="filterPOTable()"
-                                style="border:none; background:transparent; outline:none; font-size:0.84rem; color:#374151; width:100%;">
-                        </div>
-                        <button type="button" class="btn-animated-add" id="add-order-btn">
-                          <span class="add-text">New PO</span>
-                          <span class="add-icon-wrap">
-                            <svg class="svg w-8 text-white" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-                              <line x1="12" x2="12" y1="5" y2="19"></line>
-                              <line x1="5" x2="19" y1="12" y2="12"></line>
-                            </svg>
-                          </span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Table -->
-                <table id="orders-table" data-no-filter="true" style="width:100%; border-collapse:collapse;">
-                    <thead>
-                        <tr style="background:#f8fafc;">
-                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">PO #</th>
-                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Date</th>
-                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Supplier</th>
-                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Items</th>
-                            <th style="padding:11px 16px; text-align:right; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Qty</th>
-                            <th style="padding:11px 16px; text-align:right; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Amount</th>
-                            <th style="padding:11px 16px; text-align:center; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Status</th>
-                            <th style="padding:11px 16px; text-align:center; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="orders-body">
-                        <!-- Dynamic rows -->
-                    </tbody>
-                </table>
-
-                <!-- Empty State -->
-                <div id="po-empty-state" style="display:none; text-align:center; padding:48px 24px;">
-                    <div style="width:56px;height:56px;background:#f3f4f6;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-                        <i data-lucide="shopping-cart" style="width:24px;height:24px;color:#9ca3af;"></i>
-                    </div>
-                    <div style="font-size:1rem;font-weight:600;color:#374151;margin-bottom:6px;">No purchase orders found</div>
-                    <div style="font-size:0.85rem;color:#9ca3af;">Click "New Purchase Order" to create your first one.</div>
-                </div>
-            </div>
-
-            <style>
-                .po-tab:hover { filter: brightness(0.93); }
-                #orders-table th { background: transparent; color: #6b7280; border: none; }
-                #orders-table tbody tr { border-bottom: 1px solid #f9fafb; transition: background 0.12s; }
-                #orders-table tbody tr:hover { background: #fafbff; }
-                #orders-table tbody tr:last-child { border-bottom: none; }
-                .po-status-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
-            </style>
-
-        </main>
-    </div>
-
-    <script src="liquid-button.js"></script>
-    <script src="script.js?v=24"></script>
-    <script>
-        let records = [];
+let records = [];
 
         function updatePOKPIs() {
             const pos = records.filter(o => o.type === 'Purchase Order');
@@ -648,14 +241,10 @@
                             discountAmount = subtotal * (pct / 100);
                             discAmountInput.value = discountAmount.toFixed(2);
                         }
-                        }
                     }
                 }
                 
-                const roundOffInput = document.getElementById('po-round-off');
-                const roundOffAmount = parseFloat(roundOffInput?.value) || 0;
-                
-                const grandTotal = subtotal - discountAmount + gstTotal + roundOffAmount;
+                const grandTotal = subtotal - discountAmount + gstTotal;
                 
                 document.getElementById('po-sub-total').textContent = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
                 document.getElementById('po-gst-total').textContent = gstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
@@ -874,6 +463,9 @@
                     }
 
                     // Amount + payment status
+                    const amt = parseFloat(rec.amount || 0);
+                    const paid = parseFloat(rec.paidAmount || 0);
+                    const due = amt - paid;
                     let payBadge = '';
                     if (amt > 0) {
                         if (due <= 0.001) payBadge = `<span style="font-size:0.7rem;color:#16a34a;font-weight:700;"> ✓ Paid</span>`;
@@ -977,10 +569,8 @@
 
                 const discPercentInput = document.getElementById('po-discount-percent');
                 const discAmountInput = document.getElementById('po-discount-amount');
-                const roundOffInput = document.getElementById('po-round-off');
                 if (discPercentInput) discPercentInput.value = rec.discountPercent || '';
                 if (discAmountInput) discAmountInput.value = rec.discountAmount || '';
-                if (roundOffInput) roundOffInput.value = rec.roundOff || '';
 
                 // Reload items into table
                 poItemsBody.innerHTML = '';
@@ -1246,10 +836,8 @@
                 
                 const discPercentInput = document.getElementById('po-discount-percent');
                 const discAmountInput = document.getElementById('po-discount-amount');
-                const roundOffInput = document.getElementById('po-round-off');
                 if (discPercentInput) discPercentInput.value = '';
                 if (discAmountInput) discAmountInput.value = '';
-                if (roundOffInput) roundOffInput.value = '';
 
                 // Reset ID Generation
                 document.getElementById('ord-type').value = 'Purchase Order';
@@ -1471,7 +1059,6 @@
                     
                     discountPercent: dPercent,
                     discountAmount: dAmount,
-                    roundOff: roundOff,
 
                     items: items,
                     qty: totalQty,
@@ -1503,11 +1090,3 @@
 
             renderTable();
         });
-    </script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        lucide.createIcons();
-    </script>
-    <script src="liquid-button.js"></script>
-</body>
-</html>

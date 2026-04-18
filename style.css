@@ -77,6 +77,34 @@ body {
 }
 
 /* Dashboard Styles */
+.header-flex {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-logo {
+    height: 50px;
+    width: auto;
+}
+
+.kyc-form-card {
+    margin-bottom: 3rem;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.form-actions {
+    text-align: right;
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
 .dashboard {
     max-width: 100%;
     margin: 0;
@@ -1984,127 +2012,32 @@ td {
 }
 /* === MOBILE RESPONSIVENESS (Max-Width: 768px) === */
 @media screen and (max-width: 768px) {
-    /* Layout Adjustments */
+    /* Base Font Size Adjustment */
+    html {
+        font-size: 14px !important;
+    }
+
+    /* Mobile Side Navigation Adjustment */
     .dashboard-container {
-        flex-direction: column;
-        margin-left: 0 !important;
+        margin-left: var(--sidebar-width) !important;
     }
     
     .dashboard-container:has(.sidebar:hover) {
-        margin-left: 0;
+        margin-left: var(--sidebar-width) !important;
     }
 
-    /* Fixed Bottom Mobile Navigation */
     .sidebar {
-        position: fixed !important;
-        top: auto !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 70px !important;
-        flex-direction: row !important;
-        border-right: none !important;
-        border-top: 1px solid var(--border) !important;
-        padding: 0 10px !important;
-        z-index: 9999 !important;
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
-        background: white !important;
-        align-items: center !important;
-        box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+        /* When expanding on mobile, overlap instead of pushing content */
+        box-shadow: var(--shadow-lg);
     }
     
-    .sidebar:hover {
-        width: 100vw !important;
-        padding: 0 10px !important;
-    }
-
-    .sidebar-logo, .sidebar-user {
-        display: none !important;
-    }
-
-    .sidebar-nav {
-        flex-direction: row !important;
-        width: max-content !important;
-        gap: 0px !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        align-items: center;
-        height: 100%;
-    }
-
-    .nav-item {
-        flex-direction: column !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 75px !important;
-        min-width: 75px !important; /* Prevent squishing */
-        height: 60px !important;
-        padding: 4px !important;
-        margin: 0 !important; 
-        border-radius: 8px !important;
-        flex-shrink: 0 !important;
-    }
-
-    .nav-item .icon { margin-right: 0 !important; margin-bottom: 4px !important; width: 20px; height: 20px; flex-shrink: 0 !important; }
-    .nav-item .icon i { width: 20px; height: 20px; }
-    .nav-item .label { opacity: 1 !important; display: block !important; font-size: 0.65rem !important; text-align: center !important; font-weight: 500; white-space: nowrap !important; }
-    
-    .nav-group-header .chevron { display: none !important; }
-    .nav-group-header .label { opacity: 1 !important; display: block !important; font-size: 0.65rem !important; text-align: center !important; font-weight: 500; white-space: nowrap !important; }
-    .nav-group-header .icon { margin-right: 0 !important; margin-bottom: 4px !important; width: 20px; height: 20px; flex-shrink: 0 !important; }
-    .nav-group-header .icon i, .nav-group-header .icon svg { width: 20px !important; height: 20px !important; }
-    
-    .nav-group-header {
-        flex-direction: column !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 75px !important;
-        min-width: 75px !important;
-        height: 60px !important;
-        padding: 4px !important;
-        margin: 0 !important; 
-        border-radius: 8px !important;
-        flex-shrink: 0 !important;
-    }
-    
-    /* Mobile Pop-Up Folders */
-    .nav-group { 
-        display: flex; 
-        flex-direction: row; 
-        /* The container itself needs to allow position relative for the popup */
-    }
+    /* Ensure popup folders open to the right of the sidebar on mobile */
     .nav-group.active .nav-group-content { 
-        display: flex !important; 
-        flex-direction: column !important; 
-        position: fixed !important; 
-        bottom: 80px !important; /* Above the tab bar */
-        left: 50% !important; /* Centered loosely, but could overflow if at edges. Let's just fix it left. */
-        left: 10px !important;
-        right: 10px !important;
-        background: white !important; 
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.15), 0 0 0 1px #e2e8f0 !important; 
-        opacity: 1 !important; 
-        width: auto !important; 
-        pointer-events: auto !important;
-        border-radius: 16px !important;
-        padding: 10px !important;
-        z-index: 10000 !important;
-    }
-    .nav-group-content {
-        display: none !important; /* Hidden until active */
-    }
-    .nav-item.nested { 
-        padding: 12px 16px !important; 
-        margin: 4px 0 !important; 
-        background: #f8fafc !important;
-        border-radius: 8px !important;
-        width: 100% !important;
-        flex-direction: row !important;
-        justify-content: center !important;
-        font-size: 0.9rem !important;
-        font-weight: 600 !important;
-        color: var(--primary) !important;
+        position: relative !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding-left: 1rem !important;
+        max-height: max-content !important;
     }
 
     /* Main Content */
@@ -2175,5 +2108,31 @@ td {
 
     .date-filter-group {
         flex-wrap: wrap;
+    }
+    
+    /* Vendor KYC Responsive Adjustments */
+    .header-logo {
+        height: 40px !important;
+    }
+    
+    .header-flex {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    
+    .kyc-form-card {
+        padding: 1rem !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    .form-actions {
+        justify-content: stretch !important;
+        flex-direction: column !important;
+    }
+    
+    .form-actions button {
+        width: 100%;
+        margin-bottom: 0.5rem;
     }
 }

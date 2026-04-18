@@ -197,7 +197,7 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
-                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments</a>
                         <a href="expenses.html" class="nav-item nested ">Expenses</a>
                     </div>
                 </div>
@@ -256,6 +256,7 @@
                         <option value="Bangle">Bangles</option>
                         <option value="Earring">Earrings</option>
                         <option value="Necklace">Necklaces</option>
+                        <option value="Mix">Mix</option>
                     </select>
                     <button class="btn-animated-add" onclick="openDesignModal()">
                       <span class="add-text">Add Design</span>
@@ -323,6 +324,7 @@
                                 <option value="Bangle">Bangle</option>
                                 <option value="Earring">Earring</option>
                                 <option value="Necklace">Necklace</option>
+                                <option value="Mix">Mix</option>
                             </select>
                         </div>
                         <div style="flex: 1;" id="subcat-container">
@@ -341,6 +343,17 @@
                         <div style="flex: 1;" id="size-container">
                             <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Size</label>
                             <input type="text" id="design-size" placeholder="Enter Size (e.g. 14, 2x6)" oninput="updateDynamicDesignId()" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box; background: #f3f4f6;" disabled>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                        <div style="flex: 1;">
+                            <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Purchase Value (₹)</label>
+                            <input type="number" id="design-purchase-value" step="0.01" min="0" placeholder="0.00" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Depreciation (%)</label>
+                            <input type="number" id="design-depreciation" step="0.1" min="0" max="100" placeholder="0.0" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box;">
                         </div>
                     </div>
 
@@ -408,6 +421,7 @@
             else if (cat === 'Ring') prefix = 'RG';
             else if (cat === 'Earring') prefix = 'ER';
             else if (cat === 'Necklace') prefix = 'NK';
+            else if (cat === 'Mix') prefix = 'MX';
 
             let maxId = 0;
             designs.forEach(d => {
@@ -501,6 +515,9 @@
                     document.getElementById('design-weight').value = d.weight;
                     if (d.size) document.getElementById('design-size').value = d.size;
                     
+                    document.getElementById('design-purchase-value').value = d.purchaseValue || '';
+                    document.getElementById('design-depreciation').value = d.depreciation || '';
+                    
                     if (d.imageUrl) {
                         document.getElementById('design-preview').src = d.imageUrl;
                         document.getElementById('design-preview').style.display = 'inline-block';
@@ -513,6 +530,8 @@
                 document.getElementById('design-category').value = '';
                 document.getElementById('design-weight').value = '';
                 document.getElementById('design-size').value = '';
+                document.getElementById('design-purchase-value').value = '';
+                document.getElementById('design-depreciation').value = '';
                 handleCategoryChange(); // Set disabled states
                 updateDynamicDesignId();
             }
@@ -574,6 +593,8 @@
                     subCategory: subCat,
                     weight: parseFloat(document.getElementById('design-weight').value) || 0,
                     size: size,
+                    purchaseValue: parseFloat(document.getElementById('design-purchase-value').value) || null,
+                    depreciation: parseFloat(document.getElementById('design-depreciation').value) || null,
                     imageUrl: imageUrl || ''
                 };
 

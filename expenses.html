@@ -140,7 +140,7 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
-                        <a href="payment-made.html" class="nav-item nested">Payments Made</a>
+                        <a href="payment-made.html" class="nav-item nested">Payments</a>
                         <a href="expenses.html" class="nav-item nested active">Expenses</a>
                     </div>
                 </div>
@@ -259,11 +259,7 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Paid Through <span style="color:#ef4444;">*</span></label>
-                                    <select id="exp-paidthrough" class="input-wrapper" style="margin-top:0; width: 100%; height: 46px; padding: 0.75rem 1rem; box-sizing: border-box; border-color: #d1d5db;" required>
-                                        <option value="">Loading accounts...</option>
-                                    </select>
-                                    <span style="font-size:0.75rem; color:#94a3b8; margin-top:4px; display:block;">Add accounts in <a href="banking.html" style="color:var(--primary);">Banking</a></span>
+                                    <!-- Paid Through Field Removed for Accounts Payable workflow -->
                                 </div>
                             </div>
                         </section>
@@ -319,7 +315,18 @@
                                     <span>GST Amount</span>
                                     <span id="summary-gst" style="font-weight: 600;">₹ 0.00</span>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #4b5563;">
+                                    <span>Discount</span>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="number" id="exp-discount-percent" placeholder="%" step="0.1" min="0" max="100" class="input-wrapper" style="width: 70px; padding: 4px 8px; text-align: right;" oninput="calculateExpenseTotals(this)">
+                                        <input type="number" id="exp-discount-amount" placeholder="₹" step="0.01" min="0" class="input-wrapper" style="width: 100px; padding: 4px 8px; text-align: right;" oninput="calculateExpenseTotals(this)">
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #4b5563;">
+                                    <span>Round Off</span>
+                                    <input type="number" id="exp-round-off" placeholder="0.00" step="0.01" class="input-wrapper" style="width: 100px; padding: 4px 8px; text-align: right;" oninput="calculateExpenseTotals()">
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 1px dashed #cbd5e1; margin-top: 12px;">
                                     <strong style="font-size: 1.1rem; color: #111827;">Grand Total</strong>
                                     <strong id="summary-total" style="font-size: 1.2rem; color: var(--danger);">₹ 0.00</strong>
                                 </div>
@@ -348,6 +355,7 @@
                                 <th style="text-align: right;">Base Amount</th>
                                 <th style="text-align: right;">GST Amt</th>
                                 <th style="text-align: right;">Total</th>
+                                <th style="text-align: center;">Status</th>
                                 <th style="width: 80px; text-align: center;">Action</th>
                             </tr>
                         </thead>
@@ -372,30 +380,7 @@
             document.getElementById('exp-date').valueAsDate = new Date();
             expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
             
-            // Populate Paid Through from actual bank accounts dynamically
-            const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
-            const paidThroughSelect = document.getElementById('exp-paidthrough');
-            paidThroughSelect.innerHTML = '';
-            
-            if (bankAccounts.length === 0) {
-                paidThroughSelect.innerHTML = '<option value="Cash">Petty Cash</option><option value="Bank">Bank Account</option>';
-            } else {
-                let cashGroup = document.createElement('optgroup');
-                cashGroup.label = "Cash Accounts";
-                let bankGroup = document.createElement('optgroup');
-                bankGroup.label = "Bank & Credit Cards";
-
-                bankAccounts.forEach(acc => {
-                    const opt = document.createElement('option');
-                    opt.value = acc.name; // Use exact name globally
-                    opt.textContent = `${acc.name} (${acc.type || 'Bank'})`;
-                    if (acc.type === 'Cash') cashGroup.appendChild(opt);
-                    else bankGroup.appendChild(opt);
-                });
-
-                if (bankGroup.children.length > 0) paidThroughSelect.appendChild(bankGroup);
-                if (cashGroup.children.length > 0) paidThroughSelect.appendChild(cashGroup);
-            }
+            // Paid Through dropdown logic removed. Expenses now route to Accounts Payable by default.
 
             // Populate Name/Business list from KYC records
             const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
@@ -440,7 +425,7 @@
             }
         }
 
-        function calculateExpenseTotals() {
+        function calculateExpenseTotals(sourceInput = null) {
             let totalAmount = 0;
             let totalGstAmount = 0;
 
@@ -459,11 +444,41 @@
                 totalGstAmount += gst;
             });
 
+            const discPercentInput = document.getElementById('exp-discount-percent');
+            const discAmountInput = document.getElementById('exp-discount-amount');
+            const roundOffInput = document.getElementById('exp-round-off');
+            let discountAmount = 0;
+
+            if (discPercentInput && discAmountInput) {
+                if (sourceInput === discPercentInput) {
+                    const pct = parseFloat(discPercentInput.value) || 0;
+                    discountAmount = totalAmount * (pct / 100);
+                    if (discPercentInput.value !== '') discAmountInput.value = discountAmount.toFixed(2);
+                    else { discAmountInput.value = ''; discountAmount = 0; }
+                } else if (sourceInput === discAmountInput) {
+                    discountAmount = parseFloat(discAmountInput.value) || 0;
+                    if (totalAmount > 0 && discAmountInput.value !== '') discPercentInput.value = ((discountAmount / totalAmount) * 100).toFixed(2);
+                    else discPercentInput.value = '';
+                } else {
+                    discountAmount = parseFloat(discAmountInput.value) || 0;
+                    if (totalAmount > 0 && discAmountInput.value !== '') discPercentInput.value = ((discountAmount / totalAmount) * 100).toFixed(2);
+                    else if (discPercentInput.value !== '') {
+                        const pct = parseFloat(discPercentInput.value) || 0;
+                        discountAmount = totalAmount * (pct / 100);
+                        discAmountInput.value = discountAmount.toFixed(2);
+                    }
+                }
+            }
+
+            const roundOffAmount = parseFloat(roundOffInput?.value) || 0;
+
             document.getElementById('summary-subtotal').textContent = `₹ ${totalAmount.toFixed(2)}`;
             document.getElementById('summary-gst').textContent = `₹ ${totalGstAmount.toFixed(2)}`;
-            document.getElementById('summary-total').textContent = `₹ ${(totalAmount + totalGstAmount).toFixed(2)}`;
             
-            return { totalAmount, totalGstAmount };
+            const grandTotal = totalAmount - discountAmount + totalGstAmount + roundOffAmount;
+            document.getElementById('summary-total').textContent = `₹ ${grandTotal.toFixed(2)}`;
+            
+            return { totalAmount, totalGstAmount, grandTotal, discountAmount, roundOffAmount };
         }
 
         function renderExpensesTable() {
@@ -483,6 +498,20 @@
                 const attachmentHtml = exp.billUrl ? `<a href="${exp.billUrl}" target="_blank" title="View Attachment"><i data-lucide="external-link" style="width: 16px; height: 16px; color: #3b82f6;"></i></a>` : '';
                 const gstAmt = parseFloat(exp.gstAmount) || 0;
                 const total = parseFloat(exp.amount) + gstAmt;
+                
+                let paid = parseFloat(exp.paidAmount) || 0;
+                if (exp.paidAmount === undefined && exp.paidThrough && exp.paidThrough.trim() !== '') {
+                    paid = total;
+                }
+                const due = total - paid;
+                let derivedStatus = 'Payment Pending';
+                if (total > 0 && due <= 0.001) derivedStatus = 'Paid';
+                
+                let sc = { bg: '#fee2e2', color: '#ef4444', dot: '#ef4444' };
+                if (derivedStatus === 'Paid') sc = { bg: '#dcfce7', color: '#16a34a', dot: '#16a34a' };
+                
+                const statusHtml = `<span style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; background:${sc.bg};color:${sc.color};"><span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};display:inline-block;"></span>${derivedStatus}</span>`;
+
                 const gstHtml = gstAmt > 0
                     ? `<span style="color:#16a34a; font-weight:600;">₹ ${gstAmt.toLocaleString('en-IN', {minimumFractionDigits:2})}</span><br><span style="font-size:0.75rem;color:#94a3b8;">${exp.gstPercent}%</span>`
                     : '-';
@@ -494,6 +523,7 @@
                     <td style="text-align: right; color: var(--text-main);">₹ ${parseFloat(exp.amount).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
                     <td style="text-align: right;">${gstHtml}</td>
                     <td style="text-align: right; font-weight: 700; color: var(--danger);">₹ ${total.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                    <td style="text-align: center;">${statusHtml}</td>
                     <td style="text-align: center; display: flex; justify-content: center; gap: 8px;">
                         ${attachmentHtml}
                         <button onclick="editExpense('${exp.id}')" class="btn-edit" title="Edit Expense">
@@ -512,13 +542,12 @@
         async function saveExpense() {
             const date = document.getElementById('exp-date').value;
             const account = document.getElementById('exp-account').value;
-            const paidThrough = document.getElementById('exp-paidthrough').value;
             const vendor = document.getElementById('exp-vendor').value.trim();
             const ref = document.getElementById('exp-ref').value;
             const notes = document.getElementById('exp-notes').value;
             const fileInput = document.getElementById('exp-bill');
 
-            const { totalAmount, totalGstAmount } = calculateExpenseTotals();
+            const { totalAmount, totalGstAmount, grandTotal } = calculateExpenseTotals();
             const amount = totalAmount; // Base amount
             const gstAmount = totalGstAmount;
             
@@ -585,7 +614,9 @@
                 }
             }
 
-            const total = amount + gstAmount;
+            const total = grandTotal || (amount + gstAmount); // grandTotal populated from calculateExpenseTotals
+            
+            const existingExp = window.editingExpenseId ? expenses.find(e => e.id === window.editingExpenseId) : null;
             
             const expenseRecord = {
                 id: expId,
@@ -595,12 +626,16 @@
                 gstPercent: null, // Legacy field
                 gstAmount: gstAmount > 0 ? gstAmount : null,
                 total: total,
-                paidThrough: paidThrough,
+                paidThrough: existingExp && existingExp.paidThrough ? existingExp.paidThrough : '', // Legacy retention
+                paidAmount: window.editingExpenseId ? (existingExp.paidAmount !== undefined ? existingExp.paidAmount : total) : 0,
                 vendor: vendor,
                 reference: ref,
                 notes: notes,
                 billUrl: billPubUrl,
-                items: items
+                items: items,
+                discountPercent: document.getElementById('exp-discount-percent')?.value || '',
+                discountAmount: document.getElementById('exp-discount-amount')?.value || '',
+                roundOff: document.getElementById('exp-round-off')?.value || ''
             };
 
             // Record Expense
@@ -630,7 +665,7 @@
                 lines: [
                     { account: account, desc: notes, contact: vendor, debit: amount, credit: 0 },
                     ...(gstAmount > 0 ? [{ account: 'GST Input Tax', desc: `GST on Expenses`, contact: vendor, debit: gstAmount, credit: 0 }] : []),
-                    { account: paidThrough, desc: notes, contact: vendor, debit: 0, credit: total }
+                    { account: (existingExp && existingExp.paidThrough ? existingExp.paidThrough : 'Accounts Payable'), desc: notes, contact: vendor, debit: 0, credit: total }
                 ],
                 timestamp: new Date().toISOString()
             });
@@ -668,7 +703,6 @@
             
             document.getElementById('exp-date').value = exp.date;
             document.getElementById('exp-account').value = exp.account || '';
-            document.getElementById('exp-paidthrough').value = exp.paidThrough || '';
             document.getElementById('exp-vendor').value = exp.vendor || '';
             document.getElementById('exp-ref').value = exp.reference || '';
             document.getElementById('exp-notes').value = exp.notes || '';
@@ -694,6 +728,13 @@
             } else {
                 addExpenseItemRow(); // fallback
             }
+
+            const discPercentInput = document.getElementById('exp-discount-percent');
+            const discAmountInput = document.getElementById('exp-discount-amount');
+            const roundOffInput = document.getElementById('exp-round-off');
+            if (discPercentInput) discPercentInput.value = exp.discountPercent || '';
+            if (discAmountInput) discAmountInput.value = exp.discountAmount || '';
+            if (roundOffInput) roundOffInput.value = exp.roundOff || '';
             
             calculateExpenseTotals();
             window.scrollTo({ top: 0, behavior: 'smooth' });

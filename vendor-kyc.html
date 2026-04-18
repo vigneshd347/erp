@@ -26,9 +26,9 @@
         <!-- Main Content -->
         <main class="invoice-generator">
             <header class="generator-header">
-                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                <div class="header-content header-flex">
                     <a href="index.html">
-                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                        <img src="Asset 23.png" alt="Manti Logo" class="header-logo">
                     </a>
                     <div>
                         <h1>Vendor KYC Database</h1>
@@ -50,9 +50,8 @@
                 </div>
             </header>
 
-            <form id="vendor-form" class="invoice-form"
-                style="margin-bottom: 3rem; display: none; background: white; padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
-                <div class="form-grid" style="grid-template-columns: 1fr; margin-bottom: 2rem;">
+            <form id="vendor-form" class="invoice-form kyc-form-card" style="display: none;">
+                <div class="form-grid" style="margin-bottom: 2rem;">
                     <div class="form-grid">
                         <section class="form-section">
                             <h3>Vendor Info</h3>
@@ -86,8 +85,7 @@
                         </section>
                     </div>
 
-                    <div
-                        style="text-align: right; margin-top: 1.5rem; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+                    <div class="form-actions">
                         <button type="button" class="btn-liquid btn-outline" id="cancel-vendor">Cancel</button>
                         <button type="submit" class="btn-liquid btn-primary">Save Profile</button>
                     </div>

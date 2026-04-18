@@ -70,7 +70,7 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
-                        <a href="payment-made.html" class="nav-item nested ">Payments Made</a>
+                        <a href="payment-made.html" class="nav-item nested ">Payments</a>
                         <a href="expenses.html" class="nav-item nested ">Expenses</a>
                     </div>
                 </div>
@@ -115,9 +115,9 @@
         <!-- Main Content -->
         <main class="main-content" style="flex: 1; padding: 2rem;">
             <header class="generator-header">
-                <div class="header-content" style="display: flex; align-items: center; gap: 20px;">
+                <div class="header-content header-flex">
                     <a href="index.html">
-                        <img src="Asset 23.png" alt="Manti Logo" style="height: 50px; width: auto;">
+                        <img src="Asset 23.png" alt="Manti Logo" class="header-logo">
                     </a>
                     <div>
                         <h1>Tree Making</h1>
@@ -234,9 +234,14 @@
         <div class="premium-modal" style="width: 500px; max-width: 95%;">
             <div class="premium-modal-header">
                 <h2>Tree Designs</h2>
-                <button class="btn-close-modal" onclick="document.getElementById('view-modal-overlay').classList.remove('active')">
-                    <i data-lucide="x"></i>
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-liquid btn-primary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="printTreeDetails()">
+                        <i data-lucide="printer" style="width: 14px; height: 14px; margin-right: 6px;"></i> Print
+                    </button>
+                    <button class="btn-close-modal" onclick="document.getElementById('view-modal-overlay').classList.remove('active')">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
             </div>
             <div class="premium-modal-body" style="max-height: 70vh; overflow-y: auto;" id="view-tree-content">
                 <!-- Data populated via js -->
@@ -820,8 +825,8 @@
                 trees.unshift(newTree); // prepend
             }
 
-            // Sync to ERP_MEMORY so supabase backend processes it
-            window.ERP_MEMORY.set('manti_trees', JSON.stringify(trees));
+            // Sync to standard localStorage so supabase backend catches the event
+            localStorage.setItem('manti_trees', JSON.stringify(trees));
             
             closeTreeModal();
             renderTrees();
@@ -832,7 +837,7 @@
             if(confirm('Are you sure you want to delete this Tree?')) {
                 const updated = trees.filter(t => t.id !== id);
                 trees = updated;
-                window.ERP_MEMORY.set('manti_trees', JSON.stringify(trees));
+                localStorage.setItem('manti_trees', JSON.stringify(trees));
                 renderTrees();
             }
         }
@@ -843,7 +848,10 @@
             );
         }
 
+        let currentViewingTreeIdx = -1;
+
         function viewTree(index) {
+            currentViewingTreeIdx = index;
             const t = trees[index];
             const cont = document.getElementById('view-tree-content');
             let html = `<div style="margin-bottom: 15px;"><strong style="font-size:1.1rem;color:var(--primary);">${t.treeNo}</strong> <span style="color:#64748b;">(${t.date})</span></div>`;
@@ -881,9 +889,95 @@
             html += `</table>`;
             
             if(t.notes) html += `<div style="margin-top:15px;padding:10px;background:#f8fafc;border-radius:6px;font-size:0.85rem;color:#475569;"><strong>Notes:</strong> ${t.notes}</div>`;
-            
+            html += `<div style="margin-top: 20px; text-align: right;">
+                <button onclick="printTreeDetails()" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    <i data-lucide="printer" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;"></i> Print Tree
+                </button>
+            </div>`;
             cont.innerHTML = html;
             document.getElementById('view-modal-overlay').classList.add('active');
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function printTreeDetails() {
+            if (currentViewingTreeIdx === -1) return;
+            const t = trees[currentViewingTreeIdx];
+            
+            const printWin = window.open('', '_blank');
+            let html = `
+                <html>
+                <head>
+                    <title>Print Tree - ${t.treeNo}</title>
+                    <style>
+                        body { font-family: 'Inter', sans-serif; color: #1e293b; padding: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+                        th { background: #f8fafc; font-weight: 600; color: #475569; }
+                        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; align-items: flex-end; }
+                        .summary { margin-top: 20px; text-align: right; font-size: 1.1rem; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div>
+                            <h2 style="margin: 0; color: #4f46e5;">Manti ERP</h2>
+                            <p style="margin: 4px 0 0 0; color: #64748b;">Tree Manufacturing Record</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <h1 style="margin: 0;">${t.treeNo}</h1>
+                            <p style="margin: 4px 0 0 0; color: #64748b;">Date: ${t.date}</p>
+                        </div>
+                    </div>
+                    
+                    <table>
+                        <tr>
+                            <th>Pic</th>
+                            <th>Design ID</th>
+                            <th style="text-align: center;">Qty (Pcs)</th>
+                            <th style="text-align: right;">Unit Wt (g)</th>
+                            <th style="text-align: right;">Subtotal (g)</th>
+                        </tr>
+            `;
+            
+            let totalPcs = 0;
+            t.designs.forEach(d => {
+                totalPcs += d.count;
+                const imgThumb = d.imageUrl ? `<img src="${d.imageUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">` : '-';
+                html += `
+                    <tr>
+                        <td>${imgThumb}</td>
+                        <td style="font-weight: 600;">${d.design_id}</td>
+                        <td style="text-align: center;">${d.count}</td>
+                        <td style="text-align: right;">${d.unit_weight.toFixed(3)}</td>
+                        <td style="text-align: right; font-weight: 700;">${(d.count * d.unit_weight).toFixed(3)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </table>
+                    
+                    <div class="summary">
+                        <div style="margin-bottom: 8px;">Total Pieces: <strong>${totalPcs}</strong></div>
+                        <div>Total Est. Weight: <strong style="color: #4f46e5; font-size: 1.25rem;">${t.totalWeight.toFixed(3)}g</strong></div>
+                    </div>
+                    
+                    <div style="margin-top: 40px; color: #64748b; font-size: 0.9rem;">
+                        <strong>Notes:</strong><br>
+                        ${t.notes || 'None'}
+                    </div>
+                    
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                        }
+                    </script>
+                </body>
+                </html>
+            `;
+            
+            printWin.document.write(html);
+            printWin.document.close();
         }
         
         function filterTable(inputId, tableId) {
