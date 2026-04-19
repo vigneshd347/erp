@@ -217,15 +217,25 @@
 
             // Calculate stock from data
             const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
-            const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {};
             const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+            const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {};
 
             // Detailed tracking by metal and sub-type
-            // Structure: inventoryData[metalType][itemType] = { inflow: 0, outflow: 0 }
             const inventoryData = {
-                // Pre-populate core categories
-                'Gold': { 'Metal': { inflow: 0, outflow: 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } },
-                'Silver': { 'Metal': { inflow: 0, outflow: 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } }
+                'Gold': { 
+                    'Metal': { inflow: 0, outflow: 0, balance: balances.gold_22k || 0 }, 
+                    'Pure (24K)': { inflow: 0, outflow: 0, balance: balances.pure_gold || 0 },
+                    'Solder': { inflow: 0, outflow: 0 }, 
+                    'Scrap': { inflow: 0, outflow: 0 }, 
+                    'Dust': { inflow: 0, outflow: 0 } 
+                },
+                'Silver': { 
+                    'Metal': { inflow: 0, outflow: 0, balance: balances.silver_925 || 0 }, 
+                    'Pure (999)': { inflow: 0, outflow: 0, balance: balances.pure_silver || 0 },
+                    'Solder': { inflow: 0, outflow: 0 }, 
+                    'Scrap': { inflow: 0, outflow: 0 }, 
+                    'Dust': { inflow: 0, outflow: 0 } 
+                }
             };
 
             function initType(metal, type) {
@@ -235,14 +245,12 @@
                 if (!inventoryData[m][t]) inventoryData[m][t] = { inflow: 0, outflow: 0 };
             }
 
-            // In-Flow: Purchase Orders
+            // In-Flow: Purchase Orders (Completed only)
             orders.forEach(o => {
                 if (o.type === 'Purchase Order' && o.qty && o.status === 'Completed') {
                     const wt = parseFloat(o.qty) || 0;
                     const m = o.mainMetalType || 'Unknown';
                     let t = 'Metal';
-                    
-                    // Categorize based on product description or actual order fields if they exist later
                     const prodDesc = (o.product || '').toLowerCase();
                     if (prodDesc.includes('solder')) t = 'Solder';
                     else if (prodDesc.includes('scrap')) t = 'Scrap';
@@ -253,20 +261,23 @@
                 }
             });
 
-            // Out-Flow: Invoices (from stock history)
+            // Activity: Invoices & Adjustments from history
             history.forEach(h => {
-                const wt = Math.abs(parseFloat(h.weight) || 0);
-                if (h.weight < 0) { // Only outflow from history (invoices deduct from main metal)
-                    const m = (h.metal.includes('gold') ? 'Gold' : (h.metal.includes('silver') ? 'Silver' : 'Unknown'));
+                const wt = parseFloat(h.weight) || 0;
+                if (wt !== 0) {
+                    const m = (h.metal || '').toLowerCase().includes('gold') ? 'Gold' : ((h.metal || '').toLowerCase().includes('silver') ? 'Silver' : 'Unknown');
                     initType(m, 'Metal');
-                    inventoryData[m]['Metal'].outflow += wt;
+                    if (wt < 0) {
+                        inventoryData[m]['Metal'].outflow += Math.abs(wt);
+                    } else {
+                        inventoryData[m]['Metal'].inflow += wt;
+                    }
                 }
             });
 
             // Out-Flow/In-Flow: Job Work Tracker
             const jobRecords = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
             jobRecords.forEach(r => {
-                // Find associated SO to know which metal family it belongs to
                 const so = orders.find(o => o.id === r.jobnum);
                 const mainM = so ? (so.mainMetalType || 'Unknown') : 'Unknown';
 
@@ -277,11 +288,8 @@
                             initType(mainM, subType);
                             inventoryData[mainM][subType].outflow += (parseFloat(l.weight) || 0);
                         });
-                    } else if (r.issueType) {
-                        initType(mainM, r.issueType);
-                        inventoryData[mainM][r.issueType].outflow += (parseFloat(r.issueWt) || 0);
                     } else if (parseFloat(r.issueWt) > 0) {
-                        initType(mainM, 'Metal'); // Fallback
+                        initType(mainM, 'Metal');
                         inventoryData[mainM]['Metal'].outflow += (parseFloat(r.issueWt) || 0);
                     }
                 }
@@ -292,16 +300,9 @@
                             const subType = l.type || 'Metal';
                             if (subType !== 'Wastage' && subType !== 'Wastage(Loss)') {
                                 initType(mainM, subType);
-                                // Receiving materials back into inventory counts as REDUCING outflow for that type
-                                // Or conceptually, adding to inflow. We subtract from outflow to show net usage.
                                 inventoryData[mainM][subType].outflow -= (parseFloat(l.weight) || 0);
                             }
                         });
-                    } else if (r.returnType) {
-                        if (r.returnType !== 'Wastage' && r.returnType !== 'Wastage(Loss)') {
-                            initType(mainM, r.returnType);
-                            inventoryData[mainM][r.returnType].outflow -= (parseFloat(r.receiveWt) || 0);
-                        }
                     } else if (parseFloat(r.receiveWt) > 0) {
                         initType(mainM, 'Metal');
                         inventoryData[mainM]['Metal'].outflow -= (parseFloat(r.receiveWt) || 0);
@@ -319,25 +320,27 @@
 
             let rowCounter = 1;
 
-            // Define display purities based on Metal
-            const getPurity = (metal) => {
-                if(metal === 'Gold') return '22K';
-                if(metal === 'Silver') return '925';
+            const getPurity = (metal, type) => {
+                if (type.includes('24K')) return '24K';
+                if (type.includes('999')) return '999';
+                if (metal === 'Gold') return '22K';
+                if (metal === 'Silver') return '925';
                 return '-';
             };
 
             for (const [metal, typesObj] of Object.entries(inventoryData)) {
                 for (const [type, data] of Object.entries(typesObj)) {
-                    // Only show rows that have some inflow or outflow
-                    if (data.inflow === 0 && data.outflow === 0) continue;
+                    const available = data.balance !== undefined ? data.balance : (data.inflow - data.outflow);
+                    if (available === 0 && data.inflow === 0 && data.outflow === 0) continue;
 
-                    let available = data.inflow - data.outflow;
-                    // It can be negative if more scrap/dust is returned than purchased (generated during work)
-                    
-                    // Calculate valuation for overall summary (only value positive stock)
                     if (available > 0) {
-                        if (metal === 'Gold') totalValue += (available * gold22kRate);
-                        else if (metal === 'Silver') totalValue += (available * silver925Rate);
+                        if (metal === 'Gold') {
+                            const rate = type.includes('24K') ? (rates.pureGold || 0) : gold22kRate;
+                            totalValue += (available * rate);
+                        } else if (metal === 'Silver') {
+                            const rate = type.includes('999') ? (rates.pureSilver || 0) : silver925Rate;
+                            totalValue += (available * rate);
+                        }
                     }
 
                     const textColorClass = available < 0 ? 'color: var(--danger);' : 'color: var(--primary);';
@@ -345,10 +348,10 @@
                     tbody.innerHTML += `
                         <tr>
                             <td>${rowCounter++}</td>
-                            <td style="text-align: left; padding-left: 20px; font-weight: ${type === 'Metal' ? '700' : '500'};">
+                            <td style="text-align: left; padding-left: 20px; font-weight: ${type.includes('Metal') ? '700' : '500'};">
                                 ${metal} <span style="color: #6b7280; font-size: 0.85em; font-weight: normal;">- ${type}</span>
                             </td>
-                            <td>${getPurity(metal)}</td>
+                            <td>${getPurity(metal, type)}</td>
                             <td style="color: var(--success); font-weight: 600;">${data.inflow.toFixed(3)}</td>
                             <td style="color: var(--danger); font-weight: 600;">${data.outflow.toFixed(3)}</td>
                             <td style="font-weight: 700; ${textColorClass}">${available.toFixed(3)}</td>
@@ -363,6 +366,7 @@
             }
 
             document.getElementById('stock-total-value').textContent = '₹ ' + totalValue.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        });
         });
     </script>
 </body>

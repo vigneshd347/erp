@@ -616,11 +616,10 @@
                         journals = journals.filter(j => j.id !== 'JV-' + id);
                         localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
 
-                        // Force cloud deletion
-                        if (window.supabase) {
-                            window.supabase.from('assets').delete().match({ id: id })
-                                .then(({error}) => { if (error) console.error("Cloud Asset delete error", error); });
-                        }
+                        // The sync is handled by the centralized syncKeyToSupabase trigger in supabase.js
+                        // No need for direct deletion call here.
+                        closeModal();
+                        loadAssets();
 
                         closeModal();
                         loadAssets();

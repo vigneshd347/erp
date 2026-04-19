@@ -1283,34 +1283,65 @@
                         <tr style="background: #f8fafc; font-size: 0.85rem; color: #475569; font-weight: 600;">
                             <td>Date</td>
                             <td>Journal ID</td>
-                            <td>Account(s)</td>
+                            <td>Type</td>
                             <td>Description</td>
-                            <td style="text-align: right; color: #10b981;">Total Value (₹)</td>
+                            <td style="text-align: right; color: #10b981;">Value (₹)</td>
                         </tr>
                     `;
                     
+                    // Separate display entries from PMT-PO- auto-entries.
+                    // PMT-PO- entries are automatically created alongside PUR-PO- entries
+                    // for the same amount. Showing both makes the ledger appear to have
+                    // duplicate values. We display only PUR-PO- (and all others) and
+                    // summarise the PMT-PO- entries in a single collapsed info line.
+                    const displayJournals = filteredJournals.filter(j => !(j.id || '').startsWith('PMT-PO-'));
+                    const pmtEntries      = filteredJournals.filter(j =>  (j.id || '').startsWith('PMT-PO-'));
+
                     let totalJournalMovement = 0;
-                    if (filteredJournals.length === 0) {
+                    if (displayJournals.length === 0) {
                         html += `<tr><td colspan="5" style="text-align:center; padding: 15px;">No journal entries found for this period.</td></tr>`;
                     } else {
-                        filteredJournals.forEach(j => {
-                            totalJournalMovement += parseFloat(j.amount) || 0;
-                            let accountsText = (j.lines || []).map(l => l.account).join(', ');
-                            if (!accountsText) accountsText = 'Multiple Accounts';
-                            
+                        displayJournals.forEach(j => {
+                            let jAmt = parseFloat(j.total || j.amount) || 0;
+                            if (jAmt === 0 && j.lines && j.lines.length > 0) {
+                                jAmt = j.lines.reduce((sum, l) => sum + (parseFloat(l.debit) || 0), 0);
+                            }
+                            totalJournalMovement += jAmt;
+
+                            // Determine a readable type label and color
+                            let jType = 'Journal', typeColor = '#6b7280', typeBg = '#f3f4f6';
+                            if ((j.id || '').startsWith('JV-EXP-')) { jType = 'Expense'; typeColor = '#dc2626'; typeBg = '#fee2e2'; }
+                            else if ((j.id || '').startsWith('JV-AST-')) { jType = 'Asset'; typeColor = '#7c3aed'; typeBg = '#ede9fe'; }
+                            else if ((j.id || '').startsWith('PUR-PO-')) { jType = 'Purchase'; typeColor = '#d97706'; typeBg = '#fef3c7'; }
+                            else if ((j.id || '').startsWith('JN-'))     { jType = 'Manual JV'; typeColor = '#059669'; typeBg = '#d1fae5'; }
+
                             html += `
                                 <tr>
                                     <td>${j.date}</td>
-                                    <td>${j.id || j.no || '-'}</td>
-                                    <td>${accountsText}</td>
-                                    <td>${j.description || j.notes || '-'}</td>
-                                    <td style="text-align: right; font-weight: 600;">₹ ${(parseFloat(j.amount) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    <td style="font-weight: 600; color: #0f172a;">${j.id || j.no || '-'}</td>
+                                    <td><span style="background:${typeBg}; color:${typeColor}; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:700; white-space:nowrap;">${jType}</span></td>
+                                    <td style="font-size:0.85rem; color:#374151;">${j.description || j.notes || '-'}</td>
+                                    <td style="text-align: right; font-weight: 600;">₹ ${jAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                                 </tr>
                             `;
                         });
+
+                        // Show collapsed summary for auto purchase-payment entries
+                        if (pmtEntries.length > 0) {
+                            html += `
+                                <tr style="background: #f0f9ff; border-top: 1px dashed #93c5fd;">
+                                    <td colspan="3" style="padding: 8px 12px; font-size: 0.8rem; color: #0369a1;">
+                                        <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:12px; font-size:0.72rem; font-weight:700; margin-right:8px;">Auto</span>
+                                        ${pmtEntries.length} purchase payment entr${pmtEntries.length > 1 ? 'ies' : 'y'} (auto-generated, hidden to avoid duplicate display)
+                                    </td>
+                                    <td colspan="2" style="text-align:right; font-size:0.8rem; color:#0369a1; padding-right: 12px;">Included in Purchase rows above</td>
+                                </tr>
+                            `;
+                        }
+
                         html += `
                             <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1;">
-                                <td colspan="4" style="text-align: right; font-weight: 700;">Net Journal Movement:</td>
+                                <td colspan="4" style="text-align: right; font-weight: 700;">Total Journal Movement:</td>
                                 <td style="text-align: right; font-weight: 800; color: #8b5cf6;">₹ ${totalJournalMovement.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                             </tr>
                         `;
@@ -1536,19 +1567,20 @@
                     reportHead.innerHTML = `
                         <tr>
                             <th>Metal / Type</th>
-                            <th style="color: #10b981;">Total Inflow (Grams)</th>
-                            <th style="color: #ef4444;">Total Outflow (Grams)</th>
-                            <th style="color: var(--primary);">Available Stock (Grams)</th>
+                            <th style="color: #10b981;">Total Inflow (g)</th>
+                            <th style="color: #ef4444;">Total Outflow (g)</th>
+                            <th style="color: var(--primary);">Available Stock (g)</th>
                         </tr>
                     `;
 
                     const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
                     const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
                     const jobRecords = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+                    const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {};
 
                     const inventoryData = {
-                        'Gold': { 'Metal': { inflow: 0, outflow: 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } },
-                        'Silver': { 'Metal': { inflow: 0, outflow: 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } }
+                        'Gold': { 'Metal': { inflow: 0, outflow: 0, balance: balances.gold_22k || 0 }, 'Pure (24K)': { inflow: 0, outflow: 0, balance: balances.pure_gold || 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } },
+                        'Silver': { 'Metal': { inflow: 0, outflow: 0, balance: balances.silver_925 || 0 }, 'Pure (999)': { inflow: 0, outflow: 0, balance: balances.pure_silver || 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } }
                     };
 
                     function initType(metal, type) {
@@ -1558,8 +1590,9 @@
                         if (!inventoryData[m][t]) inventoryData[m][t] = { inflow: 0, outflow: 0 };
                     }
 
+                    // In-Flow: POs
                     orders.forEach(o => {
-                        if (o.type === 'Purchase Order' && o.qty && o.status !== 'Completed' && o.status !== 'Archived') {
+                        if (o.type === 'Purchase Order' && o.qty && o.status === 'Completed') {
                             const m = o.mainMetalType || 'Unknown';
                             let t = 'Metal';
                             const prodDesc = (o.product || '').toLowerCase();
@@ -1571,6 +1604,7 @@
                         }
                     });
 
+                    // Activity: History (Deductions from sales or Stock Adjustments)
                     history.forEach(h => {
                         const wt = parseFloat(h.weight) || 0;
                         if (wt !== 0) {
@@ -1581,11 +1615,13 @@
                             if (wt < 0) {
                                 inventoryData[m]['Metal'].outflow += Math.abs(wt);
                             } else {
+                                // Manual additions via Stock Adjustment often bypass POs, count as Inflow
                                 inventoryData[m]['Metal'].inflow += wt;
                             }
                         }
                     });
 
+                    // Job Work Movements
                     jobRecords.forEach(r => {
                         const so = orders.find(o => o.id === r.jobnum);
                         const mainM = so ? (so.mainMetalType || 'Unknown') : 'Unknown';
@@ -1597,28 +1633,20 @@
                                     initType(mainM, subType);
                                     inventoryData[mainM][subType].outflow += (parseFloat(l.weight) || 0);
                                 });
-                            } else if (r.issueType) {
-                                initType(mainM, r.issueType);
-                                inventoryData[mainM][r.issueType].outflow += (parseFloat(r.issueWt) || 0);
                             } else if (parseFloat(r.issueWt) > 0) {
                                 initType(mainM, 'Metal'); 
                                 inventoryData[mainM]['Metal'].outflow += (parseFloat(r.issueWt) || 0);
                             }
-                        }
-                        if (r.status === '2. Receive') {
+                        } else if (r.status === '2. Receive') {
                             if (r.receiveLines && r.receiveLines.length > 0) {
                                 r.receiveLines.forEach(l => {
                                     const subType = l.type || 'Metal';
                                     if (subType !== 'Wastage' && subType !== 'Wastage(Loss)') {
                                         initType(mainM, subType);
+                                        // Receiving back reduces the "active" outflow for that job
                                         inventoryData[mainM][subType].outflow -= (parseFloat(l.weight) || 0);
                                     }
                                 });
-                            } else if (r.returnType) {
-                                if (r.returnType !== 'Wastage' && r.returnType !== 'Wastage(Loss)') {
-                                    initType(mainM, r.returnType);
-                                    inventoryData[mainM][r.returnType].outflow -= (parseFloat(r.receiveWt) || 0);
-                                }
                             } else if (parseFloat(r.receiveWt) > 0) {
                                 initType(mainM, 'Metal');
                                 inventoryData[mainM]['Metal'].outflow -= (parseFloat(r.receiveWt) || 0);
@@ -1626,27 +1654,73 @@
                         }
                     });
 
+                    // Render Summary
+                    let summaryHtml = '';
                     let hasStock = false;
                     for (const [metal, typesObj] of Object.entries(inventoryData)) {
                         for (const [type, data] of Object.entries(typesObj)) {
-                            if (data.inflow === 0 && data.outflow === 0) continue;
+                            // If it has a master balance, show it. Otherwise check if activity exists.
+                            const effectiveAvailable = data.balance !== undefined ? data.balance : (data.inflow - data.outflow);
+                            if (effectiveAvailable === 0 && data.inflow === 0 && data.outflow === 0) continue;
+                            
                             hasStock = true;
-                            let available = data.inflow - data.outflow;
-                            const textColor = available < 0 ? 'color: #ef4444;' : 'color: var(--primary);';
+                            const textColor = effectiveAvailable < 0 ? 'color: #ef4444;' : 'color: var(--primary);';
 
-                            reportBody.innerHTML += `
+                            summaryHtml += `
                                 <tr>
                                     <td style="font-weight: 600;">${metal} <span style="color: #6b7280; font-weight: normal; font-size: 0.9em;">- ${type}</span></td>
                                     <td style="color: #10b981;">${data.inflow.toFixed(3)}</td>
                                     <td style="color: #ef4444;">${data.outflow.toFixed(3)}</td>
-                                    <td style="font-weight: 700; ${textColor}">${available.toFixed(3)}</td>
+                                    <td style="font-weight: 700; ${textColor}">${effectiveAvailable.toFixed(3)}</td>
                                 </tr>
                             `;
                         }
                     }
+                    reportBody.innerHTML = summaryHtml || '<tr><td colspan="4" style="text-align: center; color: #666; padding: 20px;">No stock transactions found.</td></tr>';
 
-                    if (!hasStock) {
-                        reportBody.innerHTML += '<tr><td colspan="4" style="text-align: center; color: #666;">No recorded stock found. Ensure transactions are logged.</td></tr>';
+                    // Detailed Tracking Table (Ledger)
+                    if (hasStock) {
+                        let historyHtml = `
+                            <tr style="background: #f1f5f9;"><td colspan="4" style="border:none; padding:15px;"></td></tr>
+                            <tr style="background: #f1f5f9;">
+                                <td colspan="4" style="padding: 12px; font-weight: bold; color: #0f172a; font-size: 1.05rem; border-left: 4px solid #f97316;">
+                                    Detailed Stock Movement Ledger
+                                </td>
+                            </tr>
+                            <tr style="background: #f8fafc; font-size: 0.85rem; color: #475569; font-weight: 600;">
+                                <td>Date</td>
+                                <td>Reference</td>
+                                <td>Category/Metal</td>
+                                <td style="text-align: right;">Quantity (g)</td>
+                            </tr>
+                        `;
+
+                        // Combine and sort history/orders/jobs
+                        let events = [];
+                        orders.forEach(o => { if(o.type === 'Purchase Order' && o.status === 'Completed') events.push({ date: o.date, ref: o.id + ' (Purchase)', cat: (o.mainMetalType||'') + ' ' + (o.product||''), qty: parseFloat(o.qty)||0 }); });
+                        history.forEach(h => { events.push({ date: h.date, ref: (h.note || 'Adjustment/Sale'), cat: h.metal, qty: parseFloat(h.weight)||0 }); });
+                        jobRecords.forEach(r => {
+                            if(r.status === '1. Issue') events.push({ date: r.date, ref: r.jobnum + ' (Iss to ' + (r.worker||'-') + ')', cat: r.process, qty: -(parseFloat(r.issueWt)||0) });
+                            if(r.status === '2. Receive') events.push({ date: r.date, ref: r.jobnum + ' (Ret from ' + (r.worker||'-') + ')', cat: r.process, qty: (parseFloat(r.receiveWt)||0) });
+                        });
+
+                        events.sort((a,b) => new Date(b.date) - new Date(a.date));
+                        
+                        events.slice(0, 50).forEach(e => {
+                            const isNeg = e.qty < 0;
+                            historyHtml += `
+                                <tr>
+                                    <td>${e.date}</td>
+                                    <td style="font-size: 0.85rem; color: #475569;">${e.ref}</td>
+                                    <td style="font-size: 0.85rem;">${e.cat}</td>
+                                    <td style="text-align: right; font-weight: 600; color: ${isNeg ? '#ef4444' : '#10b981'};">
+                                        ${isNeg ? '' : '+'}${e.qty.toFixed(3)}g
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        
+                        reportBody.innerHTML += historyHtml;
                     }
                 }
                 else if (type === 'assets') {
@@ -2189,97 +2263,31 @@
                     });
 
                     // 3. Inventory Value
-                    const rates = JSON.parse(localStorage.getItem('manti_rates')) || {gold: 0, silver: 0};
-                    const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
-                    const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
-                    const jobRecords = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+                    // Use manti_metal_rates (the correct key used across the app)
+                    const metalRates = JSON.parse(localStorage.getItem('manti_metal_rates')) || {};
+                    // Derive per-gram rates: 22K gold = pureGold/24*22, Silver 925 = pureSilver*0.925
+                    const gold22kRate  = (parseFloat(metalRates.pureGold)   || 0) / 24 * 22;
+                    const silver925Rate = (parseFloat(metalRates.pureSilver) || 0) * 0.925;
 
-                    const inventoryData = {
-                        'Gold': { 'Metal': { inflow: 0, outflow: 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } },
-                        'Silver': { 'Metal': { inflow: 0, outflow: 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } }
+                    // Read manti_stock_balances directly — this is the single source of truth.
+                    // It is updated by: stock-adjustment.html (Buy/Adjust), purchases.html (PO completion),
+                    // and script.js deductInvoiceStock(). All paths write here, so it's always current.
+                    const stockBalances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {
+                        pure_gold: 0, gold_22k: 0, pure_silver: 0, silver_925: 0
                     };
 
-                    function initType(metal, type) {
-                        const m = metal || 'Unknown';
-                        const t = type || 'Metal';
-                        if (!inventoryData[m]) inventoryData[m] = {};
-                        if (!inventoryData[m][t]) inventoryData[m][t] = { inflow: 0, outflow: 0 };
-                    }
-
-                    orders.forEach(o => {
-                        if (o.type === 'Purchase Order' && o.qty && o.status !== 'Completed' && o.status !== 'Archived') {
-                            const m = o.mainMetalType || 'Unknown';
-                            let t = 'Metal';
-                            const prodDesc = (o.product || '').toLowerCase();
-                            if (prodDesc.includes('solder')) t = 'Solder';
-                            else if (prodDesc.includes('scrap')) t = 'Scrap';
-                            else if (prodDesc.includes('dust')) t = 'Dust';
-                            initType(m, t);
-                            inventoryData[m][t].inflow += (parseFloat(o.qty) || 0);
-                        }
-                    });
-
-                    history.forEach(h => {
-                        const wt = parseFloat(h.weight) || 0;
-                        if (wt !== 0) {
-                            const metalStr = (h.metal || '').toLowerCase();
-                            const m = metalStr.includes('gold') ? 'Gold' : (metalStr.includes('silver') ? 'Silver' : 'Unknown');
-                            initType(m, 'Metal');
-                            if (wt < 0) inventoryData[m]['Metal'].outflow += Math.abs(wt);
-                            else inventoryData[m]['Metal'].inflow += wt;
-                        }
-                    });
-
-                    jobRecords.forEach(r => {
-                        const so = orders.find(o => o.id === r.jobnum);
-                        const mainM = so ? (so.mainMetalType || 'Unknown') : 'Unknown';
-                        if (r.status === '1. Issue') {
-                            if (r.issueLines && r.issueLines.length > 0) {
-                                r.issueLines.forEach(l => {
-                                    const subType = l.type || 'Metal';
-                                    initType(mainM, subType);
-                                    inventoryData[mainM][subType].outflow += (parseFloat(l.weight) || 0);
-                                });
-                            } else if (r.issueType) {
-                                initType(mainM, r.issueType);
-                                inventoryData[mainM][r.issueType].outflow += (parseFloat(r.issueWt) || 0);
-                            } else if (parseFloat(r.issueWt) > 0) {
-                                initType(mainM, 'Metal'); 
-                                inventoryData[mainM]['Metal'].outflow += (parseFloat(r.issueWt) || 0);
-                            }
-                        }
-                        if (r.status === '2. Receive') {
-                            if (r.receiveLines && r.receiveLines.length > 0) {
-                                r.receiveLines.forEach(l => {
-                                    const subType = l.type || 'Metal';
-                                    if (subType !== 'Wastage' && subType !== 'Wastage(Loss)') {
-                                        initType(mainM, subType);
-                                        inventoryData[mainM][subType].outflow -= (parseFloat(l.weight) || 0);
-                                    }
-                                });
-                            } else if (r.returnType) {
-                                if (r.returnType !== 'Wastage' && r.returnType !== 'Wastage(Loss)') {
-                                    initType(mainM, r.returnType);
-                                    inventoryData[mainM][r.returnType].outflow -= (parseFloat(r.receiveWt) || 0);
-                                }
-                            } else if (parseFloat(r.receiveWt) > 0) {
-                                initType(mainM, 'Metal');
-                                inventoryData[mainM]['Metal'].outflow -= (parseFloat(r.receiveWt) || 0);
-                            }
-                        }
-                    });
-
                     let totalInv = 0;
-                    for (const [metal, typesObj] of Object.entries(inventoryData)) {
-                        for (const [type, data] of Object.entries(typesObj)) {
-                            let available = data.inflow - data.outflow;
-                            if (available > 0) {
-                                let rate = metal.toLowerCase().includes('gold') ? parseFloat(rates.gold) : parseFloat(rates.silver);
-                                if (!rate) rate = 0;
-                                totalInv += (available * rate);
-                            }
-                        }
-                    }
+                    const gold22kQty   = parseFloat(stockBalances.gold_22k)   || 0;
+                    const silver925Qty = parseFloat(stockBalances.silver_925)  || 0;
+                    const pureGoldQty  = parseFloat(stockBalances.pure_gold)   || 0;
+                    const pureSilverQty= parseFloat(stockBalances.pure_silver) || 0;
+                    const pureGoldRate = parseFloat(metalRates.pureGold)  || 0;
+                    const pureSilverRate = parseFloat(metalRates.pureSilver) || 0;
+
+                    if (gold22kQty   > 0) totalInv += gold22kQty   * gold22kRate;
+                    if (silver925Qty > 0) totalInv += silver925Qty  * silver925Rate;
+                    if (pureGoldQty  > 0) totalInv += pureGoldQty   * pureGoldRate;
+                    if (pureSilverQty> 0) totalInv += pureSilverQty * pureSilverRate;
 
                     // 4. Accounts Receivable (Unpaid Invoices)
                     const invoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
@@ -2313,9 +2321,25 @@
                             <td style="text-align: right;">${totalBank.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
                         <tr>
-                            <td style="padding-left: 30px;">Inventory Valuation (Live Rates)</td>
-                            <td style="text-align: right;">${totalInv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                            <td style="padding-left: 30px; font-weight: 600;">Inventory Valuation (Live Rates)</td>
+                            <td style="text-align: right; font-weight: 600;">${totalInv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
+                        ${gold22kQty !== 0 ? `<tr style="font-size:0.85rem; color:#6b7280;">
+                            <td style="padding-left: 50px;">Gold 22K — ${gold22kQty.toFixed(3)}g × ₹${gold22kRate.toFixed(2)}/g</td>
+                            <td style="text-align:right; color:${gold22kQty>0?'#059669':'#dc2626'};">${(gold22kQty*gold22kRate).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                        </tr>` : ''}
+                        ${silver925Qty !== 0 ? `<tr style="font-size:0.85rem; color:#6b7280;">
+                            <td style="padding-left: 50px;">Silver 925 — ${silver925Qty.toFixed(3)}g × ₹${silver925Rate.toFixed(2)}/g</td>
+                            <td style="text-align:right; color:${silver925Qty>0?'#059669':'#dc2626'};">${(silver925Qty*silver925Rate).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                        </tr>` : ''}
+                        ${pureGoldQty !== 0 ? `<tr style="font-size:0.85rem; color:#6b7280;">
+                            <td style="padding-left: 50px;">Pure Gold (24K) — ${pureGoldQty.toFixed(3)}g × ₹${pureGoldRate.toFixed(2)}/g</td>
+                            <td style="text-align:right; color:${pureGoldQty>0?'#059669':'#dc2626'};">${(pureGoldQty*pureGoldRate).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                        </tr>` : ''}
+                        ${pureSilverQty !== 0 ? `<tr style="font-size:0.85rem; color:#6b7280;">
+                            <td style="padding-left: 50px;">Pure Silver (999) — ${pureSilverQty.toFixed(3)}g × ₹${pureSilverRate.toFixed(2)}/g</td>
+                            <td style="text-align:right; color:${pureSilverQty>0?'#059669':'#dc2626'};">${(pureSilverQty*pureSilverRate).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                        </tr>` : ''}
                         <tr>
                             <td style="padding-left: 30px;">Accounts Receivable (Unpaid Invoices)</td>
                             <td style="text-align: right;">${totalReceivables.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
@@ -2356,6 +2380,7 @@
                 if(type === 'vendor-supplier') genericTitle = 'Vendor & Supplier Report';
                 if(type === 'jobwork-jobno') genericTitle = 'Job Work - Job No. Wise';
                 if(type === 'overall-valuation') genericTitle = 'Overall Business Valuation';
+                if(type === 'banking-ledger') genericTitle = 'Banking & Ledger';
                 if(type === 'jobwork-process') genericTitle = 'Job Work - Process Wise';
                 if(type === 'jobwork-worker') genericTitle = 'Job Work - Worker Wise';
                 if(type === 'jobwork-wastage') genericTitle = 'Job Work - Wastage Wise';

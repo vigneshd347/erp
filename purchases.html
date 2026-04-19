@@ -120,6 +120,7 @@
                     <h1>Purchase Order</h1>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
+                    <button type="button" class="btn-liquid btn-secondary" onclick="window.location.href='index.html'" style="padding: 8px 12px; font-size: 0.85rem;">Dashboard</button>
                 </div>
             </header>
 
@@ -1027,6 +1028,25 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
+
+            window.purgeSamples = function() {
+                if (confirm("This will permanently remove PO-0001 through PO-0008 and clean up your Inventory report. Proceed?")) {
+                    const sampleIds = ['PO-0001', 'PO-0002', 'PO-0003', 'PO-0004', 'PO-0005', 'PO-0006', 'PO-0007', 'PO-0008'];
+                    let records = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+                    const initialCount = records.length;
+                    records = records.filter(r => !sampleIds.includes(r.id));
+                    
+                    if (records.length < initialCount) {
+                        localStorage.setItem('manti_order_records', JSON.stringify(records));
+                        alert(`Successfully removed ${initialCount - records.length} sample records. Your Inventory report will now be clean.`);
+                        location.reload();
+                    } else {
+                        alert("No sample records (PO-0001 to PO-0008) found to remove.");
+                    }
+                }
+            };
+
+
             window.deleteRecord = function (index) {
                 const rec = records[index];
 
@@ -1048,14 +1068,20 @@
                                 return;
                             }
                         }
+                    } else if (rec.category === 'Design') {
+                        const designs = JSON.parse(localStorage.getItem('manti_designs')) || [];
+                        const hasDesign = designs.some(d => d._sourcePO === rec.id);
+                        if (hasDesign) {
+                            if (!confirm("Warning: This completed Purchase Order has auto-generated Designs in your Design Book. Deleting it will leave those designs orphaned. Are you absolutely sure you want to force-delete this order?")) {
+                                return;
+                            }
+                        }
                     }
                 }
 
                 if (confirm("Delete this order?")) {
-                    if (rec && rec.id && window.supabase) {
-                        window.supabase.from('orders').delete().match({ order_number: rec.id })
-                            .then(({error}) => { if (error) console.error("Cloud delete error", error); });
-                    }
+                    // The sync is handled by the centralized syncKeyToSupabase trigger in supabase.js
+                    // No need for direct deletion call here.
                     records.splice(index, 1);
                     localStorage.setItem('manti_order_records', JSON.stringify(records));
                     renderTable();

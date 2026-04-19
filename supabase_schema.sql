@@ -29,8 +29,10 @@ CREATE TABLE IF NOT EXISTS public.job_works (
     worker_name TEXT NOT NULL,
     item_name TEXT NOT NULL,
     process TEXT NOT NULL, -- '1. Issue', '2. Casting', ..., '5. Despatch'
+    status TEXT, -- Current status for reporting
     issue_wt NUMERIC,
     receive_wt NUMERIC,
+    data JSONB, -- Stores detailed line items (issueLines, receiveLines)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -327,16 +329,30 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('designs', 'designs', tru
 
 -- Storage Objects Policies for 'designs' bucket
 -- Note: 'storage.objects' policies govern who can upload/read the actual files
+DROP POLICY IF EXISTS "Public Read Access" ON storage.objects;
 CREATE POLICY "Public Read Access" ON storage.objects FOR SELECT USING (bucket_id = 'designs');
+
+DROP POLICY IF EXISTS "Public Insert Access" ON storage.objects;
 CREATE POLICY "Public Insert Access" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'designs');
+
+DROP POLICY IF EXISTS "Public Update Access" ON storage.objects;
 CREATE POLICY "Public Update Access" ON storage.objects FOR UPDATE USING (bucket_id = 'designs') WITH CHECK (bucket_id = 'designs');
+
+DROP POLICY IF EXISTS "Public Delete Access" ON storage.objects;
 CREATE POLICY "Public Delete Access" ON storage.objects FOR DELETE USING (bucket_id = 'designs');
 
 -- 19. Storage Bucket for Expense Bills & Invoices
 INSERT INTO storage.buckets (id, name, public) VALUES ('bills', 'bills', true) ON CONFLICT (id) DO NOTHING;
 
 -- Storage Objects Policies for 'bills' bucket
+DROP POLICY IF EXISTS "Public Read Access Bills" ON storage.objects;
 CREATE POLICY "Public Read Access Bills" ON storage.objects FOR SELECT USING (bucket_id = 'bills');
+
+DROP POLICY IF EXISTS "Public Insert Access Bills" ON storage.objects;
 CREATE POLICY "Public Insert Access Bills" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'bills');
+
+DROP POLICY IF EXISTS "Public Update Access Bills" ON storage.objects;
 CREATE POLICY "Public Update Access Bills" ON storage.objects FOR UPDATE USING (bucket_id = 'bills') WITH CHECK (bucket_id = 'bills');
+
+DROP POLICY IF EXISTS "Public Delete Access Bills" ON storage.objects;
 CREATE POLICY "Public Delete Access Bills" ON storage.objects FOR DELETE USING (bucket_id = 'bills');

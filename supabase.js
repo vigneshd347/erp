@@ -198,9 +198,21 @@ async function syncKeyToSupabase(key, data) {
             }
         } else if (key === 'manti_jobwork_records') {
             const dbJobs = data.map(j => ({
-                job_no: j.jobNo || j.jobnum, date: j.date, worker_id: j.workerId || '', worker_name: j.workerName || '',
-                item_name: j.itemName || j.product || '', process: j.process, issue_wt: parseFloat(j.issueWt) || null,
-                receive_wt: parseFloat(j.receiveWt) || null
+                job_no: j.jobNo || j.jobnum,
+                date: j.date,
+                worker_id: j.workerId || '',
+                worker_name: j.workerName || j.worker || '',
+                item_name: j.itemName || j.item || j.product || '',
+                process: j.process,
+                status: j.status || '',
+                issue_wt: parseFloat(j.issueWt) || null,
+                receive_wt: parseFloat(j.receiveWt) || null,
+                data: {
+                    issueLines: j.issueLines || [],
+                    receiveLines: j.receiveLines || [],
+                    issueType: j.issueType || '',
+                    returnType: j.returnType || ''
+                }
             }));
             if (dbJobs.length > 0) {
                 const { error: delErr } = await supabase.from('job_works').delete().neq('worker_id', 'NON_EXISTENT_MAGIC_STRING');
@@ -456,6 +468,13 @@ window.fetchEverythingFromCloud = async function () {
                         remark = extended.remark || '-';
                     } catch(e) {}
                 }
+                let metal = extended.mainMetalType || '';
+                if (!metal && o.product_name) {
+                    const p = o.product_name.toLowerCase();
+                    if (p.includes('gold')) metal = 'Gold';
+                    else if (p.includes('silver')) metal = 'Silver';
+                }
+                
                 return {
                     id: o.order_number, type: o.type, date: o.date, dueDate: o.due_date,
                     customer: o.customer_name, vendor: o.vendor_id, product: o.product_name, 
@@ -466,7 +485,7 @@ window.fetchEverythingFromCloud = async function () {
                     category: extended.category || '',
                     designSubCategory: extended.designSubCategory || '',
                     assetType: extended.assetType || '',
-                    mainMetalType: extended.mainMetalType || '',
+                    mainMetalType: metal,
                     billNo: extended.billNo || '',
                     billImageUrl: extended.billImageUrl || '',
                     discountPercent: extended.discountPercent || '',
@@ -477,15 +496,38 @@ window.fetchEverythingFromCloud = async function () {
                 };
             });
             window.ERP_MEMORY.set('manti_order_records', JSON.stringify(mappedOrders));
+        } else {
+            window.ERP_MEMORY.set('manti_order_records', '[]');
         }
 
         // 2. Job Works
         if (jobsRes.data) {
-            const mappedJobs = jobsRes.data.map(j => ({
-                jobNo: j.job_no, date: j.date, workerId: j.worker_id, workerName: j.worker_name,
-                itemName: j.item_name, process: j.process, issueWt: j.issue_wt, receiveWt: j.receive_wt
-            }));
+            const mappedJobs = jobsRes.data.map(j => {
+                const ext = j.data || {};
+                return {
+                    // Primary field names used by jobwork.html, reports.html, etc.
+                    jobnum: j.job_no,
+                    date: j.date,
+                    worker: j.worker_name,
+                    item: j.item_name,
+                    process: j.process,
+                    status: j.status || (j.issue_wt && !j.receive_wt ? '1. Issue' : (j.receive_wt ? '2. Receive' : '1. Issue')),
+                    issueWt: j.issue_wt,
+                    receiveWt: j.receive_wt,
+                    issueLines: ext.issueLines || [],
+                    receiveLines: ext.receiveLines || [],
+                    issueType: ext.issueType || '',
+                    returnType: ext.returnType || '',
+                    // Legacy aliases kept for backward compat
+                    jobNo: j.job_no,
+                    workerId: j.worker_id,
+                    workerName: j.worker_name,
+                    itemName: j.item_name
+                };
+            });
             window.ERP_MEMORY.set('manti_jobwork_records', JSON.stringify(mappedJobs));
+        } else {
+            window.ERP_MEMORY.set('manti_jobwork_records', '[]');
         }
 
         // 3. Invoices
