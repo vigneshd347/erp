@@ -411,6 +411,41 @@
 
         document.addEventListener('CloudDataLoaded', () => {
             refreshLocalData();
+
+            // --- BULK MARK ALL AS PAID REQUESTED BY USER ---
+            let ordersModified = false;
+            orders.forEach(o => {
+                if (o.type === 'Purchase Order') {
+                    const amt = parseFloat(String(o.amount || 0).replace(/[^0-9.]/g, '')) || 0;
+                    const paid = parseFloat(String(o.paidAmount || 0).replace(/[^0-9.]/g, '')) || 0;
+                    if (paid < amt) {
+                        o.paidAmount = amt;
+                        o.status = 'Completed';
+                        ordersModified = true;
+                    }
+                }
+            });
+            if (ordersModified) {
+                localStorage.setItem('manti_order_records', JSON.stringify(orders));
+                if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_order_records', orders);
+            }
+
+            let expModified = false;
+            expenses.forEach(e => {
+                const total = parseFloat(e.total || 0) || 0;
+                const paid = parseFloat(e.paidAmount || 0) || 0;
+                if (paid < total) {
+                    e.paidAmount = total;
+                    e.status = 'Payed';
+                    expModified = true;
+                }
+            });
+            if (expModified) {
+                localStorage.setItem('manti_expenses', JSON.stringify(expenses));
+                if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_expenses', expenses);
+            }
+            // ------------------------------------------------
+
             document.getElementById('pay-date').valueAsDate = new Date();
 
             const vendorList = document.getElementById('supplier-kyc-list');

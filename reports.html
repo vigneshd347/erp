@@ -2333,13 +2333,13 @@
                         <tr style="background: #f8fafc; font-weight: 700;">
                             <td colspan="2">CURRENT ASSETS</td>
                         </tr>
-                        <tr>
-                            <td style="padding-left: 30px;">Cash & Bank Balances</td>
-                            <td style="text-align: right;">${totalBank.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        <tr ondblclick="window.location.href='banking.html'" style="cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" title="Double click to view Banking Ledger">
+                            <td style="padding-left: 30px; color: #0284c7; font-weight: 500;">Cash & Bank Balances ⇱</td>
+                            <td style="text-align: right; color: #0284c7; font-weight: 500;">${totalBank.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
-                        <tr>
-                            <td style="padding-left: 30px; font-weight: 600;">Inventory Valuation (Live Rates)</td>
-                            <td style="text-align: right; font-weight: 600;">${totalInv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        <tr ondblclick="window.location.href='inventory.html'" style="cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" title="Double click to view Inventory">
+                            <td style="padding-left: 30px; color: #0284c7; font-weight: 600;">Inventory Valuation (Live Rates) ⇱</td>
+                            <td style="text-align: right; color: #0284c7; font-weight: 600;">${totalInv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
                         ${gold22kQty !== 0 ? `<tr style="font-size:0.85rem; color:#6b7280;">
                             <td style="padding-left: 50px;">Gold 22K — ${gold22kQty.toFixed(3)}g × ₹${gold22kRate.toFixed(2)}/g</td>
@@ -2357,25 +2357,25 @@
                             <td style="padding-left: 50px;">Pure Silver (999) — ${pureSilverQty.toFixed(3)}g × ₹${pureSilverRate.toFixed(2)}/g</td>
                             <td style="text-align:right; color:${pureSilverQty>0?'#059669':'#dc2626'};">${(pureSilverQty*pureSilverRate).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
                         </tr>` : ''}
-                        <tr>
-                            <td style="padding-left: 30px;">Accounts Receivable (Unpaid Invoices)</td>
-                            <td style="text-align: right;">${totalReceivables.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        <tr ondblclick="window.location.href='create-invoice.html'" style="cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" title="Double click to view Invoices">
+                            <td style="padding-left: 30px; color: #0284c7; font-weight: 500;">Accounts Receivable (Unpaid Invoices) ⇱</td>
+                            <td style="text-align: right; color: #0284c7; font-weight: 500;">${totalReceivables.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
                         
                         <tr style="background: #f8fafc; font-weight: 700; margin-top: 10px;">
                             <td colspan="2">CURRENT LIABILITIES</td>
                         </tr>
-                        <tr>
-                            <td style="padding-left: 30px; color: var(--danger);">Accounts Payable (Unpaid Bills)</td>
+                        <tr ondblclick="window.location.href='purchases.html'" style="cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='transparent'" title="Double click to view Purchases & Bills">
+                            <td style="padding-left: 30px; color: var(--danger); font-weight: 500;">Accounts Payable (Unpaid Bills) ⇱</td>
                             <td style="text-align: right; color: var(--danger); font-weight: 600;">(${totalPayables.toLocaleString('en-IN', {minimumFractionDigits: 2})})</td>
                         </tr>
 
                         <tr style="background: #f8fafc; font-weight: 700; margin-top: 10px;">
                             <td colspan="2">FIXED ASSETS</td>
                         </tr>
-                        <tr>
-                            <td style="padding-left: 30px;">Machinery & Equipment (Depreciated)</td>
-                            <td style="text-align: right;">${totalAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        <tr ondblclick="window.location.href='assets.html'" style="cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" title="Double click to view Assets">
+                            <td style="padding-left: 30px; color: #0284c7; font-weight: 500;">Machinery & Equipment (Depreciated) ⇱</td>
+                            <td style="text-align: right; color: #0284c7; font-weight: 500;">${totalAssets.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
 
                         <tr style="background: #e0f2fe; color: #0284c7; font-weight: 800; font-size: 1.1rem; border-top: 3px double #0284c7;">

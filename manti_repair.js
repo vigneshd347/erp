@@ -91,20 +91,29 @@ function repairFinancialData() {
             timestamp: new Date(rec.date).toISOString()
         });
 
-        // If it was paid immediately without a separate PMT record
-        const isPaid = rec.paidAmount && parseFloat(rec.paidAmount) >= totalAmount;
-        // Wait, Payments Made handles all explicit payments. Let's ONLY add PMT journals 
-        // if paidThrough is explicitly not Accounts Payable (direct bank payment without PMT record).
-        if (rec.paidThrough && rec.paidThrough !== 'Accounts Payable' && rec.paidThrough !== '') {
+        // Find how much of this PO was formally paid through the Payments Made UI
+        let formallyPaid = 0;
+        cleanPayments.forEach(pmt => {
+            if (pmt.applications) {
+                pmt.applications.forEach(app => {
+                    if (app.id === rec.id) formallyPaid += parseFloat(app.amount) || 0;
+                });
+            }
+        });
+
+        // Any paidAmount that isn't backed by a PMT record is a "Ghost Payment"
+        const ghostPayment = Math.max(0, (parseFloat(rec.paidAmount) || 0) - formallyPaid);
+
+        if (ghostPayment > 0.001) {
             newJournals.push({
                 id: 'DIR-PMT-' + rec.id,
                 date: rec.date,
                 reference: rec.id,
-                notes: `Direct Payment for ${rec.id}`,
-                total: totalAmount,
+                notes: `Auto-Sync Payment for ${rec.id}`,
+                total: ghostPayment,
                 lines: [
-                    { account: 'Accounts Payable', desc: `Payment for ${rec.id}`, contact: rec.vendor, debit: totalAmount, credit: 0 },
-                    { account: rec.paidThrough, desc: `Payment for ${rec.id}`, contact: rec.vendor, debit: 0, credit: totalAmount }
+                    { account: 'Accounts Payable', desc: `Payment for ${rec.id}`, contact: rec.vendor, debit: ghostPayment, credit: 0 },
+                    { account: rec.paidThrough || defaultAccount, desc: `Payment for ${rec.id}`, contact: rec.vendor, debit: 0, credit: ghostPayment }
                 ],
                 timestamp: new Date(rec.date).toISOString()
             });
@@ -130,6 +139,34 @@ function repairFinancialData() {
             ],
             timestamp: new Date(rec.date).toISOString()
         });
+
+        if (payAccount === 'Accounts Payable') {
+            let expFormallyPaid = 0;
+            cleanPayments.forEach(pmt => {
+                if (pmt.applications) {
+                    pmt.applications.forEach(app => {
+                        if (app.id === rec.id) expFormallyPaid += parseFloat(app.amount) || 0;
+                    });
+                }
+            });
+
+            const expGhostPayment = Math.max(0, (parseFloat(rec.paidAmount) || 0) - expFormallyPaid);
+
+            if (expGhostPayment > 0.001) {
+                newJournals.push({
+                    id: 'DIR-PMT-' + rec.id,
+                    date: rec.date,
+                    reference: rec.id,
+                    notes: `Auto-Sync Payment for ${rec.id}`,
+                    total: expGhostPayment,
+                    lines: [
+                        { account: 'Accounts Payable', desc: `Payment for ${rec.id}`, contact: rec.vendor, debit: expGhostPayment, credit: 0 },
+                        { account: defaultAccount, desc: `Payment for ${rec.id}`, contact: rec.vendor, debit: 0, credit: expGhostPayment }
+                    ],
+                    timestamp: new Date(rec.date).toISOString()
+                });
+            }
+        }
     });
 
     // 3. Explicit Payments Made (Debits AP)
