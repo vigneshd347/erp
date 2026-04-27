@@ -308,24 +308,48 @@ async function syncKeyToSupabase(key, data) {
                 await supabase.from('delivery_challans').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_payments_made') {
-            const dbPayments = data.map(p => ({
-                vendor: p.vendor || '', date: p.date, amount: parseFloat(p.amount) || 0,
-                mode: p.mode || '', reference: p.reference || '', applications: p.applications || [], bill_url: p.billUrl || null
-            }));
+            // Deduplicate by id before upserting
+            const seenPmtIds = new Map();
+            data.forEach(p => {
+                if (!p.id) return;
+                seenPmtIds.set(p.id, {
+                    id: p.id,
+                    vendor: p.vendor || '',
+                    date: p.date,
+                    amount: parseFloat(p.amount) || 0,
+                    mode: p.mode || '',
+                    account: p.account || '',
+                    notes: p.notes || '',
+                    reference: p.reference || '',
+                    applications: p.applications || []
+                });
+            });
+            const dbPayments = Array.from(seenPmtIds.values());
             if (dbPayments.length > 0) {
-                const { error: delErr } = await supabase.from('payments_made').delete().neq('vendor', 'NON_EXISTENT');
-                if (delErr) { console.error("Payments Sync Error:", delErr); alert("Failed to clear Payments for sync: " + delErr.message); }
-                const { error } = await supabase.from('payments_made').insert(dbPayments);
+                const idList = dbPayments.map(p => `"${p.id}"`).join(',');
+                await supabase.from('payments_made').delete().not('id', 'in', `(${idList})`);
+                const { error } = await supabase.from('payments_made').upsert(dbPayments, { onConflict: 'id' });
                 if (error) { console.error("Payments Sync Error:", error); alert("Failed to save Payments to Cloud: " + error.message); }
+            } else {
+                await supabase.from('payments_made').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_expenses') {
-            const dbExpenses = data.map(e => ({
-                id: e.id, date: e.date, expense_account: e.account || '', amount: parseFloat(e.amount) || 0,
-                paid_through: e.paidThrough || '', vendor: e.vendor || null,
-                gst_percent: e.gstPercent || null, gst_amount: e.gstAmount || null,
-                reference: e.reference || '', notes: e.notes || '', bill_url: e.billUrl || null,
-                items: e.items || []
-            }));
+            const dbExpenses = data.map(e => {
+                const extended = {
+                    items: e.items || [],
+                    paidAmount: parseFloat(e.paidAmount) || 0,
+                    discount: parseFloat(e.discount) || 0,
+                    roundOff: parseFloat(e.roundOff) || 0,
+                    total: parseFloat(e.total) || 0
+                };
+                return {
+                    id: e.id, date: e.date, expense_account: e.account || '', amount: parseFloat(e.amount) || 0,
+                    paid_through: e.paidThrough || '', vendor: e.vendor || null,
+                    gst_percent: e.gstPercent || null, gst_amount: e.gstAmount || null,
+                    reference: e.reference || '', notes: e.notes || '', bill_url: e.billUrl || null,
+                    items: extended
+                };
+            });
             if (dbExpenses.length > 0) {
                 const idList = dbExpenses.map(e => `"${e.id}"`).join(',');
                 await supabase.from('expenses').delete().not('id', 'in', `(${idList})`);
@@ -335,9 +359,23 @@ async function syncKeyToSupabase(key, data) {
                 await supabase.from('expenses').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_journal_entries') {
-            const dbJournals = data.map(j => ({
-                id: j.id || j.no, date: j.date, amount: parseFloat(j.amount) || 0, description: j.description || j.notes || '', lines: j.lines || []
-            }));
+            // Map and deduplicate by id before upserting.
+            // Postgres throws "ON CONFLICT DO UPDATE command cannot affect row a second time"
+            // if the same id appears more than once in a single upsert batch.
+            const seenIds = new Map();
+            data.forEach(j => {
+                const id = j.id || j.no;
+                if (!id) return;
+                // Keep the last (most recently added) entry for each id
+                seenIds.set(id, {
+                    id,
+                    date: j.date,
+                    amount: parseFloat(j.amount) || 0,
+                    description: j.description || j.notes || '',
+                    lines: j.lines || []
+                });
+            });
+            const dbJournals = Array.from(seenIds.values());
             if (dbJournals.length > 0) {
                 const idList = dbJournals.map(j => `"${j.id}"`).join(',');
                 await supabase.from('journal_entries').delete().not('id', 'in', `(${idList})`);
@@ -586,21 +624,40 @@ window.fetchEverythingFromCloud = async function () {
         // 9. Payments Made
         if (paymentsRes.data && paymentsRes.data.length > 0) {
             const mappedPayments = paymentsRes.data.map(p => ({
+                id: p.id, account: p.account, notes: p.notes,
                 vendor: p.vendor, date: p.date, amount: p.amount, mode: p.mode,
-                reference: p.reference, applications: p.applications, billUrl: p.bill_url
+                reference: p.reference, applications: p.applications
             }));
             window.ERP_MEMORY.set('manti_payments_made', JSON.stringify(mappedPayments));
         }
 
         // 10. Expenses
         if (expensesRes.data && expensesRes.data.length > 0) {
-            const mappedExpenses = expensesRes.data.map(e => ({
-                id: e.id, date: e.date, account: e.expense_account, amount: parseFloat(e.amount) || 0,
-                paidThrough: e.paid_through, vendor: e.vendor,
-                gstPercent: e.gst_percent || null, gstAmount: e.gst_amount || null,
-                total: (parseFloat(e.amount) || 0) + (parseFloat(e.gst_amount) || 0),
-                reference: e.reference, notes: e.notes, billUrl: e.bill_url, items: e.items || []
-            }));
+            const mappedExpenses = expensesRes.data.map(e => {
+                let itemsList = [];
+                let paidAmount = 0;
+                let discount = 0;
+                let roundOff = 0;
+                let total = (parseFloat(e.amount) || 0) + (parseFloat(e.gst_amount) || 0);
+
+                if (e.items && !Array.isArray(e.items) && e.items.items) {
+                    itemsList = e.items.items;
+                    paidAmount = e.items.paidAmount || 0;
+                    discount = e.items.discount || 0;
+                    roundOff = e.items.roundOff || 0;
+                    total = e.items.total || total;
+                } else if (Array.isArray(e.items)) {
+                    itemsList = e.items;
+                }
+
+                return {
+                    id: e.id, date: e.date, account: e.expense_account, amount: parseFloat(e.amount) || 0,
+                    paidThrough: e.paid_through, vendor: e.vendor,
+                    gstPercent: e.gst_percent || null, gstAmount: e.gst_amount || null,
+                    discount: discount, roundOff: roundOff, paidAmount: paidAmount, total: total,
+                    reference: e.reference, notes: e.notes, billUrl: e.bill_url, items: itemsList
+                };
+            });
             window.ERP_MEMORY.set('manti_expenses', JSON.stringify(mappedExpenses));
         } else if (expensesRes.error) {
             console.warn("Supabase expenses table missing or error. Skipping...", expensesRes.error);

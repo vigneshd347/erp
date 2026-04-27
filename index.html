@@ -374,8 +374,8 @@
 
             // Load orders data
             const orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
-            const salesOrders = orders.filter(o => o.type === 'Sales Order');
-            const purchaseOrders = orders.filter(o => o.type === 'Purchase Order');
+            const salesOrders = orders.filter(o => o.type === 'Sales Order' && o.status !== 'Draft');
+            const purchaseOrders = orders.filter(o => o.type === 'Purchase Order' && o.status !== 'Draft');
 
             // KPI: Sales
             document.getElementById('kpi-total-sales').textContent = salesOrders.length;
@@ -389,9 +389,10 @@
 
             // KPI: Jobs
             const jobs = JSON.parse(localStorage.getItem('manti_jobwork_records') || '[]');
-            const uniqueJobs = new Set(jobs.map(j => j.jobnum)).size;
+            const activeJobs = jobs.filter(j => j.doc_status !== 'Draft');
+            const uniqueJobs = new Set(activeJobs.map(j => j.jobnum)).size;
             document.getElementById('kpi-active-jobs').textContent = uniqueJobs;
-            document.getElementById('kpi-jobs-meta').textContent = `${jobs.length} total job entries`;
+            document.getElementById('kpi-jobs-meta').textContent = `${activeJobs.length} total active job entries`;
 
             // KPI: Bank & Cash Balance
             const mantiBankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
@@ -404,7 +405,7 @@
                 const isLiability = (acc.type === 'Credit Card' || acc.type === 'Other');
                 
                 mantiJournals.forEach(j => {
-                    if (!j.lines) return;
+                    if (!j.lines || j.status === 'Draft') return;
                     j.lines.forEach(l => {
                         if ((l.account || '').toLowerCase() === (acc.name || '').toLowerCase()) {
                             const deb = parseFloat(l.debit) || 0;
@@ -428,7 +429,7 @@
 
             // Unpaid Orders Table
             const tbody = document.getElementById('recent-orders-body');
-            const unpaidOrders = orders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled');
+            const unpaidOrders = orders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled' && o.status !== 'Draft');
             unpaidOrders.sort((a, b) => new Date(a.date) - new Date(b.date)); // Oldest first (long days)
             const displayOrders = unpaidOrders.slice(0, 8);
             

@@ -149,7 +149,7 @@
             <!-- Inventory Details Table -->
             <div style="margin-bottom: 1rem;">
                 <input type="text" id="search-inventory" class="input-wrapper" placeholder="Search inventory items..."
-                    onkeyup="filterTable('search-inventory', 'inventory-table')"
+                    onkeyup="filterInventory()"
                     style="max-width: 400px; padding: 10px; font-size: 1rem;">
             </div>
 
@@ -203,6 +203,18 @@
         lucide.createIcons();
     </script>
     <script src="script.js?v=24"></script>
+    <script>
+        window.filterInventory = function() {
+            const searchInput = document.getElementById('search-inventory');
+            if (searchInput) {
+                const search = searchInput.value.trim().toLowerCase();
+                sessionStorage.setItem('last_inventory_search', search);
+            }
+            if (window.filterTable) {
+                filterTable('search-inventory', 'inventory-table');
+            }
+        };
+    </script>
 </body>
     <script>
         document.addEventListener('CloudDataLoaded', () => {
@@ -278,6 +290,7 @@
             // Out-Flow/In-Flow: Job Work Tracker
             const jobRecords = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
             jobRecords.forEach(r => {
+                if (r.doc_status === 'Draft') return;
                 const so = orders.find(o => o.id === r.jobnum);
                 const mainM = so ? (so.mainMetalType || 'Unknown') : 'Unknown';
 
@@ -366,6 +379,16 @@
             }
 
             document.getElementById('stock-total-value').textContent = '₹ ' + totalValue.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+
+            // Restore search from sessionStorage
+            const savedSearch = sessionStorage.getItem('last_inventory_search');
+            if (savedSearch) {
+                const searchInput = document.getElementById('search-inventory');
+                if (searchInput) {
+                    searchInput.value = savedSearch;
+                    if (window.filterTable) filterTable('search-inventory', 'inventory-table');
+                }
+            }
         });
         });
     </script>

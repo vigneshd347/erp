@@ -93,6 +93,41 @@
             padding: 20px;
             width: 350px;
         }
+        .filter-btn {
+            padding: 4px 12px;
+            border: none;
+            background: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .payment-tab {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .payment-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .payment-tab:hover:not(.active) {
+            color: #334155;
+            background: #f8fafc;
+        }
     </style>
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -201,6 +236,7 @@
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <button onclick="window.history.back()" style="background: none; border: none; cursor: pointer; color: var(--text-muted);"><i data-lucide="arrow-left"></i></button>
                     <h1 style="font-size: 1.5rem; color: #0f172a; margin: 0;">Payments</h1>
+                    <div id="pay-id-display" style="font-size: 1.1rem; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 4px 12px; border-radius: 8px;">PAY-XXXX (Auto)</div>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="btn-liquid btn-secondary" onclick="window.history.back()">Cancel</button>
@@ -230,6 +266,8 @@
                                     <option value="UPI">UPI Payment</option>
                                     <option value="Cheque">Cheque</option>
                                     <option value="Cash">Cash</option>
+                                </select>
+                            </div>
                             <div>
                                 <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Paid Through <span style="color:#ef4444;">*</span></label>
                                 <select id="pay-account" class="pay-input" required>
@@ -255,17 +293,37 @@
                         </div>
                     </div>
 
+                    <!-- Tabs Navigation -->
+                    <div style="display: flex; gap: 20px; border-bottom: 1px solid #e2e8f0; margin: 2rem 30px 1rem; padding-bottom: 0;">
+                        <button type="button" id="tab-pending" class="payment-tab active" onclick="switchPaymentTab('pending')">Payment Pending</button>
+                        <button type="button" id="tab-history" class="payment-tab" onclick="switchPaymentTab('history')">Recent Payments Made</button>
+                    </div>
+
                     <!-- Bills Section -->
-                    <div style="padding: 2rem 30px;">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: #0f172a;">Unpaid Purchase Orders</h3>
+                    <div id="pending-section" style="padding: 1rem 30px 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="font-size: 1.1rem; color: #0f172a; margin: 0;">Unpaid Bills & Expenses</h3>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <div style="display: flex; background: #f1f5f9; padding: 2px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                    <button type="button" class="filter-btn active" onclick="setPendingFilter('all')">All</button>
+                                    <button type="button" class="filter-btn" onclick="setPendingFilter('PO')">POs</button>
+                                    <button type="button" class="filter-btn" onclick="setPendingFilter('Expense')">Expenses</button>
+                                </div>
+                                <div style="position: relative; width: 250px;">
+                                    <input type="text" id="search-pending" placeholder="Search bills..." oninput="filterPendingTable()" style="width: 100%; padding: 6px 10px 6px 30px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.85rem; outline: none;">
+                                    <i data-lucide="search" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #94a3b8;"></i>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                             <table class="bills-table" data-no-filter="true">
                                 <thead>
                                     <tr>
                                         <th>Date</th>
+                                        <th>Type</th>
                                         <th>Supplier Name</th>
-                                        <th>PO Number</th>
+                                        <th>Doc Number</th>
                                         <th>Bill No.</th>
                             <th style="text-align: center;">Status</th>
                             <th style="text-align: right;">Amount</th>
@@ -274,7 +332,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="unpaid-bills-body">
-                                    <tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">Please select a supplier to view unpaid purchase orders.</td></tr>
+                                    <tr><td colspan="8" style="text-align: center; color: #64748b; padding: 2rem;">Loading pending payments...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -299,6 +357,29 @@
                     </div>
 
                 </div>
+
+                <!-- Recent Payments History Section -->
+                <div id="history-section" style="margin-top: 0; padding: 1rem 30px 2rem; display: none;">
+                    <h3 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 1rem;">Payment History</h3>
+                    <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;">
+                        <table class="expenses-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Payment#</th>
+                                    <th>Vendor</th>
+                                    <th>Reference#</th>
+                                    <th>Paid Through</th>
+                                    <th style="text-align: right;">Amount</th>
+                                    <th style="width: 80px; text-align: center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payments-history-body">
+                                <tr><td colspan="7" style="text-align: center; color: #64748b; padding: 2rem;">No payment history found.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -310,25 +391,35 @@
     </script>
     <script>
         // Data sources
-        const orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
-        const sups = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
-        const vends = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]');
-        const vendors = sups.concat(vends);
-        const allExpenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
-
+        let orders = [];
+        let vendors = [];
+        let allExpenses = [];
+        let paymentsHistory = [];
         let currentVendorOrders = [];
+        let pendingCategoryFilter = 'all';
+
+        function refreshLocalData() {
+            orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+            const sups = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+            const vends = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]');
+            vendors = sups.concat(vends);
+            allExpenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+            paymentsHistory = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
+        }
+
+        refreshLocalData();
 
         document.addEventListener('CloudDataLoaded', () => {
+            refreshLocalData();
             document.getElementById('pay-date').valueAsDate = new Date();
 
             const vendorList = document.getElementById('supplier-kyc-list');
-            if (vendors.length > 0) {
-                vendors.forEach(v => {
-                    const opt = document.createElement('option');
-                    opt.value = v.name ? `${v.name} (${v.id})` : v.id;
-                    vendorList.appendChild(opt);
-                });
-            }
+            vendorList.innerHTML = ''; // Clear before repopulating
+            vendors.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.name ? `${v.name} (${v.id})` : v.id;
+                vendorList.appendChild(opt);
+            });
 
             // Populate Paid Through from actual bank accounts dynamically
             const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
@@ -355,37 +446,173 @@
                 if (cashGroup.children.length > 0) select.appendChild(cashGroup);
             }
             
+            // Restore from sessionStorage if exists
+            const savedVendor = sessionStorage.getItem('last_payment_vendor');
+            if (savedVendor) {
+                document.getElementById('pay-vendor').value = savedVendor;
+            }
             loadVendorBills();
+            renderPaymentsHistory();
+
+            updatePayIdDisplay();
+
+            // Restore last tab
+            const lastTab = sessionStorage.getItem('last_payment_tab') || 'pending';
+            switchPaymentTab(lastTab);
+            
+            if (window.lucide) lucide.createIcons();
         });
 
-        function loadVendorBills() {
-            let rawVendor = document.getElementById('pay-vendor').value.trim();
-            const tbody = document.getElementById('unpaid-bills-body');
+        function updatePayIdDisplay() {
+            let nextId = 1;
+            paymentsHistory.forEach(r => {
+                if(r.id && r.id.startsWith('PAY-')) {
+                    const n = parseInt(r.id.replace('PAY-', ''), 10);
+                    if(!isNaN(n) && n >= nextId) nextId = n + 1;
+                }
+            });
+            document.getElementById('pay-id-display').textContent = 'PAY-' + nextId.toString().padStart(4, '0') + ' (Auto)';
+        }
+
+        window.setPendingFilter = function(cat) {
+            pendingCategoryFilter = cat;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.toLowerCase() === cat.toLowerCase() || (cat === 'all' && btn.innerText === 'All'));
+            });
+            loadVendorBills();
+        };
+
+        window.filterPendingTable = function() {
+            loadVendorBills();
+        };
+
+        window.switchPaymentTab = function(tab) {
+            sessionStorage.setItem('last_payment_tab', tab);
+            const pendingSec = document.getElementById('pending-section');
+            const historySec = document.getElementById('history-section');
+            const btnPending = document.getElementById('tab-pending');
+            const btnHistory = document.getElementById('tab-history');
+
+            if (tab === 'pending') {
+                pendingSec.style.display = 'block';
+                historySec.style.display = 'none';
+                btnPending.classList.add('active');
+                btnHistory.classList.remove('active');
+            } else {
+                pendingSec.style.display = 'none';
+                historySec.style.display = 'block';
+                btnPending.classList.remove('active');
+                btnHistory.classList.add('active');
+            }
+        };
+
+        function renderPaymentsHistory() {
+            const tbody = document.getElementById('payments-history-body');
+            tbody.innerHTML = '';
+
+            // Map-based lookup for vendor names in history
+            const vMap = {};
+            vendors.forEach(v => { vMap[v.id] = v.name; });
+
+            if (paymentsHistory.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 2rem;">No payment history found.</td></tr>';
+                return;
+            }
+
+            // Sort by date descending (newest first)
+            const sorted = [...paymentsHistory].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            sorted.forEach(pmt => {
+                const tr = document.createElement('tr');
+                const vName = vMap[pmt.vendor] || pmt.vendor || '—';
+                
+                tr.innerHTML = `
+                    <td>${new Date(pmt.date).toLocaleDateString('en-GB')}</td>
+                    <td style="font-weight: 600; color: var(--primary);">${pmt.id}</td>
+                    <td>${vName}</td>
+                    <td>${pmt.reference || '-'}</td>
+                    <td>${pmt.account || '-'}</td>
+                    <td style="text-align: right; font-weight: 700; color: #059669;">₹ ${parseFloat(pmt.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td style="text-align: center;">
+                        <button onclick="deletePayment('${pmt.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer;" title="Delete Payment">
+                            <i data-lucide="trash-2" style="width:18px; height:18px;"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.deletePayment = function(pmtId) {
+            if (!confirm("Are you sure you want to delete this payment? This will automatically reverse the paid amounts on the associated bills.")) return;
             
+            const payment = paymentsHistory.find(p => p.id === pmtId);
+            if (payment && payment.applications) {
+                payment.applications.forEach(app => {
+                    if (app.id.startsWith('EXP-')) {
+                        const expIndex = allExpenses.findIndex(e => e.id === app.id);
+                        if (expIndex !== -1) {
+                            allExpenses[expIndex].paidAmount = Math.max(0, (allExpenses[expIndex].paidAmount || 0) - app.amount);
+                        }
+                    } else {
+                        const orderIndex = orders.findIndex(o => o.id === app.id);
+                        if (orderIndex !== -1) {
+                            orders[orderIndex].paidAmount = Math.max(0, (orders[orderIndex].paidAmount || 0) - app.amount);
+                        }
+                    }
+                });
+                localStorage.setItem('manti_order_records', JSON.stringify(orders));
+                localStorage.setItem('manti_expenses', JSON.stringify(allExpenses));
+            }
+            
+            paymentsHistory = paymentsHistory.filter(p => p.id !== pmtId);
+            localStorage.setItem('manti_payments_made', JSON.stringify(paymentsHistory));
+            refreshLocalData();
+            loadVendorBills();
+            renderPaymentsHistory();
+            alert("Payment deleted and bill amounts reverted.");
+        };
+
+        function loadVendorBills() {
+            const rawVendor = document.getElementById('pay-vendor').value.trim();
+            sessionStorage.setItem('last_payment_vendor', rawVendor);
+            const tbody = document.getElementById('unpaid-bills-body');
             const isAllVendors = !rawVendor;
+
+            // Pre-calculate vendor maps for performance
+            const idMap = {};
+            const nameMap = {};
+            vendors.forEach(v => {
+                if (v.id) idMap[v.id] = v;
+                if (v.name) nameMap[v.name.toLowerCase()] = v;
+            });
 
             let vendorId = rawVendor;
             const match = rawVendor.match(/\(([^)]+)\)$/);
             if (match) {
                 vendorId = match[1];
             } else {
-                const found = vendors.find(v => v.name && v.name.toLowerCase() === rawVendor.toLowerCase());
+                const found = nameMap[rawVendor.toLowerCase()];
                 if (found) vendorId = found.id;
             }
 
+            const searchQuery = document.getElementById('search-pending')?.value.trim().toLowerCase() || '';
             const allUnpaid = [];
+            const idRegex = /\(([^)]+)\)$/;
 
             // 1. Process Purchase Orders
             orders.forEach(o => {
                 try {
                     if (o.type !== 'Purchase Order') return;
                     if (o.status === 'Cancelled') return;
+                    if (pendingCategoryFilter !== 'all' && pendingCategoryFilter !== 'PO') return;
                     
                     let oVid = o.vendor ? String(o.vendor).trim() : '';
-                    const m = oVid.match(/\(([^)]+)\)$/);
+                    const m = oVid.match(idRegex);
                     if (m) oVid = m[1];
                     else {
-                        const found = vendors.find(v => v.name && String(v.name).toLowerCase() === oVid.toLowerCase());
+                        const found = nameMap[oVid.toLowerCase()];
                         if (found) oVid = found.id;
                     }
                     
@@ -395,21 +622,32 @@
                     
                     // Lookup full name for rendering
                     let fullName = o.vendor;
-                    let foundVendor = vendors.find(v => v.id === oVid) || vendors.find(v => v.id === o.vendor);
+                    let foundVendor = idMap[oVid] || idMap[o.vendor];
                     if(foundVendor && foundVendor.name) fullName = foundVendor.name;
 
-                    const amt = parseFloat(String(o.amount || 0).replace(/,/g, '')) || 0;
-                    const paid = parseFloat(String(o.paidAmount || 0).replace(/,/g, '')) || 0;
+                    // Search filter
+                    if (searchQuery) {
+                        const searchable = (fullName + ' ' + o.id + ' ' + (o.billNo || '')).toLowerCase();
+                        if (!searchable.includes(searchQuery)) return;
+                    }
+
+                    const amt = parseFloat(String(o.amount || 0).replace(/[^0-9.]/g, '')) || 0;
+                    let paid = parseFloat(String(o.paidAmount || 0).replace(/[^0-9.]/g, '')) || 0;
+                    if (o.paidThrough && o.paidThrough !== 'Accounts Payable') {
+                        paid = amt;
+                    }
                     const due = amt - paid;
                     
                     if (due > 0.001) {
                         allUnpaid.push({
+                            type: 'PO',
                             date: o.date,
                             id: o.id,
                             billNo: o.billNo || '-',
                             amt: amt,
                             due: due,
-                            vendorName: fullName || '—'
+                            vendorName: fullName || '—',
+                            vendorId: oVid
                         });
                     }
                 } catch(err) {
@@ -420,11 +658,12 @@
             // 2. Process Expenses
             allExpenses.forEach(exp => {
                 try {
+                    if (pendingCategoryFilter !== 'all' && pendingCategoryFilter !== 'Expense') return;
                     let eVid = exp.vendor ? String(exp.vendor).trim() : '';
-                    const m = eVid.match(/\(([^)]+)\)$/);
+                    const m = eVid.match(idRegex);
                     if (m) eVid = m[1];
                     else {
-                        const found = vendors.find(v => v.name && String(v.name).toLowerCase() === eVid.toLowerCase());
+                        const found = nameMap[eVid.toLowerCase()];
                         if (found) eVid = found.id;
                     }
                     
@@ -434,30 +673,36 @@
 
                     // Lookup full name
                     let fullName = exp.vendor;
-                    let foundVendor = vendors.find(v => v.id === eVid) || vendors.find(v => v.id === exp.vendor);
+                    let foundVendor = idMap[eVid] || idMap[exp.vendor];
                     if(foundVendor && foundVendor.name) fullName = foundVendor.name;
 
-                    const amt = parseFloat(String(exp.total || 0).replace(/,/g, '')) || 0;
-                    let paid = parseFloat(String(exp.paidAmount || 0).replace(/,/g, '')) || 0;
-                    
-                    if (exp.paidAmount === undefined && exp.paidThrough && String(exp.paidThrough).trim() !== '') {
+                    // Search filter
+                    if (searchQuery) {
+                        const searchable = (fullName + ' ' + exp.id + ' ' + (exp.reference || '') + ' ' + (exp.account || '')).toLowerCase();
+                        if (!searchable.includes(searchQuery)) return;
+                    }
+
+                    const amt = parseFloat(String(exp.total || 0).replace(/[^0-9.]/g, '')) || 0;
+                    let paid = parseFloat(String(exp.paidAmount || 0).replace(/[^0-9.]/g, '')) || 0;
+                    if (exp.paidThrough && exp.paidThrough !== 'Accounts Payable') {
                         paid = amt;
                     }
-                    
                     const due = amt - paid;
-                    
+
                     if (due > 0.001) {
                         allUnpaid.push({
+                            type: 'Expense',
                             date: exp.date,
                             id: exp.id,
-                            billNo: exp.reference || 'Expense Bill',
+                            billNo: exp.reference || '-',
                             amt: amt,
                             due: due,
-                            vendorName: fullName || '—'
+                            vendorName: fullName || '—',
+                            vendorId: eVid
                         });
                     }
                 } catch(err) {
-                    console.error("Skipping corrupted expense:", err);
+                    console.error("Skipping corrupted Expense:", err);
                 }
             });
 
@@ -466,7 +711,8 @@
             currentVendorOrders = allUnpaid;
 
             if (currentVendorOrders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">This vendor has no outstanding Purchase Orders or Expenses.</td></tr>';
+                const msg = isAllVendors ? "No outstanding Purchase Orders or Expenses found." : "This vendor has no outstanding Purchase Orders or Expenses.";
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 2rem;">${msg}</td></tr>`;
                 calculateSummary();
                 return;
             }
@@ -474,8 +720,25 @@
             tbody.innerHTML = '';
             currentVendorOrders.forEach(o => {
                 const tr = document.createElement('tr');
+                tr.style.cursor = isAllVendors ? 'pointer' : 'default';
+                if (isAllVendors) {
+                    tr.title = "Click to select this supplier";
+                    tr.onclick = (e) => {
+                        if (e.target.tagName === 'INPUT') return;
+                        document.getElementById('pay-vendor').value = o.vendorName + (o.vendorId ? ` (${o.vendorId})` : '');
+                        loadVendorBills();
+                    };
+                }
+                const typeColor = o.type === 'PO' ? '#3b82f6' : '#8b5cf6';
+                const typeBg = o.type === 'PO' ? '#eff6ff' : '#f5f3ff';
+                
                 tr.innerHTML = `
                     <td>${new Date(o.date).toLocaleDateString('en-GB')}</td>
+                    <td>
+                        <span style="padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; background: ${typeBg}; color: ${typeColor}; border: 1px solid ${typeColor}40;">
+                            ${o.type}
+                        </span>
+                    </td>
                     <td style="font-weight: 600; color: #334155;">${o.vendorName}</td>
                     <td style="font-weight: 600; color: var(--primary);">${o.id}</td>
                     <td>${o.billNo}</td>
@@ -488,7 +751,7 @@
                     <td style="text-align: right;">${o.amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                     <td style="text-align: right; color: var(--danger); font-weight: 600;">${o.due.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                     <td style="text-align: right;">
-                        <input type="number" class="payment-cell-input" data-po-id="${o.id}" data-due="${o.due}" placeholder="${isAllVendors ? 'Select Supplier' : '0.00'}" oninput="calculateSummary()" ${isAllVendors ? 'disabled style="background:#f1f5f9; cursor:not-allowed;"' : ''}>
+                        <input type="number" class="payment-cell-input" data-po-id="${o.id}" data-due="${o.due}" placeholder="0.00" oninput="calculateSummary()">
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -630,7 +893,14 @@
 
             // 2. Generate Journal Entry for Banking Ledger
             const journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
-            const nextId = 'PMT-' + String(journals.length + 1).padStart(4, '0');
+            let pmtMax = 0;
+            journals.forEach(j => {
+                if (j.id && j.id.startsWith('PMT-')) {
+                    const n = parseInt(j.id.replace('PMT-', ''), 10);
+                    if (!isNaN(n) && n > pmtMax) pmtMax = n;
+                }
+            });
+            const nextId = 'PMT-' + (pmtMax + 1).toString().padStart(4, '0');
 
             const jvLines = [
                 {
@@ -653,7 +923,7 @@
                 id: nextId,
                 date: date,
                 reference: ref,
-                notes: notes || `Vendor Payment: ${vendor}`,
+                notes: notes || `Vendor Payment: ${rawVendor}`,
                 total: amountEntered,
                 lines: jvLines,
                 timestamp: new Date().toISOString()
@@ -686,8 +956,19 @@
             payments.push(paymentObj);
             localStorage.setItem('manti_payments_made', JSON.stringify(payments));
 
-            alert(`Payment of ₹ ${amountEntered.toFixed(2)} recorded successfully.`);
-            if (window.navigateAfterSync) window.navigateAfterSync('purchases.html'); else window.location.href = 'purchases.html';
+            alert('Payment recorded successfully!');
+            refreshLocalData();
+            document.getElementById('pay-vendor').value = '';
+            sessionStorage.removeItem('last_payment_vendor');
+            document.getElementById('pay-date').valueAsDate = new Date();
+            document.getElementById('pay-amount').value = '';
+            document.getElementById('pay-ref').value = '';
+            document.getElementById('pay-notes').value = '';
+            
+            // Reload the table now that vendor is cleared
+            loadVendorBills();
+            renderPaymentsHistory();
+            updatePayIdDisplay();
         }
     </script>
 </body>

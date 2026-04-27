@@ -144,6 +144,7 @@
                             <th>Date</th>
                             <th>Total Weight (g)</th>
                             <th>Designs Count</th>
+                            <th>Status</th>
                             <th>Notes</th>
                             <th>Actions</th>
                         </tr>
@@ -224,6 +225,7 @@
             </div>
             <div class="premium-modal-footer">
                 <button type="button" class="btn-liquid btn-outline" onclick="closeTreeModal()">Cancel</button>
+                <button type="button" class="btn-liquid btn-secondary" id="save-draft-tree">Save as Draft</button>
                 <button type="submit" form="tree-form" class="btn-liquid btn-primary" id="btn-save-tree">Save Tree</button>
             </div>
         </div>
@@ -367,11 +369,21 @@
                     tree.designs.forEach(d => designCount += (parseInt(d.count) || 0));
                 }
 
+                // Status Badge
+                const status = tree.status || 'Completed';
+                const statusStyles = {
+                    'Draft': { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' },
+                    'Completed': { bg: '#dcfce7', color: '#16a34a', dot: '#16a34a' }
+                };
+                const sc = statusStyles[status] || statusStyles['Completed'];
+                const statusHtml = `<span style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; background:${sc.bg};color:${sc.color};"><span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};display:inline-block;"></span>${status}</span>`;
+
                 tr.innerHTML = `
                     <td><strong>${tree.treeNo}</strong></td>
                     <td>${tree.date}</td>
                     <td style="color: var(--primary); font-weight: 700;">${parseFloat(tree.totalWeight).toFixed(3)}</td>
                     <td><button onclick="viewTree(${idx})" style="background:#eef2ff; color:#4f46e5; border:none; padding:4px 10px; border-radius:6px; font-weight:600; cursor:pointer;" title="View line items">${designCount} pcs</button></td>
+                    <td>${statusHtml}</td>
                     <td style="color:#64748b; font-size:0.85rem;">${tree.notes || '-'}</td>
                     <td style="display: flex; gap: 10px; align-items: center;">
                         <button onclick="editTree(${idx})" class="btn-edit" title="Edit">
@@ -815,8 +827,10 @@
                 date: document.getElementById('tree-date').value,
                 totalWeight: tWt,
                 designs: dList,
-                notes: document.getElementById('tree-notes').value
+                notes: document.getElementById('tree-notes').value,
+                status: window._isDraftSave ? 'Draft' : 'Completed'
             };
+            window._isDraftSave = false;
 
             if(idField) {
                 const idx = trees.findIndex(t => t.id === idField);
@@ -831,6 +845,15 @@
             closeTreeModal();
             renderTrees();
         });
+        
+        const saveDraftTreeBtn = document.getElementById('save-draft-tree');
+        if (saveDraftTreeBtn) {
+            saveDraftTreeBtn.addEventListener('click', () => {
+                window._isDraftSave = true;
+                // Tree form save uses the submit event
+                document.getElementById('tree-form').requestSubmit();
+            });
+        }
         
         // Expose a delete function securely
         window.deleteTree = function(id) {

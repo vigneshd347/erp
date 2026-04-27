@@ -420,6 +420,91 @@ function attachTableSorting() {
 
 // Observe dynamic table rebuilds (like on Reports page)
 document.addEventListener('CloudDataLoaded', () => {
+    // --- AGGRESSIVE DEDUPLICATION ---
+    let dedupCount = 0;
+    function deduplicate(arr, keyFn) {
+        const seen = new Set();
+        return arr.filter(item => {
+            const k = keyFn(item);
+            if (seen.has(k)) { dedupCount++; return false; }
+            seen.add(k);
+            return true;
+        });
+    }
+
+    const records = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+    const expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+    let payments = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
+
+    let updated = false;
+
+    // Assign IDs to POs
+    let maxPo = 0;
+    records.forEach(r => {
+        if (r.id && r.id.startsWith('PO-')) {
+            const n = parseInt(r.id.replace('PO-', ''), 10);
+            if (!isNaN(n) && n > maxPo) maxPo = n;
+        }
+    });
+    records.forEach(r => {
+        if (!r.id && r.type === 'Purchase Order') {
+            maxPo++;
+            r.id = 'PO-' + maxPo.toString().padStart(4, '0');
+            updated = true;
+        }
+    });
+
+    // Assign IDs to Expenses
+    let maxExp = 0;
+    expenses.forEach(e => {
+        if (e.id && e.id.startsWith('EXP-')) {
+            const n = parseInt(e.id.replace('EXP-', ''), 10);
+            if (!isNaN(n) && n > maxExp) maxExp = n;
+        }
+    });
+    expenses.forEach(e => {
+        if (!e.id) {
+            maxExp++;
+            e.id = 'EXP-' + maxExp.toString().padStart(4, '0');
+            updated = true;
+        }
+    });
+
+    // Assign IDs to Payments
+    let maxPay = 0;
+    payments.forEach(p => {
+        if (p.id && p.id.startsWith('PAY-')) {
+            const n = parseInt(p.id.replace('PAY-', ''), 10);
+            if (!isNaN(n) && n > maxPay) maxPay = n;
+        }
+    });
+    payments.forEach(p => {
+        if (!p.id) {
+            maxPay++;
+            p.id = 'PAY-' + maxPay.toString().padStart(4, '0');
+            updated = true;
+        }
+    });
+
+    // NOW deduplicate only by ID!
+    const cleanOrders = deduplicate(records, r => r.id || `${r.type}-${r.date}-${r.vendor}-${r.amount}`);
+    const cleanExpenses = deduplicate(expenses, e => e.id || `${e.date}-${e.vendor}-${e.amount}`);
+    const cleanPayments = deduplicate(payments, p => p.id || `${p.date}-${p.vendor}-${p.amount}`);
+
+    if (dedupCount > 0 || updated) {
+        localStorage.setItem('manti_order_records', JSON.stringify(cleanOrders));
+        localStorage.setItem('manti_expenses', JSON.stringify(cleanExpenses));
+        localStorage.setItem('manti_payments_made', JSON.stringify(cleanPayments));
+        
+        if (window.syncKeyToSupabase) {
+            window.syncKeyToSupabase('manti_order_records', cleanOrders);
+            window.syncKeyToSupabase('manti_expenses', cleanExpenses);
+            window.syncKeyToSupabase('manti_payments_made', cleanPayments);
+        }
+        console.log(`Global Deduplication/ID Assignment complete. Removed ${dedupCount} duplicates.`);
+    }
+    // --- END DEDUPLICATION ---
+
     attachExcelFilters();
     attachTableSorting();
 
@@ -596,6 +681,55 @@ function addNewRow() {
         </td>
     `;
     itemsBody.appendChild(row);
+}
+
+function fillInvoiceForm(data) {
+    if (!invoiceForm) return;
+    
+    // Fill top level fields from formData keys
+    Object.keys(data).forEach(key => {
+        const input = invoiceForm.querySelector(`[name="${key}"]`);
+        if (input && key !== 'items') {
+            input.value = data[key];
+        }
+    });
+
+    // Handle items
+    if (data.items && data.items.length > 0) {
+        if (itemsBody) {
+            itemsBody.innerHTML = '';
+            data.items.forEach(item => {
+                addNewRow();
+                const lastRow = itemsBody.lastElementChild;
+                lastRow.querySelector('input[name="desc"]').value = item.desc || '';
+                lastRow.querySelector('input[name="hsn"]').value = item.hsn || '';
+                lastRow.querySelector('input[name="weight"]').value = item.weight || '';
+                lastRow.querySelector('input[name="rate"]').value = item.rate || '';
+                lastRow.querySelector('input[name="mc_pct"]').value = item.mc_pct || '';
+                
+                // Handle metal select by matching text
+                const sel = lastRow.querySelector('select[name="metal_type"]');
+                if (sel) {
+                    Array.from(sel.options).forEach(opt => {
+                        if (opt.text === item.metal_text) sel.value = opt.value;
+                    });
+                }
+                calculateRow(lastRow.querySelector('input[name="weight"]'));
+            });
+        }
+    }
+    
+    // Attempt to match the SO select if buyer_order present
+    const soSelect = document.getElementById('so-select');
+    if (soSelect && data.buyer_order) {
+        Array.from(soSelect.options).forEach(opt => {
+            if (opt.value === data.buyer_order || opt.text.startsWith(data.buyer_order)) {
+               soSelect.value = opt.value;
+            }
+        });
+    }
+
+    if (typeof syncWithTemplate === 'function') syncWithTemplate();
 }
 
 // Remove leading zeros when user types in number fields
@@ -1018,6 +1152,31 @@ if (printBtn) {
     });
 }
 
+
+const draftInvoiceBtn = document.getElementById('save-draft-invoice');
+if (draftInvoiceBtn) {
+    draftInvoiceBtn.addEventListener('click', () => {
+        const soSelect = document.getElementById('so-select');
+        const soId = soSelect ? soSelect.value : null;
+
+        if (!soId) {
+            alert("Please select a Buyer's Order No (SO) before saving draft.");
+            return;
+        }
+
+        if (typeof syncWithTemplate === 'function') syncWithTemplate();
+
+        // Serialize and save as Draft
+        const serializedData = serializeInvoiceData('Draft');
+        let savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
+        savedInvoices[soId] = serializedData;
+        localStorage.setItem('manti_saved_invoices', JSON.stringify(savedInvoices));
+
+        alert('Invoice Saved as Draft ✅');
+        // We don't reset the form for drafts, allowing continued editing
+    });
+}
+
 const completeBtn = document.getElementById('complete-invoice');
 if (completeBtn) {
     completeBtn.addEventListener('click', () => {
@@ -1034,7 +1193,7 @@ if (completeBtn) {
             if (typeof deductInvoiceStock === 'function') deductInvoiceStock();
 
             // Serialize and save to Production Report
-            const serializedData = serializeInvoiceData();
+            const serializedData = serializeInvoiceData('Completed');
             let savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
             savedInvoices[soId] = serializedData;
             localStorage.setItem('manti_saved_invoices', JSON.stringify(savedInvoices));
@@ -1044,7 +1203,7 @@ if (completeBtn) {
             if (window.__pendingDespatchSoId === soId) {
                 localStorage.removeItem('manti_pending_despatch');
                 window.__pendingDespatchSoId = null;
-            } else {
+            } else if (typeof markSOCompleted === 'function') {
                 markSOCompleted(soId);
             }
 
@@ -1115,11 +1274,12 @@ function closePreview() {
 }
 
 
-function serializeInvoiceData() {
+function serializeInvoiceData(status = 'Completed') {
     const formData = new FormData(invoiceForm);
     const data = Object.fromEntries(formData.entries());
 
     data.items = [];
+    data.status = status;
     const rows = itemsBody.querySelectorAll('tr');
     rows.forEach(row => {
         data.items.push({
@@ -1140,6 +1300,8 @@ function serializeInvoiceData() {
 
     data.bank = JSON.parse(localStorage.getItem('manti_bank_details') || '{}');
     data.footer = localStorage.getItem('manti_invoice_defaults') ? JSON.parse(localStorage.getItem('manti_invoice_defaults')).footerText : 'THANK YOU WELCOME AGAIN';
+
+    data.timestamp = new Date().toISOString();
 
     const jsonStr = JSON.stringify(data);
     return btoa(unescape(encodeURIComponent(jsonStr)));
@@ -1214,8 +1376,16 @@ function handleSharedInvoice(base64Data) {
     try {
         const jsonStr = decodeURIComponent(escape(atob(base64Data)));
         const data = JSON.parse(jsonStr);
+        const urlParams = new URLSearchParams(window.location.search);
+        const isEditMode = urlParams.get('edit') === 'true';
 
-        // Hide main app
+        // If it's a draft and we want to edit, populate the form
+        if (isEditMode && data.status === 'Draft') {
+            fillInvoiceForm(data);
+            return;
+        }
+
+        // Hide main app for pure viewing/printing
         const appContainer = document.querySelector('.app-container');
         if (appContainer) appContainer.style.display = 'none';
 

@@ -671,7 +671,7 @@
                     const filterMonth = document.getElementById('report-month-filter').value;
                     const isYearlyMode = !isNaN(parseInt(filterYear)) && filterMonth === 'all';
                     
-                    const orders = allOrders.filter(o => o.type === filterType && isWithinDateFilter(o.date));
+                    const orders = allOrders.filter(o => o.type === filterType && o.status !== 'Draft' && isWithinDateFilter(o.date));
 
                     if (orders.length === 0) {
                         reportHead.innerHTML = `<tr><th>Notice</th></tr>`;
@@ -843,7 +843,7 @@
                     
                     // Filter down to Purchase Orders inside date filter
                     // Note: Vendors and balances persist across dates, so we analyze historic or filtered POs depending on how strict you want. We will apply date filter to the POs and Payments.
-                    const filteredPOs = orders.filter(o => o.type === 'Purchase Order' && o.status !== 'Cancelled' && isWithinDateFilter(o.date));
+                    const filteredPOs = orders.filter(o => o.type === 'Purchase Order' && o.status !== 'Cancelled' && o.status !== 'Draft' && isWithinDateFilter(o.date));
                     const filteredPmts = payments.filter(p => isWithinDateFilter(p.date));
 
                     let totalActive = vendors.length;
@@ -973,7 +973,7 @@
                     const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
                     const supplierMap = {}; suppliers.forEach(s => supplierMap[s.id] = s.name);
 
-                    const pos = allOrders.filter(o => o.type === 'Purchase Order' && isWithinDateFilter(o.date));
+                    const pos = allOrders.filter(o => o.type === 'Purchase Order' && o.status !== 'Draft' && isWithinDateFilter(o.date));
 
                     const totalPOs    = pos.length;
                     const openPOs     = pos.filter(o => (o.status||'Open') === 'Open').length;
@@ -1113,7 +1113,7 @@
                     let totalPurchases = 0;
                     let totalExpenses = 0;
 
-                    allOrders.filter(o => isWithinDateFilter(o.date) && o.status !== 'Cancelled').forEach(o => {
+                    allOrders.filter(o => isWithinDateFilter(o.date) && o.status !== 'Cancelled' && o.status !== 'Draft').forEach(o => {
                         const amt = parseFloat(o.amount) || 0;
                         if (o.type === 'Sales Order') totalSales += amt;
                         else if (o.type === 'Purchase Order') totalPurchases += amt;
@@ -1174,7 +1174,7 @@
                 else if (type === 'expenses') {
                     reportTitle.textContent = `Expense Details Report (${new Date().toLocaleDateString()})`;
                     const expenses = JSON.parse(localStorage.getItem('manti_expenses')) || [];
-                    const filtered = expenses.filter(e => isWithinDateFilter(e.date));
+                    const filtered = expenses.filter(e => isWithinDateFilter(e.date) && e.doc_status !== 'Draft');
                     
                     reportHead.innerHTML = `
                         <tr>
@@ -1218,7 +1218,7 @@
                 else if (type === 'banking-ledger') {
                     reportTitle.textContent = `Banking & Journal Ledger (${new Date().toLocaleDateString()})`;
                     const journals = JSON.parse(localStorage.getItem('manti_journal_entries')) || [];
-                    const filteredJournals = journals.filter(j => isWithinDateFilter(j.date));
+                    const filteredJournals = journals.filter(j => isWithinDateFilter(j.date) && j.status !== 'Draft');
                     const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts')) || [];
                     
                     let html = '';
@@ -1365,7 +1365,8 @@
                         </tr>
                     `;
 
-                    const jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+                    const allJobsRaw = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+                    const jobs = allJobsRaw.filter(j => j.doc_status !== 'Draft');
                     if (jobs.length === 0) {
                         reportBody.innerHTML = `<tr><td colspan="8" style="text-align: center;">No job work records found.</td></tr>`;
                         return;
@@ -1476,7 +1477,8 @@
                     hRow += '</tr>';
                     reportHead.innerHTML = hRow;
 
-                    let jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+                    const allJobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+                    const jobs = allJobs.filter(j => j.doc_status !== 'Draft');
 
                     if (jobs.length === 0) {
                         reportBody.innerHTML = `<tr><td colspan="8" style="text-align: center;">No job work records found.</td></tr>`;
@@ -1623,6 +1625,7 @@
 
                     // Job Work Movements
                     jobRecords.forEach(r => {
+                        if (r.doc_status === 'Draft') return;
                         const so = orders.find(o => o.id === r.jobnum);
                         const mainM = so ? (so.mainMetalType || 'Unknown') : 'Unknown';
 
@@ -1884,12 +1887,13 @@
                             <th>Invoice</th>
                         </tr>
                     `;
-                    const jobs = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+                    const allJobsRaw = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+                    const jobs = allJobsRaw.filter(j => j.doc_status !== 'Draft');
                     const filterYear = document.getElementById('report-year-filter').value;
                     const filterMonth = document.getElementById('report-month-filter').value;
                     const isYearlyMode = !isNaN(parseInt(filterYear)) && filterMonth === 'all';
                     
-                    const dispatchJobs = jobs.filter(j => j.process === '5. Despatch' && isWithinDateFilter(j.date));
+                    const dispatchJobs = jobs.filter(j => j.process === '5. Despatch' && j.doc_status !== 'Draft' && isWithinDateFilter(j.date));
                     const savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
 
                     if (dispatchJobs.length === 0) {
@@ -2042,9 +2046,22 @@
                             const weight = j.status === '1. Issue' ? j.issueWt : j.receiveWt;
                             const statusColor = j.status === '2. Receive' ? '#10b981' : '#3b82f6';
                             const savedInvoiceData = savedInvoices[j.jobnum];
-                            const invoiceAction = savedInvoiceData
-                                ? `<a href="create-invoice.html?data=${savedInvoiceData}" target="_blank" class="btn-text" style="font-size: 0.85rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #bae6fd; display: inline-block;">View</a>`
-                                : '-';
+                            
+                            let invoiceAction = '-';
+                            if (savedInvoiceData) {
+                                try {
+                                    const decoded = JSON.parse(decodeURIComponent(escape(atob(savedInvoiceData))));
+                                    const isDraft = decoded.status === 'Draft';
+                                    const label = isDraft ? 'Draft (Edit)' : 'View';
+                                    const bgColor = isDraft ? '#fef9c3' : '#e0f2fe';
+                                    const textColor = isDraft ? '#854d0e' : '#0284c7';
+                                    const borderColor = isDraft ? '#fef08a' : '#bae6fd';
+                                    
+                                    invoiceAction = `<a href="create-invoice.html?data=${savedInvoiceData}&edit=true" target="_blank" class="btn-text" style="font-size: 0.85rem; background: ${bgColor}; color: ${textColor}; padding: 4px 8px; border-radius: 4px; border: 1px solid ${borderColor}; display: inline-block; font-weight: 600;">${label}</a>`;
+                                } catch(e) {
+                                    invoiceAction = `<a href="create-invoice.html?data=${savedInvoiceData}" target="_blank" class="btn-text" style="font-size: 0.85rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #bae6fd; display: inline-block;">View</a>`;
+                                }
+                            }
 
                             bodyHtml += `
                                 <tr>
@@ -2056,7 +2073,7 @@
                                     <td>${j.process || '-'}</td>
                                     <td><span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${j.status}</span></td>
                                     <td>${invoiceAction}</td>
-                                </tr >
+                                </tr>
                             `;
                         });
                         reportBody.innerHTML = bodyHtml;

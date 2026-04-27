@@ -51,10 +51,10 @@ function initCropperUI() {
 
     document.getElementById('manti-cropper-done').addEventListener('click', () => {
         if (cropperInstance) {
-            // Compress and output canvas
+            // Compress and output canvas heavily to save Supabase free tier storage
             const canvas = cropperInstance.getCroppedCanvas({
-                maxWidth: 1200,
-                maxHeight: 1200,
+                maxWidth: 800,
+                maxHeight: 800,
                 fillColor: '#fff',
                 imageSmoothingEnabled: true,
                 imageSmoothingQuality: 'high',
@@ -63,7 +63,8 @@ function initCropperUI() {
             if (canvas) {
                 canvas.toBlob((blob) => {
                     closeCropper(blob);
-                }, 'image/jpeg', 0.85); // JPEG compression 85%
+                }, 'image/webp', 0.70); // Aggressive WEBP compression to hit ~50KB per file
+
             } else {
                 closeCropper(null);
             }
@@ -115,8 +116,8 @@ window.openCropper = async function(file, aspectRatio = NaN) {
         return new Promise((resolve, reject) => {
             currentResolve = (blob) => {
                 // Reconstruct a strict File object to emulate original input
-                const newFile = new File([blob], file.name ? file.name.replace(/\.[^/.]+$/, "") + ".jpg" : "cropped_image.jpg", {
-                    type: "image/jpeg",
+                const newFile = new File([blob], file.name ? file.name.replace(/\.[^/.]+$/, "") + ".webp" : "cropped_image.webp", {
+                    type: "image/webp",
                     lastModified: new Date().getTime()
                 });
                 URL.revokeObjectURL(objectUrl);

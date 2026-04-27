@@ -227,7 +227,8 @@
 
                 <div style="text-align: right; margin-top: 1.5rem; display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="btn-liquid btn-outline" id="cancel-order">Cancel</button>
-                    <button type="submit" class="btn-liquid btn-primary">Save Sales Order</button>
+                    <button type="button" class="btn-liquid btn-secondary" id="save-draft-so">Save as Draft</button>
+                    <button type="submit" class="btn-liquid btn-primary" id="save-so-btn">Save Sales Order</button>
                 </div>
             </form>
 
@@ -238,6 +239,7 @@
                     <!-- Status Filter Tabs -->
                     <div id="so-filter-tabs" style="display:flex; gap:0; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
                         <button class="so-tab active" data-filter="All"    onclick="filterSOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:var(--primary); color:#fff; cursor:pointer; transition:all 0.15s;">All</button>
+                        <button class="so-tab"        data-filter="Draft"   onclick="filterSOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-main); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Draft</button>
                         <button class="so-tab"        data-filter="Open"   onclick="filterSOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-main); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Open</button>
                         <button class="so-tab"        data-filter="Completed" onclick="filterSOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-main); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Completed</button>
                         <button class="so-tab"        data-filter="Cancelled" onclick="filterSOTab(this)" style="padding:8px 18px; font-size:0.82rem; font-weight:600; border:none; background:#fff; color:var(--text-main); cursor:pointer; border-left:1px solid var(--border); transition:all 0.15s;">Cancelled</button>
@@ -398,7 +400,7 @@
 
             let currentSOFilter = 'All';
 
-            window.filterSOTab = function(btn) {
+            window.filterSOTab = function(btn, skipRender = false) {
                 document.querySelectorAll('.so-tab').forEach(t => {
                     t.style.background = '#fff';
                     t.style.color = 'var(--text-main)';
@@ -406,7 +408,8 @@
                 btn.style.background = 'var(--primary)';
                 btn.style.color = '#fff';
                 currentSOFilter = btn.getAttribute('data-filter');
-                renderTable();
+                sessionStorage.setItem('last_so_filter', currentSOFilter);
+                if (!skipRender) renderTable();
             };
 
             window.filterSOTable = function() { renderTable(); };
@@ -465,6 +468,7 @@
 
                     // Status chip colors
                     const statusStyles = {
+                        'Draft':     { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' },
                         'Open':      { bg: '#fef9c3', color: '#ca8a04', dot: '#ca8a04' },
                         'Completed': { bg: '#dcfce7', color: '#16a34a', dot: '#16a34a' },
                         'Cancelled': { bg: '#fee2e2', color: '#dc2626', dot: '#dc2626' }
@@ -566,6 +570,14 @@
                 editIndex = -1;
             });
 
+            const saveDraftSOBtn = document.getElementById('save-draft-so');
+            if (saveDraftSOBtn) {
+                saveDraftSOBtn.addEventListener('click', () => {
+                    window._isDraftSave = true;
+                    form.requestSubmit();
+                });
+            }
+
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const rec = {
@@ -582,8 +594,9 @@
                     amount: document.getElementById('ord-amount').value,
                     remark: document.getElementById('ord-remark').value,
                     isFixed: document.getElementById('ord-is-fixed').checked,
-                    status: 'Open'
+                    status: window._isDraftSave ? 'Draft' : 'Open'
                 };
+                window._isDraftSave = false;
 
                 if (editIndex >= 0) records[editIndex] = rec;
                 else records.unshift(rec);
@@ -592,6 +605,24 @@
                 form.style.display = 'none';
                 renderTable();
             });
+
+            window.filterSOTable = function() { 
+                const search = (document.getElementById('search-orders')?.value || '').toLowerCase();
+                sessionStorage.setItem('last_so_search', search);
+                renderTable(); 
+            };
+
+            // Restore state from sessionStorage
+            const savedFilter = sessionStorage.getItem('last_so_filter');
+            const savedSearch = sessionStorage.getItem('last_so_search');
+            if (savedFilter) {
+                const targetTab = Array.from(document.querySelectorAll('.so-tab')).find(t => t.getAttribute('data-filter') === savedFilter);
+                if (targetTab) filterSOTab(targetTab, true);
+            }
+            if (savedSearch) {
+                const searchInput = document.getElementById('search-orders');
+                if (searchInput) searchInput.value = savedSearch;
+            }
 
             renderTable();
 

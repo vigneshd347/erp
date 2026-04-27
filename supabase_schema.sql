@@ -180,16 +180,23 @@ CREATE TABLE IF NOT EXISTS public.assets (
 
 -- 11. Create Payments Made table
 CREATE TABLE IF NOT EXISTS public.payments_made (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY,
     vendor TEXT NOT NULL,
     date DATE NOT NULL,
     amount NUMERIC NOT NULL,
     mode TEXT NOT NULL,
+    account TEXT,
+    notes TEXT,
     reference TEXT,
     applications JSONB,
     bill_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Safe migrations for existing payments_made tables
+ALTER TABLE public.payments_made ADD COLUMN IF NOT EXISTS account TEXT;
+ALTER TABLE public.payments_made ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE public.payments_made ALTER COLUMN id TYPE TEXT USING id::TEXT;
 
 -- 12. Create Journal Entries table
 CREATE TABLE IF NOT EXISTS public.journal_entries (

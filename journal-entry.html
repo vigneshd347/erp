@@ -172,6 +172,7 @@
                 </div>
                 <div class="actions">
                     <button type="button" class="btn-liquid btn-secondary" onclick="window.location.href='banking.html'">Cancel</button>
+                    <button type="button" id="save-draft-journal" class="btn-liquid btn-secondary">Save as Draft</button>
                     <button type="button" id="save-journal" class="btn-liquid btn-primary">Save & Publish</button>
                 </div>
             </header>
@@ -319,7 +320,8 @@
             }
 
             document.getElementById('add-journal-row').addEventListener('click', () => addJournalRow());
-            document.getElementById('save-journal').addEventListener('click', saveJournalEntry);
+            document.getElementById('save-journal').addEventListener('click', () => saveJournalEntry(false));
+            document.getElementById('save-draft-journal').addEventListener('click', () => saveJournalEntry(true));
         });
 
         const jBody = document.getElementById('journal-table-body');
@@ -456,24 +458,24 @@
             }
         }
 
-        function saveJournalEntry() {
+        function saveJournalEntry(isDraft = false) {
             // Validation
             const date = document.getElementById('journal-date').value;
             const no = document.getElementById('journal-no').value;
             const notes = document.getElementById('journal-notes').value;
             const diff = parseFloat(document.getElementById('sum-diff').textContent.replace('₹ ', ''));
 
-            if (!date || !no || !notes) {
+            if (!date || !no || (!notes && !isDraft)) {
                 alert('Please fill out all mandatory fields (Date, Journal#, Notes).');
                 return;
             }
 
-            if (Math.abs(diff) > 0.001) {
+            if (!isDraft && Math.abs(diff) > 0.001) {
                 alert('Debits and Credits must be equal to save the journal. Current difference: ₹ ' + Math.abs(diff).toFixed(2));
                 return;
             }
 
-            if (totalDebits === 0 && totalCredits === 0) {
+            if (totalDebits === 0 && totalCredits === 0 && !isDraft) {
                 alert('Journal must have a non-zero amount.');
                 return;
             }
@@ -515,6 +517,7 @@
                 notes: notes,
                 total: totalDebits,
                 lines: rows,
+                status: isDraft ? 'Draft' : 'Completed',
                 timestamp: new Date().toISOString()
             };
 
@@ -535,7 +538,7 @@
             localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
 
             // Show success and redirect
-            let btn = document.getElementById('save-journal');
+            let btn = isDraft ? document.getElementById('save-draft-journal') : document.getElementById('save-journal');
             btn.textContent = 'Saved!';
             btn.style.background = 'var(--success)';
             btn.style.borderColor = 'var(--success)';

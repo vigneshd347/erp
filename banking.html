@@ -291,6 +291,23 @@
         .btn-modal-cancel { padding: 9px 18px; border: 1px solid #d1d5db; background: #fff; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
         .btn-modal-save { padding: 9px 18px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
         .btn-modal-save:hover { background: var(--primary-hover); }
+
+        /* Transaction Modal Body */
+        .modal-card-body { padding: 24px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+        .form-control { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; font-family: inherit; box-sizing: border-box; transition: border 0.2s; }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        textarea.form-control { resize: vertical; }
+        .close-modal-btn { background: none; border: none; cursor: pointer; color: #6b7280; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 6px; }
+        .close-modal-btn:hover { background: #f3f4f6; }
+
+        /* Ledger Totals Footer Row */
+        .bank-txn-table tfoot tr { background: #f8fafc; }
+        .bank-txn-table tfoot td { padding: 14px 24px; font-size: 0.85rem; font-weight: 700; color: #1e293b; border-top: 2px solid #e2e8f0; }
+        .txn-totals-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; }
+        .txn-total-withdrawals { text-align: right; color: #ef4444; font-size: 0.95rem; }
+        .txn-total-deposits { text-align: right; color: #10b981; font-size: 0.95rem; }
     </style>
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -472,17 +489,25 @@
                     <table class="bank-txn-table" id="bank-txn-table" style="width: 100%; border-collapse: collapse;">
                         <thead style="position: sticky; top: 0; background: white; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                             <tr>
-                                <th style="padding: 16px 24px; text-align: left; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Date</th>
-                                <th style="padding: 16px 24px; text-align: left; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Details</th>
-                                <th style="padding: 16px 24px; text-align: left; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Type</th>
-                                <th style="padding: 16px 24px; text-align: right; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Withdrawals</th>
-                                <th style="padding: 16px 24px; text-align: right; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Deposits</th>
-                                <th style="padding: 16px 24px; text-align: right; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Balance</th>
-                                <th style="padding: 16px 24px; text-align: center; width: 60px;"></th>
+                                <th style="padding: 16px 24px; text-align: left; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Date</th>
+                                <th style="padding: 16px 24px; text-align: left; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Details</th>
+                                <th style="padding: 16px 24px; text-align: left; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Type</th>
+                                <th style="padding: 16px 24px; text-align: right; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Withdrawals</th>
+                                <th style="padding: 16px 24px; text-align: right; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Deposits</th>
+                                <th style="padding: 16px 24px; text-align: right; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Balance</th>
+                                <th style="padding: 16px 24px; text-align: center; width: 80px;"></th>
                             </tr>
                         </thead>
                         <tbody id="bank-txn-body">
                         </tbody>
+                        <tfoot id="bank-txn-footer" style="display: none;">
+                            <tr>
+                                <td colspan="3" class="txn-totals-label">Totals</td>
+                                <td class="txn-total-withdrawals" id="txn-total-withdrawals">₹ 0.00</td>
+                                <td class="txn-total-deposits" id="txn-total-deposits">₹ 0.00</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -636,7 +661,7 @@
             const isLiability = (accountType === 'Credit Card' || accountType === 'Other'); // 'Other' often used for loans
             
             journals.forEach(j => {
-                if (!j.lines) return;
+                if (!j.lines || j.status === 'Draft') return;
                 j.lines.forEach(line => {
                     if ((line.account || '').toLowerCase() === accountName.toLowerCase()) {
                         const deb = parseFloat(line.debit) || 0;
@@ -770,6 +795,7 @@
         // ---- Select Account & Show Transactions (Ledger Detail Level) ----
         function selectAccount(id) {
             selectedAccountId = id;
+            sessionStorage.setItem('last_banking_account_id', id);
             const accounts = getAccounts();
             const acc = accounts.find(a => a.id === id);
             if (!acc) return;
@@ -829,6 +855,7 @@
                             date: j.date,
                             desc: line.desc || j.notes || 'Journal Entry',
                             type: 'Journal',
+                            status: j.status || 'Completed',
                             moneyIn: parseFloat(line.debit) || 0,
                             moneyOut: parseFloat(line.credit) || 0,
                             timestamp: j.timestamp || j.date
@@ -840,11 +867,15 @@
             ledgerLines.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
             const tbody = document.getElementById('bank-txn-body');
+            const tfoot = document.getElementById('bank-txn-footer');
             tbody.innerHTML = '';
             let runningBalance = 0;
+            let totalWithdrawals = 0;
+            let totalDeposits = 0;
 
             if (ledgerLines.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#9ca3af; padding: 60px;">No transactions recorded. Create a deposit or expense.</td></tr>`;
+                if (tfoot) tfoot.style.display = 'none';
             } else {
                 const isLiability = (acc.type === 'Credit Card' || acc.type === 'Other');
                 ledgerLines.forEach((line, i) => {
@@ -853,29 +884,46 @@
                     } else {
                         runningBalance += line.moneyIn - line.moneyOut; // Debit increases asset
                     }
+                    totalWithdrawals += line.moneyOut || 0;
+                    totalDeposits += line.moneyIn || 0;
                     
                     let actionHtml = '';
                     if (line.id) {
-                        actionHtml = `<a href="journal-entry.html?edit=${line.id}" title="Edit Transaction" style="color: #64748b; display: inline-flex; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; background: white;"><i data-lucide="edit-3" style="width: 14px; height: 14px;"></i></a>`;
+                        actionHtml = `
+                            <div style="display: flex; gap: 6px; justify-content: center;">
+                                <a href="journal-entry.html?edit=${line.id}" title="Edit Transaction" style="color: #64748b; display: inline-flex; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; background: white;"><i data-lucide="edit-3" style="width: 14px; height: 14px;"></i></a>
+                                <button onclick="deleteBankTransaction('${line.id}')" title="Delete Transaction" style="color: #ef4444; display: inline-flex; padding: 6px; border-radius: 6px; border: 1px solid #fee2e2; background: #fef2f2; cursor: pointer;"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
+                            </div>
+                        `;
                     }
                     
                     const row = document.createElement('tr');
-                    // Hover effect styling for desktop feel
                     row.style.borderBottom = '1px solid #f1f5f9';
                     row.onmouseover = () => row.style.backgroundColor = '#f8fafc';
                     row.onmouseout = () => row.style.backgroundColor = 'transparent';
                     
                     row.innerHTML = `
-                        <td style="padding: 16px 24px; font-weight: 500; font-size: 0.9rem; color: #1e293b;">${new Date(line.date).toLocaleDateString('en-GB')}</td>
-                        <td style="padding: 16px 24px;"><span style="font-weight: 600; color: #0f172a; font-size: 0.95rem;">${line.desc}</span></td>
-                        <td style="padding: 16px 24px;"><span style="font-size: 0.75rem; background: #f1f5f9; color: #475569; font-weight: 600; border-radius: 4px; padding: 4px 8px; text-transform: uppercase;">${line.type}</span></td>
-                        <td style="padding: 16px 24px; text-align: right; color: #ef4444; font-weight: 500;">${line.moneyOut > 0 ? '₹ ' + line.moneyOut.toLocaleString('en-IN', {minimumFractionDigits:2}) : ''}</td>
-                        <td style="padding: 16px 24px; text-align: right; color: #10b981; font-weight: 500;">${line.moneyIn > 0 ? '₹ ' + line.moneyIn.toLocaleString('en-IN', {minimumFractionDigits:2}) : ''}</td>
-                        <td style="padding: 16px 24px; text-align: right; font-weight: 800; color: #1e293b; font-size: 1.05rem;">₹ ${runningBalance.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
-                        <td style="padding: 16px 24px; text-align: center;">${actionHtml}</td>
+                        <td style="padding: 14px 24px; font-weight: 500; font-size: 0.88rem; color: #475569; white-space: nowrap;">${new Date(line.date).toLocaleDateString('en-GB')}</td>
+                        <td style="padding: 14px 24px;"><span style="font-weight: 600; color: #0f172a; font-size: 0.92rem;">${line.desc}</span></td>
+                        <td style="padding: 14px 24px;">
+                            <span style="font-size: 0.72rem; background: #f1f5f9; color: #475569; font-weight: 600; border-radius: 4px; padding: 3px 8px; text-transform: uppercase; letter-spacing: 0.04em;">${line.type}</span>
+                            ${line.status === 'Draft' ? '<br><span style="font-size: 0.65rem; color: #f59e0b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Draft</span>' : ''}
+                        </td>
+                        <td style="padding: 14px 24px; text-align: right; color: #ef4444; font-weight: 600; font-size: 0.92rem; white-space: nowrap;">${line.moneyOut > 0 ? '₹ ' + line.moneyOut.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</td>
+                        <td style="padding: 14px 24px; text-align: right; color: #10b981; font-weight: 600; font-size: 0.92rem; white-space: nowrap;">${line.moneyIn > 0 ? '₹ ' + line.moneyIn.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</td>
+                        <td style="padding: 14px 24px; text-align: right; font-weight: 800; color: #1e293b; font-size: 0.98rem; white-space: nowrap;">₹ ${runningBalance.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                        <td style="padding: 14px 24px; text-align: center;">${actionHtml}</td>
                     `;
                     tbody.appendChild(row);
                 });
+
+                // Update totals footer
+                if (tfoot) {
+                    tfoot.style.display = '';
+                    document.getElementById('txn-total-withdrawals').textContent = totalWithdrawals > 0 ? '₹ ' + totalWithdrawals.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—';
+                    document.getElementById('txn-total-deposits').textContent = totalDeposits > 0 ? '₹ ' + totalDeposits.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—';
+                }
+
                 if (window.lucide) window.lucide.createIcons();
             }
 
@@ -892,7 +940,53 @@
             renderAccountsList();
         });
 
-        // ---- Add Account Modal ----
+        // ---- Delete Bank Transaction ----
+        window.deleteBankTransaction = function(id) {
+            if (!confirm(`Are you sure you want to delete transaction ${id}? This action cannot be undone.`)) return;
+            
+            let journals = getJournals();
+            const initialLength = journals.length;
+            journals = journals.filter(j => j.id !== id);
+            
+            if (journals.length < initialLength) {
+                // If it's an auto-generated record, we need to update the source to prevent manti_repair.js from recreating it
+                if (id.startsWith('PUR-PO-') || id.startsWith('PMT-PO-')) {
+                    const poId = id.replace('PUR-', '').replace('PMT-', '');
+                    const records = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+                    const po = records.find(r => r.id === poId);
+                    if (po) {
+                        if (id.startsWith('PUR-PO-')) {
+                            // If they delete the purchase record itself, we probably shouldn't just wipe the PO
+                            // but for consistency with "deleting from banking", we'll mark it as something that doesn't generate a journal
+                            po.status = 'Draft'; 
+                        } else {
+                            // If they delete the payment, mark PO as unpaid
+                            po.paidAmount = 0;
+                            delete po.paidThrough;
+                        }
+                        localStorage.setItem('manti_order_records', JSON.stringify(records));
+                        if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_order_records', records);
+                    }
+                } else if (id.startsWith('JV-EXP-')) {
+                    const expId = id.replace('JV-', '');
+                    const expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+                    const exp = expenses.find(e => e.id === expId);
+                    if (exp) {
+                        // Deleting the expense record from banking means we should probably wipe the expense or unpay it
+                        exp.paidAmount = 0;
+                        delete exp.paidThrough;
+                        localStorage.setItem('manti_expenses', JSON.stringify(expenses));
+                        if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_expenses', expenses);
+                    }
+                }
+
+                localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+                if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_journal_entries', journals);
+                if (selectedAccountId) selectAccount(selectedAccountId);
+            }
+        };
+
+        // ---- Add Account Logic ----
         let currentType = 'Bank';
 
         function selectAccountType(type, el) {
@@ -1043,7 +1137,17 @@
             }
 
             const newAcc = {
-                id: 'ACC-' + Date.now(),
+                id: (function() {
+                    const existing = getAccounts();
+                    let maxNum = 0;
+                    existing.forEach(a => {
+                        if (a.id && a.id.startsWith('ACC-')) {
+                            const n = parseInt(a.id.replace('ACC-', ''), 10);
+                            if (!isNaN(n) && n > maxNum) maxNum = n;
+                        }
+                    });
+                    return 'ACC-' + (maxNum + 1).toString().padStart(4, '0');
+                })(),
                 type: currentType,
                 name: name,
                 number: document.getElementById('acc-number').value.trim(),
@@ -1201,6 +1305,12 @@
         document.addEventListener('CloudDataLoaded', () => {
             renderAccountsList();
             lucide.createIcons();
+            
+            // Restore from sessionStorage
+            const savedAcc = sessionStorage.getItem('last_banking_account_id');
+            if (savedAcc) {
+                selectAccount(savedAcc);
+            }
         });
     </script>
 </body>

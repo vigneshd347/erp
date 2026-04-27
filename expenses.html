@@ -201,7 +201,8 @@
                             <div style="background: var(--danger-light); color: var(--danger); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
                                 <i data-lucide="receipt"></i>
                             </div>
-                            <h2 style="margin: 0; color: #1f2937;">Record Expense</h2>
+                            <h2 id="exp-form-title" style="margin: 0; color: #1f2937;">Record Expense</h2>
+                            <div id="exp-id-display" style="font-size: 1rem; font-weight: 700; color: var(--danger); background: var(--danger-light); padding: 4px 12px; border-radius: 8px; margin-left: 8px;">EXP-XXXX (Auto)</div>
                         </div>
                     </div>
 
@@ -259,7 +260,7 @@
                                         </optgroup>
                                     </select>
                                 </div>
-                                <div>
+                                <div style="display: none;">
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Paid Through</label>
                                     <select id="exp-paid-through" class="input-wrapper" style="margin-top:0; width: 100%; height: 46px; padding: 0.75rem 1rem; box-sizing: border-box; border-color: #d1d5db;">
                                         <option value="">Accounts Payable (Pay Later)</option>
@@ -343,18 +344,26 @@
 
                 <!-- Sticky Footer Form Action Block -->
                 <div style="position: sticky; bottom: 0; background: white; padding: 1rem 2rem; border-top: 1px solid #e5e7eb; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: flex-start; gap: 12px; z-index: 100; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
-                    <button type="button" class="btn-liquid btn-primary" onclick="saveExpense()">Save Expense</button>
-                    <button type="button" class="btn-liquid btn-secondary" onclick="window.editingExpenseId = null; document.querySelector('#expense-form h2').textContent = 'Record Expense'; document.querySelector('button[onclick=\'saveExpense()\']').textContent = 'Save Expense'; document.getElementById('expense-form').reset();">Clear</button>
+                    <button type="button" class="btn-liquid btn-primary" onclick="saveExpense('Completed')">Save Expense</button>
+                    <button type="button" class="btn-liquid btn-secondary" onclick="saveExpense('Draft')">Save as Draft</button>
+                    <button type="button" class="btn-liquid btn-outline" onclick="window.editingExpenseId = null; document.querySelector('#expense-form h2').textContent = 'Record Expense'; document.querySelector('button[onclick*=\'saveExpense\']').textContent = 'Save Expense'; document.getElementById('expense-form').reset();">Clear</button>
                 </div>
             </form>
 
             <div style="margin-top: 3rem;">
-                <h2 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 1rem;">Recent Expenses</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="font-size: 1.1rem; color: #0f172a; margin: 0;">Recent Expenses</h2>
+                    <div style="position: relative; width: 300px;">
+                        <input type="text" id="search-expenses" placeholder="Search expenses..." oninput="filterExpenses()" style="width: 100%; padding: 8px 12px 8px 35px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; outline: none; transition: border-color 0.2s;">
+                        <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #94a3b8;"></i>
+                    </div>
+                </div>
                 <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;">
                     <table class="expenses-table">
                         <thead>
                             <tr>
                                 <th>Date</th>
+                                <th>Expense#</th>
                                 <th>Expense Account</th>
                                 <th>Name / Business</th>
                                 <th>Reference#</th>
@@ -362,7 +371,7 @@
                                 <th style="text-align: right;">GST Amt</th>
                                 <th style="text-align: right;">Total</th>
                                 <th style="text-align: center;">Status</th>
-                                <th style="width: 80px; text-align: center;">Action</th>
+                                <th style="width: 100px; text-align: center;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="expenses-body">
@@ -386,6 +395,13 @@
             document.getElementById('exp-date').valueAsDate = new Date();
             expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
             
+            // Restore search
+            const savedSearch = sessionStorage.getItem('last_expenses_search');
+            if (savedSearch) {
+                document.getElementById('search-expenses').value = savedSearch;
+                setTimeout(() => window.filterExpenses(), 100);
+            }
+
             // Populate Paid Through dropdown dynamically from Bank Accounts
             const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
             const paidThroughSelect = document.getElementById('exp-paid-through');
@@ -423,8 +439,22 @@
                 }
             });
 
+            // Pre-calculate next EXP id to display
+            updateExpIdDisplay();
+
             renderExpensesTable();
         });
+
+        function updateExpIdDisplay() {
+            let nextId = 1;
+            expenses.forEach(r => {
+                if(r.id && r.id.startsWith('EXP-')) {
+                    const n = parseInt(r.id.replace('EXP-', ''), 10);
+                    if(!isNaN(n) && n >= nextId) nextId = n + 1;
+                }
+            });
+            document.getElementById('exp-id-display').textContent = 'EXP-' + nextId.toString().padStart(4, '0') + ' (Auto)';
+        }
 
         function addExpenseItemRow() {
             const tbody = document.getElementById('expense-items-body');
@@ -513,7 +543,7 @@
             tbody.innerHTML = '';
             
             if (expenses.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 2rem;">No expenses recorded yet.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: #64748b; padding: 2rem;">No expenses recorded yet.</td></tr>';
                 return;
             }
 
@@ -521,35 +551,46 @@
             const sorted = [...expenses].sort((a,b) => new Date(a.date) - new Date(b.date));
 
             sorted.forEach(exp => {
-                const tr = document.createElement('tr');
                 const attachmentHtml = exp.billUrl ? `<a href="${exp.billUrl}" target="_blank" title="View Attachment"><i data-lucide="external-link" style="width: 16px; height: 16px; color: #3b82f6;"></i></a>` : '';
                 const gstAmt = parseFloat(exp.gstAmount) || 0;
                 const total = parseFloat(exp.amount) + gstAmt;
                 
                 let paid = parseFloat(exp.paidAmount) || 0;
-                if (exp.paidAmount === undefined && exp.paidThrough && exp.paidThrough.trim() !== '') {
+                if (exp.paidThrough && exp.paidThrough !== 'Accounts Payable') {
                     paid = total;
                 }
                 const due = total - paid;
-                let derivedStatus = 'Payment Pending';
-                if (total > 0 && due <= 0.001) derivedStatus = 'Paid';
+                let derivedStatus = exp.status || (due <= 0.001 ? 'Payed' : 'Payment Pending');
                 
-                let sc = { bg: '#fee2e2', color: '#ef4444', dot: '#ef4444' };
-                if (derivedStatus === 'Paid') sc = { bg: '#dcfce7', color: '#16a34a', dot: '#16a34a' };
+                const statusStyles = {
+                    'Draft': { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' },
+                    'Payed': { bg: '#dcfce7', color: '#16a34a', dot: '#16a34a' },
+                    'Payment Pending': { bg: '#fee2e2', color: '#ef4444', dot: '#ef4444' }
+                };
+                const sc = statusStyles[derivedStatus] || statusStyles['Payment Pending'];
                 
                 const statusHtml = `<span style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; background:${sc.bg};color:${sc.color};"><span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};display:inline-block;"></span>${derivedStatus}</span>`;
 
                 const gstHtml = gstAmt > 0
-                    ? `<span style="color:#16a34a; font-weight:600;">₹ ${gstAmt.toLocaleString('en-IN', {minimumFractionDigits:2})}</span><br><span style="font-size:0.75rem;color:#94a3b8;">${exp.gstPercent}%</span>`
+                    ? `<span style="color:#16a34a; font-weight:600;">₹ ${gstAmt.toLocaleString('en-IN', {minimumFractionDigits:2})}</span><br><span style="font-size:0.75rem;color:#94a3b8;">${exp.gstPercent || 0}%</span>`
                     : '-';
+
+                const paidAmt = parseFloat(exp.paidAmount || 0);
+                const dueAmt = total - paidAmt;
+                const paymentHtml = dueAmt <= 0.01 
+                    ? `<span style="background:#d1fae5;color:#059669;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">Payed</span>`
+                    : `<span style="background:#fee2e2;color:#ef4444;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">Pending</span>`;
+
+                const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${new Date(exp.date).toLocaleDateString('en-GB')}</td>
+                    <td style="font-weight: 600; color: var(--danger);">${exp.id}</td>
                     <td style="font-weight: 500;">${exp.account}</td>
                     <td>${exp.vendor || '-'}</td>
                     <td>${exp.reference || '-'}</td>
                     <td style="text-align: right; color: var(--text-main);">₹ ${parseFloat(exp.amount).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
                     <td style="text-align: right;">${gstHtml}</td>
-                    <td style="text-align: right; font-weight: 700; color: var(--danger);">₹ ${total.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                    <td style="text-align: right; font-weight: 700; color: ${dueAmt > 0.01 ? 'var(--danger)' : '#059669'};">₹ ${total.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
                     <td style="text-align: center;">${statusHtml}</td>
                     <td style="text-align: center; display: flex; justify-content: center; gap: 8px;">
                         ${attachmentHtml}
@@ -566,7 +607,7 @@
             lucide.createIcons();
         }
 
-        async function saveExpense() {
+        async function saveExpense(status = 'Completed') {
             const date = document.getElementById('exp-date').value;
             const account = document.getElementById('exp-account').value;
             const vendor = document.getElementById('exp-vendor').value.trim();
@@ -653,8 +694,8 @@
                 gstPercent: null, // Legacy field
                 gstAmount: gstAmount > 0 ? gstAmount : null,
                 total: total,
-                paidThrough: document.getElementById('exp-paid-through').value,
-                paidAmount: window.editingExpenseId ? (existingExp.paidAmount !== undefined ? existingExp.paidAmount : total) : (document.getElementById('exp-paid-through').value ? total : 0),
+                paidThrough: "", // Force to Accounts Payable for new expenses
+                paidAmount: window.editingExpenseId ? (existingExp.paidAmount !== undefined ? existingExp.paidAmount : 0) : 0,
                 vendor: vendor,
                 reference: ref,
                 notes: notes,
@@ -662,7 +703,8 @@
                 items: items,
                 discountPercent: document.getElementById('exp-discount-percent')?.value || '',
                 discountAmount: document.getElementById('exp-discount-amount')?.value || '',
-                roundOff: document.getElementById('exp-round-off')?.value || ''
+                roundOff: document.getElementById('exp-round-off')?.value || '',
+                status: status
             };
 
             // Record Expense
@@ -677,6 +719,10 @@
 
             // Record double-entry Journal
             let journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+            // Always remove old record journals if they exist
+            journals = journals.filter(j => j.id !== 'EXP-' + expenseRecord.id && j.id !== 'PMT-EXP-' + expenseRecord.id);
+
+            if (expenseRecord.status !== 'Draft') {
             
             // Remove previous journal if editing
             if (window.editingExpenseId) {
@@ -687,7 +733,7 @@
                 id: 'JV-' + expId,
                 date: date,
                 reference: ref || expId,
-                notes: notes || `Expense: ${account}${vendor ? ' - ' + vendor : ''}${gstAmount > 0 ? ' (Includes GST ₹' + gstAmount.toFixed(2) + ')' : ''}`,
+                notes: notes || `Expense: ${account}${vendor ? ' - ' + vendor : ''}`,
                 total: total,
                 lines: [
                     { account: account, desc: notes, contact: vendor, debit: amount, credit: 0 },
@@ -697,12 +743,17 @@
                 timestamp: new Date().toISOString()
             });
             localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+            } else {
+                // If it's a draft, we still need to save the filtered journals (which removed the old entries)
+                localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+            }
 
             alert(`Expense of ₹ ${amount.toFixed(2)}${gstAmount > 0 ? ` + GST ₹ ${gstAmount.toFixed(2)} = Total ₹ ${total.toFixed(2)}` : ''} ${window.editingExpenseId ? 'updated' : 'recorded'} successfully.`);
             
             // Reset Form properly
             window.editingExpenseId = null;
-            document.querySelector('#expense-form h2').textContent = 'Record Expense';
+            document.getElementById('exp-form-title').textContent = 'Record Expense';
+            updateExpIdDisplay();
             document.querySelector('button[onclick="saveExpense()"]').textContent = 'Save Expense';
             document.getElementById('expense-form').reset();
             document.getElementById('exp-date').valueAsDate = new Date();
@@ -725,7 +776,8 @@
             if (!exp) return;
             
             window.editingExpenseId = id;
-            document.querySelector('#expense-form h2').textContent = 'Edit Expense: ' + id;
+            document.getElementById('exp-form-title').textContent = 'Edit Expense';
+            document.getElementById('exp-id-display').textContent = id;
             document.querySelector('button[onclick="saveExpense()"]').textContent = 'Update Expense';
             
             document.getElementById('exp-date').value = exp.date;
@@ -769,10 +821,42 @@
             if (window.lucide) window.lucide.createIcons();
         };
 
+        window.filterExpenses = function() {
+            const search = document.getElementById('search-expenses').value.trim().toLowerCase();
+            sessionStorage.setItem('last_expenses_search', search);
+            if (window.filterTable) {
+                filterTable('search-expenses', 'expenses-table');
+            }
+        };
+
         window.deleteExpense = function (id) {
-            if (confirm("Are you sure you want to delete this expense? This will NOT delete the generated journal entry automatically.")) {
+            const exp = expenses.find(e => e.id === id);
+            if (confirm(`Are you sure you want to delete this expense? This will also automatically remove the associated bank transaction and payments.`)) {
+                // 1. Remove from Journal Entries (Banking)
+                let journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+                const jvId = 'JV-' + id;
+                const initialJLen = journals.length;
+                journals = journals.filter(j => j.id !== jvId);
+                if (journals.length < initialJLen) {
+                    localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+                    if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_journal_entries', journals);
+                }
+
+                // 2. Remove from Payments Made
+                let payments = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
+                const initialPLen = payments.length;
+                payments = payments.filter(p => {
+                    return !p.applications || !p.applications.some(app => app.id === id);
+                });
+                if (payments.length < initialPLen) {
+                    localStorage.setItem('manti_payments_made', JSON.stringify(payments));
+                    if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_payments_made', payments);
+                }
+
+                // 3. Delete the Expense itself
                 expenses = expenses.filter(e => e.id !== id);
                 localStorage.setItem('manti_expenses', JSON.stringify(expenses));
+                updateExpIdDisplay();
                 renderExpensesTable();
             }
         };
