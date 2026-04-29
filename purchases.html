@@ -886,12 +886,21 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     
                     const amt = parseFloat(rec.amount || 0);
                     let paid = parseFloat(rec.paidAmount || 0);
-                    if (rec.paidThrough && rec.paidThrough !== 'Accounts Payable') paid = amt;
-                    const due = amt - paid;
+                    // Standard logic: if paidThrough is set and it's not Accounts Payable, we assume it was paid unless explicitly tracked otherwise
+                    if (rec.paidThrough && rec.paidThrough !== 'Accounts Payable' && paid === 0 && amt > 0) {
+                        paid = amt;
+                    }
+                    const due = Math.max(0, amt - paid);
 
-                    if (derivedStatus === 'Open') {
+                    if (derivedStatus === 'Open' || !derivedStatus) {
                         if (due <= 0.001 && amt > 0) derivedStatus = 'Payed';
-                        else derivedStatus = 'Payment Pending';
+                        else if (amt > 0) derivedStatus = 'Payment Pending';
+                        else derivedStatus = 'Open';
+                    }
+                    
+                    // Override 'Payed' if there is a significant balance due
+                    if (due > 0.01 && (derivedStatus === 'Payed' || derivedStatus === 'Completed')) {
+                        derivedStatus = 'Payment Pending';
                     }
 
                     const statusStyles = {
@@ -939,14 +948,15 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     if (rec.mainMetalType) catBadge += `<span style="font-size:0.7rem;background:#fef3c7;color:#d97706;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px;">${rec.mainMetalType}</span>`;
 
                     const tr = document.createElement('tr');
+                    tr.style.cursor = 'pointer';
+                    tr.title = "Double-click to view payment history";
+                    tr.ondblclick = () => window.location.href = `payment-made.html?search=${rec.id}`;
                     tr.setAttribute('data-status', derivedStatus);
                     tr.innerHTML = `
                         <td style="padding:13px 16px;">
                             <div style="font-weight:700;color:#0284c7;font-size:0.9rem;">${rec.id || '—'}</div>
                             ${rec.billNo ? `<div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">Bill: ${rec.billNo}</div>` : ''}
                             ${rec.billImageUrl ? `<div style="margin-top:4px;"><a href="${rec.billImageUrl}" target="_blank" style="font-size:0.7rem;color:#0ea5e9;text-decoration:underline;display:inline-flex;align-items:center;gap:3px;"><i data-lucide="paperclip" style="width:10px;height:10px;"></i> View Bill</a></div>` : ''}
-                        </td>
-                        <td style="padding:13px 16px;">
                             <div style="font-size:0.85rem;color:#374151;">${rec.date || '—'}</div>
                             ${rec.dueDate ? `<div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">Due: ${rec.dueDate}</div>` : ''}
                         </td>
@@ -979,9 +989,10 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                                 </button>
                                 ${derivedStatus === 'Payment Pending' ? `
                                 <button onclick="window.location.href='payment-made.html?po=${rec.id}&vendor=${rec.vendor}'" class="action-btn" style="padding:4px 8px; font-size:0.7rem; background:#f0f9ff; color:#0284c7; border:1px solid #bae6fd; border-radius:6px; cursor:pointer;" title="Pay Now">Pay</button>` : ''}
+                                ${derivedStatus !== 'Payed' && derivedStatus !== 'Completed' ? `
                                 <button onclick="deleteRecord(${index})" class="btn-remove" title="Delete">
                                     <svg viewBox="0 0 448 512" class="del-icon"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path></svg>
-                                </button>
+                                </button>` : ''}
                             </div>
                         </td>
                     `;

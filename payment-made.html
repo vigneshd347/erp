@@ -360,7 +360,13 @@
 
                 <!-- Recent Payments History Section -->
                 <div id="history-section" style="margin-top: 0; padding: 1rem 30px 2rem; display: none;">
-                    <h3 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 1rem;">Payment History</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="font-size: 1.1rem; color: #0f172a; margin: 0;">Payment History</h3>
+                        <div style="position: relative; width: 250px;">
+                            <input type="text" id="search-history" placeholder="Search history..." oninput="filterPaymentHistory()" style="width: 100%; padding: 6px 10px 6px 30px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.85rem;">
+                            <i data-lucide="search" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #94a3b8;"></i>
+                        </div>
+                    </div>
                     <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;">
                         <table class="expenses-table">
                             <thead>
@@ -412,38 +418,8 @@
         document.addEventListener('CloudDataLoaded', () => {
             refreshLocalData();
 
-            // --- BULK MARK ALL AS PAID REQUESTED BY USER ---
-            let ordersModified = false;
-            orders.forEach(o => {
-                if (o.type === 'Purchase Order') {
-                    const amt = parseFloat(String(o.amount || 0).replace(/[^0-9.]/g, '')) || 0;
-                    const paid = parseFloat(String(o.paidAmount || 0).replace(/[^0-9.]/g, '')) || 0;
-                    if (paid < amt) {
-                        o.paidAmount = amt;
-                        o.status = 'Completed';
-                        ordersModified = true;
-                    }
-                }
-            });
-            if (ordersModified) {
-                localStorage.setItem('manti_order_records', JSON.stringify(orders));
-                if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_order_records', orders);
-            }
-
-            let expModified = false;
-            expenses.forEach(e => {
-                const total = parseFloat(e.total || 0) || 0;
-                const paid = parseFloat(e.paidAmount || 0) || 0;
-                if (paid < total) {
-                    e.paidAmount = total;
-                    e.status = 'Payed';
-                    expModified = true;
-                }
-            });
-            if (expModified) {
-                localStorage.setItem('manti_expenses', JSON.stringify(expenses));
-                if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_expenses', expenses);
-            }
+            // ------------------------------------------------
+            // Note: Automatic bulk-marking removed as it interferes with new records.
             // ------------------------------------------------
 
             document.getElementById('pay-date').valueAsDate = new Date();
@@ -496,6 +472,27 @@
             switchPaymentTab(lastTab);
             
             if (window.lucide) lucide.createIcons();
+
+            // Handle URL Search Parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchParam = urlParams.get('search');
+            const poParam = urlParams.get('po');
+            const vendorParam = urlParams.get('vendor');
+
+            if (searchParam) {
+                switchPaymentTab('history');
+                const searchInput = document.getElementById('search-history');
+                if (searchInput) {
+                    searchInput.value = searchParam;
+                    filterPaymentHistory();
+                }
+            } else if (poParam || vendorParam) {
+                switchPaymentTab('pending');
+                if (vendorParam) {
+                    document.getElementById('pay-vendor').value = vendorParam;
+                    loadVendorBills();
+                }
+            }
         });
 
         function updatePayIdDisplay() {
@@ -577,6 +574,19 @@
                 tbody.appendChild(tr);
             });
             if (window.lucide) lucide.createIcons();
+        }
+
+        function filterPaymentHistory() {
+            const query = document.getElementById('search-history').value.toLowerCase().trim();
+            const table = document.querySelector('#history-section table');
+            if (!table) return;
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                if (row.cells.length < 2) return; // Skip "No history" row or loading row
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
         }
 
         window.deletePayment = function(pmtId) {

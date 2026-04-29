@@ -344,7 +344,7 @@
 
                 <!-- Sticky Footer Form Action Block -->
                 <div style="position: sticky; bottom: 0; background: white; padding: 1rem 2rem; border-top: 1px solid #e5e7eb; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: flex-start; gap: 12px; z-index: 100; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
-                    <button type="button" class="btn-liquid btn-primary" onclick="saveExpense('Completed')">Save Expense</button>
+                    <button type="button" class="btn-liquid btn-primary" onclick="saveExpense('Payment Pending')">Save Expense</button>
                     <button type="button" class="btn-liquid btn-secondary" onclick="saveExpense('Draft')">Save as Draft</button>
                     <button type="button" class="btn-liquid btn-outline" onclick="window.editingExpenseId = null; document.querySelector('#expense-form h2').textContent = 'Record Expense'; document.querySelector('button[onclick*=\'saveExpense\']').textContent = 'Save Expense'; document.getElementById('expense-form').reset();">Clear</button>
                 </div>
@@ -359,7 +359,7 @@
                     </div>
                 </div>
                 <div style="background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden;">
-                    <table class="expenses-table">
+                    <table id="expenses-table" class="expenses-table">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -428,6 +428,23 @@
             // Populate Name/Business list from KYC records
             const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
             const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]');
+            
+            // --- DATA CORRECTION: Reset auto-paid expenses ---
+            let corrected = false;
+            expenses.forEach(e => {
+                // If it was marked as paid but has no payment account, it was likely from the bulk script
+                if ((e.status === 'Payed' || e.status === 'Completed') && (!e.paidThrough || e.paidThrough === "") && (parseFloat(e.paidAmount) > 0)) {
+                    e.paidAmount = 0;
+                    e.status = 'Payment Pending';
+                    corrected = true;
+                }
+            });
+            if (corrected) {
+                localStorage.setItem('manti_expenses', JSON.stringify(expenses));
+                if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_expenses', expenses);
+                renderExpensesTable();
+            }
+            // ------------------------------------------------
             const allContacts = suppliers.concat(vendors);
             
             const datalist = document.getElementById('supplier-list');
@@ -556,11 +573,21 @@
                 const total = parseFloat(exp.amount) + gstAmt;
                 
                 let paid = parseFloat(exp.paidAmount) || 0;
-                if (exp.paidThrough && exp.paidThrough !== 'Accounts Payable') {
+                // If paidThrough is set and is NOT empty/Accounts Payable, assume it's paid immediately
+                if (exp.paidThrough && exp.paidThrough !== "" && exp.paidThrough !== 'Accounts Payable' && paid === 0) {
                     paid = total;
                 }
-                const due = total - paid;
-                let derivedStatus = exp.status || (due <= 0.001 ? 'Payed' : 'Payment Pending');
+                const due = Math.max(0, total - paid);
+                let derivedStatus = exp.status || 'Payment Pending';
+                
+                // Priority: If there's a balance due, it's 'Payment Pending' regardless of what status string says (unless it's Draft)
+                if (due > 0.01 && derivedStatus !== 'Draft') {
+                    derivedStatus = 'Payment Pending';
+                } else if (due <= 0.01 && (derivedStatus === 'Payment Pending' || derivedStatus === 'Open')) {
+                    derivedStatus = 'Payed';
+                }
+                
+                if (!derivedStatus) derivedStatus = 'Payment Pending';
                 
                 const statusStyles = {
                     'Draft': { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' },
@@ -582,6 +609,10 @@
                     : `<span style="background:#fee2e2;color:#ef4444;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">Pending</span>`;
 
                 const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.title = "Double-click to view payment history";
+                tr.ondblclick = () => window.location.href = `payment-made.html?search=${exp.id}`;
+                
                 tr.innerHTML = `
                     <td>${new Date(exp.date).toLocaleDateString('en-GB')}</td>
                     <td style="font-weight: 600; color: var(--danger);">${exp.id}</td>
@@ -597,9 +628,10 @@
                         <button onclick="editExpense('${exp.id}')" class="btn-edit" title="Edit Expense">
                             <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
                         </button>
-                        <button onclick="deleteExpense('${exp.id}')" class="btn-remove" title="Delete Expense">
-                            <svg viewBox="0 0 448 512" class="del-icon"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path></svg>
-                        </button>
+                        ${(derivedStatus !== 'Payed') ? 
+                            '<button onclick="deleteExpense(\'' + exp.id + '\')" class="btn-remove" title="Delete Expense"><svg viewBox="0 0 448 512" class="del-icon"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path></svg></button>'
+                            : ''
+                        }
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -607,7 +639,7 @@
             lucide.createIcons();
         }
 
-        async function saveExpense(status = 'Completed') {
+        async function saveExpense(status = 'Payment Pending') {
             const date = document.getElementById('exp-date').value;
             const account = document.getElementById('exp-account').value;
             const vendor = document.getElementById('exp-vendor').value.trim();
@@ -654,7 +686,7 @@
             // Handle Supabase Bucket File Upload if any
             let billPubUrl = null;
             if (fileInput.files.length > 0) {
-                const saveBtn = document.querySelector('button[onclick="saveExpense()"]');
+                const saveBtn = document.querySelector('button[onclick*="saveExpense"]');
                 const prevText = saveBtn.innerText;
                 saveBtn.innerText = "Uploading..."; saveBtn.disabled = true;
 
@@ -754,7 +786,7 @@
             window.editingExpenseId = null;
             document.getElementById('exp-form-title').textContent = 'Record Expense';
             updateExpIdDisplay();
-            document.querySelector('button[onclick="saveExpense()"]').textContent = 'Save Expense';
+            document.querySelector('button[onclick*="saveExpense"]').textContent = 'Save Expense';
             document.getElementById('expense-form').reset();
             document.getElementById('exp-date').valueAsDate = new Date();
             document.getElementById('expense-items-body').innerHTML = `
@@ -778,7 +810,7 @@
             window.editingExpenseId = id;
             document.getElementById('exp-form-title').textContent = 'Edit Expense';
             document.getElementById('exp-id-display').textContent = id;
-            document.querySelector('button[onclick="saveExpense()"]').textContent = 'Update Expense';
+            document.querySelector('button[onclick*="saveExpense"]').textContent = 'Update Expense';
             
             document.getElementById('exp-date').value = exp.date;
             document.getElementById('exp-account').value = exp.account || '';
