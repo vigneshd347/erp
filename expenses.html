@@ -226,8 +226,11 @@
                                     <textarea id="exp-notes" class="input-wrapper" rows="3" placeholder="Description of the expense..." style="margin-top:0; width: 100%; border-color: #d1d5db; min-height: 80px; resize: vertical;"></textarea>
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;"><i data-lucide="paperclip" style="width: 14px; margin-right: 4px; vertical-align: middle;"></i> Attach Bill <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
-                                    <input type="file" id="exp-bill" class="input-wrapper" accept="image/*,.pdf" style="padding: 6px; margin-top:0; width: 100%; border-color: #d1d5db;">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;"><i data-lucide="paperclip" style="width: 14px; margin-right: 4px; vertical-align: middle;"></i> Attach Bills / Documents <span style="color:#94a3b8; font-weight: 400;">(Optional)</span></label>
+                                    <div id="exp-bill-preview-container" style="display: none; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;"></div>
+                                    <input type="hidden" id="exp-bill-url" value="">
+                                    <input type="file" id="exp-bill" class="input-wrapper" accept="image/*,.pdf" multiple style="padding: 6px; margin-top:0; width: 100%; border-color: #d1d5db;">
+                                    <div id="exp-bill-status" style="font-size: 0.75rem; color: #0284c7; font-weight: 600; margin-top: 4px;"></div>
                                 </div>
                             </div>
                         </section>
@@ -247,16 +250,19 @@
                                         <optgroup label="Operating Expenses">
                                             <option value="Meals and Entertainment">Meals and Entertainment</option>
                                             <option value="Travel Expense">Travel Expense</option>
+                                            <option value="Fuel">Fuel</option>
                                             <option value="Office Supplies">Office Supplies</option>
                                             <option value="Utilities">Utilities</option>
                                             <option value="Rent Expense">Rent Expense</option>
                                             <option value="Telephone & Internet">Telephone & Internet</option>
                                             <option value="Advertising">Advertising</option>
                                             <option value="Repairs and Maintenance">Repairs and Maintenance</option>
+                                            <option value="Tools">Tools</option>
                                         </optgroup>
                                         <optgroup label="Cost of Goods Sold">
                                             <option value="Cost of Goods Sold">Cost of Goods Sold</option>
-                                            <option value="Materials">Materials / Consumables</option>
+                                            <option value="Materials">Materials</option>
+                                            <option value="Consumables">Consumables</option>
                                         </optgroup>
                                     </select>
                                 </div>
@@ -429,20 +435,32 @@
             const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
             const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]');
             
-            // --- DATA CORRECTION: Reset auto-paid expenses ---
-            let corrected = false;
+            // --- RESTORATION: Sync paidAmount from Payment History ---
+            const pmtHistory = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
+            let restored = false;
             expenses.forEach(e => {
-                // If it was marked as paid but has no payment account, it was likely from the bulk script
-                if ((e.status === 'Payed' || e.status === 'Completed') && (!e.paidThrough || e.paidThrough === "") && (parseFloat(e.paidAmount) > 0)) {
-                    e.paidAmount = 0;
-                    e.status = 'Payment Pending';
-                    corrected = true;
+                let actualPaid = 0;
+                pmtHistory.forEach(pmt => {
+                    if (pmt.applications) {
+                        pmt.applications.forEach(app => {
+                            if (app.id === e.id) actualPaid += parseFloat(app.amount) || 0;
+                        });
+                    }
+                });
+                
+                // If it was creation-time paid, account for that too
+                if (e.paidThrough && e.paidThrough !== "" && e.paidThrough !== 'Accounts Payable' && (!e.paidAmount || e.paidAmount === 0)) {
+                    actualPaid = parseFloat(e.total) || 0;
+                }
+
+                if (actualPaid > 0 && (!e.paidAmount || parseFloat(e.paidAmount) < actualPaid - 0.01)) {
+                    e.paidAmount = actualPaid;
+                    restored = true;
                 }
             });
-            if (corrected) {
+            if (restored) {
                 localStorage.setItem('manti_expenses', JSON.stringify(expenses));
                 if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_expenses', expenses);
-                renderExpensesTable();
             }
             // ------------------------------------------------
             const allContacts = suppliers.concat(vendors);
@@ -568,7 +586,12 @@
             const sorted = [...expenses].sort((a,b) => new Date(a.date) - new Date(b.date));
 
             sorted.forEach(exp => {
-                const attachmentHtml = exp.billUrl ? `<a href="${exp.billUrl}" target="_blank" title="View Attachment"><i data-lucide="external-link" style="width: 16px; height: 16px; color: #3b82f6;"></i></a>` : '';
+                let attachmentHtml = '';
+                if (exp.billUrl) {
+                    let urls = [];
+                    try { urls = JSON.parse(exp.billUrl); if (!Array.isArray(urls)) urls = [exp.billUrl]; } catch(e) { urls = [exp.billUrl]; }
+                    attachmentHtml = urls.map((url, i) => `<a href="${url}" target="_blank" title="View Attachment ${i+1}" style="display:inline-flex;align-items:center;gap:3px;font-size:0.75rem;color:#3b82f6;text-decoration:underline;margin-right:6px;"><i data-lucide="paperclip" style="width:12px;height:12px;"></i>${urls.length > 1 ? 'Doc '+(i+1) : 'Bill'}</a>`).join('');
+                }
                 const gstAmt = parseFloat(exp.gstAmount) || 0;
                 const total = parseFloat(exp.amount) + gstAmt;
                 
@@ -684,34 +707,48 @@
             }
 
             // Handle Supabase Bucket File Upload if any
-            let billPubUrl = null;
+            // Start with existing URLs (from hidden input, supports editing)
+            const billUrlInput = document.getElementById('exp-bill-url');
+            let existingUrls = [];
+            if (billUrlInput && billUrlInput.value) {
+                try { existingUrls = JSON.parse(billUrlInput.value); if (!Array.isArray(existingUrls)) existingUrls = [billUrlInput.value]; } catch(e) { existingUrls = [billUrlInput.value]; }
+            } else if (window.editingExpenseId) {
+                const existing = expenses.find(e => e.id === window.editingExpenseId);
+                if (existing && existing.billUrl) {
+                    try { existingUrls = JSON.parse(existing.billUrl); if (!Array.isArray(existingUrls)) existingUrls = [existing.billUrl]; } catch(e) { existingUrls = [existing.billUrl]; }
+                }
+            }
+
+            let billPubUrl = existingUrls.length > 0 ? JSON.stringify(existingUrls) : null;
+
             if (fileInput.files.length > 0) {
                 const saveBtn = document.querySelector('button[onclick*="saveExpense"]');
                 const prevText = saveBtn.innerText;
+                const billStatus = document.getElementById('exp-bill-status');
                 saveBtn.innerText = "Uploading..."; saveBtn.disabled = true;
+                if (billStatus) { billStatus.textContent = 'Uploading...'; billStatus.style.color = '#0284c7'; }
 
                 try {
-                    const file = fileInput.files[0];
-                    const safeName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.-]/g, '');
-                    const { data, error } = await window.supabase.storage.from('bills').upload(safeName, file);
-                    if (error) {
-                        alert("File sync failed: " + error.message);
-                        saveBtn.innerText = prevText; saveBtn.disabled = false;
-                        return;
-                    }
-                    const urlData = window.supabase.storage.from('bills').getPublicUrl(safeName);
-                    billPubUrl = urlData.data.publicUrl;
+                    const uploadPromises = Array.from(fileInput.files).map(async (file) => {
+                        const safeName = Date.now() + '_' + Math.random().toString(36).substring(7) + '_' + file.name.replace(/[^a-zA-Z0-9.-]/g, '');
+                        const { data, error } = await window.supabase.storage.from('bills').upload(safeName, file);
+                        if (error) throw error;
+                        const urlData = window.supabase.storage.from('bills').getPublicUrl(safeName);
+                        return urlData.data.publicUrl;
+                    });
+
+                    const newUrls = await Promise.all(uploadPromises);
+                    existingUrls.push(...newUrls);
+                    billPubUrl = JSON.stringify(existingUrls);
+                    if (billStatus) { billStatus.textContent = 'Uploaded ✓'; billStatus.style.color = '#16a34a'; }
                 } catch(err) {
                     console.error("Upload crash:", err);
+                    alert("File upload failed: " + err.message);
+                    saveBtn.innerText = prevText; saveBtn.disabled = false;
+                    return;
                 }
 
                 saveBtn.innerText = prevText; saveBtn.disabled = false;
-            } else if (window.editingExpenseId) {
-                // Keep the old bill URL if editing and no new file was uploaded
-                const existing = expenses.find(e => e.id === window.editingExpenseId);
-                if (existing && existing.billUrl) {
-                    billPubUrl = existing.billUrl;
-                }
             }
 
             const total = grandTotal || (amount + gstAmount); // grandTotal populated from calculateExpenseTotals
@@ -818,6 +855,50 @@
             document.getElementById('exp-vendor').value = exp.vendor || '';
             document.getElementById('exp-ref').value = exp.reference || '';
             document.getElementById('exp-notes').value = exp.notes || '';
+
+            // Restore bill previews
+            const previewContainer = document.getElementById('exp-bill-preview-container');
+            const billUrlInput = document.getElementById('exp-bill-url');
+            const billStatus = document.getElementById('exp-bill-status');
+            if (previewContainer) previewContainer.innerHTML = '';
+            if (billStatus) billStatus.textContent = '';
+            if (billUrlInput) billUrlInput.value = '';
+
+            if (exp.billUrl && previewContainer) {
+                let urls = [];
+                try { urls = JSON.parse(exp.billUrl); if (!Array.isArray(urls)) urls = [exp.billUrl]; } catch(e) { urls = [exp.billUrl]; }
+                if (billUrlInput) billUrlInput.value = JSON.stringify(urls);
+                urls.forEach((url, i) => {
+                    const div = document.createElement('div');
+                    div.style.position = 'relative';
+                    const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(url);
+                    if (isImage) {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #d1d5db;';
+                        div.appendChild(img);
+                    } else {
+                        const link = document.createElement('a');
+                        link.href = url; link.target = '_blank';
+                        link.style.cssText = 'display:inline-flex;align-items:center;gap:4px;font-size:0.75rem;color:#3b82f6;text-decoration:underline;';
+                        link.textContent = 'Doc ' + (i + 1);
+                        div.appendChild(link);
+                    }
+                    const delBtn = document.createElement('button');
+                    delBtn.innerHTML = '×';
+                    delBtn.type = 'button';
+                    delBtn.style.cssText = 'position:absolute;top:-5px;right:-5px;background:red;color:white;border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:11px;line-height:1;';
+                    delBtn.onclick = () => {
+                        urls.splice(i, 1);
+                        if (billUrlInput) billUrlInput.value = JSON.stringify(urls);
+                        div.remove();
+                        if (urls.length === 0 && previewContainer) previewContainer.style.display = 'none';
+                    };
+                    div.appendChild(delBtn);
+                    previewContainer.appendChild(div);
+                });
+                previewContainer.style.display = 'flex';
+            }
             
             const tbody = document.getElementById('expense-items-body');
             tbody.innerHTML = '';
@@ -893,10 +974,59 @@
             }
         };
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const expBill = document.getElementById('exp-bill');
-            if (window.attachCropperToInput && expBill) {
-                window.attachCropperToInput(expBill);
+        // Live preview when files are selected
+        document.getElementById('exp-bill').addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            const previewContainer = document.getElementById('exp-bill-preview-container');
+            const billUrlInput = document.getElementById('exp-bill-url');
+            let existingUrls = [];
+            if (billUrlInput && billUrlInput.value) {
+                try { existingUrls = JSON.parse(billUrlInput.value); if (!Array.isArray(existingUrls)) existingUrls = [billUrlInput.value]; } catch(err) { existingUrls = [billUrlInput.value]; }
+            }
+            if (previewContainer) {
+                previewContainer.innerHTML = '';
+                existingUrls.forEach((url, i) => {
+                    const div = document.createElement('div');
+                    div.style.position = 'relative';
+                    const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(url);
+                    if (isImage) {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #d1d5db;';
+                        div.appendChild(img);
+                    } else {
+                        const a = document.createElement('a'); a.href = url; a.target='_blank';
+                        a.style.cssText = 'font-size:0.75rem;color:#3b82f6;text-decoration:underline;';
+                        a.textContent = 'Doc '+(i+1); div.appendChild(a);
+                    }
+                    const delBtn = document.createElement('button');
+                    delBtn.innerHTML = '×'; delBtn.type = 'button';
+                    delBtn.style.cssText = 'position:absolute;top:-5px;right:-5px;background:red;color:white;border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:11px;line-height:1;';
+                    delBtn.onclick = () => {
+                        existingUrls.splice(i, 1);
+                        if (billUrlInput) billUrlInput.value = JSON.stringify(existingUrls);
+                        div.remove();
+                        if (existingUrls.length === 0 && e.target.files.length === 0) previewContainer.style.display = 'none';
+                    };
+                    div.appendChild(delBtn);
+                    previewContainer.appendChild(div);
+                });
+                Array.from(files).forEach(file => {
+                    const isImage = file.type.startsWith('image/');
+                    if (isImage) {
+                        const img = document.createElement('img');
+                        img.src = URL.createObjectURL(file);
+                        img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #d1d5db; opacity: 0.7;';
+                        previewContainer.appendChild(img);
+                    } else {
+                        const span = document.createElement('span');
+                        span.style.cssText = 'font-size:0.75rem;color:#6b7280;padding:4px;';
+                        span.textContent = file.name;
+                        previewContainer.appendChild(span);
+                    }
+                });
+                previewContainer.style.display = 'flex';
             }
         });
     </script>

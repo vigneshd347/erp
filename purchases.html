@@ -40,11 +40,17 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="melting.html" class="nav-item nested ">Melting</a>
                         <a href="jobwork.html" class="nav-item nested ">Job Work</a>
                         <a href="design-book.html" class="nav-item nested ">Design Book</a>
-                                            <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
-</div>
+                        <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
+                    </div>
                 </div>
+
+                <a href="stock-adjustment.html" class="nav-item">
+                    <div class="icon"><i data-lucide="sliders"></i></div>
+                    <span class="label">Stock Adjustment</span>
+                </a>
 
                 <a href="assets.html" class="nav-item">
                     <div class="icon"><i data-lucide="hard-drive"></i></div>
@@ -171,10 +177,9 @@
                                 </div>
                                 <div style="margin-bottom: 1rem;">
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Bill Image / Document</label>
-                                    <div id="ord-bill-preview-container" style="display: none; margin-bottom: 8px;">
-                                        <img id="ord-bill-preview" src="" style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #d1d5db; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                    <div id="ord-bill-preview-container" style="display: none; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                                     </div>
-                                    <input type="file" id="ord-bill-photo" accept="image/*" class="input-wrapper" style="font-size: 0.8rem; width: 100%; margin-bottom: 4px; padding: 6px;" title="Upload Bill Image">
+                                    <input type="file" id="ord-bill-photo" accept="image/*,application/pdf" multiple class="input-wrapper" style="font-size: 0.8rem; width: 100%; margin-bottom: 4px; padding: 6px;" title="Upload Bill Image(s)">
                                     <input type="hidden" id="ord-bill-imageUrl" value="">
                                     <div id="ord-bill-status" style="font-size: 0.75rem; color: #0284c7; font-weight: 600;"></div>
                                 </div>
@@ -203,8 +208,9 @@
                                         <option value="Stock">1. Stock</option>
                                         <option value="Assets">2. Assets</option>
                                         <option value="Consumables">3. Consumables</option>
-                                        <option value="Others">4. Others</option>
-                                        <option value="Design">5. Design</option>
+                                        <option value="Fuel">4. Fuel</option>
+                                        <option value="Others">5. Others</option>
+                                        <option value="Design">6. Design</option>
                                     </select>
                                 </div>
 
@@ -220,11 +226,20 @@
                                 </div>
                                 <div id="ord-metal-type-container" style="display: none;">
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Metal Type <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-main-metal-type" class="input-wrapper" style="border-color: #d1d5db;">
+                                    <select id="ord-main-metal-type" class="input-wrapper" style="border-color: #d1d5db;" onchange="togglePurityDisplay()">
                                         <option value="" disabled selected>Select Metal Type</option>
                                         <option value="Gold">1. Gold</option>
                                         <option value="Silver">2. Silver</option>
-                                        <option value="Others">3. others</option>
+                                    </select>
+                                </div>
+                                <div id="ord-purity-container" style="display: none;">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Purity <span style="color:#ef4444;">*</span></label>
+                                    <select id="ord-purity" class="input-wrapper" style="border-color: #d1d5db;">
+                                        <option value="99.99">1. 99.99</option>
+                                        <option value="99.9">2. 99.9</option>
+                                        <option value="99.5">3. 99.5</option>
+                                        <option value="22K" id="purity-22k-opt">4. 22K</option>
+                                        <option value="925" id="purity-925-opt">5. 925</option>
                                     </select>
                                 </div>
                                 <div id="ord-paid-through-container" style="display: none;">
@@ -653,8 +668,8 @@
 
             let lastDiscountAnchor = 'amount';
 
-            function calculatePOTotals(e = null) {
-                let sourceElement = (e && e.target) ? e.target : e;
+            window.calculatePOTotals = function(e = null) {
+                const sourceElement = (e && e.target) ? e.target : (e instanceof HTMLElement ? e : null);
                 
                 let subtotal = 0;
                 let gstTotal = 0;
@@ -669,7 +684,8 @@
                     const rowGst = rowSubtotal * (gstPercent / 100);
                     const rowTotal = rowSubtotal + rowGst;
                     
-                    row.querySelector('.po-row-amount').value = rowTotal.toFixed(2);
+                    const amtInput = row.querySelector('.po-row-amount');
+                    if (amtInput) amtInput.value = rowTotal.toFixed(2);
                     
                     subtotal += rowSubtotal;
                     gstTotal += rowGst;
@@ -681,7 +697,7 @@
 
                 if (discPercentInput && discAmountInput) {
                     if (sourceElement === discPercentInput) lastDiscountAnchor = 'percent';
-                    if (sourceElement === discAmountInput) lastDiscountAnchor = 'amount';
+                    else if (sourceElement === discAmountInput) lastDiscountAnchor = 'amount';
 
                     if (lastDiscountAnchor === 'percent') {
                         const pct = parseFloat(discPercentInput.value) || 0;
@@ -701,18 +717,26 @@
                         }
                     }
                 }
-
-
                 
                 const roundOffInput = document.getElementById('po-round-off');
                 const roundOffAmount = parseFloat(roundOffInput?.value) || 0;
                 
                 const grandTotal = subtotal - discountAmount + gstTotal + roundOffAmount;
                 
-                document.getElementById('po-sub-total').textContent = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-                document.getElementById('po-gst-total').textContent = gstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-                document.getElementById('po-grand-total').textContent = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-            }
+                const subTotalEl = document.getElementById('po-sub-total');
+                const gstTotalEl = document.getElementById('po-gst-total');
+                const grandTotalEl = document.getElementById('po-grand-total');
+
+                if (subTotalEl) subTotalEl.textContent = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                if (gstTotalEl) gstTotalEl.textContent = gstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                if (grandTotalEl) grandTotalEl.textContent = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            };
+
+            // Global listeners for footer inputs
+            ['po-discount-percent', 'po-discount-amount', 'po-round-off'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', (e) => window.calculatePOTotals(e));
+            });
 
             if (addPoItemBtn) {
                 addPoItemBtn.addEventListener('click', () => addPORow());
@@ -785,11 +809,15 @@
                     document.querySelectorAll('.po-qty').forEach(el => { el.required = true; });
                 }
 
+                const purityContainer = document.getElementById('ord-purity-container');
+
                 if (ordCategory && ordCategory.value === 'Stock') {
                     if (metalTypeContainer) metalTypeContainer.style.display = 'block';
                     mainMetalSelect.required = true;
+                    togglePurityDisplay(); // Show purity if metal is gold/silver
                 } else if (ordCategory && ordCategory.value === 'Assets') {
                     if (metalTypeContainer) metalTypeContainer.style.display = 'none';
+                    if (purityContainer) purityContainer.style.display = 'none';
                     if (document.getElementById('ord-asset-type-container')) {
                         document.getElementById('ord-asset-type-container').style.display = 'block';
                     }
@@ -797,11 +825,33 @@
                     mainMetalSelect.value = '';
                 } else {
                     if (metalTypeContainer) metalTypeContainer.style.display = 'none';
+                    if (purityContainer) purityContainer.style.display = 'none';
                     if (document.getElementById('ord-asset-type-container')) {
                         document.getElementById('ord-asset-type-container').style.display = 'none';
                     }
                     mainMetalSelect.required = false;
                     mainMetalSelect.value = '';
+                }
+            }
+
+            window.togglePurityDisplay = function() {
+                const metal = document.getElementById('ord-main-metal-type').value;
+                const purityContainer = document.getElementById('ord-purity-container');
+                const puritySelect = document.getElementById('ord-purity');
+                const opt22k = document.getElementById('purity-22k-opt');
+                const opt925 = document.getElementById('purity-925-opt');
+
+                if (metal === 'Gold' || metal === 'Silver') {
+                    purityContainer.style.display = 'block';
+                    if (metal === 'Gold') {
+                        opt22k.style.display = 'block';
+                        opt925.style.display = 'none';
+                    } else {
+                        opt22k.style.display = 'none';
+                        opt925.style.display = 'block';
+                    }
+                } else {
+                    purityContainer.style.display = 'none';
                 }
             }
 
@@ -956,7 +1006,12 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                         <td style="padding:13px 16px;">
                             <div style="font-weight:700;color:#0284c7;font-size:0.9rem;">${rec.id || '—'}</div>
                             ${rec.billNo ? `<div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">Bill: ${rec.billNo}</div>` : ''}
-                            ${rec.billImageUrl ? `<div style="margin-top:4px;"><a href="${rec.billImageUrl}" target="_blank" style="font-size:0.7rem;color:#0ea5e9;text-decoration:underline;display:inline-flex;align-items:center;gap:3px;"><i data-lucide="paperclip" style="width:10px;height:10px;"></i> View Bill</a></div>` : ''}
+                            ${(() => {
+                                if (!rec.billImageUrl) return '';
+                                let urls = [];
+                                try { urls = JSON.parse(rec.billImageUrl); if(!Array.isArray(urls)) urls = [rec.billImageUrl]; } catch(e) { urls = [rec.billImageUrl]; }
+                                return '<div style="margin-top:4px;">' + urls.map((url, i) => `<a href="${url}" target="_blank" style="font-size:0.7rem;color:#0ea5e9;text-decoration:underline;display:inline-flex;align-items:center;gap:3px;margin-right:8px;"><i data-lucide="paperclip" style="width:10px;height:10px;"></i> View ${urls.length > 1 ? 'Doc '+(i+1) : 'Bill'}</a>`).join('') + '</div>';
+                            })()}
                             <div style="font-size:0.85rem;color:#374151;">${rec.date || '—'}</div>
                             ${rec.dueDate ? `<div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">Due: ${rec.dueDate}</div>` : ''}
                         </td>
@@ -1021,12 +1076,34 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                 if (billPhotoInput) billPhotoInput.value = '';
                 if (billStatus) billStatus.textContent = '';
                 if (billUrlInput) billUrlInput.value = rec.billImageUrl || '';
-                if (billPreviewContainer && billPreview) {
+                if (billPreviewContainer) {
+                    billPreviewContainer.innerHTML = '';
+                    let urls = [];
                     if (rec.billImageUrl) {
-                        billPreview.src = rec.billImageUrl;
-                        billPreviewContainer.style.display = 'block';
+                        try { urls = JSON.parse(rec.billImageUrl); if(!Array.isArray(urls)) urls = [rec.billImageUrl]; } catch(e) { urls = [rec.billImageUrl]; }
+                        urls.forEach((url, i) => {
+                            const div = document.createElement('div');
+                            div.style.position = 'relative';
+                            const img = document.createElement('img');
+                            img.src = url;
+                            img.style.cssText = 'width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #d1d5db; box-shadow: 0 1px 3px rgba(0,0,0,0.1);';
+                            div.appendChild(img);
+                            
+                            const delBtn = document.createElement('button');
+                            delBtn.innerHTML = '×';
+                            delBtn.style.cssText = 'position: absolute; top: -5px; right: -5px; background: red; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; line-height: 1;';
+                            delBtn.onclick = (e) => {
+                                e.preventDefault();
+                                urls.splice(i, 1);
+                                if (billUrlInput) billUrlInput.value = JSON.stringify(urls);
+                                div.remove();
+                                if (urls.length === 0) billPreviewContainer.style.display = 'none';
+                            };
+                            div.appendChild(delBtn);
+                            billPreviewContainer.appendChild(div);
+                        });
+                        billPreviewContainer.style.display = 'flex';
                     } else {
-                        billPreview.src = '';
                         billPreviewContainer.style.display = 'none';
                     }
                 }
@@ -1040,6 +1117,10 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                 
                 
                 document.getElementById('ord-main-metal-type').value = rec.mainMetalType || '';
+                if (document.getElementById('ord-purity')) {
+                    document.getElementById('ord-purity').value = rec.purity || '99.99';
+                }
+                togglePurityDisplay(); // Show/hide purity based on metal
                 document.getElementById('ord-paid-through').value = rec.paidThrough || '';
                 document.getElementById('ord-remark').value = rec.remark || '';
                 document.getElementById('ord-status').value = rec.status || 'Open';
@@ -1145,52 +1226,50 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     let addedCount = 0;
                     
                     rec.items.forEach((it) => {
-                        const q = parseInt(it.qty, 10) || 1;
-                        for(let k = 0; k < q; k++) {
-                            // Per-item category
-                            let effectiveSubCat = it.designSubCat || 'Other';
-                            let prefix = 'DSG';
-                            if (effectiveSubCat === 'Bangle' || effectiveSubCat === 'Bracelet') prefix = 'BG';
-                            else if (effectiveSubCat === 'Ring') prefix = 'RG';
-                            else if (effectiveSubCat === 'Earring') prefix = 'ER';
-                            else if (effectiveSubCat === 'Necklace') prefix = 'NK';
-                            else if (effectiveSubCat === 'Mix') prefix = 'MX';
+                        // For designs, we only need to create ONE master template per item row, regardless of quantity purchased.
+                        // Per-item category
+                        let effectiveSubCat = it.designSubCat || 'Other';
+                        let prefix = 'DSG';
+                        if (effectiveSubCat === 'Bangle' || effectiveSubCat === 'Bracelet') prefix = 'BG';
+                        else if (effectiveSubCat === 'Ring') prefix = 'RG';
+                        else if (effectiveSubCat === 'Earring') prefix = 'ER';
+                        else if (effectiveSubCat === 'Necklace') prefix = 'NK';
+                        else if (effectiveSubCat === 'Mix') prefix = 'MX';
 
-                            let maxIdNum = 0;
-                            designs.forEach(d => {
-                                if (d.id && d.id.startsWith(prefix)) {
-                                    const match = d.id.match(new RegExp(`^${prefix}(\\d+)`));
-                                    if (match) {
-                                        const num = parseInt(match[1], 10);
-                                        if (!isNaN(num) && num > maxIdNum) maxIdNum = num;
-                                    }
+                        let maxIdNum = 0;
+                        designs.forEach(d => {
+                            if (d.id && d.id.startsWith(prefix)) {
+                                const match = d.id.match(new RegExp(`^${prefix}(\\d+)`));
+                                if (match) {
+                                    const num = parseInt(match[1], 10);
+                                    if (!isNaN(num) && num > maxIdNum) maxIdNum = num;
                                 }
-                            });
-
-                            const countStr = (maxIdNum + 1).toString().padStart(2, '0');
-                            let idStr = `${prefix}${countStr}`;
-                            
-                            const wt = parseFloat(it.designWt) || 0;
-                            if (wt > 0) idStr += `-${wt}`;
-                            if (it.designSize) idStr += `-${it.designSize}`;
-
-                            let specificSub = null;
-                            if (effectiveSubCat === 'Ring') {
-                                const descL = String(it.desc || '').toLowerCase();
-                                specificSub = descL.includes('gents') ? 'Gents ring' : 'Ladies ring'; // default
                             }
+                        });
 
-                            designs.unshift({
-                                id: idStr,
-                                category: effectiveSubCat === 'Bracelet' ? 'Bangle' : effectiveSubCat,
-                                subCategory: specificSub,
-                                weight: wt,
-                                size: it.designSize || '',
-                                imageUrl: it.detailImageUrl || it.designImageUrl || '',
-                                _sourcePO: rec.id 
-                            });
-                            addedCount++;
+                        const countStr = (maxIdNum + 1).toString().padStart(2, '0');
+                        let idStr = `${prefix}${countStr}`;
+                        
+                        const wt = parseFloat(it.designWt) || 0;
+                        if (wt > 0) idStr += `-${wt}`;
+                        if (it.designSize) idStr += `-${it.designSize}`;
+
+                        let specificSub = null;
+                        if (effectiveSubCat === 'Ring') {
+                            const descL = String(it.desc || '').toLowerCase();
+                            specificSub = descL.includes('gents') ? 'Gents ring' : 'Ladies ring'; // default
                         }
+
+                        designs.unshift({
+                            id: idStr,
+                            category: effectiveSubCat === 'Bracelet' ? 'Bangle' : effectiveSubCat,
+                            subCategory: specificSub,
+                            weight: wt,
+                            size: it.designSize || '',
+                            imageUrl: it.detailImageUrl || it.designImageUrl || '',
+                            _sourcePO: rec.id 
+                        });
+                        addedCount++;
                     });
 
                     if (addedCount > 0) {
@@ -1236,6 +1315,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                                     status: 'Pending Approval',
                                     date: rec.date,
                                     value: perItemTotal.toFixed(2),
+                                    paidThrough: 'ALREADY_PAID',
                                     notes: noteStr,
                                     imageUrl: it.detailImageUrl || it.designImageUrl || ''
                                 });
@@ -1255,29 +1335,43 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     }
                 } else if (rec.category === 'Stock') {
                     const mainMetal = rec.mainMetalType || 'Gold';
-                    const mappedMetal = mainMetal === 'Silver' ? 'silver_925' : 'gold_22k';
+                    const purity = rec.purity || '';
+                    let mappedMetal = '';
+                    if (mainMetal === 'Gold') {
+                        if (purity === '99.99') mappedMetal = 'pure_gold_9999';
+                        else if (purity === '99.9') mappedMetal = 'pure_gold_999';
+                        else if (purity === '99.5') mappedMetal = 'pure_gold_995';
+                        else mappedMetal = 'gold_22k';
+                    } else if (mainMetal === 'Silver') {
+                        if (purity === '99.99') mappedMetal = 'pure_silver_9999';
+                        else if (purity === '99.9') mappedMetal = 'pure_silver_999';
+                        else if (purity === '99.5') mappedMetal = 'pure_silver_995';
+                        else mappedMetal = 'silver_925';
+                    } else {
+                        mappedMetal = mainMetal.toLowerCase();
+                    }
                     
                     const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
                     const noteStr = 'Auto PO: ' + rec.id;
                     
                     // Prevent duplicate stock addition
                     if (!history.some(h => (h.note && h.note.includes(rec.id)) || (h.details && h.details.includes(rec.id)))) {
-                        const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {
-                            pure_gold: 0, gold_22k: 0, pure_silver: 0, silver_925: 0
-                        };
 
                         const weightToAdd = parseFloat(rec.qty) || 0;
                         if (weightToAdd > 0) {
-                            balances[mappedMetal] = (balances[mappedMetal] || 0) + weightToAdd;
+
+                            const d = new Date();
+                            const formattedDate = d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                             history.push({
-                                date: new Date().toISOString().split('T')[0],
+                                id: rec.id,
+                                date: formattedDate,
                                 type: 'Buy',
                                 metal: mappedMetal,
                                 weight: weightToAdd,
                                 details: noteStr,
                                 note: noteStr
                             });
-                            localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+
                             localStorage.setItem('manti_stock_history', JSON.stringify(history));
                             alert(`${weightToAdd}g added to ${mappedMetal.replace('_', ' ').toUpperCase()} Stock automatically.`);
                         }
@@ -1309,14 +1403,44 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
             const billPhotoInputListener = document.getElementById('ord-bill-photo');
             if (billPhotoInputListener) {
                 billPhotoInputListener.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    const objectUrl = URL.createObjectURL(file);
+                    const files = e.target.files;
+                    if (!files || files.length === 0) return;
                     const previewContainer = document.getElementById('ord-bill-preview-container');
-                    const previewImg = document.getElementById('ord-bill-preview');
-                    if (previewContainer && previewImg) {
-                        previewImg.src = objectUrl;
-                        previewContainer.style.display = 'block';
+                    const urlInput = document.getElementById('ord-bill-imageUrl');
+                    let urls = [];
+                    if (urlInput && urlInput.value) {
+                        try { urls = JSON.parse(urlInput.value); if(!Array.isArray(urls)) urls = [urlInput.value]; } catch(err) { urls = [urlInput.value]; }
+                    }
+                    if (previewContainer) {
+                        previewContainer.innerHTML = '';
+                        urls.forEach((url, i) => {
+                            const div = document.createElement('div');
+                            div.style.position = 'relative';
+                            const img = document.createElement('img');
+                            img.src = url;
+                            img.style.cssText = 'width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #d1d5db; box-shadow: 0 1px 3px rgba(0,0,0,0.1);';
+                            div.appendChild(img);
+                            const delBtn = document.createElement('button');
+                            delBtn.innerHTML = '×';
+                            delBtn.style.cssText = 'position: absolute; top: -5px; right: -5px; background: red; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; line-height: 1;';
+                            delBtn.onclick = (ev) => {
+                                ev.preventDefault();
+                                urls.splice(i, 1);
+                                if (urlInput) urlInput.value = JSON.stringify(urls);
+                                div.remove();
+                                if (urls.length === 0 && Array.from(files).length === 0) previewContainer.style.display = 'none';
+                            };
+                            div.appendChild(delBtn);
+                            previewContainer.appendChild(div);
+                        });
+                        Array.from(files).forEach(file => {
+                            const objectUrl = URL.createObjectURL(file);
+                            const img = document.createElement('img');
+                            img.src = objectUrl;
+                            img.style.cssText = 'width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #d1d5db; opacity: 0.7;';
+                            previewContainer.appendChild(img);
+                        });
+                        previewContainer.style.display = 'flex';
                     }
                     const statusDiv = document.getElementById('ord-bill-status');
                     if(statusDiv) {
@@ -1443,21 +1567,32 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                 const billStatus = document.getElementById('ord-bill-status');
                 try {
                     if (billPhotoInput && billPhotoInput.files && billPhotoInput.files.length > 0) {
-                        const file = billPhotoInput.files[0];
                         if (billStatus) {
                             billStatus.textContent = 'Uploading...';
                             billStatus.style.color = '#0284c7';
                         }
                         
-                        const fileExt = file.name.split('.').pop();
-                        const fileName = `bill_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-                        const filePath = `uploads/${fileName}`;
-
-                        const { data, error } = await window.supabase.storage.from('designs').upload(filePath, file);
-                        if (error) throw error;
+                        let existingUrls = [];
+                        if (billUrlInput && billUrlInput.value) {
+                            try { existingUrls = JSON.parse(billUrlInput.value); if(!Array.isArray(existingUrls)) existingUrls = [billUrlInput.value]; } catch(e) { existingUrls = [billUrlInput.value]; }
+                        }
                         
-                        const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(filePath);
-                        if (billUrlInput) billUrlInput.value = urlData.publicUrl;
+                        const uploadPromises = Array.from(billPhotoInput.files).map(async (file) => {
+                            const fileExt = file.name.split('.').pop();
+                            const fileName = `bill_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                            const filePath = `uploads/${fileName}`;
+
+                            const { data, error } = await window.supabase.storage.from('designs').upload(filePath, file);
+                            if (error) throw error;
+                            
+                            const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(filePath);
+                            return urlData.publicUrl;
+                        });
+                        
+                        const newUrls = await Promise.all(uploadPromises);
+                        existingUrls.push(...newUrls);
+                        
+                        if (billUrlInput) billUrlInput.value = JSON.stringify(existingUrls);
                         if (billStatus) {
                             billStatus.textContent = 'Uploaded ✓';
                             billStatus.style.color = '#16a34a';
@@ -1477,7 +1612,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                 // Upload pending images
                 const rows = poItemsBody.querySelectorAll('.po-item-row');
                 try {
-                    for (let row of rows) {
+                    const detailUploadPromises = Array.from(rows).map(async (row) => {
                         // Detailed Image Upload
                         const detailFileInput = row.querySelector('.po-detail-photo');
                         const detailUrlInput = row.querySelector('.po-detail-imageUrl');
@@ -1506,7 +1641,8 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                             
                             detailFileInput.value = ''; // clear input
                         }
-                    }
+                    });
+                    await Promise.all(detailUploadPromises);
                 } catch (err) {
                     console.error("Upload error:", err);
                     alert("Error uploading design image: " + err.message);
@@ -1580,6 +1716,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     amount: totalAmount.toFixed(2),
                     remark: document.getElementById('ord-remark').value,
                     mainMetalType: mainMetal,
+                    purity: document.getElementById('ord-purity').value,
                     paidThrough: "", // Always default to Pay Later for new POs
                     paidAmount: editIndex >= 0 ? (records[editIndex].paidAmount || 0) : 0,
                     status: ordStatus
@@ -1653,9 +1790,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 
             window.addEventListener('DOMContentLoaded', () => {
                 const billPhotoInput = document.getElementById('ord-bill-photo');
-                if (window.attachCropperToInput && billPhotoInput) {
-                    window.attachCropperToInput(billPhotoInput);
-                }
+                // Multiple document upload supported natively
             });
         });
     </script>
