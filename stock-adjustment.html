@@ -254,7 +254,7 @@
                                 </select>
                             </div>
 
-                            <div>
+                            <div id="purity-wrapper">
                                 <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Purity</label>
                                 <select id="adj-purity" class="input-wrapper" style="width: 100%;" required disabled>
                                     <option value="" disabled selected>Select Metal first</option>
@@ -467,16 +467,35 @@
         window.updatePurityOptions = function() {
             const metalType = document.getElementById('adj-metal-type').value;
             const puritySel = document.getElementById('adj-purity');
+            const purityWrapper = document.getElementById('purity-wrapper');
+            
             puritySel.innerHTML = '<option value="" disabled selected>Select Purity</option>';
+            
             if (metalType && PURITY_OPTIONS[metalType]) {
-                PURITY_OPTIONS[metalType].forEach(([val, label]) => {
+                const options = PURITY_OPTIONS[metalType];
+                
+                if (options.length === 1) {
+                    // Hide purity dropdown if there's only one option (Copper, Zinc, Iridium)
+                    purityWrapper.style.display = 'none';
                     const opt = document.createElement('option');
-                    opt.value = val;
-                    opt.textContent = label;
+                    opt.value = options[0][0];
+                    opt.textContent = options[0][1];
+                    opt.selected = true;
                     puritySel.appendChild(opt);
-                });
-                puritySel.disabled = false;
+                    puritySel.disabled = false;
+                } else {
+                    // Show dropdown for multiple options (Gold, Silver)
+                    purityWrapper.style.display = 'block';
+                    options.forEach(([val, label]) => {
+                        const opt = document.createElement('option');
+                        opt.value = val;
+                        opt.textContent = label;
+                        puritySel.appendChild(opt);
+                    });
+                    puritySel.disabled = false;
+                }
             } else {
+                purityWrapper.style.display = 'block';
                 puritySel.disabled = true;
             }
         };
@@ -533,6 +552,7 @@
             localStorage.setItem('manti_stock_history', JSON.stringify(history));
 
             form.reset();
+            document.getElementById('purity-wrapper').style.display = 'block';
             document.getElementById('adj-purity').disabled = true;
             document.getElementById('adj-purity').innerHTML = '<option value="" disabled selected>Select Metal first</option>';
             loadLocalData();
