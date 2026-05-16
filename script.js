@@ -2235,17 +2235,21 @@ window.calculateMantiBalances = function() {
             const m = (o.mainMetalType || '').toLowerCase();
             let key = '';
             if (m.includes('gold')) {
+                const p = (o.purity || '').toString();
                 const prod = (o.product || '').toLowerCase();
-                if (prod.includes('99.99') || prod.includes('9999')) key = 'pure_gold_9999';
-                else if (prod.includes('99.9') || prod.includes('999')) key = 'pure_gold_999';
-                else if (prod.includes('99.5') || prod.includes('995')) key = 'pure_gold_995';
-                else if (prod.includes('24k') || prod.includes('pure')) key = 'pure_gold_999'; // default pure
+                
+                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999')) key = 'pure_gold_9999';
+                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999')) key = 'pure_gold_999';
+                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995')) key = 'pure_gold_995';
+                else if (p === '24k' || prod.includes('24k') || prod.includes('pure')) key = 'pure_gold_999';
                 else key = 'gold_22k';
             } else if (m.includes('silver')) {
+                const p = (o.purity || '').toString();
                 const prod = (o.product || '').toLowerCase();
-                if (prod.includes('99.99') || prod.includes('9999')) key = 'pure_silver_9999';
-                else if (prod.includes('99.9') || prod.includes('999')) key = 'pure_silver_999';
-                else if (prod.includes('99.5') || prod.includes('995')) key = 'pure_silver_995';
+                
+                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999')) key = 'pure_silver_9999';
+                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999')) key = 'pure_silver_999';
+                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995')) key = 'pure_silver_995';
                 else if (prod.includes('pure')) key = 'pure_silver_999';
                 else key = 'silver_925';
             } else if (m.includes('copper')) key = 'copper';
