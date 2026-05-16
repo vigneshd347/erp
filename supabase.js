@@ -5,6 +5,24 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Initialize the Supabase client
 window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+    const string = msg.toLowerCase();
+    const substring = "script error";
+    if (string.indexOf(substring) > -1) {
+        console.log('Script Error: See Browser Console for Detail');
+    } else {
+        const message = [
+            'Message: ' + msg,
+            'URL: ' + url,
+            'Line: ' + lineNo,
+            'Column: ' + columnNo,
+            'Error object: ' + JSON.stringify(error)
+        ].join(' - ');
+        alert("ERP CRITICAL ERROR: " + message);
+    }
+    return false;
+};
+
 console.log("Supabase Client Initialized Successfully!");
 
 // --- DATA MIGRATION UTILITY ---
@@ -74,6 +92,7 @@ Object.keys(localStorage).forEach(key => {
 // 2. In-Memory Ephemeral Storage
 window.ERP_MEMORY = new Map();
 window.mantiSyncPromises = [];
+const syncLocks = new Map(); // Prevent overlapping syncs for the same key
 
 const originalGetItem = Storage.prototype.getItem;
 const originalSetItem = Storage.prototype.setItem;
@@ -121,18 +140,41 @@ Storage.prototype.setItem = function (key, value) {
         // Save to RAM only
         window.ERP_MEMORY.set(key, value);
 
-        try {
-            const parsedData = JSON.parse(value);
-            const promise = syncKeyToSupabase(key, parsedData);
-            window.mantiSyncPromises.push(promise);
-            updateSyncIndicator();
-            promise.finally(() => {
+        // SYNC LOCK: Ensure only one sync happens at a time for this key
+        // If a sync is already running, we wait for it to finish then trigger a NEW sync with latest data
+        if (syncLocks.has(key)) {
+            syncLocks.set(key, 'pending'); // Mark that we need another sync after current one
+            return;
+        }
+
+        const triggerSync = async () => {
+            syncLocks.set(key, 'running');
+            try {
+                const latestValue = window.ERP_MEMORY.get(key);
+                if (!latestValue) return;
+                
+                const parsedData = JSON.parse(latestValue);
+                const promise = syncKeyToSupabase(key, parsedData);
+                window.mantiSyncPromises.push(promise);
+                updateSyncIndicator();
+                
+                await promise;
+                
                 window.mantiSyncPromises = window.mantiSyncPromises.filter(p => p !== promise);
                 updateSyncIndicator();
-            });
-        } catch (e) {
-            console.error("Failed to parse data for cloud push", e);
-        }
+            } catch (e) {
+                console.error(`Sync failed for ${key}:`, e);
+            } finally {
+                const state = syncLocks.get(key);
+                syncLocks.delete(key);
+                if (state === 'pending') {
+                    // Trigger again because data changed while we were syncing
+                    setTimeout(triggerSync, 500); 
+                }
+            }
+        };
+
+        triggerSync();
         return;
     }
     originalSetItem.call(this, key, value);
@@ -160,7 +202,7 @@ window.navigateAfterSync = async function (url) {
 };
 
 // Map Local Data to SQL Schema and Upload (Unchanged from before)
-async function syncKeyToSupabase(key, data) {
+window.syncKeyToSupabase = async function(key, data) {
     if (!data) return;
     try {
         if (key === 'manti_order_records') {
@@ -340,7 +382,10 @@ async function syncKeyToSupabase(key, data) {
                     paidAmount: parseFloat(e.paidAmount) || 0,
                     discount: parseFloat(e.discount) || 0,
                     roundOff: parseFloat(e.roundOff) || 0,
-                    total: parseFloat(e.total) || 0
+                    total: parseFloat(e.total) || 0,
+                    status: e.status || 'Payment Pending',
+                    discountPercent: e.discountPercent || '',
+                    discountAmount: e.discountAmount || ''
                 };
                 return {
                     id: e.id, date: e.date, expense_account: e.account || '', amount: parseFloat(e.amount) || 0,
@@ -400,30 +445,40 @@ async function syncKeyToSupabase(key, data) {
                 await supabase.from('bank_accounts').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_stock_history') {
-            const dbStock = data.map(s => ({
-                date: s.date, type: s.type || '', details: s.note || s.details || '', qty: parseFloat(s.qty) || 0,
-                weight: parseFloat(s.weight) || 0, metal_type: s.metal || ''
-            }));
-            if (dbStock.length > 0) {
-                const { error: delErr } = await supabase.from('stock_history').delete().neq('type', 'NON_EXISTENT');
-                if (delErr) { console.error("Stock History Sync Error:", delErr); alert("Failed to clear Stock History for sync: " + delErr.message); }
-                const { error } = await supabase.from('stock_history').insert(dbStock);
-                if (error) { console.error("Stock History Sync Error:", error); alert("Failed to save Stock History to Cloud: " + error.message); }
-            } else {
-                await supabase.from('stock_history').delete().neq('type', 'NON_EXISTENT');
+            const dbStock = data.map(s => {
+                // Ensure ID is padded correctly if it's an ADJ
+                let cleanId = s.id || '';
+                if (cleanId.startsWith('ADJ-')) {
+                    const num = parseInt(cleanId.replace('ADJ-', ''));
+                    if (!isNaN(num)) cleanId = `ADJ-${num.toString().padStart(4, '0')}`;
+                }
+
+                return {
+                    date: s.date, type: s.type || '', 
+                    details: (cleanId && !cleanId.includes('-') && cleanId.length > 20 ? '' : `[${cleanId}] `) + (s.note || s.details || ''), 
+                    qty: parseFloat(s.qty) || 0,
+                    weight: parseFloat(s.weight) || 0, metal_type: s.metal || ''
+                };
+            });
+            
+            try {
+                // AGGRESSIVE MIRRORING:
+                // We must ensure the cloud exactly matches local.
+                // 1. Delete everything first
+                const { error: delErr } = await supabase.from('stock_history').delete().neq('weight', -999999); 
+                if (delErr) throw delErr;
+                
+                // 2. Insert current state
+                if (dbStock.length > 0) {
+                    // Supabase insert has a limit, but for stock history ~1000 rows is fine
+                    const { error: insErr } = await supabase.from('stock_history').insert(dbStock);
+                    if (insErr) throw insErr;
+                }
+                console.log(`Stock History mirrored successfully (${dbStock.length} rows)`);
+            } catch (err) {
+                console.error("Stock History Mirror Sync Failed:", err);
             }
-        } else if (key === 'manti_report_snapshots') {
-            const dbSnaps = data.map(s => ({
-                id: s.id, title: s.title, date: s.date, html: s.html, type: s.type
-            }));
-            if (dbSnaps.length > 0) {
-                const idList = dbSnaps.map(s => `"${s.id}"`).join(',');
-                await supabase.from('snapshots').delete().not('id', 'in', `(${idList})`);
-                const { error } = await supabase.from('snapshots').upsert(dbSnaps, { onConflict: 'id' });
-                if (error) { console.error("Snapshots Sync Error:", error); alert("Failed to save Snapshots to Cloud: " + error.message); }
-            } else {
-                await supabase.from('snapshots').delete().neq('id', 'NON_EXISTENT');
-            }
+
         } else if (key === 'manti_designs') {
             const dbDesigns = data.map(d => ({
                 id: d.id, category: d.category, sub_category: d.subCategory || null,
@@ -474,7 +529,7 @@ window.fetchEverythingFromCloud = async function () {
             ordersRes, jobsRes, invoicesRes, vendorRes,
             supplierRes, staffRes, assetsRes, challansRes,
             paymentsRes, expensesRes, journalsRes, accountsRes,
-            stockRes, snapsRes, settingsRes, designsRes, treesRes
+            stockRes, settingsRes, designsRes, treesRes
         ] = await Promise.all([
             supabase.from('orders').select('*'),
             supabase.from('job_works').select('*'),
@@ -489,7 +544,7 @@ window.fetchEverythingFromCloud = async function () {
             supabase.from('journal_entries').select('*'),
             supabase.from('bank_accounts').select('*'),
             supabase.from('stock_history').select('*'),
-            supabase.from('snapshots').select('*'),
+
             supabase.from('settings').select('*'),
             supabase.from('designs').select('*'),
             supabase.from('trees').select('*')
@@ -511,6 +566,9 @@ window.fetchEverythingFromCloud = async function () {
                     const p = o.product_name.toLowerCase();
                     if (p.includes('gold')) metal = 'Gold';
                     else if (p.includes('silver')) metal = 'Silver';
+                    else if (p.includes('copper')) metal = 'Copper';
+                    else if (p.includes('zinc')) metal = 'Zinc';
+                    else if (p.includes('iridium')) metal = 'Iridium';
                 }
                 
                 return {
@@ -638,14 +696,20 @@ window.fetchEverythingFromCloud = async function () {
                 let paidAmount = 0;
                 let discount = 0;
                 let roundOff = 0;
+                let expStatus = 'Payment Pending';
+                let discountPercent = '';
+                let discountAmount = '';
                 let total = (parseFloat(e.amount) || 0) + (parseFloat(e.gst_amount) || 0);
 
                 if (e.items && !Array.isArray(e.items) && e.items.items) {
                     itemsList = e.items.items;
-                    paidAmount = e.items.paidAmount || 0;
-                    discount = e.items.discount || 0;
-                    roundOff = e.items.roundOff || 0;
-                    total = e.items.total || total;
+                    paidAmount = parseFloat(e.items.paidAmount) || 0;
+                    discount = parseFloat(e.items.discount) || 0;
+                    roundOff = parseFloat(e.items.roundOff) || 0;
+                    total = parseFloat(e.items.total) || total;
+                    expStatus = e.items.status || 'Payment Pending';
+                    discountPercent = e.items.discountPercent || '';
+                    discountAmount = e.items.discountAmount || '';
                 } else if (Array.isArray(e.items)) {
                     itemsList = e.items;
                 }
@@ -655,6 +719,7 @@ window.fetchEverythingFromCloud = async function () {
                     paidThrough: e.paid_through, vendor: e.vendor,
                     gstPercent: e.gst_percent || null, gstAmount: e.gst_amount || null,
                     discount: discount, roundOff: roundOff, paidAmount: paidAmount, total: total,
+                    status: expStatus, discountPercent: discountPercent, discountAmount: discountAmount,
                     reference: e.reference, notes: e.notes, billUrl: e.bill_url, items: itemsList
                 };
             });
@@ -682,19 +747,40 @@ window.fetchEverythingFromCloud = async function () {
 
         // 13. Stock History
         if (stockRes.data && stockRes.data.length > 0) {
-            const mappedStock = stockRes.data.map(s => ({
-                date: s.date, type: s.type, note: s.details, qty: s.qty, weight: s.weight, metal: s.metal_type
-            }));
-            window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(mappedStock));
+            const seen = new Set();
+            const cleanStock = [];
+            stockRes.data.forEach(s => {
+                // Stable fingerprint for cloud data (Day + Metal + Weight + Type + Details)
+                const datePart = (s.date || '').split(' ')[0];
+                const notePart = (s.details || '').trim().toLowerCase();
+                const finger = `${datePart}|${(s.metal_type||'').trim()}|${parseFloat(s.weight).toFixed(3)}|${(s.type||'').trim()}|${notePart}`;
+                
+                if (seen.has(finger)) return;
+                seen.add(finger);
+
+                // Extract stable ID from details if it was wrapped in brackets like [ADJ-1001]
+                let extractedId = s.id;
+                if (s.details && s.details.startsWith('[')) {
+                    const match = s.details.match(/^\[(.*?)\]/);
+                    if (match) {
+                        extractedId = match[1];
+                    }
+                }
+                
+                cleanStock.push({
+                    id: extractedId, 
+                    date: s.date, 
+                    type: s.type, 
+                    note: s.details ? s.details.replace(/^\[.*?\]\s*/, '') : '', 
+                    qty: s.qty, 
+                    weight: s.weight, 
+                    metal: s.metal_type
+                });
+            });
+            window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(cleanStock));
         }
 
-        // 14. Snapshots
-        if (snapsRes.data && snapsRes.data.length > 0) {
-            const mappedSnaps = snapsRes.data.map(s => ({
-                id: s.id, title: s.title, date: s.date, html: s.html, type: s.type
-            }));
-            window.ERP_MEMORY.set('manti_report_snapshots', JSON.stringify(mappedSnaps));
-        }
+
 
         // 15. Settings
         if (settingsRes.data) {
@@ -702,7 +788,7 @@ window.fetchEverythingFromCloud = async function () {
                 'manti_vendor_kyc_records', 'manti_supplier_kyc_records', 'manti_staff_records',
                 'manti_assets', 'manti_delivery_challan_records', 'manti_payments_made',
                 'manti_expenses', 'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history',
-                'manti_report_snapshots'
+                'manti_stock_balances'
             ];
             settingsRes.data.forEach(s => {
                 if (!ignoredKeys.includes(s.setting_key)) {
@@ -711,23 +797,52 @@ window.fetchEverythingFromCloud = async function () {
             });
         }
 
-        // 16. Designs
-        if (designsRes && designsRes.data) {
-            const mappedDesigns = designsRes.data.map(d => ({
+        // 16. Designs (with self-healing migration)
+        let finalDesigns = [];
+        if (designsRes && designsRes.data && designsRes.data.length > 0) {
+            finalDesigns = designsRes.data.map(d => ({
                 id: d.id, category: d.category, subCategory: d.sub_category,
                 weight: d.weight, size: d.size, imageUrl: d.image_url, timestamp: d.created_at
             }));
-            window.ERP_MEMORY.set('manti_designs', JSON.stringify(mappedDesigns));
+        } else {
+            // Check if it exists in settings (legacy)
+            const legacy = settingsRes.data.find(s => s.setting_key === 'manti_designs');
+            if (legacy && legacy.setting_value) {
+                console.log("Found legacy designs in settings. Migrating...");
+                finalDesigns = legacy.setting_value;
+                // Silently push to the new table
+                await supabase.from('designs').upsert(finalDesigns.map(d => ({
+                    id: d.id, category: d.category, sub_category: d.subCategory || null,
+                    weight: parseFloat(d.weight) || 0, size: d.size || null,
+                    image_url: d.imageUrl || null
+                })), { onConflict: 'id' });
+            }
         }
+        window.ERP_MEMORY.set('manti_designs', JSON.stringify(finalDesigns));
 
-        // 17. Trees
-        if (treesRes && treesRes.data) {
-            const mappedTrees = treesRes.data.map(t => ({
+        // 17. Trees (with self-healing migration)
+        let finalTrees = [];
+        if (treesRes && treesRes.data && treesRes.data.length > 0) {
+            finalTrees = treesRes.data.map(t => ({
                 id: t.id, treeNo: t.tree_no, date: t.date,
                 totalWeight: t.total_weight, designs: t.designs, notes: t.notes, timestamp: t.created_at
             }));
-            window.ERP_MEMORY.set('manti_trees', JSON.stringify(mappedTrees));
+        } else {
+            // Check if it exists in settings (legacy)
+            const legacy = settingsRes.data.find(s => s.setting_key === 'manti_trees');
+            if (legacy && legacy.setting_value) {
+                console.log("Found legacy trees in settings. Migrating...");
+                finalTrees = legacy.setting_value;
+                // Silently push to the new table
+                await supabase.from('trees').upsert(finalTrees.map(t => ({
+                    id: t.id, tree_no: t.treeNo, date: t.date,
+                    total_weight: parseFloat(t.totalWeight) || 0,
+                    designs: t.designs || [],
+                    notes: t.notes || null
+                })), { onConflict: 'id' });
+            }
         }
+        window.ERP_MEMORY.set('manti_trees', JSON.stringify(finalTrees));
     } catch (e) {
         console.error("Cloud Fetch Failed!", e);
         // Continue booting the app anyway with locally cached/empty data

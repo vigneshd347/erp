@@ -435,7 +435,7 @@
             const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
             const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records') || '[]');
             
-            // --- RESTORATION: Sync paidAmount from Payment History ---
+            // --- RESTORATION: Sync paidAmount from Payment History AND fix status ---
             const pmtHistory = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
             let restored = false;
             expenses.forEach(e => {
@@ -453,9 +453,24 @@
                     actualPaid = parseFloat(e.total) || 0;
                 }
 
+                // Restore paidAmount if payment history shows more paid than recorded
                 if (actualPaid > 0 && (!e.paidAmount || parseFloat(e.paidAmount) < actualPaid - 0.01)) {
                     e.paidAmount = actualPaid;
                     restored = true;
+                }
+
+                // Fix status field to match actual payment state (prevents stuck "Payment Pending")
+                if (e.status !== 'Draft') {
+                    const totalAmt = parseFloat(e.total) || (parseFloat(e.amount) + (parseFloat(e.gstAmount) || 0));
+                    const paid = parseFloat(e.paidAmount) || 0;
+                    const due = totalAmt - paid;
+                    if (due <= 0.01 && paid > 0 && e.status !== 'Payed') {
+                        e.status = 'Payed';
+                        restored = true;
+                    } else if (due > 0.01 && e.status === 'Payed') {
+                        e.status = 'Payment Pending';
+                        restored = true;
+                    }
                 }
             });
             if (restored) {
