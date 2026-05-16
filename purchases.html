@@ -1369,11 +1369,12 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                                 metal: mappedMetal,
                                 weight: weightToAdd,
                                 details: noteStr,
-                                note: noteStr
+                                note: noteStr,
+                                status: 'Pending Approval'
                             });
 
                             localStorage.setItem('manti_stock_history', JSON.stringify(history));
-                            alert(`${weightToAdd}g added to ${mappedMetal.replace('_', ' ').toUpperCase()} Stock automatically.`);
+                            alert(`${weightToAdd}g of ${mappedMetal.replace('_', ' ').toUpperCase()} routed to Stock Adjustment for Approval.`);
                         }
                     }
                 }

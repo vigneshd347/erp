@@ -2214,6 +2214,8 @@ window.calculateMantiBalances = function() {
 
     // 1. Process History (Manual adjustments, Melting outputs/inputs, etc.)
     history.forEach(h => {
+        if (h.status === 'Pending Approval') return;
+        
         let metal = h.metal;
         // Legacy fallback mapping
         if (metal === 'pure_gold') metal = 'pure_gold_999';

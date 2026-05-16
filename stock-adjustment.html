@@ -391,22 +391,26 @@
                     iridium: 'Iridium (100%)'
                 };
 
+                const isPending = rec.status === 'Pending Approval';
+                const statusBadge = isPending 
+                    ? `<span style="background: #e0e7ff; color: #4f46e5; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Pending PO</span>`
+                    : `<span style="background: ${color}20; color: ${color}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${rec.type}</span>`;
+
+                const actionBtns = isPending
+                    ? `<button type="button" class="btn-approve-adj" data-id="${rec.id || ''}" data-index="${i}" title="Approve PO Stock" style="display: inline-flex; align-items: center; justify-content: center; background: #dcfce7; border: none; color: #16a34a; cursor: pointer; padding: 8px; border-radius: 6px; margin-right: 6px; transition: all 0.2s;"><i data-lucide="check" style="width: 14px; height: 14px; pointer-events: none;"></i></button>
+                       <button type="button" class="btn-delete-adj" data-id="${rec.id || ''}" data-index="${i}" title="Reject/Delete" style="display: inline-flex; align-items: center; justify-content: center; background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s;"><i data-lucide="x" style="width: 14px; height: 14px; pointer-events: none;"></i></button>`
+                    : `<button type="button" class="btn-delete-adj" data-id="${rec.id || ''}" data-index="${i}" title="Delete Record" style="display: inline-flex; align-items: center; justify-content: center; background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s;"><i data-lucide="trash-2" style="width: 14px; height: 14px; pointer-events: none;"></i></button>`;
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-family: monospace; font-weight: 700; color: #475569;">${rec.id && rec.id !== 'undefined' ? rec.id : 'ADJ-OLD'}</td>
                     <td style="font-size: 0.85rem; color: #64748b;">${rec.date}</td>
-                    <td><span style="background: ${color}20; color: ${color}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${rec.type}</span></td>
+                    <td>${statusBadge}</td>
                     <td style="font-weight: 600; color: #1e293b;">${metalMap[rec.metal] || rec.metal}</td>
                     <td style="color: ${color}; font-weight: 700;">${parseFloat(rec.weight).toFixed(3)} g</td>
                     <td style="font-size: 0.85rem; color: #64748b;">${rec.note || '-'}</td>
-                    <td style="text-align: center;">
-                        <button type="button" class="btn-delete-adj"
-                            data-id="${rec.id || ''}"
-                            data-index="${i}"
-                            title="Delete Record"
-                            style="display: inline-flex; align-items: center; justify-content: center; background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s;">
-                            <i data-lucide="trash-2" style="width: 14px; height: 14px; pointer-events: none;"></i>
-                        </button>
+                    <td style="text-align: center; white-space: nowrap;">
+                        ${actionBtns}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -417,13 +421,37 @@
 
         // Delegated event listener for better reliability
         document.getElementById('stock-body').addEventListener('click', function(e) {
-            const btn = e.target.closest('.btn-delete-adj');
-            if (btn) {
-                const recId = btn.getAttribute('data-id');
-                const idx = parseInt(btn.getAttribute('data-index'));
+            const deleteBtn = e.target.closest('.btn-delete-adj');
+            const approveBtn = e.target.closest('.btn-approve-adj');
+            
+            if (deleteBtn) {
+                const recId = deleteBtn.getAttribute('data-id');
+                const idx = parseInt(deleteBtn.getAttribute('data-index'));
                 window.deleteAdjustment(recId, idx);
+            } else if (approveBtn) {
+                const recId = approveBtn.getAttribute('data-id');
+                const idx = parseInt(approveBtn.getAttribute('data-index'));
+                window.approveAdjustment(recId, idx);
             }
         });
+
+        window.approveAdjustment = function(recId, fallbackIndex) {
+            if (!confirm("Approve this PO Stock and add to inventory?")) return;
+
+            let idx = -1;
+            if (recId) idx = history.findIndex(h => h.id === recId);
+            if (idx === -1 && !isNaN(fallbackIndex)) idx = fallbackIndex;
+            if (idx === -1) return;
+
+            history[idx].status = 'Active';
+            localStorage.setItem('manti_stock_history', JSON.stringify(history));
+
+            if (window.syncKeyToSupabase) {
+                window.syncKeyToSupabase('manti_stock_history', history);
+            }
+            loadLocalData();
+            renderData();
+        };
 
         window.deleteAdjustment = function(recId, fallbackIndex) {
             if (!confirm("Are you sure you want to delete this stock adjustment? This will revert the metal balance.")) return;
