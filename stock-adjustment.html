@@ -10,83 +10,331 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=2"></script>
 </head>
 
 <body>
-    <div class="app-container">
+    <div class="dashboard-container">
         <!-- Sidebar / Navigation -->
-        
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested">Inventory</a>
+                        <a href="melting.html" class="nav-item nested">Melting</a>
+                        <a href="jobwork.html" class="nav-item nested">Job Work</a>
+                        <a href="design-book.html" class="nav-item nested">Design Book</a>
+                        <a href="tree-making.html" class="nav-item nested">Tree Making</a>
+                    </div>
+                </div>
+
+                <a href="stock-adjustment.html" class="nav-item active">
+                    <div class="icon"><i data-lucide="sliders"></i></div>
+                    <span class="label">Stock Adjustment</span>
+                </a>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested">Payments</a>
+                        <a href="expenses.html" class="nav-item nested">Expenses</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested">Manual Journals</a>
+                    </div>
+                </div>
+
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
 
         <!-- Main Content -->
-        <main class="invoice-generator">
+        <main class="main-content" style="flex: 1; padding: 2rem;">
             <header class="generator-header">
                 <div class="header-content header-flex">
-                    <a href="index.html">
-                        <img src="Asset 23.png" alt="Manti Logo" class="header-logo">
-                    </a>
-                    <div>
-                        <h1>Stock Adjustment</h1>
-                        <p>Buy metal stock and manage available inventory for invoices.</p>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <a href="index.html">
+                            <img src="Asset 23.png" alt="Manti Logo" class="header-logo">
+                        </a>
+                        <div>
+                            <h1>Stock Adjustment</h1>
+                            <p>Buy metal stock and manage available inventory for invoices.</p>
+                        </div>
                     </div>
+
                 </div>
             </header>
 
-            <div class="admin-grid" style="margin-bottom: 2rem;">
-                <section class="form-section">
-                    <h3 style="color: var(--primary);">Current Available Stock</h3>
-                    <div class="field-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="total-row"
-                            style="background: white; border-radius: 8px; padding: 15px; border: 1px solid var(--border);">
-                            <span style="font-size: 0.9rem; color: var(--text-muted);">Pure Gold (24K)</span>
-                            <span id="bal-pure_gold" style="font-weight: 700; color: #d97706; font-size: 1.2rem;">0.000
-                                g</span>
+            <div class="stock-dashboard-grid" style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem; margin-bottom: 2.5rem; align-items: start;">
+                <!-- Balance Overview Cards -->
+                <section class="balances-section" style="background: white; padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                    <h3 style="color: var(--primary); font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="database" style="width: 20px; height: 20px;"></i>
+                        Current Available Stock
+                    </h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <!-- Gold Group -->
+                        <div style="background: #fff9f0; padding: 16px; border-radius: 12px; border: 1px solid #feebc8;">
+                            <h4 style="font-size: 0.8rem; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; font-weight: 700;">Gold Inventory</h4>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: #4b5563;">99.99 Pure</span>
+                                    <span id="bal-pure_gold_9999" style="font-weight: 700; color: #d97706;">0.000 g</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: #4b5563;">99.9 Pure</span>
+                                    <span id="bal-pure_gold_999" style="font-weight: 700; color: #d97706;">0.000 g</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: #4b5563;">99.5 Pure</span>
+                                    <span id="bal-pure_gold_995" style="font-weight: 700; color: #d97706;">0.000 g</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed #feebc8;">
+                                    <span style="font-size: 0.85rem; font-weight: 600; color: #4b5563;">22K Standard</span>
+                                    <span id="bal-gold_22k" style="font-weight: 700; color: #d97706;">0.000 g</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 2px solid #feebc8; margin-top: 4px;">
+                                    <span style="font-size: 0.85rem; font-weight: 800; color: #92400e;">Net 99.99 Equiv.</span>
+                                    <span id="bal-gold-equiv" style="font-weight: 800; color: #b45309; font-size: 1rem;">0.000 g</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="total-row"
-                            style="background: white; border-radius: 8px; padding: 15px; border: 1px solid var(--border);">
-                            <span style="font-size: 0.9rem; color: var(--text-muted);">Gold (22K)</span>
-                            <span id="bal-gold_22k" style="font-weight: 700; color: #d97706; font-size: 1.2rem;">0.000
-                                g</span>
+
+                        <!-- Silver Group -->
+                        <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                            <h4 style="font-size: 0.8rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; font-weight: 700;">Silver Inventory</h4>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: #4b5563;">99.99 Pure</span>
+                                    <span id="bal-pure_silver_9999" style="font-weight: 700; color: #64748b;">0.000 g</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: #4b5563;">99.9 Pure</span>
+                                    <span id="bal-pure_silver_999" style="font-weight: 700; color: #64748b;">0.000 g</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: #4b5563;">99.5 Pure</span>
+                                    <span id="bal-pure_silver_995" style="font-weight: 700; color: #64748b;">0.000 g</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed #cbd5e1;">
+                                    <span style="font-size: 0.85rem; font-weight: 600; color: #4b5563;">925 Standard</span>
+                                    <span id="bal-silver_925" style="font-weight: 700; color: #64748b;">0.000 g</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 2px solid #cbd5e1; margin-top: 4px;">
+                                    <span style="font-size: 0.85rem; font-weight: 800; color: #334155;">Net 99.99 Equiv.</span>
+                                    <span id="bal-silver-equiv" style="font-weight: 800; color: #1e293b; font-size: 1rem;">0.000 g</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="total-row"
-                            style="background: white; border-radius: 8px; padding: 15px; border: 1px solid var(--border);">
-                            <span style="font-size: 0.9rem; color: var(--text-muted);">Pure Silver (999)</span>
-                            <span id="bal-pure_silver"
-                                style="font-weight: 700; color: #6b7280; font-size: 1.2rem;">0.000 g</span>
-                        </div>
-                        <div class="total-row"
-                            style="background: white; border-radius: 8px; padding: 15px; border: 1px solid var(--border);">
-                            <span style="font-size: 0.9rem; color: var(--text-muted);">Silver (925)</span>
-                            <span id="bal-silver_925" style="font-weight: 700; color: #6b7280; font-size: 1.2rem;">0.000
-                                g</span>
+
+                        <!-- Copper, Zinc, Iridium Group -->
+                        <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 0.5rem;">
+                            <!-- Copper -->
+                            <div style="background: #fff7ed; padding: 16px; border-radius: 12px; border: 1px solid #fed7aa;">
+                                <h4 style="font-size: 0.8rem; color: #9a3412; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 700;">Copper Inventory</h4>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.82rem; color: #4b5563;">99.99 Pure</span>
+                                        <span id="bal-copper_9999" style="font-weight: 700; color: #c2410c;">0.000 g</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.82rem; color: #4b5563;">99.9 Pure</span>
+                                        <span id="bal-copper_999" style="font-weight: 700; color: #c2410c;">0.000 g</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.82rem; color: #4b5563;">99.5 Pure</span>
+                                        <span id="bal-copper_995" style="font-weight: 700; color: #c2410c;">0.000 g</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px dashed #fed7aa;">
+                                        <span style="font-size: 0.82rem; font-weight: 600; color: #4b5563;">Standard</span>
+                                        <span id="bal-copper" style="font-weight: 700; color: #c2410c;">0.000 g</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Zinc -->
+                            <div style="background: #f0fdf4; padding: 16px; border-radius: 12px; border: 1px solid #bbf7d0;">
+                                <h4 style="font-size: 0.8rem; color: #14532d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 700;">Zinc Inventory</h4>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.82rem; color: #4b5563;">99.99 Pure</span>
+                                        <span id="bal-zinc_9999" style="font-weight: 700; color: #15803d;">0.000 g</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.82rem; color: #4b5563;">99.9 Pure</span>
+                                        <span id="bal-zinc_999" style="font-weight: 700; color: #15803d;">0.000 g</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.82rem; color: #4b5563;">99.5 Pure</span>
+                                        <span id="bal-zinc_995" style="font-weight: 700; color: #15803d;">0.000 g</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px dashed #bbf7d0;">
+                                        <span style="font-size: 0.82rem; font-weight: 600; color: #4b5563;">Standard</span>
+                                        <span id="bal-zinc" style="font-weight: 700; color: #15803d;">0.000 g</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Iridium -->
+                            <div style="background: #faf5ff; padding: 16px; border-radius: 12px; border: 1px solid #e9d5ff;">
+                                <h4 style="font-size: 0.8rem; color: #581c87; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 700;">Iridium Inventory</h4>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.82rem; color: #4b5563;">99.99 Pure</span>
+                                        <span id="bal-iridium_9999" style="font-weight: 700; color: #7c3aed;">0.000 g</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.82rem; color: #4b5563;">99.9 Pure</span>
+                                        <span id="bal-iridium_999" style="font-weight: 700; color: #7c3aed;">0.000 g</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.82rem; color: #4b5563;">99.5 Pure</span>
+                                        <span id="bal-iridium_995" style="font-weight: 700; color: #7c3aed;">0.000 g</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px dashed #e9d5ff;">
+                                        <span style="font-size: 0.82rem; font-weight: 600; color: #4b5563;">Standard</span>
+                                        <span id="bal-iridium" style="font-weight: 700; color: #7c3aed;">0.000 g</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <section class="form-section">
-                    <h3 style="color: #10b981;">Buy / Adjust Stock</h3>
+                <!-- Adjustment Form Card -->
+                <section class="form-section" style="background: white; padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                    <h3 style="color: #10b981; font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="plus-circle" style="width: 20px; height: 20px;"></i>
+                        Buy / Adjust Stock
+                    </h3>
                     <form id="stock-adjust-form">
-                        <div class="field-group">
-                            <select id="adj-type" class="input-wrapper" required>
-                                <option value="Buy">Buy Stock (+)</option>
-                                <option value="Adjust">Manual Adjust / Deduct (-)</option>
-                            </select>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div>
+                                <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Adjustment Type</label>
+                                <select id="adj-type" class="input-wrapper" style="width: 100%;" required>
+                                    <option value="Buy">Buy Stock (+)</option>
+                                    <option value="Adjust">Manual Adjust / Deduct (-)</option>
+                                </select>
+                            </div>
 
-                            <select id="adj-metal" class="input-wrapper" required>
-                                <option value="" disabled selected>Select Invoice Metal Type</option>
-                                <option value="pure_gold">Pure Gold (24K)</option>
-                                <option value="gold_22k">Gold (22K)</option>
-                                <option value="pure_silver">Pure Silver</option>
-                                <option value="silver_925">Silver (925)</option>
-                            </select>
+                            <div>
+                                <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Metal Type & Purity</label>
+                                <select id="adj-metal" class="input-wrapper" style="width: 100%;" required>
+                                    <option value="" disabled selected>Select Metal</option>
+                                    <optgroup label="1. Gold">
+                                        <option value="pure_gold_9999">Gold (99.99)</option>
+                                        <option value="pure_gold_999">Gold (99.9)</option>
+                                        <option value="pure_gold_995">Gold (99.5)</option>
+                                        <option value="gold_22k">Gold (22K)</option>
+                                    </optgroup>
+                                    <optgroup label="2. Silver">
+                                        <option value="pure_silver_9999">Silver (99.99)</option>
+                                        <option value="pure_silver_999">Silver (99.9)</option>
+                                        <option value="pure_silver_995">Silver (99.5)</option>
+                                        <option value="silver_925">Silver (925)</option>
+                                    </optgroup>
+                                    <optgroup label="3. Copper">
+                                        <option value="copper_9999">Copper (99.99)</option>
+                                        <option value="copper_999">Copper (99.9)</option>
+                                        <option value="copper_995">Copper (99.5)</option>
+                                        <option value="copper">Copper (Standard)</option>
+                                    </optgroup>
+                                    <optgroup label="4. Zinc">
+                                        <option value="zinc_9999">Zinc (99.99)</option>
+                                        <option value="zinc_999">Zinc (99.9)</option>
+                                        <option value="zinc_995">Zinc (99.5)</option>
+                                        <option value="zinc">Zinc (Standard)</option>
+                                    </optgroup>
+                                    <optgroup label="5. Iridium">
+                                        <option value="iridium_9999">Iridium (99.99)</option>
+                                        <option value="iridium_999">Iridium (99.9)</option>
+                                        <option value="iridium_995">Iridium (99.5)</option>
+                                        <option value="iridium">Iridium (Standard)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
 
-                            <input type="number" step="0.001" id="adj-weight" placeholder="Weight (grams)" required>
-                            <input type="text" id="adj-note" placeholder="Remarks / Ref No. (Optional)">
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Weight (grams)</label>
+                                    <input type="number" step="0.001" id="adj-weight" class="input-wrapper" style="width: 100%;" placeholder="0.000" required>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Remarks</label>
+                                    <input type="text" id="adj-note" class="input-wrapper" style="width: 100%;" placeholder="Enter note...">
+                                </div>
+                            </div>
 
-                            <button type="submit" class="btn-liquid btn-primary" style="margin-top: 10px; width: 100%;">Save
-                                Adjustment</button>
+                            <button type="submit" class="btn-liquid btn-primary" style="margin-top: 8px; width: 100%; height: 45px; font-weight: 700;">
+                                Save Adjustment
+                            </button>
                         </div>
                     </form>
                 </section>
@@ -103,6 +351,7 @@
                 <table id="stock-table">
                     <thead>
                         <tr>
+                            <th width="120">Transaction ID</th>
                             <th width="150">Date</th>
                             <th width="100">Type</th>
                             <th width="150">Metal Type</th>
@@ -121,117 +370,196 @@
     </div>
 
     <script src="liquid-button.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
     <script src="script.js?v=24"></script>
     <script>
+        const form = document.getElementById('stock-adjust-form');
+        const tbody = document.getElementById('stock-body');
+
+        let balances = {};
+        let history = [];
+
+        // Manual Clean Sync Utility
+        window.runManualCleanSync = function() {
+            if (window.runInventoryMigration) {
+                window.runInventoryMigration();
+                loadLocalData();
+                renderData();
+                alert("Inventory cleaned and synced to cloud successfully!");
+            }
+        };
+
         document.addEventListener('CloudDataLoaded', () => {
-            const form = document.getElementById('stock-adjust-form');
-            const tbody = document.getElementById('stock-body');
+            loadLocalData();
+            renderData();
+        });
 
-            let balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {
-                pure_gold: 0, gold_22k: 0, pure_silver: 0, silver_925: 0
-            };
+        function loadLocalData() {
+            history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+            if (window.calculateMantiBalances) {
+                balances = window.calculateMantiBalances();
+            } else {
+                balances = { pure_gold_9999: 0, pure_gold_999: 0, pure_gold_995: 0, gold_22k: 0, pure_silver_9999: 0, pure_silver_999: 0, pure_silver_995: 0, silver_925: 0 };
+            }
+        }
 
-            let history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+        function renderData() {
+            // Render Balances
+            const setbal = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = (balances[key] || 0).toFixed(3) + ' g'; };
+            setbal('bal-pure_gold_9999','pure_gold_9999'); setbal('bal-pure_gold_999','pure_gold_999');
+            setbal('bal-pure_gold_995','pure_gold_995'); setbal('bal-gold_22k','gold_22k');
+            setbal('bal-pure_silver_9999','pure_silver_9999'); setbal('bal-pure_silver_999','pure_silver_999');
+            setbal('bal-pure_silver_995','pure_silver_995'); setbal('bal-silver_925','silver_925');
+            setbal('bal-copper_9999','copper_9999'); setbal('bal-copper_999','copper_999');
+            setbal('bal-copper_995','copper_995'); setbal('bal-copper','copper');
+            setbal('bal-zinc_9999','zinc_9999'); setbal('bal-zinc_999','zinc_999');
+            setbal('bal-zinc_995','zinc_995'); setbal('bal-zinc','zinc');
+            setbal('bal-iridium_9999','iridium_9999'); setbal('bal-iridium_999','iridium_999');
+            setbal('bal-iridium_995','iridium_995'); setbal('bal-iridium','iridium');
+            if (document.getElementById('bal-gold-equiv')) document.getElementById('bal-gold-equiv').textContent = (balances.gold_9999_equiv || 0).toFixed(3) + ' g';
+            if (document.getElementById('bal-silver-equiv')) document.getElementById('bal-silver-equiv').textContent = (balances.silver_9999_equiv || 0).toFixed(3) + ' g';
 
-            function renderData() {
-                // Render Balances
-                document.getElementById('bal-pure_gold').textContent = (balances.pure_gold || 0).toFixed(3) + ' g';
-                document.getElementById('bal-gold_22k').textContent = (balances.gold_22k || 0).toFixed(3) + ' g';
-                document.getElementById('bal-pure_silver').textContent = (balances.pure_silver || 0).toFixed(3) + ' g';
-                document.getElementById('bal-silver_925').textContent = (balances.silver_925 || 0).toFixed(3) + ' g';
+            // Refresh icons if any were added dynamically
+            if (window.lucide) window.lucide.createIcons();
 
-                // Render History Table
-                tbody.innerHTML = '';
-                if (history.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No stock transactions yet.</td></tr>';
-                    return;
-                }
-
-                // Show latest first
-                let sorted = [...history].reverse();
-                sorted.forEach(rec => {
-                    const isAdd = rec.type === 'Buy' || rec.weight > 0;
-                    const color = isAdd ? '#10b981' : '#ef4444';
-
-                    const metalMap = {
-                        pure_gold: 'Pure Gold (24K)',
-                        gold_22k: 'Gold (22K)',
-                        pure_silver: 'Pure Silver',
-                        silver_925: 'Silver (925)'
-                    };
-
-                    const indexToDelete = history.indexOf(rec);
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${rec.date}</td>
-                        <td><span style="background: ${color}20; color: ${color}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${rec.type}</span></td>
-                        <td style="font-weight: 600;">${metalMap[rec.metal] || rec.metal}</td>
-                        <td style="color: ${color}; font-weight: 700;">${parseFloat(rec.weight).toFixed(3)}</td>
-                        <td>${rec.note || '-'}</td>
-                        <td style="text-align: center;">
-                            <button type="button" class="btn-remove-sm" onclick="deleteAdjustment(${indexToDelete})" title="Delete Record" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;padding:4px;">✕</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+            // Render History Table
+            tbody.innerHTML = '';
+            if (history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No stock transactions yet.</td></tr>';
+                return;
             }
 
-            window.deleteAdjustment = function(index) {
-                if (confirm("Are you sure you want to delete this stock adjustment? This will revert the metal balance.")) {
-                    const rec = history[index];
-                    const metal = rec.metal;
-                    const weight = parseFloat(rec.weight) || 0;
-                    
-                    balances[metal] = (balances[metal] || 0) - weight;
-                    history.splice(index, 1);
-                    
-                    localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
-                    localStorage.setItem('manti_stock_history', JSON.stringify(history));
-                    
-                    renderData();
+            // Show latest first
+            tbody.innerHTML = '';
+            if (history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #6b7280;">No stock transactions found.</td></tr>';
+                return;
+            }
+
+            // We iterate original history in reverse to show newest first
+            for (let i = history.length - 1; i >= 0; i--) {
+                const rec = history[i];
+                const isAdd = rec.type === 'Buy' || rec.weight > 0;
+                const color = isAdd ? '#10b981' : '#ef4444';
+
+                const metalMap = {
+                    pure_gold_9999: 'Gold (99.99)', pure_gold_999: 'Gold (99.9)',
+                    pure_gold_995: 'Gold (99.5)', gold_22k: 'Gold (22K)',
+                    pure_silver_9999: 'Silver (99.99)', pure_silver_999: 'Silver (99.9)',
+                    pure_silver_995: 'Silver (99.5)', silver_925: 'Silver (925)',
+                    copper_9999: 'Copper (99.99)', copper_999: 'Copper (99.9)',
+                    copper_995: 'Copper (99.5)', copper: 'Copper (Standard)',
+                    zinc_9999: 'Zinc (99.99)', zinc_999: 'Zinc (99.9)',
+                    zinc_995: 'Zinc (99.5)', zinc: 'Zinc (Standard)',
+                    iridium_9999: 'Iridium (99.99)', iridium_999: 'Iridium (99.9)',
+                    iridium_995: 'Iridium (99.5)', iridium: 'Iridium (Standard)'
+                };
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-family: monospace; font-weight: 700; color: #475569;">${rec.id && rec.id !== 'undefined' ? rec.id : 'ADJ-OLD'}</td>
+                    <td style="font-size: 0.85rem; color: #64748b;">${rec.date}</td>
+                    <td><span style="background: ${color}20; color: ${color}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${rec.type}</span></td>
+                    <td style="font-weight: 600; color: #1e293b;">${metalMap[rec.metal] || rec.metal}</td>
+                    <td style="color: ${color}; font-weight: 700;">${parseFloat(rec.weight).toFixed(3)} g</td>
+                    <td style="font-size: 0.85rem; color: #64748b;">${rec.note || '-'}</td>
+                    <td style="text-align: center;">
+                        <button type="button" class="btn-delete-adj" data-index="${i}" title="Delete Record" style="display: inline-flex; align-items: center; justify-content: center; background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s;">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px; pointer-events: none;"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+            
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        // Delegated event listener for better reliability
+        document.getElementById('stock-body').addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-delete-adj');
+            if (btn) {
+                const idx = parseInt(btn.getAttribute('data-index'));
+                if (!isNaN(idx)) {
+                    window.deleteAdjustment(idx);
                 }
-            };
+            }
+        });
 
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-
-                const type = document.getElementById('adj-type').value;
-                const metal = document.getElementById('adj-metal').value;
-                let weight = parseFloat(document.getElementById('adj-weight').value) || 0;
-                const note = document.getElementById('adj-note').value;
-
-                if (weight <= 0) {
-                    alert("Please enter a valid weight!");
-                    return;
-                }
-
-                if (type === 'Adjust') {
-                    weight = -weight; // Deduct
-                }
-
-                // Check if deduct goes below 0? Allow negative or not?
-                if (type === 'Adjust' && balances[metal] + weight < 0) {
-                    if (!confirm("This will result in negative stock. Proceed?")) return;
-                }
-
-                balances[metal] = (balances[metal] || 0) + weight;
-
-                history.push({
-                    date: new Date().toISOString().split('T')[0] + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    type: type,
-                    metal: metal,
-                    weight: weight,
-                    note: note
-                });
-
-                localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+        window.deleteAdjustment = function(index) {
+            if (confirm("Are you sure you want to delete this stock adjustment? This will revert the metal balance.")) {
+                const rec = history[index];
+                if(!rec) return;
+                
+                history.splice(index, 1);
                 localStorage.setItem('manti_stock_history', JSON.stringify(history));
-
-                form.reset();
+                
+                loadLocalData(); // Re-calculate everything
                 renderData();
+            }
+        };
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const type = document.getElementById('adj-type').value;
+            const metal = document.getElementById('adj-metal').value;
+            let weightInput = parseFloat(document.getElementById('adj-weight').value) || 0;
+            const note = document.getElementById('adj-note').value;
+
+            if (weightInput <= 0) {
+                alert("Please enter a valid weight!");
+                return;
+            }
+
+            let weight = weightInput;
+            if (type === 'Adjust') {
+                weight = -weightInput; // Deduct
+            }
+
+            // Check if deduct goes below 0? Allow negative or not?
+            if (type === 'Adjust' && (balances[metal] || 0) + weight < 0) {
+                if (!confirm("This will result in negative stock. Proceed?")) return;
+            }
+
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Robust ID generation
+            let maxAdjNum = 1000;
+            history.forEach(h => {
+                if (h.id && h.id.startsWith('ADJ-')) {
+                    const num = parseInt(h.id.replace('ADJ-', ''));
+                    if (!isNaN(num) && num > maxAdjNum) maxAdjNum = num;
+                }
+            });
+            const newId = `ADJ-${maxAdjNum + 1}`;
+
+            history.push({
+                id: newId,
+                date: formattedDate,
+                type: type,
+                metal: metal,
+                weight: weight,
+                note: note
             });
 
+            localStorage.setItem('manti_stock_history', JSON.stringify(history));
+
+            form.reset();
+            loadLocalData(); // Re-calculate everything
+            renderData();
+        });
+
+        // Initialize
+        loadLocalData();
+        renderData();
+
+        // Refresh when cloud data arrives
+        document.addEventListener('CloudDataLoaded', () => {
+            loadLocalData();
             renderData();
         });
     </script>

@@ -3,7 +3,10 @@ let metalRates = {
     pureGold: 0,
     pureSilver: 0,
     gold22k: 0,
-    silver925: 0
+    silver925: 0,
+    copper: 0,
+    zinc: 0,
+    iridium: 0
 };
 
 // Global Table Filter function (legacy search bar support)
@@ -664,11 +667,18 @@ function addNewRow() {
         <td>
             <select name="metal_type" onchange="handleMetalChange(this)">
                 <option value="none">Select Metal</option>
-                <option value="pure_gold">Pure Gold (24K)</option>
-                <option value="gold_22k">Gold (22K)</option>
-                <option value="pure_silver">Pure Silver</option>
-                <option value="silver_925">Silver (925)</option>
-                <option value="other">Other</option>
+                <optgroup label="Gold">
+                    <option value="pure_gold_9999">Pure Gold (99.99)</option>
+                    <option value="pure_gold_999">Pure Gold (99.9)</option>
+                    <option value="pure_gold_995">Pure Gold (99.5)</option>
+                    <option value="gold_22k">Gold (22K)</option>
+                </optgroup>
+                <optgroup label="Silver">
+                    <option value="pure_silver_9999">Pure Silver (99.99)</option>
+                    <option value="pure_silver_999">Pure Silver (99.9)</option>
+                    <option value="pure_silver_995">Pure Silver (99.5)</option>
+                    <option value="silver_925">Silver (925)</option>
+                </optgroup>
             </select>
         </td>
         <td><input type="number" name="rate" placeholder="Rate" step="0.01" oninput="onNumberInput(this); calculateRow(this)"></td>
@@ -972,10 +982,17 @@ function handleMetalChange(select) {
 
     let price = 0;
     switch (metalType) {
-        case 'pure_gold': price = metalRates.pureGold; break;
+        case 'pure_gold_9999':
+        case 'pure_gold_999':
+        case 'pure_gold_995': price = metalRates.pureGold; break;
         case 'gold_22k': price = metalRates.gold22k; break;
-        case 'pure_silver': price = metalRates.pureSilver; break;
+        case 'pure_silver_9999':
+        case 'pure_silver_999':
+        case 'pure_silver_995': price = metalRates.pureSilver; break;
         case 'silver_925': price = metalRates.silver925; break;
+        case 'copper': price = metalRates.copper; break;
+        case 'zinc': price = metalRates.zinc; break;
+        case 'iridium': price = metalRates.iridium; break;
         default: price = rateInput.value || 0;
     }
 
@@ -2023,3 +2040,279 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+
+/**
+ * Inventory System Migration v1
+ * Purpose: Move historical Purchase Orders into the new Stock History ledger 
+ * and calibrate the manti_stock_balances object.
+ */
+/**
+ * Stable Inventory De-duplication & ID Assignment
+ */
+function runInventoryMigration() {
+    let history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+    let orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+    let changed = false;
+
+    // 1. STABLE CLEANUP
+    const cleanHistory = [];
+    const seenFingers = new Set();
+    
+    // First pass: Find the highest existing ADJ number to prevent ID shuffling
+    let maxIdNum = 0;
+    history.forEach(h => {
+        if (h.id && h.id.startsWith('ADJ-')) {
+            const num = parseInt(h.id.replace('ADJ-', ''));
+            if (!isNaN(num) && num > maxIdNum) maxIdNum = num;
+        }
+    });
+
+    history.forEach(h => {
+        // Fingerprint: Date (Day only) + Metal + Weight + Type + Note (STRIPIING IDs for clean comparison)
+        const datePart = (h.date || '').split(' ')[0];
+        let notePart = (h.note || h.details || '').trim().toLowerCase();
+        // Remove [ADJ-XXXX] or [PO-XXXX] from note to prevent unique fingerprints for duplicates
+        notePart = notePart.replace(/\[(adj|po)-.*?\]/gi, '').trim();
+        const finger = `${datePart}|${(h.metal||'').trim()}|${parseFloat(h.weight).toFixed(3)}|${(h.type||'').trim()}|${notePart}`;
+        
+        // If we have an ID, we prioritize keeping it. If we don't, we check fingerprint.
+        const isPO = h.id && typeof h.id === 'string' && h.id.startsWith('PO-');
+        if (seenFingers.has(finger) && !isPO) {
+            changed = true;
+            return; // Skip duplicate
+        }
+        seenFingers.add(finger);
+
+        // Assign STABLE ID if missing or invalid (Handle UUIDs or random strings from database)
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(h.id);
+        const isRandom = h.id && h.id.length > 15 && !h.id.includes('-');
+        if (!h.id || h.id === 'undefined' || h.id === 'null' || isUuid || isRandom) {
+            maxIdNum++;
+            h.id = `ADJ-${maxIdNum.toString().padStart(4, '0')}`;
+            changed = true;
+        }
+        cleanHistory.push(h);
+    });
+
+    // 2. MIGRATE MISSING POs
+    orders.forEach(o => {
+        if (o.type === 'Purchase Order' && o.status === 'Completed' && o.qty) {
+            const alreadyIn = cleanHistory.some(h => (h.id === o.id) || (h.note && h.note.includes(o.id)));
+            if (!alreadyIn) {
+                const wt = parseFloat(o.qty) || 0;
+                const m = (o.mainMetalType || '').toLowerCase();
+                let key = '';
+                if (m.includes('gold')) key = (o.product||'').toLowerCase().includes('24k') ? 'pure_gold' : 'gold_22k';
+                else if (m.includes('silver')) key = (o.product||'').toLowerCase().includes('999') ? 'pure_silver' : 'silver_925';
+                else if (m.includes('copper')) key = 'copper';
+                else if (m.includes('zinc')) key = 'zinc';
+
+                if (key) {
+                    const d = o.date ? new Date(o.date) : new Date();
+                    const formattedDate = d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    cleanHistory.push({
+                        id: o.id, date: formattedDate, type: 'Buy', metal: key, weight: wt, note: 'PO Migrated: ' + o.id
+                    });
+                    changed = true;
+                }
+            }
+        }
+    });
+
+    if (changed) {
+        localStorage.setItem('manti_stock_history', JSON.stringify(cleanHistory));
+        if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_stock_history', cleanHistory);
+    }
+}
+
+// Trigger migration on load
+document.addEventListener('DOMContentLoaded', () => {
+    runInventoryMigration();
+    runStockCalibration();
+});
+
+// Also trigger on sync
+document.addEventListener('CloudDataLoaded', () => {
+    runInventoryMigration();
+});
+
+/**
+ * One-time Stock Calibration
+ * Ensures specific target weights requested by the user are represented.
+ */
+function runStockCalibration() {
+    if (localStorage.getItem('manti_stock_calibrated_v3')) return;
+
+    let history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+    let initialCount = history.length;
+    
+    // 1. Remove any old CALIB- records or interim duplicates
+    history = history.filter(h => {
+        if (!h.id) return true;
+        if (h.id.startsWith('CALIB-')) return false;
+        // Also remove if it has [CALIB- in the note/details
+        if ((h.note || '').includes('[CALIB-')) return false;
+        if ((h.details || '').includes('[CALIB-')) return false;
+        return true;
+    });
+
+    const targets = [
+        { id: 'ADJ-0004', metal: 'zinc', weight: 25.0, note: 'Initial Stock Calibration (Zinc)' },
+        { id: 'ADJ-0001', metal: 'pure_silver', weight: 100.0, note: 'Initial Stock Calibration (Silver)' },
+        { id: 'ADJ-0003', metal: 'copper', weight: 50.0, note: 'Initial Stock Calibration (Copper)' },
+        { id: 'ADJ-0002', metal: 'pure_silver', weight: 10.0, note: 'Initial Stock Calibration (Akshyathiruthiyai)' }
+    ];
+
+    targets.forEach(t => {
+        const exists = history.some(h => h.id === t.id);
+        if (!exists) {
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            history.push({
+                id: t.id,
+                date: formattedDate,
+                type: 'Calibration',
+                metal: t.metal,
+                weight: t.weight,
+                note: t.note
+            });
+        }
+    });
+
+    if (history.length !== initialCount) {
+        localStorage.setItem('manti_stock_history', JSON.stringify(history));
+        if (window.syncKeyToSupabase) {
+            window.syncKeyToSupabase('manti_stock_history', history);
+        }
+        console.log("Manti ERP Stock Calibration (v3) Applied.");
+    }
+    localStorage.setItem('manti_stock_calibrated_v3', 'true');
+}
+
+/**
+ * Global Inventory Calculator
+ * Derives current stock balances from manti_stock_history, POs, and Job Work.
+ * This is the new single source of truth for stock levels.
+ */
+window.calculateMantiBalances = function() {
+    const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+    const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+    const jobRecords = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+
+    // Initialize with zeros
+    const balances = {
+        pure_gold_9999: 0, pure_gold_999: 0, pure_gold_995: 0,
+        gold_22k: 0,
+        pure_silver_9999: 0, pure_silver_999: 0, pure_silver_995: 0,
+        silver_925: 0,
+        copper_9999: 0, copper_999: 0, copper_995: 0, copper: 0,
+        zinc_9999: 0, zinc_999: 0, zinc_995: 0, zinc: 0,
+        iridium_9999: 0, iridium_999: 0, iridium_995: 0, iridium: 0,
+        solder: 0
+    };
+
+    // 1. Process History (Manual adjustments, Melting outputs/inputs, etc.)
+    history.forEach(h => {
+        let metal = h.metal;
+        // Legacy fallback mapping
+        if (metal === 'pure_gold') metal = 'pure_gold_999';
+        if (metal === 'pure_silver') metal = 'pure_silver_999';
+
+        const weight = parseFloat(h.weight) || 0;
+        if (metal && balances.hasOwnProperty(metal)) {
+            balances[metal] += weight;
+        }
+    });
+
+    // 2. Process Purchase Orders (Completed only, NOT in history yet)
+    orders.forEach(o => {
+        if (o.type === 'Purchase Order' && o.qty && o.status === 'Completed') {
+            const alreadyIn = history.some(h => (h.note && h.note.includes(o.id)) || (h.details && h.details.includes(o.id)));
+            if (alreadyIn) return;
+
+            const wt = parseFloat(o.qty) || 0;
+            const m = (o.mainMetalType || '').toLowerCase();
+            let key = '';
+            if (m.includes('gold')) {
+                const prod = (o.product || '').toLowerCase();
+                if (prod.includes('99.99') || prod.includes('9999')) key = 'pure_gold_9999';
+                else if (prod.includes('99.9') || prod.includes('999')) key = 'pure_gold_999';
+                else if (prod.includes('99.5') || prod.includes('995')) key = 'pure_gold_995';
+                else if (prod.includes('24k') || prod.includes('pure')) key = 'pure_gold_999'; // default pure
+                else key = 'gold_22k';
+            } else if (m.includes('silver')) {
+                const prod = (o.product || '').toLowerCase();
+                if (prod.includes('99.99') || prod.includes('9999')) key = 'pure_silver_9999';
+                else if (prod.includes('99.9') || prod.includes('999')) key = 'pure_silver_999';
+                else if (prod.includes('99.5') || prod.includes('995')) key = 'pure_silver_995';
+                else if (prod.includes('pure')) key = 'pure_silver_999';
+                else key = 'silver_925';
+            } else if (m.includes('copper')) key = 'copper';
+            else if (m.includes('zinc')) key = 'zinc';
+            else if (m.includes('iridium')) key = 'iridium';
+
+            if (key && balances.hasOwnProperty(key)) {
+                balances[key] += wt;
+            }
+        }
+    });
+
+    // 3. Process Job Work (Outflow/Inflow)
+    jobRecords.forEach(r => {
+        if (r.doc_status === 'Draft') return;
+        const so = orders.find(o => o.id === r.jobnum);
+        const mainM = so ? (so.mainMetalType || '').toLowerCase() : '';
+        let key = '';
+        if (mainM.includes('gold')) key = 'gold_22k';
+        else if (mainM.includes('silver')) key = 'silver_925';
+        else if (mainM.includes('copper')) key = 'copper';
+        else if (mainM.includes('zinc')) key = 'zinc';
+        else if (mainM.includes('iridium')) key = 'iridium';
+
+        if (key && balances.hasOwnProperty(key)) {
+            if (r.status === '1. Issue') {
+                let wt = 0;
+                if (r.issueLines && r.issueLines.length > 0) {
+                    wt = r.issueLines.reduce((s, l) => s + (parseFloat(l.weight) || 0), 0);
+                } else {
+                    wt = parseFloat(r.issueWt) || 0;
+                }
+                balances[key] -= wt;
+            }
+            if (r.status === '2. Receive') {
+                let wt = 0;
+                if (r.receiveLines && r.receiveLines.length > 0) {
+                    wt = r.receiveLines.reduce((s, l) => s + (l.type !== 'Wastage' ? (parseFloat(l.weight) || 0) : 0), 0);
+                } else {
+                    wt = parseFloat(r.receiveWt) || 0;
+                }
+                balances[key] += wt;
+            }
+        }
+    });
+
+    // Fix precision
+    Object.keys(balances).forEach(k => {
+        if (typeof balances[k] === 'number') {
+            balances[k] = parseFloat(balances[k].toFixed(3));
+        }
+    });
+
+    // Calculate 99.99 Equivalents
+    balances.gold_9999_equiv = (
+        ((balances.pure_gold_9999 || 0) * 99.99 / 99.99) +
+        ((balances.pure_gold_999 || 0) * 99.9 / 99.99) +
+        ((balances.pure_gold_995 || 0) * 99.5 / 99.99) +
+        ((balances.gold_22k || 0) * 91.67 / 99.99)
+    );
+
+    balances.silver_9999_equiv = (
+        ((balances.pure_silver_9999 || 0) * 99.99 / 99.99) +
+        ((balances.pure_silver_999 || 0) * 99.9 / 99.99) +
+        ((balances.pure_silver_995 || 0) * 99.5 / 99.99) +
+        ((balances.silver_925 || 0) * 92.7 / 99.99)
+    );
+
+    return balances;
+};
