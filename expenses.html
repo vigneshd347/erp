@@ -608,7 +608,8 @@
                     attachmentHtml = urls.map((url, i) => `<a href="${url}" target="_blank" title="View Attachment ${i+1}" style="display:inline-flex;align-items:center;gap:3px;font-size:0.75rem;color:#3b82f6;text-decoration:underline;margin-right:6px;"><i data-lucide="paperclip" style="width:12px;height:12px;"></i>${urls.length > 1 ? 'Doc '+(i+1) : 'Bill'}</a>`).join('');
                 }
                 const gstAmt = parseFloat(exp.gstAmount) || 0;
-                const total = parseFloat(exp.amount) + gstAmt;
+                // Use stored total (includes discount & round-off). Fallback to amount+gst if missing.
+                const total = parseFloat(exp.total) || (parseFloat(exp.amount) + gstAmt);
                 
                 let paid = parseFloat(exp.paidAmount) || 0;
                 // If paidThrough is set and is NOT empty/Accounts Payable, assume it's paid immediately
