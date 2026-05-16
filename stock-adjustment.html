@@ -285,39 +285,21 @@
                             </div>
 
                             <div>
-                                <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Metal Type & Purity</label>
-                                <select id="adj-metal" class="input-wrapper" style="width: 100%;" required>
+                                <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Metal Type</label>
+                                <select id="adj-metal-type" class="input-wrapper" style="width: 100%;" required onchange="updatePurityOptions()">
                                     <option value="" disabled selected>Select Metal</option>
-                                    <optgroup label="1. Gold">
-                                        <option value="pure_gold_9999">Gold (99.99)</option>
-                                        <option value="pure_gold_999">Gold (99.9)</option>
-                                        <option value="pure_gold_995">Gold (99.5)</option>
-                                        <option value="gold_22k">Gold (22K)</option>
-                                    </optgroup>
-                                    <optgroup label="2. Silver">
-                                        <option value="pure_silver_9999">Silver (99.99)</option>
-                                        <option value="pure_silver_999">Silver (99.9)</option>
-                                        <option value="pure_silver_995">Silver (99.5)</option>
-                                        <option value="silver_925">Silver (925)</option>
-                                    </optgroup>
-                                    <optgroup label="3. Copper">
-                                        <option value="copper_9999">Copper (99.99)</option>
-                                        <option value="copper_999">Copper (99.9)</option>
-                                        <option value="copper_995">Copper (99.5)</option>
-                                        <option value="copper">Copper (Standard)</option>
-                                    </optgroup>
-                                    <optgroup label="4. Zinc">
-                                        <option value="zinc_9999">Zinc (99.99)</option>
-                                        <option value="zinc_999">Zinc (99.9)</option>
-                                        <option value="zinc_995">Zinc (99.5)</option>
-                                        <option value="zinc">Zinc (Standard)</option>
-                                    </optgroup>
-                                    <optgroup label="5. Iridium">
-                                        <option value="iridium_9999">Iridium (99.99)</option>
-                                        <option value="iridium_999">Iridium (99.9)</option>
-                                        <option value="iridium_995">Iridium (99.5)</option>
-                                        <option value="iridium">Iridium (Standard)</option>
-                                    </optgroup>
+                                    <option value="gold">1. Gold</option>
+                                    <option value="silver">2. Silver</option>
+                                    <option value="copper">3. Copper</option>
+                                    <option value="zinc">4. Zinc</option>
+                                    <option value="iridium">5. Iridium</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 4px; display: block;">Purity</label>
+                                <select id="adj-purity" class="input-wrapper" style="width: 100%;" required disabled>
+                                    <option value="" disabled selected>Select Metal first</option>
                                 </select>
                             </div>
 
@@ -501,14 +483,44 @@
             }
         };
 
+        // Purity options per metal type
+        const PURITY_OPTIONS = {
+            gold:    [['pure_gold_9999','99.99 Pure'],['pure_gold_999','99.9 Pure'],['pure_gold_995','99.5 Pure'],['gold_22k','22K Standard']],
+            silver:  [['pure_silver_9999','99.99 Pure'],['pure_silver_999','99.9 Pure'],['pure_silver_995','99.5 Pure'],['silver_925','925 Standard']],
+            copper:  [['copper_9999','99.99 Pure'],['copper_999','99.9 Pure'],['copper_995','99.5 Pure'],['copper','Standard']],
+            zinc:    [['zinc_9999','99.99 Pure'],['zinc_999','99.9 Pure'],['zinc_995','99.5 Pure'],['zinc','Standard']],
+            iridium: [['iridium_9999','99.99 Pure'],['iridium_999','99.9 Pure'],['iridium_995','99.5 Pure'],['iridium','Standard']]
+        };
+
+        window.updatePurityOptions = function() {
+            const metalType = document.getElementById('adj-metal-type').value;
+            const puritySel = document.getElementById('adj-purity');
+            puritySel.innerHTML = '<option value="" disabled selected>Select Purity</option>';
+            if (metalType && PURITY_OPTIONS[metalType]) {
+                PURITY_OPTIONS[metalType].forEach(([val, label]) => {
+                    const opt = document.createElement('option');
+                    opt.value = val;
+                    opt.textContent = label;
+                    puritySel.appendChild(opt);
+                });
+                puritySel.disabled = false;
+            } else {
+                puritySel.disabled = true;
+            }
+        };
+
         form.addEventListener('submit', (e) => {
             e.preventDefault();
 
             const type = document.getElementById('adj-type').value;
-            const metal = document.getElementById('adj-metal').value;
+            const metal = document.getElementById('adj-purity').value; // combined key from purity
             let weightInput = parseFloat(document.getElementById('adj-weight').value) || 0;
             const note = document.getElementById('adj-note').value;
 
+            if (!metal) {
+                alert("Please select both Metal Type and Purity!");
+                return;
+            }
             if (weightInput <= 0) {
                 alert("Please enter a valid weight!");
                 return;
@@ -519,7 +531,7 @@
                 weight = -weightInput; // Deduct
             }
 
-            // Check if deduct goes below 0? Allow negative or not?
+            // Check if deduct goes below 0
             if (type === 'Adjust' && (balances[metal] || 0) + weight < 0) {
                 if (!confirm("This will result in negative stock. Proceed?")) return;
             }
@@ -549,7 +561,9 @@
             localStorage.setItem('manti_stock_history', JSON.stringify(history));
 
             form.reset();
-            loadLocalData(); // Re-calculate everything
+            document.getElementById('adj-purity').disabled = true;
+            document.getElementById('adj-purity').innerHTML = '<option value="" disabled selected>Select Metal first</option>';
+            loadLocalData();
             renderData();
         });
 
