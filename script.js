@@ -2206,9 +2206,9 @@ window.calculateMantiBalances = function() {
         gold_22k: 0,
         pure_silver_9999: 0, pure_silver_999: 0, pure_silver_995: 0,
         silver_925: 0,
-        copper_9999: 0, copper_999: 0, copper_995: 0, copper: 0,
-        zinc_9999: 0, zinc_999: 0, zinc_995: 0, zinc: 0,
-        iridium_9999: 0, iridium_999: 0, iridium_995: 0, iridium: 0,
+        copper: 0,   // 100% pure only
+        zinc: 0,     // 100% pure only
+        iridium: 0,  // 100% pure only
         solder: 0
     };
 
