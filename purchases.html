@@ -1337,15 +1337,16 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     const mainMetal = rec.mainMetalType || 'Gold';
                     const purity = rec.purity || '';
                     let mappedMetal = '';
+                    const p = purity.toString().trim().toLowerCase();
                     if (mainMetal === 'Gold') {
-                        if (purity === '99.99') mappedMetal = 'pure_gold_9999';
-                        else if (purity === '99.9') mappedMetal = 'pure_gold_999';
-                        else if (purity === '99.5') mappedMetal = 'pure_gold_995';
+                        if (p === '99.99') mappedMetal = 'pure_gold_9999';
+                        else if (p === '99.9') mappedMetal = 'pure_gold_999';
+                        else if (p === '99.5') mappedMetal = 'pure_gold_995';
                         else mappedMetal = 'gold_22k';
                     } else if (mainMetal === 'Silver') {
-                        if (purity === '99.99') mappedMetal = 'pure_silver_9999';
-                        else if (purity === '99.9') mappedMetal = 'pure_silver_999';
-                        else if (purity === '99.5') mappedMetal = 'pure_silver_995';
+                        if (p === '99.99') mappedMetal = 'pure_silver_9999';
+                        else if (p === '99.9') mappedMetal = 'pure_silver_999';
+                        else if (p === '99.5') mappedMetal = 'pure_silver_995';
                         else mappedMetal = 'silver_925';
                     } else {
                         mappedMetal = mainMetal.toLowerCase();

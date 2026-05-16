@@ -2103,16 +2103,32 @@ function runInventoryMigration() {
                 const wt = parseFloat(o.qty) || 0;
                 const m = (o.mainMetalType || '').toLowerCase();
                 let key = '';
-                if (m.includes('gold')) key = (o.product||'').toLowerCase().includes('24k') ? 'pure_gold' : 'gold_22k';
-                else if (m.includes('silver')) key = (o.product||'').toLowerCase().includes('999') ? 'pure_silver' : 'silver_925';
+                if (m.includes('gold')) {
+                    const p = (o.purity || '').toString();
+                    const prod = (o.product || '').toLowerCase();
+                    if (p === '99.99' || prod.includes('99.99') || prod.includes('9999')) key = 'pure_gold_9999';
+                    else if (p === '99.9' || prod.includes('99.9') || prod.includes('999')) key = 'pure_gold_999';
+                    else if (p === '99.5' || prod.includes('99.5') || prod.includes('995')) key = 'pure_gold_995';
+                    else if (p === '24k' || prod.includes('24k') || prod.includes('pure')) key = 'pure_gold_999';
+                    else key = 'gold_22k';
+                } else if (m.includes('silver')) {
+                    const p = (o.purity || '').toString();
+                    const prod = (o.product || '').toLowerCase();
+                    if (p === '99.99' || prod.includes('99.99') || prod.includes('9999')) key = 'pure_silver_9999';
+                    else if (p === '99.9' || prod.includes('99.9') || prod.includes('999')) key = 'pure_silver_999';
+                    else if (p === '99.5' || prod.includes('99.5') || prod.includes('995')) key = 'pure_silver_995';
+                    else if (prod.includes('pure')) key = 'pure_silver_999';
+                    else key = 'silver_925';
+                }
                 else if (m.includes('copper')) key = 'copper';
                 else if (m.includes('zinc')) key = 'zinc';
+                else if (m.includes('iridium')) key = 'iridium';
 
                 if (key) {
                     const d = o.date ? new Date(o.date) : new Date();
                     const formattedDate = d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     cleanHistory.push({
-                        id: o.id, date: formattedDate, type: 'Buy', metal: key, weight: wt, note: 'PO Migrated: ' + o.id
+                        id: o.id, date: formattedDate, type: 'Buy', metal: key, weight: wt, note: 'PO Migrated: ' + o.id, status: 'Pending Approval'
                     });
                     changed = true;
                 }
