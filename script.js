@@ -2118,7 +2118,7 @@ function runInventoryMigration() {
                 let key = '';
                 const p = String(o.purity || '').trim().toLowerCase();
                 const prod = (o.product || '').toLowerCase();
-                const itemsDesc = (o.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
+                const itemsDesc = (o.items || []).map(i => (String(i.desc || '') + ' ' + String(i.purity || '')).toLowerCase()).join(' ');
 
                 if (m.includes('gold')) {
                     if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
@@ -2170,7 +2170,7 @@ function runInventoryMigration() {
                     let key = '';
                     const p = String(o.purity || '').trim().toLowerCase();
                     const prod = (o.product || '').toLowerCase();
-                    const itemsDesc = (o.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
+                    const itemsDesc = (o.items || []).map(i => (String(i.desc || '') + ' ' + String(i.purity || '')).toLowerCase()).join(' ');
 
                     if (m.includes('gold')) {
                         if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
@@ -2334,7 +2334,7 @@ window.calculateMantiBalances = function() {
             let key = '';
             const p = String(o.purity || '').trim().toLowerCase();
             const prod = (o.product || '').toLowerCase();
-            const itemsDesc = (o.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
+            const itemsDesc = (o.items || []).map(i => (String(i.desc || '') + ' ' + String(i.purity || '')).toLowerCase()).join(' ');
 
             if (m.includes('gold')) {
                 if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
@@ -2368,7 +2368,7 @@ window.calculateMantiBalances = function() {
         if (so) {
             const p = String(so.purity || '').trim().toLowerCase();
             const prod = (so.product || '').toLowerCase();
-            const itemsDesc = (so.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
+            const itemsDesc = (so.items || []).map(i => (String(i.desc || '') + ' ' + String(i.purity || '')).toLowerCase()).join(' ');
 
             if (mainM.includes('gold')) {
                 if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
