@@ -548,7 +548,7 @@ document.addEventListener('CloudDataLoaded', () => {
     // Check if handling a shared link
     const urlParams = new URLSearchParams(window.location.search);
     const sharedData = urlParams.get('data');
-    if (sharedData) {
+    if (sharedData && window.location.pathname.includes('create-invoice')) {
         handleSharedInvoice(sharedData);
         return; // Skip normal init
     }
@@ -2058,6 +2058,7 @@ function runInventoryMigration() {
     // 1. STABLE CLEANUP
     const cleanHistory = [];
     const seenFingers = new Set();
+    const seenIds = new Set();
     
     // First pass: Find the highest existing ADJ number to prevent ID shuffling
     let maxIdNum = 0;
@@ -2069,16 +2070,27 @@ function runInventoryMigration() {
     });
 
     history.forEach(h => {
-        // Fingerprint: Date (Day only) + Metal + Weight + Type + Note (STRIPIING IDs for clean comparison)
-        const datePart = (h.date || '').split(' ')[0];
+        // Fingerprint: Use full date/time + Metal + Weight + Type + Note
+        // This prevents deleting valid identical transactions that occur on the same day
+        const fullDate = (h.date || '').trim();
         let notePart = (h.note || h.details || '').trim().toLowerCase();
         // Remove [ADJ-XXXX] or [PO-XXXX] from note to prevent unique fingerprints for duplicates
         notePart = notePart.replace(/\[(adj|po)-.*?\]/gi, '').trim();
-        const finger = `${datePart}|${(h.metal||'').trim()}|${parseFloat(h.weight).toFixed(3)}|${(h.type||'').trim()}|${notePart}`;
+        const finger = `${fullDate}|${(h.metal||'').trim()}|${parseFloat(h.weight).toFixed(3)}|${(h.type||'').trim()}|${notePart}`;
         
         // If we have an ID, we prioritize keeping it. If we don't, we check fingerprint.
         const isPO = h.id && typeof h.id === 'string' && h.id.startsWith('PO-');
-        if (seenFingers.has(finger) && !isPO) {
+        const isExplicitAdj = h.id && typeof h.id === 'string' && h.id.startsWith('ADJ-');
+        
+        if ((isPO || isExplicitAdj) && seenIds.has(h.id)) {
+            changed = true;
+            return; // Skip duplicate ID
+        }
+        if (isPO || isExplicitAdj) {
+            seenIds.add(h.id);
+        }
+
+        if (seenFingers.has(finger) && !isPO && !isExplicitAdj) {
             changed = true;
             return; // Skip duplicate
         }
@@ -2090,6 +2102,7 @@ function runInventoryMigration() {
         if (!h.id || h.id === 'undefined' || h.id === 'null' || isUuid || isRandom) {
             maxIdNum++;
             h.id = `ADJ-${maxIdNum.toString().padStart(4, '0')}`;
+            seenIds.add(h.id);
             changed = true;
         }
         cleanHistory.push(h);
@@ -2103,21 +2116,21 @@ function runInventoryMigration() {
                 const wt = parseFloat(o.qty) || 0;
                 const m = (o.mainMetalType || '').toLowerCase();
                 let key = '';
+                const p = String(o.purity || '').trim().toLowerCase();
+                const prod = (o.product || '').toLowerCase();
+                const itemsDesc = (o.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
+
                 if (m.includes('gold')) {
-                    const p = (o.purity || '').toString();
-                    const prod = (o.product || '').toLowerCase();
-                    if (p === '99.99' || prod.includes('99.99') || prod.includes('9999')) key = 'pure_gold_9999';
-                    else if (p === '99.9' || prod.includes('99.9') || prod.includes('999')) key = 'pure_gold_999';
-                    else if (p === '99.5' || prod.includes('99.5') || prod.includes('995')) key = 'pure_gold_995';
-                    else if (p === '24k' || prod.includes('24k') || prod.includes('pure')) key = 'pure_gold_999';
+                    if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
+                    else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_gold_999';
+                    else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_gold_995';
+                    else if (p === '24k' || prod.includes('24k') || prod.includes('pure') || itemsDesc.includes('24k') || itemsDesc.includes('pure')) key = 'pure_gold_999';
                     else key = 'gold_22k';
                 } else if (m.includes('silver')) {
-                    const p = (o.purity || '').toString();
-                    const prod = (o.product || '').toLowerCase();
-                    if (p === '99.99' || prod.includes('99.99') || prod.includes('9999')) key = 'pure_silver_9999';
-                    else if (p === '99.9' || prod.includes('99.9') || prod.includes('999')) key = 'pure_silver_999';
-                    else if (p === '99.5' || prod.includes('99.5') || prod.includes('995')) key = 'pure_silver_995';
-                    else if (prod.includes('pure')) key = 'pure_silver_999';
+                    if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_silver_9999';
+                    else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_silver_999';
+                    else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_silver_995';
+                    else if (prod.includes('pure') || itemsDesc.includes('pure')) key = 'pure_silver_999';
                     else key = 'silver_925';
                 }
                 else if (m.includes('copper')) key = 'copper';
@@ -2131,6 +2144,53 @@ function runInventoryMigration() {
                         id: o.id, date: formattedDate, type: 'Buy', metal: key, weight: wt, note: 'PO Migrated: ' + o.id, status: 'Pending Approval'
                     });
                     changed = true;
+                }
+            }
+        }
+    });
+
+    // 3. RETRO-ACTIVE CORRECTION FOR EXISTING MIGRATED POs
+    cleanHistory.forEach(h => {
+        // Only target auto-migrated PO records
+        if ((h.id && h.id.startsWith('PO-')) || (h.note && h.note.includes('PO-')) || (h.details && h.details.includes('PO-'))) {
+            let poId = h.id && h.id.startsWith('PO-') ? h.id : null;
+            if (!poId && h.note) {
+                const match = h.note.match(/PO-\d+/);
+                if (match) poId = match[0];
+            }
+            if (!poId && h.details) {
+                const match = h.details.match(/PO-\d+/);
+                if (match) poId = match[0];
+            }
+            
+            if (poId) {
+                const o = orders.find(ord => ord.id === poId);
+                if (o) {
+                    const m = (o.mainMetalType || '').toLowerCase();
+                    let key = '';
+                    const p = String(o.purity || '').trim().toLowerCase();
+                    const prod = (o.product || '').toLowerCase();
+                    const itemsDesc = (o.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
+
+                    if (m.includes('gold')) {
+                        if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
+                        else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_gold_999';
+                        else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_gold_995';
+                        else if (p === '24k' || prod.includes('24k') || prod.includes('pure') || itemsDesc.includes('24k') || itemsDesc.includes('pure')) key = 'pure_gold_999';
+                        else key = 'gold_22k';
+                    } else if (m.includes('silver')) {
+                        if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_silver_9999';
+                        else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_silver_999';
+                        else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_silver_995';
+                        else if (prod.includes('pure') || itemsDesc.includes('pure')) key = 'pure_silver_999';
+                        else key = 'silver_925';
+                    }
+
+                    // If the existing history record has the wrong metal mapped, update it
+                    if (key && h.metal !== key) {
+                        h.metal = key;
+                        changed = true;
+                    }
                 }
             }
         }
@@ -2229,9 +2289,29 @@ window.calculateMantiBalances = function() {
     };
 
     // 1. Process History (Manual adjustments, Melting outputs/inputs, etc.)
+    const uniqueHistory = [];
+    const calcSeenIds = new Set();
+    const calcSeenFingers = new Set();
+
     history.forEach(h => {
         if (h.status === 'Pending Approval') return;
-        
+
+        const isPO = h.id && typeof h.id === 'string' && h.id.startsWith('PO-');
+        const isExplicitAdj = h.id && typeof h.id === 'string' && h.id.startsWith('ADJ-');
+
+        if ((isPO || isExplicitAdj) && calcSeenIds.has(h.id)) return; // Skip duplicate ID
+        if (isPO || isExplicitAdj) calcSeenIds.add(h.id);
+
+        const fullDate = (h.date || '').trim();
+        let notePart = (h.note || h.details || '').trim().toLowerCase();
+        notePart = notePart.replace(/\[(adj|po)-.*?\]/gi, '').trim();
+        const finger = `${fullDate}|${(h.metal||'').trim()}|${parseFloat(h.weight).toFixed(3)}|${(h.type||'').trim()}|${notePart}`;
+
+        if (calcSeenFingers.has(finger) && !isPO && !isExplicitAdj) return;
+        calcSeenFingers.add(finger);
+
+        uniqueHistory.push(h);
+
         let metal = h.metal;
         // Legacy fallback mapping
         if (metal === 'pure_gold') metal = 'pure_gold_999';
@@ -2246,29 +2326,27 @@ window.calculateMantiBalances = function() {
     // 2. Process Purchase Orders (Completed only, NOT in history yet)
     orders.forEach(o => {
         if (o.type === 'Purchase Order' && o.qty && o.status === 'Completed') {
-            const alreadyIn = history.some(h => (h.note && h.note.includes(o.id)) || (h.details && h.details.includes(o.id)));
+            const alreadyIn = uniqueHistory.some(h => (h.id === o.id) || (h.note && h.note.includes(o.id)) || (h.details && h.details.includes(o.id)));
             if (alreadyIn) return;
 
             const wt = parseFloat(o.qty) || 0;
             const m = (o.mainMetalType || '').toLowerCase();
             let key = '';
+            const p = String(o.purity || '').trim().toLowerCase();
+            const prod = (o.product || '').toLowerCase();
+            const itemsDesc = (o.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
+
             if (m.includes('gold')) {
-                const p = (o.purity || '').toString();
-                const prod = (o.product || '').toLowerCase();
-                
-                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999')) key = 'pure_gold_9999';
-                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999')) key = 'pure_gold_999';
-                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995')) key = 'pure_gold_995';
-                else if (p === '24k' || prod.includes('24k') || prod.includes('pure')) key = 'pure_gold_999';
+                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
+                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_gold_999';
+                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_gold_995';
+                else if (p === '24k' || prod.includes('24k') || prod.includes('pure') || itemsDesc.includes('24k') || itemsDesc.includes('pure')) key = 'pure_gold_999';
                 else key = 'gold_22k';
             } else if (m.includes('silver')) {
-                const p = (o.purity || '').toString();
-                const prod = (o.product || '').toLowerCase();
-                
-                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999')) key = 'pure_silver_9999';
-                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999')) key = 'pure_silver_999';
-                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995')) key = 'pure_silver_995';
-                else if (prod.includes('pure')) key = 'pure_silver_999';
+                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_silver_9999';
+                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_silver_999';
+                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_silver_995';
+                else if (prod.includes('pure') || itemsDesc.includes('pure')) key = 'pure_silver_999';
                 else key = 'silver_925';
             } else if (m.includes('copper')) key = 'copper';
             else if (m.includes('zinc')) key = 'zinc';
@@ -2286,8 +2364,32 @@ window.calculateMantiBalances = function() {
         const so = orders.find(o => o.id === r.jobnum);
         const mainM = so ? (so.mainMetalType || '').toLowerCase() : '';
         let key = '';
-        if (mainM.includes('gold')) key = 'gold_22k';
-        else if (mainM.includes('silver')) key = 'silver_925';
+
+        if (so) {
+            const p = String(so.purity || '').trim().toLowerCase();
+            const prod = (so.product || '').toLowerCase();
+            const itemsDesc = (so.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
+
+            if (mainM.includes('gold')) {
+                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
+                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_gold_999';
+                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_gold_995';
+                else if (p === '24k' || prod.includes('24k') || prod.includes('pure') || itemsDesc.includes('24k') || itemsDesc.includes('pure')) key = 'pure_gold_999';
+                else key = 'gold_22k';
+            } else if (mainM.includes('silver')) {
+                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_silver_9999';
+                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_silver_999';
+                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_silver_995';
+                else if (prod.includes('pure') || itemsDesc.includes('pure')) key = 'pure_silver_999';
+                else key = 'silver_925';
+            }
+        }
+
+        // Fallback for older records without SO data
+        if (!key) {
+            if (mainM.includes('gold')) key = 'gold_22k';
+            else if (mainM.includes('silver')) key = 'silver_925';
+        }
         else if (mainM.includes('copper')) key = 'copper';
         else if (mainM.includes('zinc')) key = 'zinc';
         else if (mainM.includes('iridium')) key = 'iridium';
