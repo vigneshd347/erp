@@ -529,6 +529,7 @@
             });
 
             // Also include direct Expenses in the Cash Flow Expense chart
+            const mantiExpenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
             mantiExpenses.forEach(e => {
                 if (!e.date) return;
                 const amt = parseFloat(e.total || e.amount) || 0; // Check e.total first, fallback to e.amount
