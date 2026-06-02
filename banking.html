@@ -644,6 +644,7 @@
     </div>    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="liquid-button.js"></script>
     <script src="script.js?v=25"></script>
+    <script src="manti_repair.js"></script>
     <script>
         lucide.createIcons();
 
@@ -662,6 +663,10 @@
             
             journals.forEach(j => {
                 if (!j.lines || j.status === 'Draft') return;
+                // Only include actual payments/receipts/journals, skip auto-purchases/assets/expenses to avoid double counting
+                const jid = (j.id || '').toUpperCase();
+                if (jid.startsWith('PUR-') || jid.startsWith('JV-AST') || jid.startsWith('JV-EXP')) return;
+                
                 j.lines.forEach(line => {
                     if ((line.account || '').toLowerCase() === accountName.toLowerCase()) {
                         const deb = parseFloat(line.debit) || 0;
@@ -846,6 +851,10 @@
 
             journals.forEach(j => {
                 if (!j.lines) return;
+                // Filter: Only show actual payments/receipts in banking ledger
+                const jid = (j.id || '').toUpperCase();
+                if (jid.startsWith('PUR-') || jid.startsWith('JV-AST') || jid.startsWith('JV-EXP')) return;
+
                 j.lines.forEach(line => {
                     const lAccount = (line.account || '').toLowerCase();
                     const aName = acc.name.toLowerCase();

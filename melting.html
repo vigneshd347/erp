@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Melting Management</title>
+    <link rel="stylesheet" href="style.css?v=17">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Supabase Cloud Sync -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js?v=2"></script>
+    <style>
+        .melting-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .calc-card {
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .calc-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 6px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #f9fafb;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            background: #fff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(84, 84, 212, 0.1);
+        }
+
+        .result-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .result-item:last-child {
+            margin-bottom: 0;
+            padding-top: 8px;
+            border-top: 1px solid #e2e8f0;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .btn-melting {
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+
+        .btn-melting:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .history-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 12px 16px;
+            background: #f8fafc;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .history-table td {
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .tag {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tag-alloy { background: #e0f2fe; color: #0369a1; }
+        .tag-solder { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar / Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested">Inventory</a>
+                        <a href="melting.html" class="nav-item nested active">Melting</a>
+                        <a href="stock-adjustment.html" class="nav-item nested">Stock Adjustment</a>
+                        <a href="jobwork.html" class="nav-item nested">Job Work</a>
+                        <a href="design-book.html" class="nav-item nested">Design Book</a>
+                        <a href="tree-making.html" class="nav-item nested">Tree Making</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested">Payments</a>
+                        <a href="expenses.html" class="nav-item nested">Expenses</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested">Manual Journals</a>
+                    </div>
+                </div>
+
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; padding: 2.5rem; background: #f1f5f9; overflow-y: auto;">
+            <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 style="font-size: 1.8rem; font-weight: 800; color: #1f2937;">Melting & Alloy Conversion</h1>
+                    <p style="color: #6b7280; font-size: 0.95rem;">Convert pure metals into alloys and solder based on standardized formulas.</p>
+                </div>
+                <div id="save-status" style="display: none; background: #dcfce7; color: #166534; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                    ✓ Inventory Updated Successfully
+                </div>
+            </header>
+
+            <div class="melting-grid">
+                <!-- Alloy 92.5 Calculator -->
+                <div class="calc-card">
+                    <h3><i data-lucide="flame" style="color: #f97316;"></i> Alloy 92.5 Conversion</h3>
+                    <div class="form-group">
+    <label>Pure Metal Weight (g)</label>
+    <input type="number" id="alloy-pure-wt" placeholder="0.000" step="0.001" oninput="calculateAlloy()">
+</div>
+<div class="form-group">
+    <label>Metal Type (Select from inventory)</label>
+    <select id="alloy-metal-select" class="input-wrapper" style="width: 100%;" required>
+        <option value="" disabled selected>Select Metal</option>
+    </select>
+</div>
+        <div class="form-group">
+            <label>Wastage (g) <small>(editable)</small></label>
+            <input type="number" id="alloy-wastage-wt" placeholder="0.000" step="0.001" value="0" oninput="calculateAlloy()">
+            <input type="hidden" id="alloy-purity" value="">
+        </div>
+                    <div class="result-box">
+                        <div class="result-item">
+                            <span>Input (Pure Metal):</span>
+                            <span id="alloy-disp-pure">0.00 g</span>
+                        </div>
+                        <div class="result-item" style="color: #64748b; font-size: 0.8rem;">
+                            <span>Formula:</span>
+                            <span>(Pure * Purity) / 92.7</span>
+                        </div>
+                        <div class="result-item">
+                            <span>Copper Required:</span>
+                            <span id="alloy-disp-copper" style="color: #92400e; font-weight: 600;">0.00 g</span>
+                        </div>
+                        <div class="result-item">
+                            <span>Resulting 92.5 Weight:</span>
+                            <span id="alloy-disp-result">0.00 g</span>
+                        </div>
+                    </div>
+                    <button class="btn-melting" onclick="processMelting('alloy')">
+                        <i data-lucide="check-circle"></i> Complete Alloy Melting
+                    </button>
+                </div>
+
+                <!-- Solder Calculator -->
+                <div class="calc-card">
+                    <h3><i data-lucide="zap" style="color: #3b82f6;"></i> Solder Composition</h3>
+                    <div class="form-group">
+                        <label>Pure Silver Weight (g)</label>
+                        <input type="number" id="solder-silver-wt" placeholder="0.000" step="0.001" oninput="calculateSolder()">
+                    </div>
+                    <div class="form-group">
+                        <label>Purity</label>
+                        <select id="solder-purity" onchange="calculateSolder()">
+                            <option value="99.99">1. 99.99</option>
+                            <option value="99.9" selected>2. 99.9</option>
+                            <option value="99.5">3. 99.5</option>
+                        </select>
+                    </div>
+                    <div class="result-box">
+                        <div class="result-item">
+                            <span>Formula:</span>
+                            <span>Silver represents 65% of Total</span>
+                        </div>
+                        <div class="result-item">
+                            <span>Copper (20%):</span>
+                            <span id="solder-disp-copper">0.000 g</span>
+                        </div>
+                        <div class="result-item">
+                            <span>Zinc (15%):</span>
+                            <span id="solder-disp-zinc">0.000 g</span>
+                        </div>
+                        <div class="result-item">
+                            <span>Total Solder Weight:</span>
+                            <span id="solder-disp-result">0.000 g</span>
+                        </div>
+                    </div>
+                    <button class="btn-melting" onclick="processMelting('solder')">
+                        <i data-lucide="check-circle"></i> Complete Solder Melting
+                    </button>
+                </div>
+            </div>
+
+            <!-- Melting History -->
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h3>Recent Melting Operations</h3>
+                </div>
+                <div class="dash-table-wrap">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Input Metal</th>
+                                <th>Result Weight</th>
+                                <th>Status</th>
+                                <th style="text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="melting-history-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js?v=25"></script>
+    <script>
+        lucide.createIcons();
+
+        function calculateAlloy() {
+            const pure = parseFloat(document.getElementById('alloy-pure-wt').value) || 0;
+            const purity = parseFloat(document.getElementById('alloy-purity').value) || 0;
+            
+            const result = (pure * purity) / 92.7;
+            const copper = result - pure;
+            
+            document.getElementById('alloy-disp-pure').textContent = pure.toFixed(2) + ' g';
+            document.getElementById('alloy-disp-copper').textContent = (copper > 0 ? copper : 0).toFixed(2) + ' g';
+            document.getElementById('alloy-disp-result').textContent = result.toFixed(2) + ' g';
+        }
+
+        function calculateSolder() {
+            const silverRaw = parseFloat(document.getElementById('solder-silver-wt').value) || 0;
+            const purity = parseFloat(document.getElementById('solder-purity').value) || 0;
+            
+            const pureSilver = silverRaw * (purity / 100);
+            const total = pureSilver / 0.65;
+            
+            const copper = total * 0.20;
+            const zinc = total * 0.15;
+            
+            document.getElementById('solder-disp-copper').textContent = copper.toFixed(2) + ' g';
+            document.getElementById('solder-disp-zinc').textContent = zinc.toFixed(2) + ' g';
+            document.getElementById('solder-disp-result').textContent = total.toFixed(2) + ' g';
+        }
+
+        async function processMelting(type) {
+            console.log('processMelting called with type:', type);
+            try {
+            const balances = window.calculateMantiBalances ? window.calculateMantiBalances() : JSON.parse(localStorage.getItem('manti_stock_balances') || '{}');
+            const history = JSON.parse(localStorage.getItem('manti_melting_history') || '[]');
+            const stockHistory = JSON.parse(localStorage.getItem('manti_stock_history') || '[]');
+
+            let outputWeight = 0;
+            let inputs = {};
+            let outputMetal = '';
+            let selectedMetalKey = '';
+
+            if (type === 'alloy') {
+                selectedMetalKey = document.getElementById('alloy-metal-select').value;
+                if (!selectedMetalKey) {
+                    return alert('Please select a metal type from inventory!');
+                }
+                const purityMatch = selectedMetalKey.match(/pure_(?:gold|silver)_(\d+)/);
+                if (purityMatch) {
+                    const num = purityMatch[1];
+                    let purityVal = 99.9;
+                    if (num.length === 4) {
+                        purityVal = parseFloat(num.slice(0,2) + '.' + num.slice(2));
+                    } else if (num.length === 3) {
+                        purityVal = parseFloat(num.slice(0,2) + '.' + num.slice(2));
+                    } else {
+                        purityVal = parseFloat(num);
+                    }
+                    const purityElem = document.getElementById('alloy-purity');
+                if (purityElem) purityElem.value = purityVal;
+                }
+                const pureElem = document.getElementById('alloy-pure-wt');
+                const pure = pureElem ? parseFloat(pureElem.value) || 0 : 0;
+                const purityElem2 = document.getElementById('alloy-purity');
+                const purity = purityElem2 ? parseFloat(purityElem2.value) || 0 : 0;
+                const wastageElem = document.getElementById('alloy-wastage-wt');
+                const wastage = wastageElem ? parseFloat(wastageElem.value) || 0 : 0;
+                if (pure <= 0) return alert("Please enter pure metal weight");
+                outputWeight = parseFloat(((pure * purity) / 92.7).toFixed(3));
+                const copperReq = parseFloat((outputWeight - pure).toFixed(3));
+                const finalOutput = Math.max(0, outputWeight - wastage);
+                if (selectedMetalKey.startsWith('pure_')) {
+                    const base = selectedMetalKey.replace('pure_', '').split('_')[0];
+                    outputMetal = `${base}_925`;
+                } else {
+                    outputMetal = selectedMetalKey;
+                }
+                inputs = { [selectedMetalKey]: pure, 'copper': copperReq };
+                if ((balances[selectedMetalKey] || 0) < pure) return alert(`Insufficient source metal! (${selectedMetalKey}) Available: ${balances[selectedMetalKey] || 0}`);
+                if ((balances.copper || 0) < copperReq) return alert(`Insufficient Copper! (Available: ${balances.copper || 0})`);
+                outputWeight = finalOutput;
+            } else if (type === 'solder') {
+                // Solder calculations with null checks
+                const silverElem = document.getElementById('solder-silver-wt');
+                const purityElem = document.getElementById('solder-purity');
+                const silverRaw = silverElem ? parseFloat(silverElem.value) || 0 : 0;
+                const purity = purityElem ? parseFloat(purityElem.value) : 0;
+                if (silverRaw <= 0) return alert("Please enter silver weight");
+                // Continue using silverRaw and purity
+                const pureSilver = silverRaw * (purity / 100);
+                outputWeight = parseFloat((pureSilver / 0.65).toFixed(3));
+                outputMetal = 'solder'; 
+                const purityKey = `pure_silver_${purity.toString().replace('.', '')}`;
+                inputs = {
+                    [purityKey]: silverRaw,
+                    'copper': parseFloat((outputWeight * 0.20).toFixed(3)),
+                    'zinc': parseFloat((outputWeight * 0.15).toFixed(3))
+                };
+
+                if ((balances[purityKey] || 0) < silverRaw) return alert(`Insufficient Source Silver! (Available: ${balances[purityKey] || 0})`);
+                if ((balances.copper || 0) < inputs.copper) return alert(`Insufficient Copper! (Available: ${balances.copper || 0})`);
+                if ((balances.zinc || 0) < inputs.zinc) return alert(`Insufficient Zinc! (Available: ${balances.zinc || 0})`);
+            }
+
+                    const mltId = `MLT-${Date.now()}`;
+        const meltingOp = {
+            id: mltId,
+            date: new Date().toISOString().split('T')[0],
+            type: type === 'alloy' ? 'Alloy 92.5' : 'Solder',
+            inputs: inputs,
+            outputWeight: outputWeight,
+            purity: type === 'alloy' ? (function(){ const p = document.getElementById('alloy-purity'); return p ? parseFloat(p.value) : null; })() : null,
+            status: 'Completed'
+        };
+          
+            history.push(meltingOp);
+
+            // Record input consumption
+            for (const [metal, wt] of Object.entries(inputs)) {
+                balances[metal] = parseFloat(((balances[metal] || 0) - wt).toFixed(3));
+                stockHistory.push({
+                    id: mltId,
+                    date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    type: 'Melting Consumption',
+                    metal: metal,
+                    weight: -wt,
+                    note: `Used in ${meltingOp.type}`
+                });
+            }
+
+            // Record output production
+            stockHistory.push({
+                id: mltId,
+                date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                type: 'Melting Production',
+                metal: outputMetal,
+                weight: outputWeight,
+                note: `Produced via ${meltingOp.type}`
+            });
+
+            balances[outputMetal] = parseFloat(((balances[outputMetal] || 0) + outputWeight).toFixed(3));
+            // Also add matching pure metal entry for alloy
+            if (type === 'alloy') {
+                const purityElem = document.getElementById('alloy-purity');
+                if (purityElem) {
+                    // Derive base metal name from selected key (e.g., pure_silver_925 -> silver)
+                    const base = selectedMetalKey.replace('pure_', '').split('_')[0];
+                    const purityKey = `pure_${base}_${purityElem.value.replace('.', '')}`;
+                    // Record pure metal production in history
+                    stockHistory.push({
+                        id: mltId,
+                        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        type: 'Melting Production',
+                        metal: purityKey,
+                        weight: outputWeight,
+                        note: `Added pure ${purityKey} via ${meltingOp.type}`
+                    });
+                    balances[purityKey] = parseFloat(((balances[purityKey] || 0) + outputWeight).toFixed(3));
+                }
+            }
+
+            localStorage.setItem('manti_melting_history', JSON.stringify(history));
+            localStorage.setItem('manti_stock_history', JSON.stringify(stockHistory));
+            // Update balances persistently after recording history
+            localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+            if (window.syncKeyToSupabase) {
+                window.syncKeyToSupabase('manti_melting_history', history);
+                window.syncKeyToSupabase('manti_stock_history', stockHistory);
+                window.syncKeyToSupabase('manti_stock_balances', balances);
+            }
+
+            document.getElementById('save-status').style.display = 'block';
+            setTimeout(() => document.getElementById('save-status').style.display = 'none', 3000);
+            loadHistory();
+            populateAlloyMetalSelect();
+            // Reset selector to placeholder
+            document.getElementById('alloy-metal-select').selectedIndex = 0;
+            // Removed redundant populateAlloyMetalSelect() call
+            
+            if (type === 'alloy') {
+                const pureWtReset = document.getElementById('alloy-pure-wt');
+                if (pureWtReset) pureWtReset.value = '';
+                const wastageReset = document.getElementById('alloy-wastage-wt');
+                if (wastageReset) wastageReset.value = '';
+                const purityReset = document.getElementById('alloy-purity');
+                if (purityReset) purityReset.value = '';
+            } else {
+                const solderReset = document.getElementById('solder-silver-wt');
+                if (solderReset) solderReset.value = '';
+            }
+        } // end try
+        catch (e) {
+            console.error('processMelting error:', e);
+            alert('An error occurred: ' + e.message);
+        }
+    }
+
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('manti_melting_history') || '[]');
+            const tbody = document.getElementById('melting-history-body');
+            tbody.innerHTML = '';
+            
+            [...history].reverse().slice(0, 10).forEach(h => {
+                const row = document.createElement('tr');
+                let inputStr = '';
+                for (const [m, w] of Object.entries(h.inputs)) {
+                    inputStr += `${m.replace('_', ' ')}: ${w.toFixed(3)}g, `;
+                }
+                
+                row.innerHTML = `
+                    <td>${h.date}</td>
+                    <td><span class="tag ${h.type === 'Solder' ? 'tag-solder' : 'tag-alloy'}">${h.type}</span></td>
+                    <td style="font-size: 0.75rem; color: #64748b;">${inputStr.slice(0, -2)}</td>
+                    <td style="font-weight: 700;">${h.outputWeight.toFixed(2)} g</td>
+                    <td><span style="color: #16a34a; font-weight: 600;">${h.status}</span></td>
+                    <td style="text-align: center;">
+                        <button onclick="deleteMeltingRecord(${history.indexOf(h)})" class="btn-remove" title="Delete" style="background: none; border: none; cursor: pointer; color: #ef4444;">
+                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            if (history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #94a3b8;">No melting records found.</td></tr>';
+            }
+            lucide.createIcons();
+        }
+
+        async function deleteMeltingRecord(index) {
+            if (!confirm("Are you sure you want to delete this melting record? This will reverse the inventory changes.")) return;
+
+            const history = JSON.parse(localStorage.getItem('manti_melting_history') || '[]');
+            const balances = JSON.parse(localStorage.getItem('manti_stock_balances') || '{}');
+            const stockHistory = JSON.parse(localStorage.getItem('manti_stock_history') || '[]');
+
+            const record = history[index];
+            if (!record) return;
+
+            // Reverse the inputs (restore consumed metals)
+            for (const [metal, weight] of Object.entries(record.inputs)) {
+                balances[metal] = parseFloat(((balances[metal] || 0) + weight).toFixed(2));
+                
+                stockHistory.push({
+                    id: record.id || 'ADJ-OLD',
+                    date: new Date().toISOString().split('T')[0],
+                    type: 'Melting Deletion (Restore)',
+                    metal: metal.replace('_', ' '),
+                    weight: weight,
+                    note: `Restored from deleted ${record.type} record`
+                });
+            }
+
+            // Reverse the output (deduct produced alloy)
+            const outputMetal = record.type === 'Alloy 92.5' ? 'silver_925' : 'solder';
+            balances[outputMetal] = parseFloat(((balances[outputMetal] || 0) - record.outputWeight).toFixed(2));
+
+            stockHistory.push({
+                date: new Date().toISOString().split('T')[0],
+                type: 'Melting Deletion (Deduct)',
+                metal: record.type === 'Alloy 92.5' ? 'Silver (92.5)' : 'Silver Solder',
+                weight: -record.outputWeight,
+                note: `Deducted from deleted ${record.type} record`
+            });
+
+            // Remove record
+            history.splice(index, 1);
+
+            // Save
+            localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+            localStorage.setItem('manti_melting_history', JSON.stringify(history));
+            localStorage.setItem('manti_stock_history', JSON.stringify(stockHistory));
+
+            if (window.syncKeyToSupabase) {
+                window.syncKeyToSupabase('manti_stock_balances', balances);
+                window.syncKeyToSupabase('manti_melting_history', history);
+                window.syncKeyToSupabase('manti_stock_history', stockHistory);
+            }
+
+            loadHistory();
+            alert("Record deleted and inventory restored.");
+        }
+        function populateAlloyMetalSelect() {
+            const select = document.getElementById('alloy-metal-select');
+            if (!select) return;
+            const balances = window.calculateMantiBalances ? window.calculateMantiBalances() : JSON.parse(localStorage.getItem('manti_stock_balances') || '{}');
+            const placeholder = select.querySelector('option[value=""]');
+            select.innerHTML = '';
+            if (placeholder) select.appendChild(placeholder);
+            Object.entries(balances).forEach(([key, val]) => {
+                if (val > 0 && (key.startsWith('pure_') || key.startsWith('silver_') || key.startsWith('gold_'))) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    // Show only the metal name without quantity
+                    opt.textContent = `${key.replace('_', ' ')}`;
+                    select.appendChild(opt);
+                }
+            });
+            // Auto-fill weight and purity when a metal is selected
+                // Auto-fill weight and purity when a metal is selected
+                select.onchange = function () {
+                    const key = this.value;
+                    if (!key) return;
+                    const bal = window.calculateMantiBalances ? window.calculateMantiBalances() : JSON.parse(localStorage.getItem('manti_stock_balances') || '{}');
+                    const available = bal[key] || 0;
+                    const pureWtElem = document.getElementById('alloy-pure-wt');
+                    if (pureWtElem) pureWtElem.value = available.toFixed(3);
+                    const purityMatch = key.match(/pure_(?:gold|silver)_(\d+)/);
+                    if (purityMatch) {
+                        const num = purityMatch[1];
+                        let purityVal = 99.9;
+                        if (num.length === 4) {
+                            purityVal = parseFloat(num.slice(0, 2) + '.' + num.slice(2));
+                        } else if (num.length === 3) {
+                            purityVal = parseFloat(num.slice(0, 2) + '.' + num.slice(2));
+                        } else {
+                            purityVal = parseFloat(num);
+                        }
+                        const purityElem = document.getElementById('alloy-purity');
+                        if (purityElem) purityElem.value = purityVal;
+                    }
+                };
+        }
+        document.addEventListener('CloudDataLoaded', loadHistory);
+        document.addEventListener('CloudDataLoaded', populateAlloyMetalSelect);</script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
+    </script>
+</body>
+
+</html>

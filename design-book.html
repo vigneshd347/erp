@@ -140,7 +140,7 @@
     </style>
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=2"></script>
+    <script src="supabase.js?v=27"></script>
     <script src="image-cropper.js"></script>
 </head>
 
@@ -166,9 +166,11 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested">Inventory</a>
-                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
+                        <a href="melting.html" class="nav-item nested">Melting</a>
+                        <a href="stock-adjustment.html" class="nav-item nested">Stock Adjustment</a>
+                        <a href="jobwork.html" class="nav-item nested">Job Work</a>
                         <a href="design-book.html" class="nav-item nested active">Design Book</a>
-                                            <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
+                        <a href="tree-making.html" class="nav-item nested">Tree Making</a>
 </div>
                 </div>
 
@@ -400,9 +402,48 @@
         let designs = [];
         let isUploading = false;
 
-        document.addEventListener('CloudDataLoaded', () => {
-            designs = JSON.parse(localStorage.getItem('manti_designs') || '[]');
+        function loadLocalData() {
+            let rawDesigns = JSON.parse(localStorage.getItem('manti_designs') || '[]');
+            
+            // Remove duplicates: 
+            // 1. By exact ID
+            // 2. By identical properties (which happens when PO auto-generates multiple IDs for the same qty)
+            let uniqueById = new Map();
+            let uniqueByProps = new Map();
+            
+            rawDesigns.forEach(d => {
+                // First ensure no ID duplicates
+                if (!uniqueById.has(d.id)) {
+                    uniqueById.set(d.id, d);
+                    
+                    // Create a composite key for identical templates
+                    const propKey = `${d.category}|${d.subCategory||''}|${d.weight}|${d.size||''}|${d.imageUrl||''}|${d._sourcePO||''}`;
+                    
+                    // If we already have a design with these exact properties, it's a duplicate template
+                    if (!uniqueByProps.has(propKey)) {
+                        uniqueByProps.set(propKey, d);
+                    }
+                }
+            });
+            
+            designs = Array.from(uniqueByProps.values());
+            
+            // Clean up localStorage if duplicates were found
+            if (rawDesigns.length !== designs.length) {
+                localStorage.setItem('manti_designs', JSON.stringify(designs));
+                if (window.syncKeyToSupabase) {
+                    window.syncKeyToSupabase('manti_designs', designs);
+                }
+            }
+            
             renderGrid();
+        }
+
+        // Initial load from local
+        loadLocalData();
+
+        document.addEventListener('CloudDataLoaded', () => {
+            loadLocalData();
         });
 
         function updateDynamicDesignId() {
@@ -621,6 +662,9 @@
 
                 // Trigger Supabase Sync Interceptor
                 localStorage.setItem('manti_designs', JSON.stringify(designs));
+                if (window.syncKeyToSupabase) {
+                    window.syncKeyToSupabase('manti_designs', designs);
+                }
                 
                 closeDesignModal();
                 renderGrid();

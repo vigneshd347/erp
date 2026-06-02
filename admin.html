@@ -39,9 +39,11 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="melting.html" class="nav-item nested">Melting</a>
+                        <a href="stock-adjustment.html" class="nav-item nested">Stock Adjustment</a>
                         <a href="jobwork.html" class="nav-item nested ">Job Work</a>
                         <a href="design-book.html" class="nav-item nested ">Design Book</a>
-                                            <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
+                        <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
 </div>
                 </div>
 
@@ -150,6 +152,18 @@
                         <div class="summary-item">
                             <span class="summary-label">Pure Silver</span>
                             <span class="summary-value" id="disp-pure-silver">₹ --</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Copper</span>
+                            <span class="summary-value" id="disp-copper">₹ --</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Zinc</span>
+                            <span class="summary-value" id="disp-zinc">₹ --</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Iridium</span>
+                            <span class="summary-value" id="disp-iridium">₹ --</span>
                         </div>
                     </div>
                 </div>
@@ -315,6 +329,27 @@
                                     <input type="number" id="admin-pure-silver" placeholder="0.00" step="0.01">
                                 </div>
                             </div>
+                            <div class="input-group">
+                                <label for="admin-copper">Copper per Gram</label>
+                                <div class="input-wrapper">
+                                    <span>₹</span>
+                                    <input type="number" id="admin-copper" placeholder="0.00" step="0.01">
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="admin-zinc">Zinc per Gram</label>
+                                <div class="input-wrapper">
+                                    <span>₹</span>
+                                    <input type="number" id="admin-zinc" placeholder="0.00" step="0.01">
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="admin-iridium">Iridium per Gram</label>
+                                <div class="input-wrapper">
+                                    <span>₹</span>
+                                    <input type="number" id="admin-iridium" placeholder="0.00" step="0.01">
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="premium-modal-footer">
@@ -392,9 +427,15 @@
                 const rates = JSON.parse(savedRates);
                 document.getElementById('admin-pure-gold').value = rates.pureGold || '';
                 document.getElementById('admin-pure-silver').value = rates.pureSilver || '';
+                document.getElementById('admin-copper').value = rates.copper || '';
+                document.getElementById('admin-zinc').value = rates.zinc || '';
+                document.getElementById('admin-iridium').value = rates.iridium || '';
                 
                 document.getElementById('disp-pure-gold').textContent = rates.pureGold ? '₹ ' + rates.pureGold : '₹ --';
                 document.getElementById('disp-pure-silver').textContent = rates.pureSilver ? '₹ ' + rates.pureSilver : '₹ --';
+                document.getElementById('disp-copper').textContent = rates.copper ? '₹ ' + rates.copper : '₹ --';
+                document.getElementById('disp-zinc').textContent = rates.zinc ? '₹ ' + rates.zinc : '₹ --';
+                document.getElementById('disp-iridium').textContent = rates.iridium ? '₹ ' + rates.iridium : '₹ --';
             }
 
             if (savedBank) {
@@ -466,9 +507,16 @@
         }
 
         function saveMetalRates() {
+            const pureG = parseFloat(document.getElementById('admin-pure-gold').value) || 0;
+            const pureS = parseFloat(document.getElementById('admin-pure-silver').value) || 0;
             const rates = {
-                pureGold: parseFloat(document.getElementById('admin-pure-gold').value) || 0,
-                pureSilver: parseFloat(document.getElementById('admin-pure-silver').value) || 0
+                pureGold: pureG,
+                pureSilver: pureS,
+                gold22k: (pureG * 0.916).toFixed(2),
+                silver925: (pureS * 0.925).toFixed(2),
+                copper: parseFloat(document.getElementById('admin-copper').value) || 0,
+                zinc: parseFloat(document.getElementById('admin-zinc').value) || 0,
+                iridium: parseFloat(document.getElementById('admin-iridium').value) || 0
             };
             localStorage.setItem('manti_metal_rates', JSON.stringify(rates));
             loadSettingSummaries(); // Update the card display
@@ -572,6 +620,11 @@
 
             alert(`Monthly Close Successful!\n\nArchived:\n• ${completedOrders.length} Orders\n• ${completedJobs.length} Job Work records\n\nKept Open:\n• ${openOrders.length} Orders\n• ${openJobs.length} Job Work records`);
         });
+    </script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
     </script>
 </body>
 

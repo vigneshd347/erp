@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Worker Data Sheet</title>
+    <link rel="stylesheet" href="style.css?v=25">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Supabase Cloud Sync -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js?v=2"></script>
+    <style>
+        body { background-color: #f1f5f9; }
+
+        /* KPI Cards */
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .kpi-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .kpi-card .kpi-label { font-size: 0.78rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; }
+        .kpi-card .kpi-value { font-size: 1.6rem; font-weight: 800; color: #111827; }
+        .kpi-card .kpi-meta { font-size: 0.78rem; color: #9ca3af; }
+        .kpi-card .kpi-icon {
+            width: 42px; height: 42px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 4px;
+        }
+
+        /* Filter Pills */
+        .filter-pills { display: flex; gap: 8px; align-items: center; }
+        .filter-pill {
+            padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+            background: #fff; color: #6b7280; border: 1px solid #e5e7eb; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .filter-pill:hover:not(.active) { background: #f9fafb; color: #374151; }
+
+        /* Production Badges */
+        .prod-badge {
+            display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px;
+            font-size: 0.75rem; font-weight: 600; margin-right: 6px; margin-bottom: 4px;
+        }
+        .prod-badge.jobs { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .prod-badge.issued { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+        .prod-badge.received { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+        .prod-badge.wip { background: #fef9c3; color: #ca8a04; border: 1px solid #fde047; }
+        .prod-badge.loss { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+
+        /* Table custom styling */
+        .worker-table th { background: #f8fafc; color: #374151; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 2px solid #e2e8f0; }
+        .worker-table td { padding: 14px 16px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; color: #1f2937; }
+        .worker-table tr:hover td { background: #fafbff; }
+
+        /* Ledger Table */
+        .ledger-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .ledger-table th { background: #f1f5f9; padding: 10px 14px; text-align: left; font-weight: 700; color: #374151; border-bottom: 2px solid #cbd5e1; }
+        .ledger-table td { padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #334155; }
+        .ledger-table tr:hover td { background: #f8fafc; }
+
+        /* Fix btn-liquid transparent override for this page */
+        .btn-liquid.btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; color: #ffffff !important; }
+        .btn-liquid.btn-outline { background: #ffffff !important; color: #475569 !important; }
+        .worker-table .edit-schedule-btn { background: #ffffff; border: 1px solid #cbd5e1; color: #2563eb; font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+        .worker-table .edit-schedule-btn:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+                
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="inventory.html" class="nav-item nested">Inventory</a>
+                        <a href="melting.html" class="nav-item nested">Melting</a>
+                        <a href="jobwork.html" class="nav-item nested">Job Work</a>
+                        <a href="design-book.html" class="nav-item nested">Design Book</a>
+                        <a href="tree-making.html" class="nav-item nested">Tree Making</a>
+                    </div>
+                </div>
+
+                <a href="stock-adjustment.html" class="nav-item">
+                    <div class="icon"><i data-lucide="sliders"></i></div>
+                    <span class="label">Stock Adjustment</span>
+                </a>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="sales-orders.html" class="nav-item nested">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested">Invoices</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested">Payments</a>
+                        <a href="expenses.html" class="nav-item nested">Expenses</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested">Manual Journals</a>
+                    </div>
+                </div>
+                
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="worker-data-sheet.html" class="nav-item active">
+                    <div class="icon"><i data-lucide="user-check"></i></div>
+                    <span class="label">Worker Data Sheet</span>
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; overflow-y: auto; padding: 24px; background: #f1f5f9;">
+            <!-- Header -->
+            <header style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+                <div>
+                    <h1 style="font-size: 1.5rem; font-weight: 800; color: #1f2937; margin: 0;">Worker Data Sheet</h1>
+                    <p style="font-size: 0.85rem; color: #6b7280; margin-top: 4px;">Real-time karigar tracking, work hours & job work production metrics</p>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <a href="staff.html" class="btn-liquid btn-outline" style="display: flex; align-items: center; gap: 6px; text-decoration: none;">
+                        <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i> Add New Worker
+                    </a>
+                </div>
+            </header>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: #e0f2fe; color: #0284c7;">
+                        <i data-lucide="users" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div class="kpi-label">Total Karigars</div>
+                    <div class="kpi-value" id="kpi-total-workers">0</div>
+                    <div class="kpi-meta" id="kpi-workers-meta">Active personnel</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: #fef3c7; color: #d97706;">
+                        <i data-lucide="briefcase" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div class="kpi-label">Active Job Works</div>
+                    <div class="kpi-value" id="kpi-active-jobs">0</div>
+                    <div class="kpi-meta" id="kpi-jobs-meta">Ongoing processes</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: #fae8ff; color: #9333ea;">
+                        <i data-lucide="scale" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div class="kpi-label">Total WIP Holding</div>
+                    <div class="kpi-value" id="kpi-total-wip">0.000 g</div>
+                    <div class="kpi-meta" id="kpi-wip-meta">Pending return weight</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: #fee2e2; color: #dc2626;">
+                        <i data-lucide="trending-down" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div class="kpi-label">Net Wastage (Loss)</div>
+                    <div class="kpi-value" id="kpi-total-wastage">0.000 g</div>
+                    <div class="kpi-meta" id="kpi-wastage-meta">Recorded loss</div>
+                </div>
+            </div>
+
+            <!-- Search & Filter Controls -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 280px;">
+                    <div style="position: relative; width: 100%; max-width: 400px;">
+                        <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; width: 18px; height: 18px;"></i>
+                        <input type="text" id="search-worker" placeholder="Search karigars by name, MSP/TP no, or designation..." onkeyup="renderWorkers()" style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none; transition: border 0.2s;">
+                    </div>
+                </div>
+                <div class="filter-pills">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-right: 4px;">Filter:</span>
+                    <button class="filter-pill active" onclick="setFilter('All', this)">All</button>
+                    <button class="filter-pill" onclick="setFilter('Worker', this)">Workers</button>
+                    <button class="filter-pill" onclick="setFilter('Contractor', this)">Contractors</button>
+                </div>
+            </div>
+
+            <!-- Main Workers Table -->
+            <div class="table-container" style="background: white; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;">
+                <table class="worker-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th width="100">MSP/TP No.</th>
+                            <th>Karigar / Name</th>
+                            <th width="120">Joined Date</th>
+                            <th width="140">Monthly Salary</th>
+                            <th width="160">Work Hours</th>
+                            <th>Job Work Production</th>
+                            <th width="140" style="text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="worker-body">
+                        <tr><td colspan="7" style="text-align: center; padding: 32px; color: #9ca3af;">Loading worker data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Hours Modal -->
+    <div class="modal-overlay" id="hours-modal">
+        <div class="premium-modal" style="max-width: 480px; width: 100%;">
+            <div class="premium-modal-header">
+                <h2>Update Work Hours</h2>
+                <button class="btn-close-modal" onclick="closeModal('hours-modal')"><i data-lucide="x"></i></button>
+            </div>
+            <form id="hours-form" onsubmit="saveWorkHours(event)">
+                <div class="premium-modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+                    <input type="hidden" id="modal-worker-id">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #374151; margin-bottom: 6px;">Karigar Name</label>
+                        <input type="text" id="modal-worker-name" readonly style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; font-weight: 600; color: #475569; outline: none;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #374151; margin-bottom: 6px;">Work Hours / Schedule</label>
+                        <input type="text" id="modal-work-hours" placeholder="e.g. 8 hours/day, 48 hours/week, 200 hrs/month" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                        <span style="font-size: 0.75rem; color: #6b7280; margin-top: 4px; display: block;">Specify the karigar's active working hours or shift schedule.</span>
+                    </div>
+                </div>
+                <div class="premium-modal-footer">
+                    <button type="button" class="btn-liquid btn-outline" onclick="closeModal('hours-modal')">Cancel</button>
+                    <button type="submit" class="btn-liquid btn-primary">Save Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Worker Ledger Modal -->
+    <div class="modal-overlay" id="ledger-modal">
+        <div class="premium-modal" style="max-width: 900px; width: 95%;">
+            <div class="premium-modal-header">
+                <h2 id="ledger-modal-title">Worker Production Ledger</h2>
+                <button class="btn-close-modal" onclick="closeModal('ledger-modal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="premium-modal-body" style="max-height: 70vh; overflow-y: auto; padding: 20px;">
+                <!-- Summary Header inside Ledger -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                    <div>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase;">Total Assigned</span>
+                        <div id="ledger-tot-jobs" style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin-top: 2px;">0</div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase;">Total Issued</span>
+                        <div id="ledger-tot-issued" style="font-size: 1.3rem; font-weight: 800; color: #0284c7; margin-top: 2px;">0.000 g</div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase;">Total Received</span>
+                        <div id="ledger-tot-received" style="font-size: 1.3rem; font-weight: 800; color: #16a34a; margin-top: 2px;">0.000 g</div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase;">Net Holding WIP</span>
+                        <div id="ledger-tot-wip" style="font-size: 1.3rem; font-weight: 800; color: #ca8a04; margin-top: 2px;">0.000 g</div>
+                    </div>
+                </div>
+
+                <div style="border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden;">
+                    <table class="ledger-table">
+                        <thead>
+                            <tr>
+                                <th>Job No.</th>
+                                <th>Date</th>
+                                <th>Process</th>
+                                <th>Item</th>
+                                <th style="text-align: right;">Issue Wt (g)</th>
+                                <th style="text-align: right;">Receive Wt (g)</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Wastage (g)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledger-table-body">
+                            <tr><td colspan="8" style="text-align: center; padding: 24px; color: #9ca3af;">No job work history found.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="premium-modal-footer">
+                <button type="button" class="btn-liquid btn-outline" onclick="closeModal('ledger-modal')">Close Ledger</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=25"></script>
+    <script>
+        let currentFilter = 'All';
+        let staffList = [];
+        let jobWorksList = [];
+
+        // DOM is already parsed (script is at end of body) — init icons immediately
+        if (window.lucide) lucide.createIcons();
+
+        // Load from localStorage immediately so the page isn't blank on first paint
+        loadData();
+        renderWorkers();
+
+        // Reload again when Supabase cloud sync completes (fresher data)
+        document.addEventListener('CloudDataLoaded', () => {
+            loadData();
+            renderWorkers();
+        });
+
+        function loadData() {
+            const rawStaff = JSON.parse(localStorage.getItem('manti_staff_records')) || [];
+            // Filter to include Workers and Contractors, or all if none specified
+            staffList = rawStaff.filter(s => s.type === 'Worker' || s.type === 'Contractor');
+            if (staffList.length === 0 && rawStaff.length > 0) {
+                // Fallback to show all staff if no specific workers exist
+                staffList = rawStaff;
+            }
+
+            jobWorksList = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function setFilter(type, btnEl) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+            btnEl.classList.add('active');
+            renderWorkers();
+        }
+
+        // Helper to calculate job work production metrics for a worker
+        function getWorkerProduction(workerId, workerName) {
+            const jobs = jobWorksList.filter(j => {
+                if (j.doc_status === 'Draft') return false;
+                const w = j.worker || j.workerNameRec || j.workerName || '';
+                return (workerId && w.includes(workerId)) || (workerName && w.includes(workerName));
+            });
+
+            let totalIssued = 0;
+            let totalReceived = 0;
+            let totalWastage = 0;
+            let activeJobsCount = 0;
+
+            jobs.forEach(j => {
+                let issWt = parseFloat(j.issueWt) || 0;
+                let recWt = parseFloat(j.receiveWt) || 0;
+
+                if (j.status === '1. Issue') {
+                    activeJobsCount++;
+                    recWt = 0; // Not received yet
+                } else if (j.status === '2. Receive') {
+                    // Find related issue weight if needed
+                    const relatedIss = jobWorksList.find(x => x.jobnum === j.jobnum && x.process === j.process && x.status === '1. Issue');
+                    if (relatedIss) issWt = parseFloat(relatedIss.issueWt) || issWt;
+                }
+
+                totalIssued += issWt;
+                totalReceived += recWt;
+
+                // Calculate wastage
+                let loss = 0;
+                if (j.status === '2. Receive') {
+                    if (j.receiveLines && j.receiveLines.length > 0) {
+                        j.receiveLines.forEach(l => {
+                            if (l.type === 'Wastage(Loss)' || l.type === 'Wastage') {
+                                loss += parseFloat(l.weight) || 0;
+                            }
+                        });
+                    } else if (j.returnType === 'Wastage(Loss)' || j.returnType === 'Wastage') {
+                        loss += parseFloat(j.receiveWt) || 0;
+                    } else {
+                        let diff = issWt - recWt;
+                        if (diff > 0) loss = diff;
+                    }
+                }
+                totalWastage += loss;
+            });
+
+            const holdingWip = Math.max(0, totalIssued - totalReceived);
+
+            return {
+                jobsCount: jobs.length,
+                activeCount: activeJobsCount,
+                issued: totalIssued,
+                received: totalReceived,
+                wip: holdingWip,
+                wastage: totalWastage,
+                jobList: jobs
+            };
+        }
+
+        function renderWorkers() {
+            const tbody = document.getElementById('worker-body');
+            const searchVal = (document.getElementById('search-worker').value || '').toLowerCase();
+
+            let filtered = staffList.filter(s => {
+                const matchFilter = currentFilter === 'All' || s.type === currentFilter;
+                const matchSearch = (s.id || '').toLowerCase().includes(searchVal) ||
+                                    (s.name || '').toLowerCase().includes(searchVal) ||
+                                    (s.designation || '').toLowerCase().includes(searchVal);
+                return matchFilter && matchSearch;
+            });
+
+            // Calculate KPIs
+            let totWorkers = filtered.length;
+            let totActiveJobs = 0;
+            let totWip = 0;
+            let totWastage = 0;
+
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 48px; color: #9ca3af;">No karigars found matching the criteria.</td></tr>`;
+            } else {
+                filtered.forEach(s => {
+                    const prod = getWorkerProduction(s.id, s.name);
+                    totActiveJobs += prod.activeCount;
+                    totWip += prod.wip;
+                    totWastage += prod.wastage;
+
+                    let color = 'var(--primary)';
+                    if (s.type === 'Worker') color = 'var(--accent)';
+                    if (s.type === 'Contractor') color = '#6366f1';
+
+                    const salaryStr = s.salary ? '₹ ' + parseFloat(s.salary).toLocaleString('en-IN') : '—';
+                    const workHoursStr = s.workHours || '<span style="color:#9ca3af;font-style:italic;">Not Set</span>';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-weight: 700; color: #1f2937;">${s.id || '—'}</td>
+                        <td style="line-height: 1.4;">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <img src="${s.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(s.name || 'Worker') + '&background=e5e7eb&color=6b7280&size=40'}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb;flex-shrink:0;">
+                                <div>
+                                    <strong style="color: var(--primary); font-size: 1rem; display: flex; align-items: center; gap: 6px;">
+                                        ${s.name || 'Unnamed'}
+                                        <span style="background: ${color}20; color: ${color}; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 700;">${s.type || 'Worker'}</span>
+                                    </strong>
+                                    <span style="font-size: 0.8rem; color: #6b7280; display: block; margin-top: 2px;">${s.designation || 'Karigar'}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color: #475569; font-size: 0.9rem;">${s.doj || '—'}</td>
+                        <td style="font-weight: 600; color: var(--success); font-size: 0.95rem;">${salaryStr}</td>
+                        <td style="line-height: 1.4;">
+                            <div style="font-weight: 600; color: #1f2937; font-size: 0.9rem; margin-bottom: 4px;">${workHoursStr}</div>
+                            <button onclick="openHoursModal('${s.id}')" class="edit-schedule-btn">Edit Schedule</button>
+                        </td>
+                        <td style="line-height: 1.4;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                <span class="prod-badge jobs">Jobs: ${prod.jobsCount}</span>
+                                <span class="prod-badge issued">Iss: ${prod.issued.toFixed(3)}g</span>
+                                <span class="prod-badge received">Rcv: ${prod.received.toFixed(3)}g</span>
+                                <span class="prod-badge wip" style="${prod.wip > 0 ? 'background:#fef9c3;color:#ca8a04;border-color:#fde047;' : 'background:#f1f5f9;color:#9ca3af;border-color:#e2e8f0;'}">WIP: ${prod.wip.toFixed(3)}g</span>
+                                ${prod.wastage > 0 ? `<span class="prod-badge loss">Loss: ${prod.wastage.toFixed(3)}g</span>` : ''}
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <button onclick="viewLedger('${s.id}')" class="btn-liquid btn-primary" style="padding: 6px 14px; font-size: 0.8rem;">View Ledger</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Update KPI Displays
+            document.getElementById('kpi-total-workers').textContent = totWorkers;
+            document.getElementById('kpi-active-jobs').textContent = totActiveJobs;
+            document.getElementById('kpi-total-wip').textContent = `${totWip.toFixed(3)} g`;
+            document.getElementById('kpi-total-wastage').textContent = `${totWastage.toFixed(3)} g`;
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function openHoursModal(workerId) {
+            const worker = staffList.find(s => s.id === workerId);
+            if (!worker) return;
+
+            document.getElementById('modal-worker-id').value = worker.id;
+            document.getElementById('modal-worker-name').value = `${worker.id} - ${worker.name || ''}`;
+            document.getElementById('modal-work-hours').value = worker.workHours || '';
+
+            document.getElementById('hours-modal').classList.add('active');
+        }
+
+        function saveWorkHours(e) {
+            e.preventDefault();
+            const workerId = document.getElementById('modal-worker-id').value;
+            const newHours = document.getElementById('modal-work-hours').value.trim();
+
+            const rawStaff = JSON.parse(localStorage.getItem('manti_staff_records')) || [];
+            const match = rawStaff.find(s => s.id === workerId);
+            if (match) {
+                match.workHours = newHours;
+                localStorage.setItem('manti_staff_records', JSON.stringify(rawStaff));
+
+                // Trigger cloud sync if available
+                if (window._performSupabaseSync) {
+                    window._performSupabaseSync('manti_staff_records', rawStaff);
+                }
+
+                loadData();
+                renderWorkers();
+                closeModal('hours-modal');
+            }
+        }
+
+        function viewLedger(workerId) {
+            const worker = staffList.find(s => s.id === workerId);
+            if (!worker) return;
+
+            const prod = getWorkerProduction(worker.id, worker.name);
+
+            document.getElementById('ledger-modal-title').textContent = `Production Ledger: ${worker.name || worker.id}`;
+            document.getElementById('ledger-tot-jobs').textContent = prod.jobsCount;
+            document.getElementById('ledger-tot-issued').textContent = `${prod.issued.toFixed(3)} g`;
+            document.getElementById('ledger-tot-received').textContent = `${prod.received.toFixed(3)} g`;
+            document.getElementById('ledger-tot-wip').textContent = `${prod.wip.toFixed(3)} g`;
+
+            const tbody = document.getElementById('ledger-table-body');
+            tbody.innerHTML = '';
+
+            if (prod.jobList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 32px; color: #9ca3af;">No job work history found for this karigar.</td></tr>`;
+            } else {
+                prod.jobList.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(j => {
+                    let issWt = parseFloat(j.issueWt) || 0;
+                    let recWt = parseFloat(j.receiveWt) || 0;
+                    if (j.status === '1. Issue') recWt = 0;
+                    if (j.status === '2. Receive') {
+                        const relatedIss = jobWorksList.find(x => x.jobnum === j.jobnum && x.process === j.process && x.status === '1. Issue');
+                        if (relatedIss) issWt = parseFloat(relatedIss.issueWt) || issWt;
+                    }
+
+                    // Calculate wastage for this specific job
+                    let loss = 0;
+                    if (j.status === '2. Receive') {
+                        if (j.receiveLines && j.receiveLines.length > 0) {
+                            j.receiveLines.forEach(l => {
+                                if (l.type === 'Wastage(Loss)' || l.type === 'Wastage') {
+                                    loss += parseFloat(l.weight) || 0;
+                                }
+                            });
+                        } else if (j.returnType === 'Wastage(Loss)' || j.returnType === 'Wastage') {
+                            loss += parseFloat(j.receiveWt) || 0;
+                        } else {
+                            let diff = issWt - recWt;
+                            if (diff > 0) loss = diff;
+                        }
+                    }
+
+                    let statusBadge = `background:#fef3c7; color:#d97706;`;
+                    if (j.status === '2. Receive') statusBadge = `background:#dcfce7; color:#16a34a;`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-weight: 700; color: #0f172a;">${j.jobnum || '—'}</td>
+                        <td>${j.date || '—'}</td>
+                        <td style="font-weight: 600; color: #334155;">${j.process || '—'}</td>
+                        <td>${j.item || '—'}</td>
+                        <td style="text-align: right; font-weight: 600; color: #0284c7;">${issWt > 0 ? issWt.toFixed(3) : '—'}</td>
+                        <td style="text-align: right; font-weight: 600; color: #16a34a;">${recWt > 0 ? recWt.toFixed(3) : '—'}</td>
+                        <td><span style="padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; ${statusBadge}">${j.status || 'Issue'}</span></td>
+                        <td style="text-align: right; font-weight: 600; color: ${loss > 0 ? '#ef4444' : '#64748b'};">${loss > 0 ? loss.toFixed(3) : '—'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('ledger-modal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+    </script>
+    <!-- Re-init Lucide icons after full DOM parse (matches purchases.html/staff.html pattern) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

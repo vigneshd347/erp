@@ -38,11 +38,17 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested">Inventory</a>
-                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
-                        <a href="design-book.html" class="nav-item nested ">Design Book</a>
-                                            <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
-</div>
+                        <a href="melting.html" class="nav-item nested">Melting</a>
+                        <a href="jobwork.html" class="nav-item nested">Job Work</a>
+                        <a href="design-book.html" class="nav-item nested">Design Book</a>
+                        <a href="tree-making.html" class="nav-item nested">Tree Making</a>
+                    </div>
                 </div>
+
+                <a href="stock-adjustment.html" class="nav-item">
+                    <div class="icon"><i data-lucide="sliders"></i></div>
+                    <span class="label">Stock Adjustment</span>
+                </a>
 
                 <a href="assets.html" class="nav-item">
                     <div class="icon"><i data-lucide="hard-drive"></i></div>
@@ -133,17 +139,19 @@
             </header>
 
             <!-- Stock Overview Cards -->
-            <div class="admin-grid" style="margin-bottom: 3rem; grid-template-columns: 1fr;">
-                <section class="form-section">
-                    <h3>Stock Value</h3>
-                    <div class="field-group">
-                        <div class="total-row"
-                            style="color: var(--primary); padding: 15px; background: white; border-radius: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9rem; color: var(--text-muted);">Total Inventory Value</span>
-                            <span id="stock-total-value" style="font-weight: 800; color: var(--primary); font-size: 1.5rem;">₹ 0.00</span>
-                        </div>
-                    </div>
-                </section>
+            <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div class="summary-card" style="background: linear-gradient(135deg, #fff9f0 0%, #fff 100%); border: 1px solid #feebc8;">
+                    <span style="color: #92400e; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Gold (Net 99.99 Equiv.)</span>
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #b45309; margin-top: 5px;"><span id="total-gold-equiv">0.000</span> g</div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #f8fafc 0%, #fff 100%); border: 1px solid #e2e8f0;">
+                    <span style="color: #475569; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Silver (Net 99.99 Equiv.)</span>
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-top: 5px;"><span id="total-silver-equiv">0.000</span> g</div>
+                </div>
+                <div class="summary-card">
+                    <span style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Total Inventory Value</span>
+                    <div id="stock-total-value" style="font-size: 1.5rem; font-weight: 800; color: #059669; margin-top: 5px;">₹ 0.00</div>
+                </div>
             </div>
 
             <!-- Inventory Details Table -->
@@ -230,25 +238,79 @@
             // Calculate stock from data
             const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
             const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
-            const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {};
+            const balances = window.calculateMantiBalances ? window.calculateMantiBalances() : {};
 
             // Detailed tracking by metal and sub-type
             const inventoryData = {
                 'Gold': { 
-                    'Metal': { inflow: 0, outflow: 0, balance: balances.gold_22k || 0 }, 
-                    'Pure (24K)': { inflow: 0, outflow: 0, balance: balances.pure_gold || 0 },
-                    'Solder': { inflow: 0, outflow: 0 }, 
+                    '99.99': { inflow: 0, outflow: 0, balance: balances.pure_gold_9999 || 0 }, 
+                    '99.9': { inflow: 0, outflow: 0, balance: balances.pure_gold_999 || 0 }, 
+                    '99.5': { inflow: 0, outflow: 0, balance: balances.pure_gold_995 || 0 }, 
+                    '22K': { inflow: 0, outflow: 0, balance: balances.gold_22k || 0 }, 
+                    'Solder': { inflow: 0, outflow: 0, balance: balances.solder || 0 }, 
                     'Scrap': { inflow: 0, outflow: 0 }, 
                     'Dust': { inflow: 0, outflow: 0 } 
                 },
                 'Silver': { 
-                    'Metal': { inflow: 0, outflow: 0, balance: balances.silver_925 || 0 }, 
-                    'Pure (999)': { inflow: 0, outflow: 0, balance: balances.pure_silver || 0 },
+                    '99.99': { inflow: 0, outflow: 0, balance: balances.pure_silver_9999 || 0 }, 
+                    '99.9': { inflow: 0, outflow: 0, balance: balances.pure_silver_999 || 0 }, 
+                    '99.5': { inflow: 0, outflow: 0, balance: balances.pure_silver_995 || 0 }, 
+                    '925': { inflow: 0, outflow: 0, balance: balances.silver_925 || 0 }, 
                     'Solder': { inflow: 0, outflow: 0 }, 
                     'Scrap': { inflow: 0, outflow: 0 }, 
                     'Dust': { inflow: 0, outflow: 0 } 
+                },
+                'Copper': {
+                    'Metal': { inflow: 0, outflow: 0, balance: balances.copper || 0 }
+                },
+                'Zinc': {
+                    'Metal': { inflow: 0, outflow: 0, balance: balances.zinc || 0 }
+                },
+                'Iridium': {
+                    'Metal': { inflow: 0, outflow: 0, balance: balances.iridium || 0 }
                 }
             };
+
+            function parseMetalAndType(metalKey) {
+                const low = (metalKey || '').toLowerCase();
+                let m = 'Unknown';
+                let t = 'Metal';
+                
+                if (low.includes('gold')) {
+                    m = 'Gold';
+                    if (low.includes('9999') || low.includes('99.99')) t = '99.99';
+                    else if (low.includes('999') || low.includes('99.9')) t = '99.9';
+                    else if (low.includes('995') || low.includes('99.5')) t = '99.5';
+                    else if (low.includes('22k')) t = '22K';
+                    else if (low.includes('solder')) t = 'Solder';
+                    else if (low.includes('scrap')) t = 'Scrap';
+                    else if (low.includes('dust')) t = 'Dust';
+                    else t = '22K';
+                } else if (low.includes('silver')) {
+                    m = 'Silver';
+                    if (low.includes('9999') || low.includes('99.99')) t = '99.99';
+                    else if (low.includes('999') || low.includes('99.9')) t = '99.9';
+                    else if (low.includes('995') || low.includes('99.5')) t = '99.5';
+                    else if (low.includes('925')) t = '925';
+                    else if (low.includes('solder')) t = 'Solder';
+                    else if (low.includes('scrap')) t = 'Scrap';
+                    else if (low.includes('dust')) t = 'Dust';
+                    else t = '925';
+                } else if (low.includes('copper')) {
+                    m = 'Copper';
+                    t = 'Metal';
+                } else if (low.includes('zinc')) {
+                    m = 'Zinc';
+                    t = 'Metal';
+                } else if (low.includes('iridium')) {
+                    m = 'Iridium';
+                    t = 'Metal';
+                } else if (low.includes('solder')) {
+                    m = 'Gold';
+                    t = 'Solder';
+                }
+                return { m, t };
+            }
 
             function initType(metal, type) {
                 const m = metal || 'Unknown';
@@ -258,31 +320,55 @@
             }
 
             // In-Flow: Purchase Orders (Completed only)
+            // We only count POs that ARE NOT already recorded in the stock history to avoid double counting.
             orders.forEach(o => {
                 if (o.type === 'Purchase Order' && o.qty && o.status === 'Completed') {
+                    // Check if this PO is already in history
+                    const isAlreadyInHistory = history.some(h => (h.note && h.note.includes(o.id)) || (h.details && h.details.includes(o.id)));
+                    if (isAlreadyInHistory) return;
+
                     const wt = parseFloat(o.qty) || 0;
-                    const m = o.mainMetalType || 'Unknown';
-                    let t = 'Metal';
-                    const prodDesc = (o.product || '').toLowerCase();
-                    if (prodDesc.includes('solder')) t = 'Solder';
-                    else if (prodDesc.includes('scrap')) t = 'Scrap';
-                    else if (prodDesc.includes('dust')) t = 'Dust';
-                    
-                    initType(m, t);
-                    inventoryData[m][t].inflow += wt;
+                    const m = (o.mainMetalType || '').toLowerCase();
+                    let key = '';
+                    const p = String(o.purity || '').trim().toLowerCase();
+                    const prod = (o.product || '').toLowerCase();
+                    const itemsDesc = (o.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
+
+                    if (m.includes('gold')) {
+                        if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
+                        else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_gold_999';
+                        else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_gold_995';
+                        else if (p === '24k' || prod.includes('24k') || prod.includes('pure') || itemsDesc.includes('24k') || itemsDesc.includes('pure')) key = 'pure_gold_999';
+                        else key = 'gold_22k';
+                    } else if (m.includes('silver')) {
+                        if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_silver_9999';
+                        else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_silver_999';
+                        else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_silver_995';
+                        else if (prod.includes('pure') || itemsDesc.includes('pure')) key = 'pure_silver_999';
+                        else key = 'silver_925';
+                    } else if (m.includes('copper')) key = 'copper';
+                    else if (m.includes('zinc')) key = 'zinc';
+                    else if (m.includes('iridium')) key = 'iridium';
+
+                    if (key) {
+                        const { m: metalGroup, t: typeGroup } = parseMetalAndType(key);
+                        initType(metalGroup, typeGroup);
+                        inventoryData[metalGroup][typeGroup].inflow += wt;
+                    }
                 }
             });
+
 
             // Activity: Invoices & Adjustments from history
             history.forEach(h => {
                 const wt = parseFloat(h.weight) || 0;
                 if (wt !== 0) {
-                    const m = (h.metal || '').toLowerCase().includes('gold') ? 'Gold' : ((h.metal || '').toLowerCase().includes('silver') ? 'Silver' : 'Unknown');
-                    initType(m, 'Metal');
+                    const { m: metalGroup, t: typeGroup } = parseMetalAndType(h.metal);
+                    initType(metalGroup, typeGroup);
                     if (wt < 0) {
-                        inventoryData[m]['Metal'].outflow += Math.abs(wt);
+                        inventoryData[metalGroup][typeGroup].outflow += Math.abs(wt);
                     } else {
-                        inventoryData[m]['Metal'].inflow += wt;
+                        inventoryData[metalGroup][typeGroup].inflow += wt;
                     }
                 }
             });
@@ -292,33 +378,73 @@
             jobRecords.forEach(r => {
                 if (r.doc_status === 'Draft') return;
                 const so = orders.find(o => o.id === r.jobnum);
-                const mainM = so ? (so.mainMetalType || 'Unknown') : 'Unknown';
+                let key = '';
+                if (so) {
+                    const mainM = (so.mainMetalType || '').toLowerCase();
+                    const p = String(so.purity || '').trim().toLowerCase();
+                    const prod = (so.product || '').toLowerCase();
+                    const itemsDesc = (so.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
 
-                if (r.status === '1. Issue') {
-                    if (r.issueLines && r.issueLines.length > 0) {
-                        r.issueLines.forEach(l => {
-                            const subType = l.type || 'Metal';
-                            initType(mainM, subType);
-                            inventoryData[mainM][subType].outflow += (parseFloat(l.weight) || 0);
-                        });
-                    } else if (parseFloat(r.issueWt) > 0) {
-                        initType(mainM, 'Metal');
-                        inventoryData[mainM]['Metal'].outflow += (parseFloat(r.issueWt) || 0);
+                    if (mainM.includes('gold')) {
+                        if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
+                        else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_gold_999';
+                        else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_gold_995';
+                        else if (p === '24k' || prod.includes('24k') || prod.includes('pure') || itemsDesc.includes('24k') || itemsDesc.includes('pure')) key = 'pure_gold_999';
+                        else key = 'gold_22k';
+                    } else if (mainM.includes('silver')) {
+                        if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_silver_9999';
+                        else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_silver_999';
+                        else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_silver_995';
+                        else if (prod.includes('pure') || itemsDesc.includes('pure')) key = 'pure_silver_999';
+                        else key = 'silver_925';
                     }
                 }
+                
+                // Fallback for older records
+                if (!key) {
+                    const workerM = (r.worker || '').toLowerCase();
+                    if (workerM.includes('gold')) key = 'gold_22k';
+                    else if (workerM.includes('silver')) key = 'silver_925';
+                }
 
-                if (r.status === '2. Receive') {
-                    if (r.receiveLines && r.receiveLines.length > 0) {
-                        r.receiveLines.forEach(l => {
-                            const subType = l.type || 'Metal';
-                            if (subType !== 'Wastage' && subType !== 'Wastage(Loss)') {
-                                initType(mainM, subType);
-                                inventoryData[mainM][subType].outflow -= (parseFloat(l.weight) || 0);
-                            }
-                        });
-                    } else if (parseFloat(r.receiveWt) > 0) {
-                        initType(mainM, 'Metal');
-                        inventoryData[mainM]['Metal'].outflow -= (parseFloat(r.receiveWt) || 0);
+                if (key) {
+                    const { m: metalGroup, t: typeGroup } = parseMetalAndType(key);
+                    initType(metalGroup, typeGroup);
+                    
+                    if (r.status === '1. Issue') {
+                        if (r.issueLines && r.issueLines.length > 0) {
+                            r.issueLines.forEach(l => {
+                                const subType = l.type || 'Metal';
+                                let finalType = typeGroup;
+                                if (subType === 'Solder') finalType = 'Solder';
+                                else if (subType === 'Scrap') finalType = 'Scrap';
+                                else if (subType === 'Dust') finalType = 'Dust';
+                                
+                                initType(metalGroup, finalType);
+                                inventoryData[metalGroup][finalType].outflow += (parseFloat(l.weight) || 0);
+                            });
+                        } else if (parseFloat(r.issueWt) > 0) {
+                            inventoryData[metalGroup][typeGroup].outflow += (parseFloat(r.issueWt) || 0);
+                        }
+                    }
+
+                    if (r.status === '2. Receive') {
+                        if (r.receiveLines && r.receiveLines.length > 0) {
+                            r.receiveLines.forEach(l => {
+                                const subType = l.type || 'Metal';
+                                if (subType !== 'Wastage' && subType !== 'Wastage(Loss)') {
+                                    let finalType = typeGroup;
+                                    if (subType === 'Solder') finalType = 'Solder';
+                                    else if (subType === 'Scrap') finalType = 'Scrap';
+                                    else if (subType === 'Dust') finalType = 'Dust';
+                                    
+                                    initType(metalGroup, finalType);
+                                    inventoryData[metalGroup][finalType].outflow -= (parseFloat(l.weight) || 0);
+                                }
+                            });
+                        } else if (parseFloat(r.receiveWt) > 0) {
+                            inventoryData[metalGroup][typeGroup].outflow -= (parseFloat(r.receiveWt) || 0);
+                        }
                     }
                 }
             });
@@ -334,10 +460,13 @@
             let rowCounter = 1;
 
             const getPurity = (metal, type) => {
+                if (type === '99.99' || type === '99.9' || type === '99.5') return type;
+                if (type === '22K') return '22K';
+                if (type === '925') return '925';
                 if (type.includes('24K')) return '24K';
                 if (type.includes('999')) return '999';
-                if (metal === 'Gold') return '22K';
-                if (metal === 'Silver') return '925';
+                if (metal === 'Gold' && type === 'Metal') return '22K';
+                if (metal === 'Silver' && type === 'Metal') return '925';
                 return '-';
             };
 
@@ -348,10 +477,10 @@
 
                     if (available > 0) {
                         if (metal === 'Gold') {
-                            const rate = type.includes('24K') ? (rates.pureGold || 0) : gold22kRate;
+                            const rate = (type === '99.99' || type === '99.9' || type === '99.5') ? (rates.pureGold || 0) : gold22kRate;
                             totalValue += (available * rate);
                         } else if (metal === 'Silver') {
-                            const rate = type.includes('999') ? (rates.pureSilver || 0) : silver925Rate;
+                            const rate = (type === '99.99' || type === '99.9' || type === '99.5') ? (rates.pureSilver || 0) : silver925Rate;
                             totalValue += (available * rate);
                         }
                     }
@@ -379,6 +508,9 @@
             }
 
             document.getElementById('stock-total-value').textContent = '₹ ' + totalValue.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+            
+            if (document.getElementById('total-gold-equiv')) document.getElementById('total-gold-equiv').textContent = (balances.gold_9999_equiv || 0).toFixed(3);
+            if (document.getElementById('total-silver-equiv')) document.getElementById('total-silver-equiv').textContent = (balances.silver_9999_equiv || 0).toFixed(3);
 
             // Restore search from sessionStorage
             const savedSearch = sessionStorage.getItem('last_inventory_search');
@@ -390,7 +522,11 @@
                 }
             }
         });
-        });
+    </script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
     </script>
 </body>
 

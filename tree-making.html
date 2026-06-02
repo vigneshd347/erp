@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=2"></script>
+    <script src="supabase.js?v=27"></script>
 </head>
 
 <body>
@@ -38,9 +38,11 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested">Inventory</a>
-                        <a href="jobwork.html" class="nav-item nested ">Job Work</a>
-                        <a href="design-book.html" class="nav-item nested ">Design Book</a>
-                                            <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
+                        <a href="melting.html" class="nav-item nested">Melting</a>
+                        <a href="stock-adjustment.html" class="nav-item nested">Stock Adjustment</a>
+                        <a href="jobwork.html" class="nav-item nested">Job Work</a>
+                        <a href="design-book.html" class="nav-item nested">Design Book</a>
+                        <a href="tree-making.html" class="nav-item nested active">Tree Making</a>
 </div>
                 </div>
 
@@ -125,7 +127,7 @@
                     </div>
                 </div>
                 <div class="actions">
-                    <button class="btn-liquid btn-primary" onclick="openTreeModal()">
+                    <button class="btn-liquid btn-primary" id="btn-new-tree">
                         <i data-lucide="folder-plus" style="width: 16px; height: 16px; margin-right: 6px;"></i> + New Tree
                     </button>
                 </div>
@@ -161,7 +163,7 @@
                 </div>
                 <h3 style="margin-bottom: 8px; font-size: 1.25rem; font-weight: 700;">No Trees Created</h3>
                 <p style="color: #64748b; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto;">Start combining designs into your first production tree structure.</p>
-                <button class="btn-liquid btn-primary" onclick="openTreeModal()">Create Production Tree</button>
+                <button class="btn-liquid btn-primary">Create Production Tree</button>
             </div>
 
         </main>
@@ -335,14 +337,33 @@
         let currentGalleryIndex = 0;
         let isImageZoomed = false;
         
-        document.addEventListener('CloudDataLoaded', () => {
+        function loadLocalData() {
             trees = JSON.parse(localStorage.getItem('manti_trees')) || [];
             allDesigns = JSON.parse(localStorage.getItem('manti_designs')) || [];
             
-            // Sort trees by latest
-            trees.sort((a,b) => new Date(b.date) - new Date(a.date));
+            // Robust Date Sorting (DD/MM/YYYY HH:MM)
+            trees.sort((a,b) => {
+                const parseDate = (dStr) => {
+                    if (!dStr) return 0;
+                    const [d, t] = dStr.split(' ');
+                    const [day, month, year] = d.split('/').map(Number);
+                    return new Date(year, month - 1, day).getTime();
+                };
+                return parseDate(b.date) - parseDate(a.date);
+            });
             renderTrees();
-        });
+        }
+
+        // Initial load
+        loadLocalData();
+
+        if (window.isCloudDataLoaded) {
+            loadLocalData();
+        } else {
+            document.addEventListener('CloudDataLoaded', () => {
+                loadLocalData();
+            });
+        }
 
         function renderTrees() {
             const tbody = document.getElementById('trees-body');
@@ -466,11 +487,13 @@
             });
             document.getElementById('tree-calc-weight').textContent = totalWt.toFixed(3) + ' g';
             document.getElementById('tree-calc-count').textContent = totalPcs;
+            lucide.createIcons();
         }
 
         function generateUniqueTreeId() {
             const prefix = "TR-";
             let max = 0;
+            if (!Array.isArray(trees)) return prefix + "0001";
             trees.forEach(t => {
                 if (t.treeNo && t.treeNo.startsWith(prefix)) {
                     const num = parseInt(t.treeNo.replace(prefix, ''));
@@ -481,16 +504,43 @@
         }
 
         function openTreeModal() {
+            // Always refresh from ERP_MEMORY so designs are available after CloudDataLoaded
+            const freshDesigns = localStorage.getItem('manti_designs');
+            if (freshDesigns) {
+                try { 
+                    const parsed = JSON.parse(freshDesigns);
+                    allDesigns = Array.isArray(parsed) ? parsed : [];
+                } catch(e) { allDesigns = []; }
+            } else { allDesigns = []; }
+            
+            const freshTrees = localStorage.getItem('manti_trees');
+            if (freshTrees) {
+                try { 
+                    const parsed = JSON.parse(freshTrees);
+                    trees = Array.isArray(parsed) ? parsed : [];
+                } catch(e) { trees = []; }
+            } else { trees = []; }
+
             document.getElementById('tree-form').reset();
             document.getElementById('tree-id').value = '';
             document.getElementById('tree-no').value = generateUniqueTreeId();
-            document.getElementById('tree-date').valueAsDate = new Date();
+            document.getElementById('tree-date').value = new Date().toISOString().split('T')[0];
             
             document.getElementById('tree-designs-container').innerHTML = '';
             addDesignRow();
 
             document.getElementById('tree-modal-overlay').classList.add('active');
         }
+
+        // Attach click listeners explicitly in case liquid-button or DOM mutation breaks the onclick attribute
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnNewTree = document.getElementById('btn-new-tree');
+            if (btnNewTree) btnNewTree.addEventListener('click', openTreeModal);
+            
+            const emptyStateBtn = document.querySelector('#empty-state button');
+            if (emptyStateBtn) emptyStateBtn.addEventListener('click', openTreeModal);
+        });
+
 
         // Visual Design Picker
         function openDesignPickerModal() {
@@ -779,22 +829,18 @@
         }
 
         function deleteTree(id) {
+            // Handled by window.deleteTree override below
             if(confirm('Are you sure you want to delete this Tree?')) {
-                const idx = trees.findIndex(t => t.id === id);
-                if(idx > -1) {
-                    trees.splice(idx, 1);
-                    localStorage.setItem('manti_trees', JSON.stringify(trees));
-                    // Fire save
-                    const originalSync = JSON.parse(localStorage.getItem('manti_trees'));
-                    fetchEverythingFromCloud(); // We just hijack this via proxy if possible, but actually we use a hack:
-                    
-                    // Standard Manti Hack: update memory and let it sync manually, but we know localStorage saves trigger nothing unless we call something.
-                    // Oh wait, in previous code we didn't push to cloud manually on delete. We need to save via script!
-                    // Wait, Manti syncs by listening? No, we just write to localstorage. 
-                    // Let's implement `window.ERP_MEMORY.set` or trigger a cloud call explicitly:
+                const updated = trees.filter(t => t.id !== id);
+                trees = updated;
+                localStorage.setItem('manti_trees', JSON.stringify(trees));
+                if (window.syncKeyToSupabase) {
+                    window.syncKeyToSupabase('manti_trees', trees);
                 }
+                renderTrees();
             }
         }
+
 
         document.getElementById('tree-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -841,6 +887,9 @@
 
             // Sync to standard localStorage so supabase backend catches the event
             localStorage.setItem('manti_trees', JSON.stringify(trees));
+            if (window.syncKeyToSupabase) {
+                window.syncKeyToSupabase('manti_trees', trees);
+            }
             
             closeTreeModal();
             renderTrees();
@@ -861,6 +910,9 @@
                 const updated = trees.filter(t => t.id !== id);
                 trees = updated;
                 localStorage.setItem('manti_trees', JSON.stringify(trees));
+                if (window.syncKeyToSupabase) {
+                    window.syncKeyToSupabase('manti_trees', trees);
+                }
                 renderTrees();
             }
         }
@@ -993,8 +1045,8 @@
                     <script>
                         window.onload = function() {
                             window.print();
-                        }
-                    </script>
+                        };
+                    <\/script>
                 </body>
                 </html>
             `;
@@ -1024,5 +1076,10 @@
         }
     </script>
     <script src="script.js"></script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
+    </script>
 </body>
 </html>

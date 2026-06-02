@@ -164,6 +164,7 @@
                             <th>Asset Name / Desc</th>
                             <th width="120">Category</th>
                             <th width="120">Purchase Value</th>
+                            <th width="120">Deprec. Value</th>
                             <th width="120">Current Value</th>
                             <th width="120">Status</th>
                             <th width="100" style="text-align: center;">Actions</th>
@@ -234,8 +235,8 @@
 
                     <div style="display: flex; gap: 15px;">
                         <div style="flex: 1;">
-                            <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Depreciation Rate (% p.a.)</label>
-                            <input type="number" id="a-depreciation" step="0.1" min="0" max="100" placeholder="0.0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Depreciation Rate</label>
+                            <input type="text" id="a-depreciation" readonly value="Auto (20% SV, 5 Yrs)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background: #f1f5f9; color: #64748b;">
                         </div>
                         <div style="flex: 1;">
                             <label style="font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 5px; display: block;">Paid Through</label>
@@ -277,6 +278,19 @@
     <script src="script.js?v=24"></script>
     <script>
         document.addEventListener('CloudDataLoaded', () => {
+            // --- ONE-TIME CLEANUP: Remove incorrectly created asset records ---
+            // PO-0013 items 3,4 were Consumables but got auto-added as Assets
+            const _cleanupIds = ['AST-0030', 'AST-0031', 'AST-0032', 'AST-0033'];
+            let _assets = JSON.parse(localStorage.getItem('manti_assets') || '[]');
+            const _beforeLen = _assets.length;
+            _assets = _assets.filter(a => !_cleanupIds.includes(a.id));
+            if (_assets.length < _beforeLen) {
+                localStorage.setItem('manti_assets', JSON.stringify(_assets));
+                if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_assets', _assets);
+                console.log('Auto-cleanup: Removed ' + (_beforeLen - _assets.length) + ' incorrect asset records (AST-0030 to AST-0033).');
+            }
+            // --- END CLEANUP ---
+
             const btnAdd = document.getElementById('add-asset');
             const modal = document.getElementById('asset-modal');
             const btnClose = document.getElementById('close-asset-modal');
@@ -303,7 +317,7 @@
                 const select = document.getElementById('a-paidthrough');
                 if (!select) return;
                 
-                select.innerHTML = '<option value="">Not Paid (Credit / Existing)</option>';
+                select.innerHTML = '<option value="">Not Paid (Credit / Existing)</option><option value="ALREADY_PAID">Already Accounted (via PO/Expense)</option>';
                 
                 const accounts = JSON.parse(localStorage.getItem('manti_bank_accounts')) || [];
                 if (accounts.length > 0) {
@@ -345,6 +359,10 @@
 
                 // Sort ascending by date (oldest first)
                 assets.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+                
+                let totalPurchaseValue = 0;
+                let totalDepreciationValue = 0;
+                let totalCurrentValue = 0;
 
                 assets.forEach((a, index) => {
                     let statusColor = 'var(--success)'; // Active
@@ -352,17 +370,43 @@
                     if (a.status === 'Retired') statusColor = 'var(--danger)';
                     if (a.status === 'Pending Approval') statusColor = '#8b5cf6'; // Keep purple for distinction or use var(--primary)
 
-                    // Calculate Current Value (Depreciation)
+                    // Calculate Current Value (Auto Depreciation: (Cost - 20%) / 5 years)
                     let displayCurrentValue = '-';
+                    let displayDepreciationValue = '-';
+                    let curVal = 0;
+                    let purchaseValue = 0;
+                    let depVal = 0;
+                    
+                    if (a.value) {
+                        purchaseValue = parseFloat(a.value);
+                        curVal = purchaseValue;
+                    }
+
                     if (a.value && a.date) {
                         const pDate = new Date(a.date);
                         const today = new Date();
                         const diffDays = Math.max(0, Math.floor((today - pDate) / (1000 * 60 * 60 * 24)));
                         const years = diffDays / 365;
-                        const rate = parseFloat(a.depreciation || 0) / 100;
-                        const curVal = parseFloat(a.value) * Math.pow(1 - rate, years);
+                        
+                        const salvageValue = purchaseValue * 0.20;
+                        const annualDepreciation = (purchaseValue - salvageValue) / 5;
+                        const totalDepreciation = annualDepreciation * years;
+                        
+                        curVal = purchaseValue - totalDepreciation;
+                        if (curVal < salvageValue) curVal = salvageValue;
+                        
+                        depVal = purchaseValue - curVal;
+                        
                         displayCurrentValue = '₹ ' + (curVal > 0 ? curVal.toFixed(2) : '0.00');
+                        displayDepreciationValue = '₹ ' + (depVal > 0 ? depVal.toFixed(2) : '0.00');
+                    } else if (a.value) {
+                        displayCurrentValue = '₹ ' + (curVal > 0 ? curVal.toFixed(2) : '0.00');
+                        displayDepreciationValue = '₹ 0.00';
                     }
+                    
+                    totalPurchaseValue += purchaseValue;
+                    totalDepreciationValue += depVal;
+                    totalCurrentValue += curVal;
 
                     const hasCheckbox = a.status === 'Pending Approval' ? `<input type="checkbox" class="asset-select-cb" value="${a.id}" onchange="updateBulkApproveBtn()">` : '';
                     const cbColDisplay = pendingCount > 0 ? '' : 'display:none;';
@@ -410,6 +454,7 @@
                             </td>
                             <td>${a.category}</td>
                             <td>${a.value ? '₹ ' + parseFloat(a.value).toFixed(2) : '-'}</td>
+                            <td style="color: #ef4444;">${displayDepreciationValue}</td>
                             <td><strong>${displayCurrentValue}</strong></td>
                             <td><span style="color: ${statusColor}; font-weight: 600; background: ${statusColor}15; padding: 4px 10px; border-radius: 20px;">${a.status}</span></td>
                             <td style="text-align: center; vertical-align: middle;">
@@ -439,6 +484,21 @@
                         </tr>
                     `;
                 });
+                
+                if (assets.length > 0) {
+                    const cbColDisplay = pendingCount > 0 ? '' : 'display:none;';
+                    tbody.innerHTML += `
+                        <tr style="font-weight: 700; background-color: #f8fafc; border-top: 2px solid #e2e8f0;">
+                            <td style="${cbColDisplay}"></td>
+                            <td colspan="6" style="text-align: right; padding-right: 15px;">TOTAL CURRENT VALUE:</td>
+                            <td></td>
+                            <td></td>
+                            <td>₹ ${totalCurrentValue.toFixed(2)}</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    `;
+                }
+
                 lucide.createIcons();
                 
                 // Attach edit listeners
@@ -675,7 +735,8 @@
                 const purchaseValue = parseFloat(newData.value) || 0;
                 
                 // If the asset has a cost and was actually paid for through a bank/cash account
-                if (purchaseValue > 0 && newData.paidThrough && newData.paidThrough !== '') {
+                // Skip if it's already accounted for via PO/Expense
+                if (purchaseValue > 0 && newData.paidThrough && newData.paidThrough !== '' && newData.paidThrough !== 'ALREADY_PAID') {
                     journals.push({
                         id: 'JV-' + newData.id,
                         date: newData.date,
@@ -739,6 +800,11 @@
             populateAccounts();
             loadAssets();
         });
+    </script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>

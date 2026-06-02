@@ -243,29 +243,7 @@
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Date <span style="color:#ef4444;">*</span></label>
                                     <input type="date" id="exp-date" class="input-wrapper" style="margin-top:0; width: 100%; height: 46px; padding: 0.75rem 1rem; box-sizing: border-box; border-color: #d1d5db;" required>
                                 </div>
-                                <div>
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Expense Account <span style="color:#ef4444;">*</span></label>
-                                    <select id="exp-account" class="input-wrapper" style="margin-top:0; width: 100%; height: 46px; padding: 0.75rem 1rem; box-sizing: border-box; border-color: #d1d5db;" required>
-                                        <option value="">Select Category...</option>
-                                        <optgroup label="Operating Expenses">
-                                            <option value="Meals and Entertainment">Meals and Entertainment</option>
-                                            <option value="Travel Expense">Travel Expense</option>
-                                            <option value="Fuel">Fuel</option>
-                                            <option value="Office Supplies">Office Supplies</option>
-                                            <option value="Utilities">Utilities</option>
-                                            <option value="Rent Expense">Rent Expense</option>
-                                            <option value="Telephone & Internet">Telephone & Internet</option>
-                                            <option value="Advertising">Advertising</option>
-                                            <option value="Repairs and Maintenance">Repairs and Maintenance</option>
-                                            <option value="Tools">Tools</option>
-                                        </optgroup>
-                                        <optgroup label="Cost of Goods Sold">
-                                            <option value="Cost of Goods Sold">Cost of Goods Sold</option>
-                                            <option value="Materials">Materials</option>
-                                            <option value="Consumables">Consumables</option>
-                                        </optgroup>
-                                    </select>
-                                </div>
+
                                 <div style="display: none;">
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Paid Through</label>
                                     <select id="exp-paid-through" class="input-wrapper" style="margin-top:0; width: 100%; height: 46px; padding: 0.75rem 1rem; box-sizing: border-box; border-color: #d1d5db;">
@@ -288,21 +266,58 @@
                             <thead style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
                                 <tr>
                                     <th style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Description</th>
+                                    <th style="padding: 12px; text-align: left; font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Category</th>
                                     <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Quantity</th>
                                     <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Rate (₹)</th>
-                                    <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">GST %</th>
-                                    <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Total (₹)</th>
-                                    <th style="padding: 12px; width: 40px; text-align: center;"></th>
+                                                                        <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Discount %</th>
+<th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">HSN/SAC</th>
+<th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">GST %</th>
+<th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Total (₹)</th>
+<th style="padding: 12px; width: 40px; text-align: center;"></th>>
                                 </tr>
                             </thead>
                             <tbody id="expense-items-body">
                                 <!-- First row added natively -->
                                 <tr class="item-row" style="border-bottom: 1px solid #e5e7eb;">
                                     <td style="padding: 12px; vertical-align: top;"><input type="text" class="item-desc" placeholder="e.g. Printer Toner" style="width: 100%; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
+                                    <td style="padding: 12px; vertical-align: top;">
+                                        <select class="item-category" style="width: 100%; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required>
+                                            <option value="">Select Category...</option>
+                                            <optgroup label="Operating Expenses">
+                                                <option value="Meals and Entertainment">Meals and Entertainment</option>
+                                                <option value="Travel Expense">Travel Expense</option>
+                                                <option value="Fuel">Fuel</option>
+                                                <option value="Office Supplies">Office Supplies</option>
+                                                <option value="Utilities">Utilities</option>
+                                                <option value="Rent Expense">Rent Expense</option>
+                                                <option value="Telephone & Internet">Telephone & Internet</option>
+                                                <option value="Advertising">Advertising</option>
+                                                <option value="Repairs and Maintenance">Repairs and Maintenance</option>
+                                                <option value="Tools">Tools</option>
+                                            </optgroup>
+                                            <optgroup label="Cost of Goods Sold">
+                                                <option value="Cost of Goods Sold">Cost of Goods Sold</option>
+                                                <option value="Materials">Materials</option>
+                                                <option value="Consumables">Consumables</option>
+                                            </optgroup>
+                                        </select>
+                                    </td>
                                     <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-qty" value="1" min="1" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
-                                    <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-rate" placeholder="0.00" min="0" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
-                                    <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-gst" placeholder="0" min="0" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;"></td>
-                                    <td style="padding: 12px; vertical-align: top;"><input type="text" class="item-total" value="0.00" readonly style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-weight: 600; font-size: 0.9rem;"></td>
+                                    <td style="padding: 12px; vertical-align: top;">
+                                        <input type="number" class="item-rate" placeholder="0.00" min="0" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required>
+                                    </td>
+                                    <td style="padding: 12px; vertical-align: top;">
+                                        <input type="number" class="item-discount" placeholder="0" min="0" max="100" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;">
+                                    </td>
+                                    <td style="padding: 12px; vertical-align: top;">
+                                        <input type="text" class="item-hsn" placeholder="HSN" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;">
+                                    </td>
+                                    <td style="padding: 12px; vertical-align: top;">
+                                        <input type="number" class="item-gst" placeholder="0" min="0" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;">
+                                    </td>
+                                    <td style="padding: 12px; vertical-align: top;">
+                                        <input type="text" class="item-total" value="0.00" readonly style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-weight: 600; font-size: 0.9rem;">
+                                    </td>
                                     <td style="padding: 12px; vertical-align: top; text-align: center;"></td>
                                 </tr>
                             </tbody>
@@ -370,8 +385,8 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Expense#</th>
-                                <th>Expense Account</th>
                                 <th>Name / Business</th>
+                                <th>Category</th>
                                 <th>Reference#</th>
                                 <th style="text-align: right;">Base Amount</th>
                                 <th style="text-align: right;">GST Amt</th>
@@ -513,8 +528,32 @@
             tr.style.cssText = 'border-bottom: 1px solid #e5e7eb;';
             tr.innerHTML = `
                 <td style="padding: 12px; vertical-align: top;"><input type="text" class="item-desc" placeholder="e.g. Printer Toner" style="width: 100%; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
+                <td style="padding: 12px; vertical-align: top;">
+                    <select class="item-category" style="width: 100%; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required>
+                        <option value="">Select Category...</option>
+                        <optgroup label="Operating Expenses">
+                            <option value="Meals and Entertainment">Meals and Entertainment</option>
+                            <option value="Travel Expense">Travel Expense</option>
+                            <option value="Fuel">Fuel</option>
+                            <option value="Office Supplies">Office Supplies</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Rent Expense">Rent Expense</option>
+                            <option value="Telephone & Internet">Telephone & Internet</option>
+                            <option value="Advertising">Advertising</option>
+                            <option value="Repairs and Maintenance">Repairs and Maintenance</option>
+                            <option value="Tools">Tools</option>
+                        </optgroup>
+                        <optgroup label="Cost of Goods Sold">
+                            <option value="Cost of Goods Sold">Cost of Goods Sold</option>
+                            <option value="Materials">Materials</option>
+                            <option value="Consumables">Consumables</option>
+                        </optgroup>
+                    </select>
+                </td>
                 <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-qty" value="1" min="1" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
                 <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-rate" placeholder="0.00" min="0" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
+                <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-discount" placeholder="0" min="0" max="100" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;"></td>
+                <td style="padding: 12px; vertical-align: top;"><input type="text" class="item-hsn" placeholder="HSN" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;"></td>
                 <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-gst" placeholder="0" min="0" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;"></td>
                 <td style="padding: 12px; vertical-align: top;"><input type="text" class="item-total" value="0.00" readonly style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-weight: 600; font-size: 0.9rem;"></td>
                 <td style="padding: 12px; vertical-align: top; text-align: center;"><button type="button" class="btn-remove-sm" onclick="removeExpenseItemRow(this)" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.2rem; font-weight: bold;">&times;</button></td>
@@ -539,15 +578,18 @@
             document.querySelectorAll('.item-row').forEach(row => {
                 const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
                 const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+                const discountPct = parseFloat(row.querySelector('.item-discount').value) || 0;
                 const gstPct = parseFloat(row.querySelector('.item-gst').value) || 0;
                 
                 const subtotal = qty * rate;
-                const gst = subtotal * (gstPct / 100);
-                const rowTotal = subtotal + gst;
+                const discount = subtotal * (discountPct / 100);
+                const net = subtotal - discount;
+                const gst = net * (gstPct / 100);
+                const rowTotal = net + gst;
 
                 row.querySelector('.item-total').value = rowTotal.toFixed(2);
                 
-                totalAmount += subtotal;
+                totalAmount += net;
                 totalGstAmount += gst;
             });
 
@@ -638,14 +680,11 @@
                 const statusHtml = `<span style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; background:${sc.bg};color:${sc.color};"><span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};display:inline-block;"></span>${derivedStatus}</span>`;
 
                 const gstHtml = gstAmt > 0
-                    ? `<span style="color:#16a34a; font-weight:600;">₹ ${gstAmt.toLocaleString('en-IN', {minimumFractionDigits:2})}</span><br><span style="font-size:0.75rem;color:#94a3b8;">${exp.gstPercent || 0}%</span>`
+                    ? `<span style="color:#16a34a; font-weight:600;">₹ ${gstAmt.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`
                     : '-';
 
                 const paidAmt = parseFloat(exp.paidAmount || 0);
                 const dueAmt = total - paidAmt;
-                const paymentHtml = dueAmt <= 0.01 
-                    ? `<span style="background:#d1fae5;color:#059669;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">Payed</span>`
-                    : `<span style="background:#fee2e2;color:#ef4444;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">Pending</span>`;
 
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer';
@@ -655,12 +694,12 @@
                 tr.innerHTML = `
                     <td>${new Date(exp.date).toLocaleDateString('en-GB')}</td>
                     <td style="font-weight: 600; color: var(--danger);">${exp.id}</td>
-                    <td style="font-weight: 500;">${exp.account}</td>
                     <td>${exp.vendor || '-'}</td>
+                    <td style="font-weight: 500;">${exp.account}</td>
                     <td>${exp.reference || '-'}</td>
-                    <td style="text-align: right; color: var(--text-main);">₹ ${parseFloat(exp.amount).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                    <td style="text-align: right; color: var(--text-main);">₹ ${parseFloat(exp.amount).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style="text-align: right;">${gstHtml}</td>
-                    <td style="text-align: right; font-weight: 700; color: ${dueAmt > 0.01 ? 'var(--danger)' : '#059669'};">₹ ${total.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                    <td style="text-align: right; font-weight: 700; color: ${dueAmt > 0.01 ? 'var(--danger)' : '#059669'};">₹ ${total.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style="text-align: center;">${statusHtml}</td>
                     <td style="text-align: center; display: flex; justify-content: center; gap: 8px;">
                         ${attachmentHtml}
@@ -680,7 +719,6 @@
 
         async function saveExpense(status = 'Payment Pending') {
             const date = document.getElementById('exp-date').value;
-            const account = document.getElementById('exp-account').value;
             const vendor = document.getElementById('exp-vendor').value.trim();
             const ref = document.getElementById('exp-ref').value;
             const notes = document.getElementById('exp-notes').value;
@@ -690,21 +728,23 @@
             const amount = totalAmount; // Base amount
             const gstAmount = totalGstAmount;
             
-            // Extract Items Array
             const items = [];
             document.querySelectorAll('.item-row').forEach(row => {
                 const desc = row.querySelector('.item-desc').value.trim();
+                const category = row.querySelector('.item-category').value;
                 const qty = row.querySelector('.item-qty').value;
                 const rate = row.querySelector('.item-rate').value;
+                const disc = row.querySelector('.item-discount').value || '0';
+                const hsn = row.querySelector('.item-hsn').value || '';
                 const gstPct = row.querySelector('.item-gst').value || '0';
                 const rowTotal = row.querySelector('.item-total').value;
-                if (desc) {
-                    items.push({ desc, qty, rate, gst: gstPct, total: rowTotal });
-                }
+                items.push({ desc, category, qty, rate, discount: disc, hsn: hsn, gst: gstPct, total: rowTotal });
             });
+            
+            const account = items.length > 0 ? items[0].category : '';
 
             if (!date || !account || amount <= 0 || items.length === 0) {
-                return alert("Please fill the required fields: Date, Expense Account, and at least one valid Item.");
+                return alert("Please fill the required fields: Date, Expense Account (per item), and at least one valid Item.");
             }
 
             let expId;
@@ -776,7 +816,6 @@
                 date: date,
                 account: account,
                 amount: amount,
-                gstPercent: null, // Legacy field
                 gstAmount: gstAmount > 0 ? gstAmount : null,
                 total: total,
                 paidThrough: "", // Force to Accounts Payable for new expenses
@@ -847,6 +886,9 @@
                     <td style="padding: 12px; vertical-align: top;"><input type="text" class="item-desc" placeholder="e.g. Printer Toner" style="width: 100%; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
                     <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-qty" value="1" min="1" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
                     <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-rate" placeholder="0.00" min="0" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
+                    <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-discount" placeholder="0" min="0" max="100" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;"></td>
+                 <td style="padding: 12px; vertical-align: top;"><input type="text" class="item-hsn" placeholder="HSN/SAC" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;"></td>
+                 <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-gst" placeholder="0" min="0" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;"></td>
                     <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-gst" placeholder="0" min="0" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;"></td>
                     <td style="padding: 12px; vertical-align: top;"><input type="text" class="item-total" value="0.00" readonly style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-weight: 600; font-size: 0.9rem;"></td>
                     <td style="padding: 12px; vertical-align: top; text-align: center;"></td>
@@ -866,7 +908,6 @@
             document.querySelector('button[onclick*="saveExpense"]').textContent = 'Update Expense';
             
             document.getElementById('exp-date').value = exp.date;
-            document.getElementById('exp-account').value = exp.account || '';
             document.getElementById('exp-paid-through').value = exp.paidThrough || '';
             document.getElementById('exp-vendor').value = exp.vendor || '';
             document.getElementById('exp-ref').value = exp.reference || '';
@@ -926,10 +967,27 @@
                     tr.style.cssText = 'border-bottom: 1px solid #e5e7eb;';
                     tr.innerHTML = `
                         <td style="padding: 12px; vertical-align: top;"><input type="text" class="item-desc" placeholder="e.g. Printer Toner" style="width: 100%; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" value="${it.desc}" required></td>
+                        <td style="padding: 12px; vertical-align: top;">
+                            <select class="item-category" style="width: 100%; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required>
+                                <option value="${it.category}">${it.category}</option>
+                            </select>
+                        </td>
                         <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-qty" value="${it.qty}" min="1" step="0.01" oninput="calculateExpenseTotals()" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
-                        <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-rate" placeholder="0.00" min="0" step="0.01" oninput="calculateExpenseTotals()" value="${it.rate}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required></td>
-                        <td style="padding: 12px; vertical-align: top;"><input type="number" class="item-gst" placeholder="0" min="0" step="0.01" oninput="calculateExpenseTotals()" value="${it.gst || 0}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;"></td>
-                        <td style="padding: 12px; vertical-align: top;"><input type="text" class="item-total" value="${it.total || '0.00'}" readonly style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-weight: 600; font-size: 0.9rem;"></td>
+                        <td style="padding: 12px; vertical-align: top;">
+                            <input type="number" class="item-rate" placeholder="0.00" min="0" step="0.01" oninput="calculateExpenseTotals()" value="${it.rate}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" required>
+                        </td>
+                        <td style="padding: 12px; vertical-align: top;">
+                            <input type="number" class="item-discount" placeholder="0" min="0" max="100" step="0.01" oninput="calculateExpenseTotals()" value="${it.discount || 0}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;">
+                        </td>
+                        <td style="padding: 12px; vertical-align: top;">
+                            <input type="text" class="item-hsn" placeholder="HSN/SAC" value="${it.hsn || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;">
+                        </td>
+                        <td style="padding: 12px; vertical-align: top;">
+                            <input type="number" class="item-gst" placeholder="0" min="0" step="0.01" oninput="calculateExpenseTotals()" value="${it.gst || 0}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;">
+                        </td>
+                        <td style="padding: 12px; vertical-align: top;">
+                            <input type="text" class="item-total" value="${it.total || '0.00'}" readonly style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-weight: 600; font-size: 0.9rem;">
+                        </td>
                         <td style="padding: 12px; vertical-align: top; text-align: center;"><button type="button" class="btn-remove-sm" onclick="removeExpenseItemRow(this)" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.2rem; font-weight: bold;">&times;</button></td>
                     `;
                     tbody.appendChild(tr);
@@ -1045,6 +1103,11 @@
                 previewContainer.style.display = 'flex';
             }
         });
+    </script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>

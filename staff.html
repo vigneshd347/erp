@@ -92,6 +92,10 @@
                     <div class="icon"><i data-lucide="users"></i></div>
                     <span class="label">Staff</span>
                 </a>
+                <a href="worker-data-sheet.html" class="nav-item">
+                    <div class="icon"><i data-lucide="user-check"></i></div>
+                    <span class="label">Worker Data Sheet</span>
+                </a>
                 <a href="reports.html" class="nav-item ">
                     <div class="icon"><i data-lucide="bar-chart-3"></i></div>
                     <span class="label">Reports</span>
@@ -242,6 +246,24 @@
                                 <input type="number" step="0.01" id="st-salary" placeholder="Salary (₹)" required
                                     style="margin-bottom: 0.75rem;">
                             </div>
+
+                            <!-- Adda / Production Salary Section (Contractor & Worker only) -->
+                            <div id="adda-salary-section" style="display:none; margin-top: 1rem;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                                    <span style="font-size:0.85rem; font-weight:700; color:#4f46e5;">Production / Adda Salary (per process)</span>
+                                    <button type="button" id="btn-add-adda-row" onclick="addAddaRow()"
+                                        style="font-size:0.78rem; background:#eef2ff; color:#4f46e5; border:1px solid #c7d2fe; padding:4px 12px; border-radius:6px; font-weight:600; cursor:pointer;">
+                                        + Add Process Row
+                                    </button>
+                                </div>
+                                <div id="adda-rows-container" style="display:flex; flex-direction:column; gap:8px;">
+                                    <!-- Rows injected by JS -->
+                                </div>
+                                <div style="margin-top:10px; padding:10px; background:#f0fdf4; border-radius:8px; border:1px solid #bbf7d0; display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:0.85rem; font-weight:600; color:#16a34a;">Total Adda Salary (Rounded)</span>
+                                    <span id="adda-total-display" style="font-size:1.3rem; font-weight:800; color:#15803d;">₹ 0</span>
+                                </div>
+                            </div>
                             <div id="bank-fields">
                                 <div class="field-row">
                                     <input type="text" id="st-bank-name" placeholder="Bank Name" required>
@@ -251,11 +273,116 @@
                                     <input type="text" id="st-bank-ifsc" placeholder="IFSC" required>
                                     <input type="text" id="st-bank-upi" placeholder="UPI ID">
                                 </div>
-                                <input type="text" id="st-bank-branch" placeholder="Branch Name" required
-                                    style="margin-top: 0.75rem;">
+                                <input type="text" id="st-bank-branch" placeholder="Branch Name" require                                    style="margin-top: 0.75rem;">
                             </div>
                         </div>
                     </section>
+                </div>
+
+                <!-- Document Uploads & Remarks Section -->
+                <h3 style="color: var(--primary); margin-top: 2rem; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--accent); font-size: 0.875rem; font-weight: 700; text-transform: uppercase;">Documents & Remarks</h3>
+                <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-bottom: 2rem;">
+                    <!-- Aadhaar Upload -->
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; border: 1px solid var(--border); display: flex; gap: 1.5rem; align-items: center;">
+                        <div style="position: relative; flex-shrink: 0;">
+                            <img id="st-aadhar-preview"
+                                src="https://ui-avatars.com/api/?name=Aadhaar&background=e5e7eb&color=9ca3af&size=100"
+                                alt="Aadhaar Photo"
+                                style="width: 100px; height: 75px; border-radius: 8px; object-fit: cover; border: 2px solid #cbd5e1; cursor: pointer;"
+                                onclick="document.getElementById('st-aadhar-input').click()">
+                            <div onclick="document.getElementById('st-aadhar-input').click()"
+                                style="position: absolute; bottom: -8px; right: -8px; background: var(--primary); color: white; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <i data-lucide="upload" style="width:14px;height:14px;"></i>
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <p style="font-weight: 600; color: #1f2937; margin: 0 0 4px; font-size: 0.95rem;">Aadhaar Card</p>
+                            <p style="font-size: 0.8rem; color: #6b7280; margin: 0 0 12px;">Upload Aadhaar document copy (JPG, PNG)</p>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" onclick="document.getElementById('st-aadhar-input').click()"
+                                    style="padding: 6px 14px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer; font-weight: 500; font-family: inherit; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                    Choose File
+                                </button>
+                                <button type="button" id="st-aadhar-remove" onclick="removeDocument('aadhar')"
+                                    style="padding: 6px 12px; font-size: 0.8rem; border: 1px solid #fee2e2; border-radius: 6px; background: #fef2f2; cursor: pointer; font-weight: 500; font-family: inherit; color: #ef4444; display: none;">
+                                    Remove
+                                </button>
+                            </div>
+                            <input type="file" id="st-aadhar-input" accept="image/*" style="display:none;"
+                                onchange="handleDocUpload(this, 'aadhar')">
+                            <input type="hidden" id="st-aadhar-data">
+                        </div>
+                    </div>
+
+                    <!-- PAN Upload -->
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; border: 1px solid var(--border); display: flex; gap: 1.5rem; align-items: center;">
+                        <div style="position: relative; flex-shrink: 0;">
+                            <img id="st-pan-preview"
+                                src="https://ui-avatars.com/api/?name=PAN&background=e5e7eb&color=9ca3af&size=100"
+                                alt="PAN Photo"
+                                style="width: 100px; height: 75px; border-radius: 8px; object-fit: cover; border: 2px solid #cbd5e1; cursor: pointer;"
+                                onclick="document.getElementById('st-pan-input').click()">
+                            <div onclick="document.getElementById('st-pan-input').click()"
+                                style="position: absolute; bottom: -8px; right: -8px; background: var(--primary); color: white; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <i data-lucide="upload" style="width:14px;height:14px;"></i>
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <p style="font-weight: 600; color: #1f2937; margin: 0 0 4px; font-size: 0.95rem;">PAN Card</p>
+                            <p style="font-size: 0.8rem; color: #6b7280; margin: 0 0 12px;">Upload PAN document copy (JPG, PNG)</p>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" onclick="document.getElementById('st-pan-input').click()"
+                                    style="padding: 6px 14px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer; font-weight: 500; font-family: inherit; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                    Choose File
+                                </button>
+                                <button type="button" id="st-pan-remove" onclick="removeDocument('pan')"
+                                    style="padding: 6px 12px; font-size: 0.8rem; border: 1px solid #fee2e2; border-radius: 6px; background: #fef2f2; cursor: pointer; font-weight: 500; font-family: inherit; color: #ef4444; display: none;">
+                                    Remove
+                                </button>
+                            </div>
+                            <input type="file" id="st-pan-input" accept="image/*" style="display:none;"
+                                onchange="handleDocUpload(this, 'pan')">
+                            <input type="hidden" id="st-pan-data">
+                        </div>
+                    </div>
+
+                    <!-- Bank Passbook Upload -->
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; border: 1px solid var(--border); display: flex; gap: 1.5rem; align-items: center;">
+                        <div style="position: relative; flex-shrink: 0;">
+                            <img id="st-passbook-preview"
+                                src="https://ui-avatars.com/api/?name=Bank+Passbook&background=e5e7eb&color=9ca3af&size=100"
+                                alt="Passbook Photo"
+                                style="width: 100px; height: 75px; border-radius: 8px; object-fit: cover; border: 2px solid #cbd5e1; cursor: pointer;"
+                                onclick="document.getElementById('st-passbook-input').click()">
+                            <div onclick="document.getElementById('st-passbook-input').click()"
+                                style="position: absolute; bottom: -8px; right: -8px; background: var(--primary); color: white; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <i data-lucide="upload" style="width:14px;height:14px;"></i>
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <p style="font-weight: 600; color: #1f2937; margin: 0 0 4px; font-size: 0.95rem;">Bank Passbook / Cheque</p>
+                            <p style="font-size: 0.8rem; color: #6b7280; margin: 0 0 12px;">Upload front page of passbook or cheque</p>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" onclick="document.getElementById('st-passbook-input').click()"
+                                    style="padding: 6px 14px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer; font-weight: 500; font-family: inherit; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                    Choose File
+                                </button>
+                                <button type="button" id="st-passbook-remove" onclick="removeDocument('passbook')"
+                                    style="padding: 6px 12px; font-size: 0.8rem; border: 1px solid #fee2e2; border-radius: 6px; background: #fef2f2; cursor: pointer; font-weight: 500; font-family: inherit; color: #ef4444; display: none;">
+                                    Remove
+                                </button>
+                            </div>
+                            <input type="file" id="st-passbook-input" accept="image/*" style="display:none;"
+                                onchange="handleDocUpload(this, 'passbook')">
+                            <input type="hidden" id="st-passbook-data">
+                        </div>
+                    </div>
+
+                    <!-- Remarks Box -->
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; border: 1px solid var(--border); display: flex; flex-direction: column;">
+                        <p style="font-weight: 600; color: #1f2937; margin: 0 0 8px; font-size: 0.95rem;">Remarks / Notes</p>
+                        <textarea id="st-remarks" placeholder="Enter any staff remarks, special terms, or additional notes here..." rows="3" style="flex: 1; resize: none; background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-size: 0.875rem; font-family: inherit; width: 100%;"></textarea>
+                    </div>
                 </div>
 
                 <div
@@ -282,6 +409,7 @@
                             <th>Name & Designation</th>
                             <th>Contact</th>
                             <th>Salary</th>
+                            <th>Docs & Remarks</th>
                             <th width="80">Action</th>
                         </tr>
                     </thead>
@@ -304,11 +432,45 @@
             const form = document.getElementById('staff-form');
             const tbody = document.getElementById('staff-body');
             const toggleBtn = document.getElementById('add-staff-btn');
+            const cancelBtn = document.getElementById('cancel-staff-btn');
 
             let records = JSON.parse(localStorage.getItem('manti_staff_records')) || [];
             let editIndex = -1;
 
             document.getElementById('st-doj').valueAsDate = new Date();
+
+            window.handleDocUpload = async function(input, type) {
+                let file = input.files[0];
+                if (file) {
+                    if (window.openCropper) {
+                        try {
+                            file = await window.openCropper(file, NaN); // Freeform for documents
+                            const dt = new DataTransfer();
+                            dt.items.add(file);
+                            input.files = dt.files;
+                        } catch(e) { input.value = ''; return; }
+                    }
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        document.getElementById(`st-${type}-preview`).src = e.target.result;
+                        document.getElementById(`st-${type}-data`).value = e.target.result;
+                        document.getElementById(`st-${type}-remove`).style.display = 'inline-block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            window.removeDocument = function(type) {
+                const inputEl = document.getElementById(`st-${type}-input`);
+                const dataEl = document.getElementById(`st-${type}-data`);
+                const previewEl = document.getElementById(`st-${type}-preview`);
+                const removeEl = document.getElementById(`st-${type}-remove`);
+                if (inputEl) inputEl.value = '';
+                if (dataEl) dataEl.value = '';
+                let defaultName = type === 'aadhar' ? 'Aadhaar' : type === 'pan' ? 'PAN' : 'Bank+Passbook';
+                if (previewEl) previewEl.src = `https://ui-avatars.com/api/?name=${defaultName}&background=e5e7eb&color=9ca3af&size=100`;
+                if (removeEl) removeEl.style.display = 'none';
+            };
 
             function generateEmpId(selectedType) {
                 let type = selectedType || document.getElementById('st-type').value;
@@ -332,6 +494,7 @@
                 const payroll = document.getElementById('payroll-fields');
                 const salary = document.getElementById('st-salary');
                 const bankInputs = document.querySelectorAll('#bank-fields input');
+                const addaSection = document.getElementById('adda-salary-section');
 
                 if (type === 'Contractor') {
                     payroll.style.display = 'none';
@@ -339,13 +502,220 @@
                     bankInputs.forEach(input => {
                         if (input.id !== 'st-bank-upi') input.required = false;
                     });
+                    addaSection.style.display = 'block';
+                } else if (type === 'Worker') {
+                    payroll.style.display = 'block';
+                    salary.required = true;
+                    bankInputs.forEach(input => {
+                        if (input.id !== 'st-bank-upi') input.required = true;
+                    });
+                    addaSection.style.display = 'block';
                 } else {
                     payroll.style.display = 'block';
                     salary.required = true;
                     bankInputs.forEach(input => {
                         if (input.id !== 'st-bank-upi') input.required = true;
                     });
+                    addaSection.style.display = 'none';
                 }
+            }
+
+            // ── Adda / Production Salary helpers ──────────────────────────────
+
+            // Key: manti_adda_rates  →  { [workerIdOrName]: { [process]: { rate: N, history: [{rate,date}] } } }
+            function getAddaRates() {
+                return JSON.parse(localStorage.getItem('manti_adda_rates') || '{}');
+            }
+            function saveAddaRates(obj) {
+                localStorage.setItem('manti_adda_rates', JSON.stringify(obj));
+                if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_adda_rates', obj);
+            }
+
+            // Returns { [process]: { finalPcsWt, jobNums } } for a worker name
+            function getWorkerProduction(workerName) {
+                const jwRecords = JSON.parse(localStorage.getItem('manti_jobwork_records') || '[]');
+                const production = {};
+                jwRecords.forEach(r => {
+                    if (!r.worker || r.status !== '2. Receive') return;
+                    // Match worker name (stored as "ID - Name" or just name)
+                    const wMatch = r.worker.toLowerCase().includes(workerName.toLowerCase()) ||
+                                   workerName.toLowerCase().includes(r.worker.toLowerCase());
+                    if (!wMatch) return;
+
+                    const process = r.process || 'Unknown';
+                    if (!production[process]) production[process] = { finalPcsWt: 0, jobNums: [] };
+
+                    // Sum Final Pcs weight from receiveLines
+                    if (r.receiveLines && r.receiveLines.length > 0) {
+                        r.receiveLines.forEach(l => {
+                            if (l.type === 'Final Pcs') production[process].finalPcsWt += parseFloat(l.weight) || 0;
+                        });
+                    } else if (r.returnType === 'Final Pcs') {
+                        production[process].finalPcsWt += parseFloat(r.receiveWt) || 0;
+                    }
+
+                    if (r.jobnum && !production[process].jobNums.includes(r.jobnum)) {
+                        production[process].jobNums.push(r.jobnum);
+                    }
+                });
+                return production;
+            }
+
+            function calcAddaTotal() {
+                let total = 0;
+                document.querySelectorAll('#adda-rows-container .adda-row').forEach(row => {
+                    const rate = parseFloat(row.querySelector('.adda-rate-inp').value) || 0;
+                    const wt   = parseFloat(row.querySelector('.adda-wt-display').dataset.wt) || 0;
+                    total += Math.round(wt * rate);
+                });
+                document.getElementById('adda-total-display').textContent = '₹ ' + total.toLocaleString();
+            }
+
+            function rateChanged(inp, process) {
+                const newRate = parseFloat(inp.value) || 0;
+                // Store pending change; will be committed on form save
+                inp.dataset.pendingRate = newRate;
+                inp.style.borderColor = '#f59e0b';
+                inp.title = 'Unsaved rate change – will be committed on Save';
+                calcAddaTotal();
+            }
+
+            function buildAddaRow(process, wt, jobNums, rate, historyArr) {
+                const history = historyArr || [];
+                const historyHtml = history.length
+                    ? history.slice(-3).reverse().map(h =>
+                        `<span style="font-size:0.7rem;color:#6b7280;">₹${h.rate} (${h.date})</span>`
+                    ).join(' → ')
+                    : '<span style="font-size:0.7rem;color:#9ca3af;">No history</span>';
+
+                const row = document.createElement('div');
+                row.className = 'adda-row';
+                row.dataset.process = process;
+                row.style.cssText = 'background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; display:grid; grid-template-columns: 1fr 90px 90px 90px auto; gap:8px; align-items:center;';
+                row.innerHTML = `
+                    <div>
+                        <div style="font-weight:700; font-size:0.85rem; color:#1e293b;">${process}</div>
+                        <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Jobs: ${jobNums.length ? jobNums.join(', ') : '-'}</div>
+                        <div style="margin-top:3px;">${historyHtml}</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.7rem;color:#64748b;font-weight:600;">Final Pcs (g)</div>
+                        <div class="adda-wt-display" data-wt="${wt.toFixed(3)}" style="font-weight:700;color:var(--primary);font-size:1rem;">${wt.toFixed(3)}</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.7rem;color:#64748b;font-weight:600;">Rate (₹/g)</div>
+                        <input type="number" step="0.01" min="0" class="adda-rate-inp"
+                            value="${rate}"
+                            oninput="rateChanged(this, '${process.replace(/'/g, "\\'")}')"
+                            style="width:80px;padding:4px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.9rem;font-weight:700;text-align:center;outline:none;">
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.7rem;color:#64748b;font-weight:600;">Salary (₹)</div>
+                        <div class="adda-salary-display" style="font-weight:800;font-size:1rem;color:#16a34a;">₹${Math.round(wt * rate).toLocaleString()}</div>
+                    </div>
+                    <button type="button" title="Remove row" onclick="this.parentElement.remove(); calcAddaTotal();"
+                        style="background:#fee2e2;color:#ef4444;border:none;width:28px;height:28px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:1rem;flex-shrink:0;">×</button>
+                `;
+                // Live-update the salary display when rate changes
+                row.querySelector('.adda-rate-inp').addEventListener('input', function() {
+                    const r = parseFloat(this.value) || 0;
+                    const w = parseFloat(row.querySelector('.adda-wt-display').dataset.wt) || 0;
+                    row.querySelector('.adda-salary-display').textContent = '₹' + Math.round(w * r).toLocaleString();
+                    calcAddaTotal();
+                });
+                return row;
+            }
+
+            // Standard job-work processes (always available as options)
+            const JW_PROCESSES = [
+                '1. Casting', '2. Filling', '3. Buffing',
+                '4. Final Process', '5. Despatch'
+            ];
+
+            window.addAddaRow = function() {
+                const container  = document.getElementById('adda-rows-container');
+                const workerName = document.getElementById('st-name').value.trim();
+
+                // Collect production data to show Final Pcs weight per process
+                const production = getWorkerProduction(workerName);
+
+                // Build unique process list: standard + any found in job work
+                const processSet = new Set([...JW_PROCESSES, ...Object.keys(production)]);
+
+                // Processes already shown in existing rows (to avoid duplicates)
+                const usedProcesses = new Set(
+                    Array.from(document.querySelectorAll('#adda-rows-container .adda-row'))
+                        .map(r => r.dataset.process)
+                );
+
+                // Build option list
+                let optionsHtml = '<option value="" disabled selected>-- Select Process --</option>';
+                processSet.forEach(proc => {
+                    const pData  = production[proc];
+                    const wt     = pData ? pData.finalPcsWt.toFixed(3) : '0.000';
+                    const used   = usedProcesses.has(proc) ? ' disabled' : '';
+                    const label  = pData && pData.finalPcsWt > 0
+                        ? `${proc}  [Final Pcs: ${wt}g]`
+                        : proc;
+                    optionsHtml += `<option value="${proc}"${used}>${label}</option>`;
+                });
+
+                // Picker row – replaced by a real row once a process is chosen
+                const pickerRow = document.createElement('div');
+                pickerRow.className = 'adda-row adda-picker-row';
+                pickerRow.style.cssText = 'background:#f0f4ff; border:2px dashed #a5b4fc; border-radius:8px; padding:10px 12px; display:flex; gap:10px; align-items:center;';
+                pickerRow.innerHTML = `
+                    <select class="adda-proc-select" style="flex:1; padding:6px 10px; border:1px solid #a5b4fc; border-radius:6px; font-size:0.9rem; font-weight:600; color:#1e293b; outline:none; cursor:pointer;">
+                        ${optionsHtml}
+                    </select>
+                    <button type="button" title="Cancel"
+                        style="background:#fee2e2;color:#ef4444;border:none;width:28px;height:28px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:1rem;"
+                        onclick="this.parentElement.remove();">×</button>
+                `;
+
+                // When a process is selected from the dropdown, replace picker with real row
+                pickerRow.querySelector('.adda-proc-select').addEventListener('change', function() {
+                    const selectedProc = this.value;
+                    const pData  = production[selectedProc];
+                    const wt     = pData ? pData.finalPcsWt : 0;
+                    const jobs   = pData ? pData.jobNums   : [];
+
+                    // Get saved rate/history if any
+                    const allRates   = getAddaRates();
+                    const workerRates = allRates[workerName] || {};
+                    const saved      = workerRates[selectedProc] || { rate: 0, history: [] };
+
+                    const realRow = buildAddaRow(selectedProc, wt, jobs, saved.rate, saved.history);
+                    realRow.dataset.process = selectedProc;
+                    container.replaceChild(realRow, pickerRow);
+                    calcAddaTotal();
+                });
+
+                container.appendChild(pickerRow);
+            };
+
+            function loadAddaRowsForWorker(workerName, existingRates) {
+                const container = document.getElementById('adda-rows-container');
+                container.innerHTML = '';
+                const production = getWorkerProduction(workerName);
+                const allRates = getAddaRates();
+                const workerRates = (allRates[workerName] || existingRates || {});
+
+                // Rows from job work data
+                Object.entries(production).forEach(([proc, data]) => {
+                    const saved = workerRates[proc] || {};
+                    const row = buildAddaRow(proc, data.finalPcsWt, data.jobNums, saved.rate || 0, saved.history || []);
+                    container.appendChild(row);
+                });
+
+                // Also add any manually saved processes that no longer have job work entries
+                Object.entries(workerRates).forEach(([proc, saved]) => {
+                    if (production[proc]) return; // already added
+                    const row = buildAddaRow(proc, 0, [], saved.rate || 0, saved.history || []);
+                    container.appendChild(row);
+                });
+
+                calcAddaTotal();
             }
 
             document.getElementById('st-type').addEventListener('change', () => {
@@ -353,12 +723,21 @@
                     document.getElementById('st-id').value = generateEmpId();
                 }
                 updateFieldVisibility();
+                // Refresh adda rows if name is known
+                const type = document.getElementById('st-type').value;
+                const name = document.getElementById('st-name').value.trim();
+                if ((type === 'Worker' || type === 'Contractor') && name) {
+                    loadAddaRowsForWorker(name, {});
+                } else if (type !== 'Worker' && type !== 'Contractor') {
+                    document.getElementById('adda-rows-container').innerHTML = '';
+                    document.getElementById('adda-total-display').textContent = '\u20b9 0';
+                }
             });
 
             function renderTable() {
                 tbody.innerHTML = '';
                 if (records.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No staff records found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">No staff records found.</td></tr>';
                     return;
                 }
 
@@ -366,6 +745,14 @@
                     let color = 'var(--primary)'; // Staff
                     if (rec.type === 'Worker') color = 'var(--accent)';
                     if (rec.type === 'Contractor') color = '#6366f1'; // Indigo for contractor
+
+                    let docsBadges = [];
+                    if (rec.aadharDoc) docsBadges.push('<span style="background: #e0e7ff; color: #4f46e5; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-right: 4px; display: inline-block;">Aadhaar</span>');
+                    if (rec.panDoc) docsBadges.push('<span style="background: #e0e7ff; color: #4f46e5; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-right: 4px; display: inline-block;">PAN</span>');
+                    if (rec.passbookDoc) docsBadges.push('<span style="background: #e0e7ff; color: #4f46e5; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-right: 4px; display: inline-block;">Bank</span>');
+                    
+                    let docsHtml = docsBadges.length > 0 ? docsBadges.join('') : '<span style="color: #9ca3af; font-size: 0.75rem;">No Docs</span>';
+                    let remarksHtml = rec.remarks ? `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 4px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${rec.remarks.replace(/"/g, '&quot;')}"><i data-lucide="file-text" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:2px;"></i>${rec.remarks}</div>` : '';
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -381,7 +768,16 @@
                             <span style="color: #6b7280; font-size: 0.85rem;">Ph:</span> ${rec.mobile}<br>
                             <span style="font-size: 0.8rem; color: #6b7280;">${rec.guardian} (${rec.guardianMobile || '-'})</span>
                         </td>
-                        <td style="font-weight: 600; color: var(--success);">₹ ${parseFloat(rec.salary || 0).toLocaleString()}</td>
+                        <td style="font-weight: 600; color: var(--success);">
+                            ${(rec.type === 'Worker' || rec.type === 'Contractor') && rec.addaTotalSalary
+                                ? `<div style="font-size:0.78rem;color:#6b7280;">Fixed: ₹${parseFloat(rec.salary||0).toLocaleString()}</div><div style="color:#16a34a;">Adda: ₹${rec.addaTotalSalary.toLocaleString()}</div>`
+                                : `₹ ${parseFloat(rec.salary || 0).toLocaleString()}`
+                            }
+                        </td>
+                        <td style="line-height: 1.4; text-align: left;">
+                            <div>${docsHtml}</div>
+                            ${remarksHtml}
+                        </td>
                         <td style="display: flex; gap: 10px; align-items: center; justify-content: center; height: 100%;">
                             <button onclick="editRecord(${index})" class="btn-edit" title="Edit">
                                 <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
@@ -393,6 +789,7 @@
                     `;
                     tbody.appendChild(tr);
                 });
+                if (window.lucide) lucide.createIcons();
             }
 
             window.editRecord = function (index) {
@@ -428,7 +825,37 @@
                 preview.src = photoData || `https://ui-avatars.com/api/?name=${encodeURIComponent(rec.name)}&background=e5e7eb&color=9ca3af&size=100`;
                 document.getElementById('staff-photo-data').value = photoData;
 
+                // Load Aadhaar Doc
+                const aadharData = rec.aadharDoc || '';
+                const aadharPreview = document.getElementById('st-aadhar-preview');
+                aadharPreview.src = aadharData || 'https://ui-avatars.com/api/?name=Aadhaar&background=e5e7eb&color=9ca3af&size=100';
+                document.getElementById('st-aadhar-data').value = aadharData;
+                document.getElementById('st-aadhar-remove').style.display = aadharData ? 'inline-block' : 'none';
+
+                // Load PAN Doc
+                const panData = rec.panDoc || '';
+                const panPreview = document.getElementById('st-pan-preview');
+                panPreview.src = panData || 'https://ui-avatars.com/api/?name=PAN&background=e5e7eb&color=9ca3af&size=100';
+                document.getElementById('st-pan-data').value = panData;
+                document.getElementById('st-pan-remove').style.display = panData ? 'inline-block' : 'none';
+
+                // Load Passbook Doc
+                const passbookData = rec.passbookDoc || '';
+                const passbookPreview = document.getElementById('st-passbook-preview');
+                passbookPreview.src = passbookData || 'https://ui-avatars.com/api/?name=Bank+Passbook&background=e5e7eb&color=9ca3af&size=100';
+                document.getElementById('st-passbook-data').value = passbookData;
+                document.getElementById('st-passbook-remove').style.display = passbookData ? 'inline-block' : 'none';
+
+                // Load Remarks
+                document.getElementById('st-remarks').value = rec.remarks || '';
+
                 updateFieldVisibility();
+
+                // Load adda/production salary rows for Worker & Contractor
+                if (rec.type === 'Worker' || rec.type === 'Contractor') {
+                    loadAddaRowsForWorker(rec.name, rec.addaRates || {});
+                }
+
                 form.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
@@ -449,9 +876,16 @@
                 document.getElementById('st-doj').valueAsDate = new Date();
                 document.getElementById('staff-photo-preview').src = 'https://ui-avatars.com/api/?name=Photo&background=e5e7eb&color=9ca3af&size=100';
                 document.getElementById('staff-photo-data').value = '';
+                window.removeDocument('aadhar');
+                window.removeDocument('pan');
+                window.removeDocument('passbook');
+                document.getElementById('st-remarks').value = '';
+                document.getElementById('adda-rows-container').innerHTML = '';
+                document.getElementById('adda-total-display').textContent = '₹ 0';
                 updateFieldVisibility();
                 form.style.display = form.style.display === 'none' ? 'block' : 'none';
             });
+
 
             cancelBtn.addEventListener('click', () => {
                 form.style.display = 'none';
@@ -460,11 +894,53 @@
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
 
+                const workerName = document.getElementById('st-name').value.trim();
+                const workerType = document.getElementById('st-type').value;
+
+                // ── Collect and commit adda rates ─────────────────────────────
+                const addaRatesSnapshot = {};
+                if (workerType === 'Worker' || workerType === 'Contractor') {
+                    const allRates = getAddaRates();
+                    if (!allRates[workerName]) allRates[workerName] = {};
+
+                    document.querySelectorAll('#adda-rows-container .adda-row').forEach(row => {
+                        const proc   = row.dataset.process;
+                        const inp    = row.querySelector('.adda-rate-inp');
+                        const newRate = parseFloat(inp.value) || 0;
+                        const existing = allRates[workerName][proc] || { rate: 0, history: [] };
+
+                        // Record history if rate changed
+                        if (existing.rate !== newRate) {
+                            existing.history.push({
+                                rate: existing.rate,
+                                date: new Date().toLocaleDateString('en-IN')
+                            });
+                        }
+                        existing.rate = newRate;
+                        allRates[workerName][proc] = existing;
+                        addaRatesSnapshot[proc] = { rate: newRate, history: existing.history };
+
+                        // Reset visual state
+                        inp.style.borderColor = '';
+                        inp.title = '';
+                    });
+
+                    saveAddaRates(allRates);
+                }
+
+                // Compute total adda salary for display
+                let addaTotalSalary = 0;
+                document.querySelectorAll('#adda-rows-container .adda-row').forEach(row => {
+                    const rate = parseFloat(row.querySelector('.adda-rate-inp').value) || 0;
+                    const wt   = parseFloat(row.querySelector('.adda-wt-display').dataset.wt) || 0;
+                    addaTotalSalary += Math.round(wt * rate);
+                });
+
                 const rec = {
                     id: document.getElementById('st-id').value || generateEmpId(),
-                    type: document.getElementById('st-type').value,
+                    type: workerType,
                     doj: document.getElementById('st-doj').value,
-                    name: document.getElementById('st-name').value.trim(),
+                    name: workerName,
                     designation: document.getElementById('st-designation').value.trim(),
                     guardian: document.getElementById('st-guardian').value.trim(),
                     guardianMobile: document.getElementById('st-guardian-mobile').value.trim(),
@@ -482,7 +958,13 @@
                     bankAcc: document.getElementById('st-bank-acc').value.trim(),
                     bankIfsc: document.getElementById('st-bank-ifsc').value.trim(),
                     bankUpi: document.getElementById('st-bank-upi').value.trim(),
-                    photo: document.getElementById('staff-photo-data').value
+                    photo: document.getElementById('staff-photo-data').value,
+                    aadharDoc: document.getElementById('st-aadhar-data').value,
+                    panDoc: document.getElementById('st-pan-data').value,
+                    passbookDoc: document.getElementById('st-passbook-data').value,
+                    remarks: document.getElementById('st-remarks').value.trim(),
+                    addaRates: addaRatesSnapshot,
+                    addaTotalSalary: addaTotalSalary
                 };
 
                 if (editIndex >= 0) {
@@ -492,6 +974,7 @@
                 }
 
                 localStorage.setItem('manti_staff_records', JSON.stringify(records));
+                if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_staff_records', records);
 
                 form.style.display = 'none';
                 form.reset();
@@ -500,6 +983,11 @@
 
             renderTable();
         });
+    </script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
     </script>
 </body>
 

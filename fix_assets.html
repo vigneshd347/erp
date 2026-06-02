@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fix Assets - Remove Consumables</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; }
+  h2 { color: #1e3a5f; }
+  table { border-collapse: collapse; width: 100%; margin-top: 16px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  th { background: #1e3a5f; color: white; padding: 10px 14px; text-align: left; font-size: 0.85rem; }
+  td { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; font-size: 0.85rem; }
+  tr:last-child td { border-bottom: none; }
+  .success { color: #16a34a; font-weight: 700; font-size: 1.1rem; margin-top: 12px; }
+  .danger { color: #ef4444; font-weight: 700; }
+  .btn-delete { padding: 5px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+  .btn-delete:hover { background: #dc2626; }
+  .btn-all { padding: 8px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 700; margin-top: 12px; }
+  .btn-all:hover { background: #dc2626; }
+  .empty { color: #ef4444; font-weight: 700; font-size: 1.1rem; }
+</style>
+</head>
+<body>
+<h2>🗑️ Fix Assets — Remove Incorrectly Added Records</h2>
+
+<div id="output"></div>
+
+<script>
+const output = document.getElementById('output');
+const assets = JSON.parse(localStorage.getItem('manti_assets') || '[]');
+
+// IDs to remove
+const toRemove = ['AST-0030', 'AST-0031', 'AST-0032', 'AST-0033'];
+
+if (assets.length === 0) {
+    output.innerHTML = '<p class="empty">❌ No asset records found in localStorage.<br>Open this page in the same browser you use for the ERP.</p>';
+} else {
+    const targets = assets.filter(a => toRemove.includes(a.id));
+    const others = assets.filter(a => !toRemove.includes(a.id));
+
+    if (targets.length === 0) {
+        output.innerHTML = `<p class="success">✅ AST-0030 to AST-0033 are already not in the asset list. Nothing to remove.</p>
+        <p>Total assets in localStorage: <b>${assets.length}</b></p>`;
+    } else {
+        let html = `<p>Found <b>${targets.length}</b> asset record(s) to remove (AST-0030 → AST-0033):</p>`;
+        html += `<table>
+            <thead><tr>
+                <th>ID</th><th>Name</th><th>Category</th><th>Value</th><th>Notes</th>
+            </tr></thead><tbody>`;
+
+        targets.forEach(a => {
+            html += `<tr>
+                <td><b>${a.id}</b></td>
+                <td>${a.name || '—'}</td>
+                <td>${a.category || '—'}</td>
+                <td>₹${parseFloat(a.value || 0).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                <td>${a.notes || '—'}</td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>
+        <br>
+        <button class="btn-all" onclick="removeAll()">🗑️ Remove All ${targets.length} Records from Asset List</button>
+        <span id="result"></span>`;
+        output.innerHTML = html;
+    }
+}
+
+function removeAll() {
+    const assets = JSON.parse(localStorage.getItem('manti_assets') || '[]');
+    const toRemove = ['AST-0030', 'AST-0031', 'AST-0032', 'AST-0033'];
+    const cleaned = assets.filter(a => !toRemove.includes(a.id));
+    const removed = assets.length - cleaned.length;
+    localStorage.setItem('manti_assets', JSON.stringify(cleaned));
+    document.getElementById('result').innerHTML = `&nbsp; <span class="success">✅ Removed ${removed} record(s) successfully!</span>`;
+    setTimeout(() => {
+        window.location.href = 'assets.html';
+    }, 1500);
+}
+</script>
+</body>
+</html>

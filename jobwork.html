@@ -38,8 +38,10 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested ">Inventory</a>
-                        <a href="jobwork.html" class="nav-item nested">Job Work</a>
-                                            <a href="design-book.html" class="nav-item nested ">Design Book</a>
+                        <a href="melting.html" class="nav-item nested ">Melting</a>
+                        <a href="stock-adjustment.html" class="nav-item nested ">Stock Adjustment</a>
+                        <a href="jobwork.html" class="nav-item nested active">Job Work</a>
+                        <a href="design-book.html" class="nav-item nested ">Design Book</a>
                         <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
 </div>
                 </div>
@@ -90,6 +92,10 @@
                 <a href="staff.html" class="nav-item">
                     <div class="icon"><i data-lucide="users"></i></div>
                     <span class="label">Staff</span>
+                </a>
+                <a href="worker-data-sheet.html" class="nav-item">
+                    <div class="icon"><i data-lucide="user-check"></i></div>
+                    <span class="label">Worker Data Sheet</span>
                 </a>
                 <a href="reports.html" class="nav-item ">
                     <div class="icon"><i data-lucide="bar-chart-3"></i></div>
@@ -267,7 +273,7 @@
     <script src="script.js?v=24"></script>
 </body>
     <script>
-        document.addEventListener('CloudDataLoaded', () => {
+        function initJobwork() {
             // Set default date
             document.getElementById('jw-date').value = new Date().toISOString().split('T')[0];
 
@@ -320,6 +326,11 @@
             const toggleBtn = document.getElementById('add-jobwork');
             const cancelBtn = document.getElementById('cancel-jobwork');
             const processSelect = document.getElementById('jw-process');
+// Expose key elements to global scope for early access
+window.form = form;
+window.toggleBtn = toggleBtn;
+window.cancelBtn = cancelBtn;
+window.processSelect = processSelect;
             const tbody = document.getElementById('jobwork-body');
 
             // Default date
@@ -328,6 +339,8 @@
             const statusSelect = document.getElementById('jw-status');
             const sectionIssue = document.getElementById('section-issue');
             const sectionReceive = document.getElementById('section-receive');
+
+            let editIndex = -1; // Declared here so it's accessible and initialized before use
 
             function updateReceiveWorkerDropdown() {
                 const jobNum = jobNumSelect.value;
@@ -426,8 +439,8 @@
                         const typeSelect = singleRow.querySelector('.issue-line-type');
                         typeSelect.value = 'Metal';
 
-                        const removeBtn = singleRow.querySelector('.btn-remove');
-                        removeBtn.style.display = 'none';
+                        const removeBtn = singleRow.querySelector('.btn-remove-sm');
+                        if (removeBtn) removeBtn.style.display = 'none';
                     }
 
                     document.getElementById('add-issue-line').style.display = 'none';
@@ -444,7 +457,8 @@
                     document.getElementById('add-issue-line').style.display = 'block';
                     issueLines.querySelectorAll('.issue-line-row').forEach(row => {
                         row.querySelector('.issue-line-wt').readOnly = false;
-                        row.querySelector('.btn-remove').style.display = 'block';
+                        const removeBtn = row.querySelector('.btn-remove-sm');
+                        if (removeBtn) removeBtn.style.display = 'block';
                     });
                 }
 
@@ -506,7 +520,7 @@
                     <input type="number" step="0.001" class="issue-line-wt" placeholder="Weight (g)" value="${weight}" style="margin:0;">
                     <button type="button" class="btn-remove-sm" title="Remove">×</button>
                 `;
-                row.querySelector('.btn-remove').addEventListener('click', () => { row.remove(); recalculateIssueTotal(); });
+                row.querySelector('.btn-remove-sm').addEventListener('click', () => { row.remove(); recalculateIssueTotal(); });
                 row.querySelector('.issue-line-type').addEventListener('change', recalculateIssueTotal);
                 row.querySelector('.issue-line-wt').addEventListener('input', recalculateIssueTotal);
                 issueLines.appendChild(row);
@@ -563,7 +577,7 @@
                     <input type="number" step="0.001" class="receive-line-wt" placeholder="Weight (g)" value="${weight}" style="margin:0;">
                     <button type="button" class="btn-remove-sm" title="Remove">×</button>
                 `;
-                row.querySelector('.btn-remove').addEventListener('click', () => { row.remove(); recalculateReceiveTotal(); });
+                row.querySelector('.btn-remove-sm').addEventListener('click', () => { row.remove(); recalculateReceiveTotal(); });
                 row.querySelector('.receive-line-type').addEventListener('change', recalculateReceiveTotal);
                 row.querySelector('.receive-line-wt').addEventListener('input', recalculateReceiveTotal);
                 receiveLines.appendChild(row);
@@ -780,7 +794,12 @@
                 lucide.createIcons();
             }
 
-            let editIndex = -1;
+            // Expose functions to global scope
+window.clearIssueLines = clearIssueLines;
+window.addIssueLine = addIssueLine;
+window.clearReceiveLines = clearReceiveLines;
+window.addReceiveLine = addReceiveLine;
+window.toggleSections = toggleSections;
 
             window.deleteRecord = function (index) {
                 if (confirm("Delete this record?")) {
@@ -832,6 +851,7 @@
                         alert("Please select Job No. and Process.");
                         return;
                     }
+                }
 
                 if (isReceive) {
                     const selectedWorker = document.getElementById('jw-worker-rec').value;
@@ -1078,7 +1098,13 @@
                     if (window.filterTable) filterTable('search-jobwork', 'jobwork-table');
                 }
             }
-        });
+        }
+        
+        if (window.isCloudDataLoaded) {
+            initJobwork();
+        } else {
+            document.addEventListener('CloudDataLoaded', initJobwork);
+        }
 
         window.filterJobwork = function() {
             const searchInput = document.getElementById('search-jobwork');
@@ -1092,6 +1118,11 @@
         };
     </script>
     <script src="liquid-button.js"></script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
+    </script>
 </body>
 
 </html>

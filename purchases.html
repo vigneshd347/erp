@@ -16,6 +16,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=2"></script>
     <script src="image-cropper.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        integrity="sha512-GNprVnMWBGl/DBbHJaLSVBVZMRTegXeEJGhbnZnPBDau8PM/6QUoOBKJddH0M/BRq5buOry05JNvXLZkVB+HYA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 
 <body>
@@ -201,46 +204,21 @@
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Expected Delivery Date</label>
                                     <input type="date" id="ord-due-date" required style="border-color: #d1d5db;">
                                 </div>
-                                <div id="po-category-container">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Category <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-category" class="input-wrapper" style="border-color: #d1d5db;">
-                                        <option value="" disabled selected>Select Category</option>
-                                        <option value="Stock">1. Stock</option>
-                                        <option value="Assets">2. Assets</option>
-                                        <option value="Consumables">3. Consumables</option>
-                                        <option value="Fuel">4. Fuel</option>
-                                        <option value="Others">5. Others</option>
-                                        <option value="Design">6. Design</option>
-                                    </select>
-                                </div>
 
-                                <div id="ord-asset-type-container" style="display: none;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Asset Type <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-asset-type" class="input-wrapper" style="border-color: #d1d5db;">
-                                        <option value="Other">1. Other</option>
-                                        <option value="Machinery">2. Machinery</option>
-                                        <option value="Tools">3. Tools</option>
-                                        <option value="Furniture">4. Furniture</option>
-                                        <option value="Electronics">5. Electronics</option>
+
+
+                                <div id="po-hidden-globals" style="display: none;">
+                                    <select id="ord-category">
+                                        <option value="Stock">Stock</option>
+                                        <option value="Assets">Assets</option>
+                                        <option value="Consumables">Consumables</option>
+                                        <option value="Fuel">Fuel</option>
+                                        <option value="Others">Others</option>
+                                        <option value="Design">Design</option>
                                     </select>
-                                </div>
-                                <div id="ord-metal-type-container" style="display: none;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Metal Type <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-main-metal-type" class="input-wrapper" style="border-color: #d1d5db;" onchange="togglePurityDisplay()">
-                                        <option value="" disabled selected>Select Metal Type</option>
-                                        <option value="Gold">1. Gold</option>
-                                        <option value="Silver">2. Silver</option>
-                                    </select>
-                                </div>
-                                <div id="ord-purity-container" style="display: none;">
-                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Purity <span style="color:#ef4444;">*</span></label>
-                                    <select id="ord-purity" class="input-wrapper" style="border-color: #d1d5db;">
-                                        <option value="99.99">1. 99.99</option>
-                                        <option value="99.9">2. 99.9</option>
-                                        <option value="99.5">3. 99.5</option>
-                                        <option value="22K" id="purity-22k-opt">4. 22K</option>
-                                        <option value="925" id="purity-925-opt">5. 925</option>
-                                    </select>
+                                    <select id="ord-asset-type"></select>
+                                    <select id="ord-main-metal-type"></select>
+                                    <select id="ord-purity"></select>
                                 </div>
                                 <div id="ord-paid-through-container" style="display: none;">
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Paid Through</label>
@@ -260,7 +238,8 @@
                                     <th class="design-size-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Size</th>
                                     <th class="design-wt-col" style="display: none; padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 100px;">Weight</th>
                                     <th class="qty-col" style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Quantity</th>
-                                    <th style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Rate</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">Discount %</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Rate</th>
                                     <th style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 120px;">GST %</th>
                                     <th style="padding: 12px; text-align: center; font-size: 0.75rem; color: #6b7280; text-transform: uppercase; width: 150px;">Amount</th>
                                     <th style="padding: 12px; width: 40px;"></th>
@@ -378,9 +357,9 @@
                 <table id="orders-table" data-no-filter="true" style="width:100%; border-collapse:collapse;">
                     <thead>
                         <tr style="background:#f8fafc;">
-                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">PO #</th>
-                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Date</th>
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">PO # & Date</th>
                             <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Supplier</th>
+                            <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Category</th>
                             <th style="padding:11px 16px; text-align:left; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Items</th>
                             <th style="padding:11px 16px; text-align:right; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Qty</th>
                             <th style="padding:11px 16px; text-align:right; font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f0f2f5;">Amount</th>
@@ -410,9 +389,197 @@
                 #orders-table tbody tr:hover { background: #fafbff; }
                 #orders-table tbody tr:last-child { border-bottom: none; }
                 .po-status-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
+                
+                #po-pdf-template {
+                    width: 210mm;
+                    min-height: 296mm;
+                    padding: 12mm 15mm;
+                    background: white;
+                    color: #333;
+                    font-size: 12px;
+                    position: relative;
+                    box-sizing: border-box;
+                    margin: 0 auto;
+                }
+                
+                #po-pdf-template .p-table th {
+                    background: #f8fafc !important; 
+                    color: #475569 !important; 
+                    border: none !important; 
+                    border-top: 1px solid #cbd5e1 !important; 
+                    border-bottom: 2px solid #cbd5e1 !important;
+                }
+                
+                #po-pdf-template .p-table td {
+                    border: none !important; 
+                    border-bottom: 1px solid #f1f5f9 !important;
+                    padding: 10px 5px !important;
+                }
+                
+                #po-pdf-template .st-total-row td {
+                    border-bottom: none !important;
+                }
+
+                @media print {
+                    .print-only-hide { display: none !important; }
+                    body { background: white !important; padding: 0 !important; margin: 0 !important; }
+                    #po-pdf-template {
+                        width: 210mm !important;
+                        height: auto !important;
+                        min-height: 296mm !important;
+                        padding: 12mm 15mm !important;
+                        margin: 0 auto !important;
+                        box-shadow: none !important;
+                        position: static !important;
+                        display: block !important;
+                        overflow: visible !important;
+                    }
+                    .p-table tr {
+                        page-break-inside: avoid !important;
+                    }
+                }
             </style>
 
         </main>
+    </div>
+
+    <!-- ═══════ PURCHASE ORDER PDF TEMPLATE (Hidden) ═══════ -->
+    <div id="po-pdf-template" style="position:absolute;left:-9999px;top:0;width:210mm;box-sizing:border-box;font-family:'Inter',sans-serif;">
+        <table style="width: 100%; border-collapse: collapse; border: none; margin: 0; padding: 0; background: transparent;">
+            <thead style="display: table-header-group;">
+                <tr>
+                    <td style="border: none; padding: 0; background: white;">
+                        <div style="position: relative; margin-bottom: 20px;">
+                            <img src="header.jpg" alt="PO Header" style="width: 100%; height: auto; display: block;">
+                            <div style="position: absolute; top: 0; right: 0; width: 48%; height: 45%; background: white;"></div>
+                        </div>
+                    </td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border: none; padding: 0; background: white;">
+                        <div class="p-details-row">
+            <div class="p-details-left">
+                <h4 class="p-section-title">Bill To</h4>
+                <table style="width: 100%; font-size: 0.9rem; line-height: 1.5; color: #1f2937; border-collapse: collapse;">
+                    <tr><td style="width: 110px; font-weight: 600; padding-bottom: 3px; vertical-align: top;">Company Name</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-vendor-name" style="font-weight: 800; color: var(--primary);"></span></td></tr>
+                    <tr><td style="font-weight: 600; padding-bottom: 3px; vertical-align: top;">Address</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-vendor-address"></span></td></tr>
+                    <tr><td style="font-weight: 600; padding-bottom: 3px; vertical-align: top;">Pin Code</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-vendor-state"></span></td></tr>
+                    <tr><td style="font-weight: 600; padding-bottom: 3px; vertical-align: top;">Mail / Contact</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-vendor-contact"></span></td></tr>
+                    <tr><td style="font-weight: 600; padding-bottom: 3px; vertical-align: top;">GSTIN</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-vendor-gstin" style="font-weight: 600;"></span></td></tr>
+                </table>
+            </div>
+
+            <div class="p-details-right">
+                <h4 class="p-section-title" style="text-align: right; font-size: 1.4rem; letter-spacing: 0.5px;" id="po-pdf-title">PURCHASE ORDER</h4>
+                <table style="width: 100%; font-size: 0.9rem; line-height: 1.5; color: #1f2937; margin-top: 10px; border-collapse: collapse;">
+                    <tr><td style="width: 130px; font-weight: 600; padding-bottom: 3px; vertical-align: top;"># PO Number</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-id" style="font-weight: 800; color: var(--primary);"></span></td></tr>
+                    <tr><td style="font-weight: 600; padding-bottom: 3px; vertical-align: top;">PO Date</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-date"></span></td></tr>
+                    <tr><td style="font-weight: 600; padding-bottom: 3px; vertical-align: top;">Status</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-status" style="font-weight: 700; text-transform: uppercase;"></span></td></tr>
+                </table>
+
+                <div class="p-thin-orange-hr mt-10 mb-10"></div>
+
+                <table style="width: 100%; font-size: 0.9rem; line-height: 1.5; color: #1f2937; border-collapse: collapse;">
+                    <tr><td style="width: 130px; font-weight: 600; padding-bottom: 3px; vertical-align: top;">Expected Delivery</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-due-date"></span></td></tr>
+                    <tr><td style="font-weight: 600; padding-bottom: 3px; vertical-align: top;">Bill No.</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-bill-no"></span></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="p-table-container" style="margin-top: 25px;">
+            <div class="watermark-overlay"></div>
+            <table class="p-table" data-no-filter="true" style="width:100%; border-collapse:collapse; border:none;">
+                <thead>
+                    <tr>
+                        <th width="30" style="background:#f8fafc !important; color:#475569 !important; border:none; border-top:1px solid #cbd5e1; border-bottom:2px solid #cbd5e1; padding:10px 5px; font-weight:700; font-size:0.75rem; text-align:center;">Sr</th>
+                        <th style="background:#f8fafc !important; color:#475569 !important; border:none; border-top:1px solid #cbd5e1; border-bottom:2px solid #cbd5e1; padding:10px 10px; font-weight:700; font-size:0.75rem; text-align:left;">Goods & Description</th>
+
+                        <th width="70" style="background:#f8fafc !important; color:#475569 !important; border:none; border-top:1px solid #cbd5e1; border-bottom:2px solid #cbd5e1; padding:10px 5px; font-weight:700; font-size:0.75rem; text-align:center;">Qty</th>
+                        <th width="80" style="background:#f8fafc !important; color:#475569 !important; border:none; border-top:1px solid #cbd5e1; border-bottom:2px solid #cbd5e1; padding:10px 5px; font-weight:700; font-size:0.75rem; text-align:right;">Rate (₹)</th>
+                        <th width="60" style="background:#f8fafc !important; color:#475569 !important; border:none; border-top:1px solid #cbd5e1; border-bottom:2px solid #cbd5e1; padding:10px 5px; font-weight:700; font-size:0.75rem; text-align:center;">Disc %</th>
+                        <th width="60" style="background:#f8fafc !important; color:#475569 !important; border:none; border-top:1px solid #cbd5e1; border-bottom:2px solid #cbd5e1; padding:10px 5px; font-weight:700; font-size:0.75rem; text-align:center;">GST %</th>
+                        <th width="80" style="background:#f8fafc !important; color:#475569 !important; border:none; border-top:1px solid #cbd5e1; border-bottom:2px solid #cbd5e1; padding:10px 5px; font-weight:700; font-size:0.75rem; text-align:right; padding-right:10px;">Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="po-pdf-items-body"></tbody>
+            </table>
+        </div>
+
+        <div class="p-footer-grid" style="margin-top: 25px;">
+            <div class="p-bank-info" id="po-pdf-remarks-box" style="flex: 1;">
+                <h4 class="p-blue-title" style="font-size: 0.95rem; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px; display: inline-block; margin-bottom: 8px;">Notes / Remarks</h4>
+                <div id="po-pdf-remark" style="font-size: 0.8rem; line-height: 1.5; color: #374151; white-space: pre-wrap;"></div>
+            </div>
+
+            <div class="p-thin-orange-vr" id="po-pdf-vr" style="margin: 0 15px;"></div>
+
+            <div class="p-summary-box" style="width: 300px;">
+                <h4 class="p-blue-title ms-5" style="font-size: 0.95rem; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px; display: inline-block; margin-bottom: 12px; margin-left: 0;">Summary</h4>
+                <table class="summary-table" style="width: 100%; border-collapse: collapse; margin-left: 0;">
+                    <tr>
+                        <td class="st-label" style="padding: 5px 0; font-weight: 600; color: #475569; width: 140px; font-size: 0.8rem;">Taxable Amt</td>
+                        <td class="st-colon" style="padding: 5px 0; width: 15px; text-align: center;">:</td>
+                        <td class="st-val" style="padding: 5px 0; text-align: right; font-weight: 600; color: #1e293b; font-size: 0.8rem;"><span id="po-pdf-subtotal"></span></td>
+                    </tr>
+                    <tr id="po-pdf-discount-row">
+                        <td class="st-label" style="padding: 5px 0; font-weight: 600; color: #dc2626; font-size: 0.8rem;">Discount</td>
+                        <td class="st-colon" style="padding: 5px 0; text-align: center;">:</td>
+                        <td class="st-val" style="padding: 5px 0; text-align: right; font-weight: 600; color: #dc2626; font-size: 0.8rem;"><span id="po-pdf-discount"></span></td>
+                    </tr>
+                    <tr id="po-pdf-gst-row">
+                        <td class="st-label" style="padding: 5px 0; font-weight: 600; color: #475569; font-size: 0.8rem;">GST Amt</td>
+                        <td class="st-colon" style="padding: 5px 0; text-align: center;">:</td>
+                        <td class="st-val" style="padding: 5px 0; text-align: right; font-weight: 600; color: #1e293b; font-size: 0.8rem;"><span id="po-pdf-gst"></span></td>
+                    </tr>
+                    <tr id="po-pdf-roundoff-row">
+                        <td class="st-label" style="padding: 5px 0; font-weight: 600; color: #64748b; font-size: 0.8rem;">Round Off</td>
+                        <td class="st-colon" style="padding: 5px 0; text-align: center;">:</td>
+                        <td class="st-val" style="padding: 5px 0; text-align: right; font-weight: 600; color: #64748b; font-size: 0.8rem;"><span id="po-pdf-roundoff"></span></td>
+                    </tr>
+                    <tr class="st-total-row" style="border-top: 1px solid #cbd5e1; border-bottom: 2px double #475569;">
+                        <td class="st-label" style="padding: 8px 0; font-weight: 800; font-size: 1rem; color: var(--primary);">Grand Total</td>
+                        <td class="st-colon" style="padding: 8px 0; font-weight: 800; font-size: 1rem; color: var(--primary);">:</td>
+                        <td class="st-val" style="padding: 8px 0; text-align: right; font-weight: 800; font-size: 1rem; color: var(--primary);"><span id="po-pdf-grand-total"></span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="p-words-section" style="margin-top: 20px;">
+            <div class="p-words-header">
+                <h4 class="p-blue-title line-title" style="font-size: 0.85rem; color: #475569;">Total in Words :</h4>
+                <div class="p-words-text" id="po-pdf-total-words" style="margin-top: 0; border-bottom: none; margin-right: 10px; font-size: 0.85rem; font-weight: 700; color: var(--primary);"></div>
+                <div class="p-line" style="background: #cbd5e1;"></div>
+            </div>
+            <div style="font-size: 9px; color: #9ca3af; margin-top: 5px;" id="po-pdf-generated-date"></div>
+        </div>
+
+        <div class="p-sign-grid" style="margin-top: 30px;">
+            <div class="p-payment-visuals">
+                <!-- Status Visual Stamp -->
+            </div>
+            <div class="p-sign-box" style="width: 250px;">
+                <div class="font-bold blue-text text-right f11" style="font-size: 0.8rem; color: #475569;">For, MANTI JEWEL ART PRIVATE LIMITED</div>
+                <div class="p-sign-space" style="height: 45px;"></div>
+                <div class="font-bold text-right f11" style="font-size: 0.8rem; border-top: 1px solid #cbd5e1; padding-top: 4px; color: #475569;">This is computer generated</div>
+            </div>
+        </div>
+
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot style="display: table-footer-group;">
+                <tr>
+                    <td style="border: none; padding: 0; background: white;">
+                        <div class="p-bottom-bleed-bar" style="margin-top: 20px;">
+                            THANK YOU
+                        </div>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
 
     <script src="liquid-button.js"></script>
@@ -525,6 +692,11 @@
             function addPORow(itemData = {}) {
                 const tr = document.createElement('tr');
                 tr.classList.add('po-item-row');
+                // Ensure the PO items table body exists before proceeding
+                if (!poItemsBody) {
+                    console.warn('po-items-body element not found; cannot add PO row.');
+                    return;
+                }
                 const rowCount = poItemsBody.rows.length + 1;
                 
                 tr.innerHTML = `
@@ -542,7 +714,63 @@
                             
                             <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
                                 <textarea class="po-desc input-wrapper" placeholder="Add a description to your item" style="width: 100%; border: none; background: transparent; padding: 4px; min-height: 48px; font-size: 0.95rem; resize: none; color: #1f2937;">${itemData.desc || ''}</textarea>
-                                <select class="po-design-subcat input-wrapper" style="display: none; width: 100%; border: 1px solid #d1d5db; padding: 4px; font-size: 0.8rem; border-radius: 4px; background: #fff;">
+                                
+                                <select class="po-item-category input-wrapper" style="width: 100%; border: 1px solid #d1d5db; padding: 4px; font-size: 0.8rem; border-radius: 4px; background: #fff;" onchange="
+                                    const assetType = this.parentElement.querySelector('.po-item-asset-type');
+                                    const metalGroup = this.parentElement.querySelector('.po-item-metal-group');
+                                    const subcat = this.parentElement.querySelector('.po-design-subcat');
+                                    if(assetType) assetType.style.display = this.value === 'Assets' ? 'block' : 'none';
+                                    if(metalGroup) metalGroup.style.display = this.value === 'Stock' ? 'flex' : 'none';
+                                    if(subcat) subcat.style.display = this.value === 'Design' ? 'block' : 'none';
+                                    
+                                    const dtSize = document.querySelectorAll('.design-size-col, .design-size-cell');
+                                    const dtWt = document.querySelectorAll('.design-wt-col, .design-wt-cell');
+                                    if(this.value === 'Design') {
+                                        dtSize.forEach(el => el.style.display = 'table-cell');
+                                        dtWt.forEach(el => el.style.display = 'table-cell');
+                                    }
+                                ">
+                                    <option value="" disabled ${!itemData.category ? 'selected' : ''}>Select Category</option>
+                                    <option value="Stock" ${itemData.category === 'Stock' ? 'selected' : ''}>1. Stock</option>
+                                    <option value="Assets" ${itemData.category === 'Assets' ? 'selected' : ''}>2. Assets</option>
+                                    <option value="Consumables" ${itemData.category === 'Consumables' ? 'selected' : ''}>3. Consumables</option>
+                                    <option value="Fuel" ${itemData.category === 'Fuel' ? 'selected' : ''}>4. Fuel</option>
+                                    <option value="Others" ${itemData.category === 'Others' ? 'selected' : ''}>5. Others</option>
+                                    <option value="Design" ${itemData.category === 'Design' ? 'selected' : ''}>6. Design</option>
+                                </select>
+
+                                <select class="po-item-asset-type input-wrapper" style="display: ${itemData.category === 'Assets' ? 'block' : 'none'}; width: 100%; border: 1px solid #d1d5db; padding: 4px; font-size: 0.8rem; border-radius: 4px; background: #fff;">
+                                    <option value="Other" ${itemData.assetType === 'Other' ? 'selected' : ''}>1. Other</option>
+                                    <option value="Machinery" ${itemData.assetType === 'Machinery' ? 'selected' : ''}>2. Machinery</option>
+                                    <option value="Tools" ${itemData.assetType === 'Tools' ? 'selected' : ''}>3. Tools</option>
+                                    <option value="Furniture" ${itemData.assetType === 'Furniture' ? 'selected' : ''}>4. Furniture</option>
+                                    <option value="Electronics" ${itemData.assetType === 'Electronics' ? 'selected' : ''}>5. Electronics</option>
+                                </select>
+
+                                <div class="po-item-metal-group" style="display: ${itemData.category === 'Stock' ? 'flex' : 'none'}; gap: 8px;">
+                                    <select class="po-item-metal-type input-wrapper" style="flex: 1; border: 1px solid #d1d5db; padding: 4px; font-size: 0.8rem; border-radius: 4px; background: #fff;" onchange="
+                                        const pur = this.parentElement.querySelector('.po-item-purity');
+                                        if(pur) {
+                                            const v22k = pur.querySelector('.purity-22k-opt');
+                                            const v925 = pur.querySelector('.purity-925-opt');
+                                            if(this.value === 'Gold') { if(v22k) v22k.style.display = 'block'; if(v925) v925.style.display = 'none'; pur.value='99.99'; }
+                                            if(this.value === 'Silver') { if(v22k) v22k.style.display = 'none'; if(v925) v925.style.display = 'block'; pur.value='925'; }
+                                        }
+                                    ">
+                                        <option value="" disabled ${!itemData.metalType ? 'selected' : ''}>Metal Type</option>
+                                        <option value="Gold" ${itemData.metalType === 'Gold' ? 'selected' : ''}>1. Gold</option>
+                                        <option value="Silver" ${itemData.metalType === 'Silver' ? 'selected' : ''}>2. Silver</option>
+                                    </select>
+                                    <select class="po-item-purity input-wrapper" style="flex: 1; border: 1px solid #d1d5db; padding: 4px; font-size: 0.8rem; border-radius: 4px; background: #fff;">
+                                        <option value="99.99" ${itemData.purity === '99.99' ? 'selected' : ''}>1. 99.99</option>
+                                        <option value="99.9" ${itemData.purity === '99.9' ? 'selected' : ''}>2. 99.9</option>
+                                        <option value="99.5" ${itemData.purity === '99.5' ? 'selected' : ''}>3. 99.5</option>
+                                        <option value="22K" class="purity-22k-opt" style="display: ${itemData.metalType === 'Gold' || !itemData.metalType ? 'block' : 'none'};" ${itemData.purity === '22K' ? 'selected' : ''}>4. 22K</option>
+                                        <option value="925" class="purity-925-opt" style="display: ${itemData.metalType === 'Silver' ? 'block' : 'none'};" ${itemData.purity === '925' ? 'selected' : ''}>5. 925</option>
+                                    </select>
+                                </div>
+
+                                <select class="po-design-subcat input-wrapper" style="display: ${itemData.category === 'Design' ? 'block' : 'none'}; width: 100%; border: 1px solid #d1d5db; padding: 4px; font-size: 0.8rem; border-radius: 4px; background: #fff;">
                                     <option value="" disabled ${!itemData.designSubCat ? 'selected' : ''}>Sub Category (Ring, Bangle...)</option>
                                     <option value="Ring" ${itemData.designSubCat === 'Ring' ? 'selected' : ''}>1. Ring</option>
                                     <option value="Bangle" ${itemData.designSubCat === 'Bangle' ? 'selected' : ''}>2. Bangle</option>
@@ -564,8 +792,11 @@
                     <td class="qty-cell" style="padding: 12px; vertical-align: middle;">
                         <input type="number" step="0.001" class="po-qty input-wrapper" placeholder="0.000" value="${itemData.qty || ''}" style="width: 100%; text-align: center; border: none; background: transparent; padding: 0;">
                     </td>
+                    <td class="discount-cell" style="padding: 12px; vertical-align: middle;">
+                         <input type="number" step="0.1" min="0" max="100" class="po-discount-percent input-wrapper" placeholder="%" value="${itemData.discount || ''}" style="width: 100%; text-align: right; border: none; background: transparent; padding: 0; outline: none; font-size: 0.9rem;" oninput="calculatePOTotals(this)" />
+                    </td>
                     <td style="padding: 12px; vertical-align: middle;">
-                        <input type="number" step="0.01" class="po-rate input-wrapper" placeholder="0.00" value="${itemData.rate || ''}" style="width: 100%; text-align: center; border: none; background: transparent; padding: 0;">
+                        <input type="number" step="0.01" class="po-rate input-wrapper" placeholder="0.00" value="${itemData.rate || ''}" style="width: 100%; text-align: center; border: none; background: transparent; padding: 0;" oninput="calculatePOTotals(this)">
                     </td>
                     <td style="padding: 12px; vertical-align: middle;">
                         <input type="number" step="0.1" class="po-gst input-wrapper" placeholder="0" value="${itemData.gst !== undefined ? itemData.gst : ''}" style="width: 100%; text-align: center; border: none; background: transparent; padding: 0;">
@@ -646,8 +877,8 @@
                 
 
                 // Show size conditionally immediately if creating from data
-                const ordCat = document.getElementById('ord-category');
-                if (ordCat && ordCat.value === 'Design') {
+                const ordCategory = document.getElementById('ord-category');
+                if (ordCategory && ordCategory.value === 'Design') {
                     tr.querySelector('.design-wt-cell').style.display = 'table-cell';
                     tr.querySelector('.item-details-cell').style.display = 'table-cell';
                     tr.querySelector('.qty-cell').style.display = 'none';
@@ -679,15 +910,18 @@
                     const qty = parseFloat(row.querySelector('.po-qty').value) || 0;
                     const rate = parseFloat(row.querySelector('.po-rate').value) || 0;
                     const gstPercent = parseFloat(row.querySelector('.po-gst').value) || 0;
+                    const discountPercent = parseFloat(row.querySelector('.po-discount-percent')?.value) || 0;
                     
                     const rowSubtotal = qty * rate;
-                    const rowGst = rowSubtotal * (gstPercent / 100);
-                    const rowTotal = rowSubtotal + rowGst;
+                    const discountAmount = rowSubtotal * (discountPercent / 100);
+                    const subtotalAfterDiscount = rowSubtotal - discountAmount;
+                    const rowGst = subtotalAfterDiscount * (gstPercent / 100);
+                    const rowTotal = subtotalAfterDiscount + rowGst;
                     
                     const amtInput = row.querySelector('.po-row-amount');
                     if (amtInput) amtInput.value = rowTotal.toFixed(2);
                     
-                    subtotal += rowSubtotal;
+                    subtotal += subtotalAfterDiscount;
                     gstTotal += rowGst;
                 });
                 
@@ -727,9 +961,9 @@
                 const gstTotalEl = document.getElementById('po-gst-total');
                 const grandTotalEl = document.getElementById('po-grand-total');
 
-                if (subTotalEl) subTotalEl.textContent = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-                if (gstTotalEl) gstTotalEl.textContent = gstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-                if (grandTotalEl) grandTotalEl.textContent = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                if (subTotalEl) subTotalEl.textContent = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (gstTotalEl) gstTotalEl.textContent = gstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (grandTotalEl) grandTotalEl.textContent = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             };
 
             // Global listeners for footer inputs
@@ -780,13 +1014,14 @@
                 const poCategoryContainer = document.getElementById('po-category-container');
                 const ordCategory = document.getElementById('ord-category');
                 const metalTypeContainer = document.getElementById('ord-metal-type-container');
+                const mainMetalSelect = document.getElementById('ord-main-metal-type');
 
                 if (poCategoryContainer) poCategoryContainer.style.display = 'block';
 
                 if (ordCategory && ordCategory.value === 'Design') {
                     if (metalTypeContainer) metalTypeContainer.style.display = 'none';
                     if (document.getElementById('ord-asset-type-container')) document.getElementById('ord-asset-type-container').style.display = 'none';
-                    document.getElementById('ord-main-metal-type').required = false;
+                    if (mainMetalSelect) mainMetalSelect.required = false;
                     
                     document.querySelectorAll('.design-wt-col, .design-wt-cell').forEach(el => el.style.display = 'table-cell');
                     document.querySelectorAll('.item-details-col, .item-details-cell').forEach(el => el.style.display = 'table-cell');
@@ -813,7 +1048,7 @@
 
                 if (ordCategory && ordCategory.value === 'Stock') {
                     if (metalTypeContainer) metalTypeContainer.style.display = 'block';
-                    mainMetalSelect.required = true;
+                    if (mainMetalSelect) mainMetalSelect.required = true;
                     togglePurityDisplay(); // Show purity if metal is gold/silver
                 } else if (ordCategory && ordCategory.value === 'Assets') {
                     if (metalTypeContainer) metalTypeContainer.style.display = 'none';
@@ -821,37 +1056,36 @@
                     if (document.getElementById('ord-asset-type-container')) {
                         document.getElementById('ord-asset-type-container').style.display = 'block';
                     }
-                    mainMetalSelect.required = false;
-                    mainMetalSelect.value = '';
+                    if (mainMetalSelect) { mainMetalSelect.required = false; mainMetalSelect.value = ''; }
                 } else {
                     if (metalTypeContainer) metalTypeContainer.style.display = 'none';
                     if (purityContainer) purityContainer.style.display = 'none';
                     if (document.getElementById('ord-asset-type-container')) {
                         document.getElementById('ord-asset-type-container').style.display = 'none';
                     }
-                    mainMetalSelect.required = false;
-                    mainMetalSelect.value = '';
+                    if (mainMetalSelect) { mainMetalSelect.required = false; mainMetalSelect.value = ''; }
                 }
             }
 
             window.togglePurityDisplay = function() {
-                const metal = document.getElementById('ord-main-metal-type').value;
+                const metalEl = document.getElementById('ord-main-metal-type');
+                const metal = metalEl ? metalEl.value : '';
                 const purityContainer = document.getElementById('ord-purity-container');
                 const puritySelect = document.getElementById('ord-purity');
                 const opt22k = document.getElementById('purity-22k-opt');
                 const opt925 = document.getElementById('purity-925-opt');
 
                 if (metal === 'Gold' || metal === 'Silver') {
-                    purityContainer.style.display = 'block';
+                    if (purityContainer) purityContainer.style.display = 'block';
                     if (metal === 'Gold') {
-                        opt22k.style.display = 'block';
-                        opt925.style.display = 'none';
+                        if (opt22k) opt22k.style.display = 'block';
+                        if (opt925) opt925.style.display = 'none';
                     } else {
-                        opt22k.style.display = 'none';
-                        opt925.style.display = 'block';
+                        if (opt22k) opt22k.style.display = 'none';
+                        if (opt925) opt925.style.display = 'block';
                     }
                 } else {
-                    purityContainer.style.display = 'none';
+                    if (purityContainer) purityContainer.style.display = 'none';
                 }
             }
 
@@ -992,9 +1226,8 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                         if (due <= 0.001) payBadge = `<span style="font-size:0.7rem;color:#16a34a;font-weight:700;"> ✓ Payed</span>`;
                     }
 
-                    // Category + metal badges
+                    // Metal badges
                     let catBadge = '';
-                    if (rec.category) catBadge += `<span style="font-size:0.7rem;background:#e0e7ff;color:#4338ca;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px;">${rec.category}</span>`;
                     if (rec.mainMetalType) catBadge += `<span style="font-size:0.7rem;background:#fef3c7;color:#d97706;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px;">${rec.mainMetalType}</span>`;
 
                     const tr = document.createElement('tr');
@@ -1018,6 +1251,9 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                         <td style="padding:13px 16px;">
                             <div style="font-weight:600;color:#1f2937;font-size:0.9rem;">${vendorMap[rec.vendor] || rec.vendor || '—'}</div>
                         </td>
+                        <td style="padding:13px 16px;">
+                            <div style="font-weight:600;color:#4b5563;font-size:0.85rem;">${rec.category || '—'}</div>
+                        </td>
                         <td style="padding:13px 16px;max-width:220px;">
                             <div style="font-size:0.85rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${itemsSummary.replace(/"/g, '&quot;')}">${itemsSummary}</div>
                             ${imageHtml}
@@ -1027,7 +1263,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                             <div style="font-weight:700;color:#111827;font-size:0.9rem;">${totalQty > 0 ? totalQty.toFixed(3) : '—'}</div>
                         </td>
                         <td style="padding:13px 16px;text-align:right;">
-                            <div style="font-weight:700;color:#059669;font-size:0.9rem;">${amt > 0 ? '₹' + amt.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—'}</div>
+                            <div style="font-weight:700;color:#059669;font-size:0.9rem;">${amt > 0 ? '₹' + amt.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '—'}</div>
                             <div>${payBadge}</div>
                         </td>
                         <td style="padding:13px 16px;text-align:center;">
@@ -1042,6 +1278,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                                 <button onclick="editRecord(${index})" class="btn-edit" title="Edit">
                                     <svg viewBox="0 0 512 512"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"></path></svg>
                                 </button>
+                                <button onclick="generatePOPdf(${index})" style="padding:4px 8px; font-size:0.7rem; background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:6px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:3px;" title="Download PDF"><i data-lucide="file-text" style="width:12px;height:12px;"></i> PDF</button>
                                 ${derivedStatus === 'Payment Pending' ? `
                                 <button onclick="window.location.href='payment-made.html?po=${rec.id}&vendor=${rec.vendor}'" class="action-btn" style="padding:4px 8px; font-size:0.7rem; background:#f0f9ff; color:#0284c7; border:1px solid #bae6fd; border-radius:6px; cursor:pointer;" title="Pay Now">Pay</button>` : ''}
                                 ${derivedStatus !== 'Payed' && derivedStatus !== 'Completed' ? `
@@ -1338,12 +1575,12 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     const purity = rec.purity || '';
                     let mappedMetal = '';
                     const p = purity.toString().trim().toLowerCase();
-                    if (mainMetal === 'Gold') {
+                    if (mainMetal.toLowerCase() === 'gold') {
                         if (p === '99.99') mappedMetal = 'pure_gold_9999';
                         else if (p === '99.9') mappedMetal = 'pure_gold_999';
                         else if (p === '99.5') mappedMetal = 'pure_gold_995';
                         else mappedMetal = 'gold_22k';
-                    } else if (mainMetal === 'Silver') {
+                    } else if (mainMetal.toLowerCase() === 'silver') {
                         if (p === '99.99') mappedMetal = 'pure_silver_9999';
                         else if (p === '99.9') mappedMetal = 'pure_silver_999';
                         else if (p === '99.5') mappedMetal = 'pure_silver_995';
@@ -1356,7 +1593,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     const noteStr = 'Auto PO: ' + rec.id;
                     
                     // Prevent duplicate stock addition
-                    if (!history.some(h => (h.note && h.note.includes(rec.id)) || (h.details && h.details.includes(rec.id)))) {
+                    if (!history.some(h => (h.id === rec.id) || (h.note && h.note.includes(rec.id)) || (h.details && h.details.includes(rec.id)))) {
 
                         const weightToAdd = parseFloat(rec.qty) || 0;
                         if (weightToAdd > 0) {
@@ -1526,11 +1763,19 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
 
                 const ordType = document.getElementById('ord-type').value;
                 let ordStatus = document.getElementById('ord-status').value || 'Open';
+                let isSaveAndSend = false;
                 if (window._isDraftSave) {
                     ordStatus = 'Draft';
                     window._isDraftSave = false;
+                } else {
+                    isSaveAndSend = true;
+                    // Auto-promote status if user clicks "Save and Send" on a Draft
+                    if (ordStatus === 'Draft') {
+                        ordStatus = 'Open';
+                        document.getElementById('ord-status').value = 'Open';
+                    }
                 }
-                const mainMetal = document.getElementById('ord-main-metal-type').value;
+                let mainMetal = document.getElementById('ord-main-metal-type').value;
                 const billNo = document.getElementById('ord-bill-no').value;
                 let categoryVal = '';
                 if (document.getElementById('ord-category')) {
@@ -1667,7 +1912,12 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                         qty: row.querySelector('.po-qty').value,
                         rate: row.querySelector('.po-rate').value,
                         gst: row.querySelector('.po-gst').value,
+                        discount: row.querySelector('.po-discount-percent')?.value || '',
                         total: row.querySelector('.po-row-amount').value,
+                        category: row.querySelector('.po-item-category')?.value || '',
+                        assetType: row.querySelector('.po-item-asset-type')?.value || 'Other',
+                        metalType: row.querySelector('.po-item-metal-type')?.value || '',
+                        purity: row.querySelector('.po-item-purity')?.value || '',
                         designWt: row.querySelector('.po-design-wt')?.value || '',
                         designSize: row.querySelector('.po-design-size')?.value || '',
                         designSubCat: row.querySelector('.po-design-subcat')?.value || '',
@@ -1678,14 +1928,35 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     const qty = parseFloat(it.qty) || 0;
                     const rate = parseFloat(it.rate) || 0;
                     const gstPct = parseFloat(it.gst) || 0;
+                    const discPct = parseFloat(it.discount) || 0;
                     const rt = qty * rate;
-                    rowSumWithoutGst += rt;
-                    rowGstSum += rt * (gstPct/100);
+                    const discAmount = rt * (discPct / 100);
+                    const subAfterDisc = rt - discAmount;
+                    
+                    rowSumWithoutGst += subAfterDisc;
+                    rowGstSum += subAfterDisc * (gstPct/100);
                     totalQty += qty;
                 });
 
                 if (items.length === 0) {
                     alert('Please add at least one item.');
+                    if (submitBtn) { submitBtn.style.pointerEvents = 'auto'; submitBtn.style.opacity = '1'; }
+                    return;
+                }
+
+                // Sync global hidden fields to first item to prevent breaking legacy logic
+                const firstItem = items[0];
+                document.getElementById('ord-category').value = firstItem.category || 'Stock';
+                document.getElementById('ord-asset-type').value = firstItem.assetType || 'Other';
+                document.getElementById('ord-main-metal-type').value = firstItem.metalType || '';
+                document.getElementById('ord-purity').value = firstItem.purity || '';
+                
+                categoryVal = firstItem.category;
+                mainMetal = firstItem.metalType;
+                
+                if (ordType === 'Purchase Order' && categoryVal === 'Stock' && !mainMetal) {
+                    alert("Please select a Metal Type for Stock items.");
+                    if (submitBtn) { submitBtn.style.pointerEvents = 'auto'; submitBtn.style.opacity = '1'; }
                     return;
                 }
 
@@ -1707,7 +1978,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     billNo: document.getElementById('ord-bill-no').value,
                     billImageUrl: document.getElementById('ord-bill-imageUrl')?.value || '',
                     category: categoryVal,
-                    assetType: document.getElementById('ord-asset-type')?.value || 'Other',
+                    assetType: firstItem.assetType || 'Other',
                     
                     discountPercent: dPercent,
                     discountAmount: dAmount,
@@ -1718,7 +1989,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     amount: totalAmount.toFixed(2),
                     remark: document.getElementById('ord-remark').value,
                     mainMetalType: mainMetal,
-                    purity: document.getElementById('ord-purity').value,
+                    purity: firstItem.purity || '',
                     paidThrough: "", // Always default to Pay Later for new POs
                     paidAmount: editIndex >= 0 ? (records[editIndex].paidAmount || 0) : 0,
                     status: ordStatus
@@ -1771,6 +2042,9 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     syncCompletedPO(rec);
                 }
 
+                const targetIndex = editIndex >= 0 ? editIndex : 0;
+                const shouldSend = isSaveAndSend && ordStatus !== 'Draft' && ordStatus !== 'Cancelled';
+
                 if (editIndex >= 0) {
                     records[editIndex] = rec;
                 } else {
@@ -1786,6 +2060,10 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                 }
                 
                 renderTable();
+
+                if (shouldSend) {
+                    generatePOPdf(targetIndex, true);
+                }
             });
 
             renderTable();
@@ -1794,6 +2072,337 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                 const billPhotoInput = document.getElementById('ord-bill-photo');
                 // Multiple document upload supported natively
             });
+        });
+
+        // Helpers
+        function numberToWords(num) {
+            const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+            const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+            if ((num = num.toString()).length > 9) return 'overflow';
+            let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+            if (!n) return '';
+            let str = '';
+            str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+            str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+            str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
+            str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
+            str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
+            return str;
+        }
+
+        // ═══════ PURCHASE ORDER PDF TEMPLATE POPULATOR ═══════
+        window.populatePOTemplate = function(rec) {
+            // Use embedded supplier data if available (passed via URL), otherwise look up from localStorage
+            let vendorObj = rec._supplierData || null;
+            if (!vendorObj) {
+                const vendors = JSON.parse(localStorage.getItem('manti_supplier_kyc_records')) || [];
+                vendorObj = vendors.find(v => v.id === rec.vendor);
+                if (!vendorObj) {
+                    vendorObj = vendors.find(v => v.name === rec.vendor);
+                }
+            }
+
+            // Supplier details
+            document.getElementById('po-pdf-vendor-name').textContent = vendorObj ? (vendorObj.name || rec.vendor || '—') : (rec.vendor || '—');
+            
+            let addr = '—';
+            let stateStr = '';
+            if (vendorObj) {
+                addr = vendorObj.address || '';
+                if (vendorObj.city) addr += (addr ? ', ' : '') + vendorObj.city;
+                
+                let stateParts = [];
+                if (vendorObj.state) stateParts.push(vendorObj.state);
+                if (vendorObj.pin) stateParts.push(vendorObj.pin);
+                stateStr = stateParts.join(' - ');
+            }
+            
+            document.getElementById('po-pdf-vendor-address').textContent = addr || '—';
+            document.getElementById('po-pdf-vendor-state').textContent = stateStr;
+            
+            let contactStr = '—';
+            if (vendorObj) {
+                contactStr = [vendorObj.mobile, vendorObj.email].filter(Boolean).join(' / ') || '—';
+            }
+            document.getElementById('po-pdf-vendor-contact').textContent = contactStr;
+            document.getElementById('po-pdf-vendor-gstin').textContent = vendorObj ? (vendorObj.gst || '—') : '—';
+
+            // Details
+            document.getElementById('po-pdf-id').textContent = rec.id || '—';
+            document.getElementById('po-pdf-date').textContent = rec.date || '—';
+            document.getElementById('po-pdf-due-date').textContent = rec.dueDate || '—';
+            document.getElementById('po-pdf-bill-no').textContent = rec.billNo || '—';
+
+
+
+            // Status badge
+            let derivedStatus = rec.status || 'Open';
+            const amt = parseFloat(rec.amount || 0);
+            let paid = parseFloat(rec.paidAmount || 0);
+            if (rec.paidThrough && rec.paidThrough !== 'Accounts Payable' && paid === 0 && amt > 0) paid = amt;
+            const due = Math.max(0, amt - paid);
+            if (derivedStatus === 'Open' || !derivedStatus) {
+                if (due <= 0.001 && amt > 0) derivedStatus = 'Payed';
+                else if (amt > 0) derivedStatus = 'Payment Pending';
+                else derivedStatus = 'Open';
+            }
+            if (due > 0.01 && (derivedStatus === 'Payed' || derivedStatus === 'Completed')) derivedStatus = 'Payment Pending';
+            
+            const statusEl = document.getElementById('po-pdf-status');
+            statusEl.textContent = derivedStatus;
+
+            // Items
+            const itemsTbody = document.getElementById('po-pdf-items-body');
+            itemsTbody.innerHTML = '';
+            let subtotal = 0, gstTotal = 0;
+            const items = rec.items && rec.items.length > 0 ? rec.items : [{ desc: rec.product || '—', qty: rec.qty || 0, rate: (parseFloat(rec.amount) / parseFloat(rec.qty)) || 0, gst: '', discount: '', category: rec.category || '' }];
+
+            items.forEach((it, i) => {
+                const qty = parseFloat(it.qty) || 0;
+                const rate = parseFloat(it.rate) || 0;
+                const gstPct = parseFloat(it.gst) || 0;
+                const discPct = parseFloat(it.discount) || 0;
+                const rowSub = qty * rate;
+                const discAmt = rowSub * (discPct / 100);
+                const afterDisc = rowSub - discAmt;
+                const rowGst = afterDisc * (gstPct / 100);
+                const rowTotal = afterDisc + rowGst;
+                subtotal += afterDisc;
+                gstTotal += rowGst;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td style="text-align: left; padding-left: 10px;">
+                        ${it.desc || '—'}${it.metalType ? ' <span style="color:#d97706;font-size:9px;font-weight:700;">(' + it.metalType + (it.purity ? ' ' + it.purity : '') + ')</span>' : ''}
+                    </td>
+
+                    <td>${qty > 0 ? qty.toFixed(3) : '—'}</td>
+                    <td style="text-align: right; padding-right: 5px;">${rate > 0 ? rate.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—'}</td>
+                    <td>${discPct > 0 ? discPct.toFixed(1) + '%' : '—'}</td>
+                    <td>${gstPct > 0 ? gstPct.toFixed(1) + '%' : '—'}</td>
+                    <td style="text-align: right; padding-right: 5px; font-weight: bold; color: var(--primary);">${rowTotal > 0 ? rowTotal.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—'}</td>
+                `;
+                itemsTbody.appendChild(tr);
+            });
+
+            // Summary
+            document.getElementById('po-pdf-subtotal').textContent = '₹ ' + subtotal.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+            const da = parseFloat(rec.discountAmount) || 0;
+            const discRow = document.getElementById('po-pdf-discount-row');
+            if (da > 0) {
+                discRow.style.display = '';
+                document.getElementById('po-pdf-discount').textContent = '- ₹ ' + da.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+            } else {
+                discRow.style.display = 'none';
+            }
+
+            const gstRow = document.getElementById('po-pdf-gst-row');
+            if (gstTotal > 0) {
+                gstRow.style.display = '';
+                document.getElementById('po-pdf-gst').textContent = '₹ ' + gstTotal.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+            } else {
+                gstRow.style.display = 'none';
+            }
+
+            const ro = parseFloat(rec.roundOff) || 0;
+            const roRow = document.getElementById('po-pdf-roundoff-row');
+            if (ro !== 0) {
+                roRow.style.display = '';
+                document.getElementById('po-pdf-roundoff').textContent = (ro >= 0 ? '₹ ' : '- ₹ ') + Math.abs(ro).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+            } else {
+                roRow.style.display = 'none';
+            }
+
+            document.getElementById('po-pdf-grand-total').textContent = '₹ ' + amt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+            // Remarks
+            const remarkSection = document.getElementById('po-pdf-remarks-box');
+            const poPdfVr = document.getElementById('po-pdf-vr');
+            if (rec.remark && rec.remark.trim()) {
+                remarkSection.style.display = '';
+                if (poPdfVr) poPdfVr.style.display = '';
+                document.getElementById('po-pdf-remark').textContent = rec.remark;
+            } else {
+                remarkSection.style.display = 'none';
+                if (poPdfVr) poPdfVr.style.display = 'none';
+            }
+
+            // Word Amount
+            const words = numberToWords(Math.round(amt));
+            document.getElementById('po-pdf-total-words').textContent = words ? `${words} Only` : 'Zero Only';
+
+            // Generated date
+            document.getElementById('po-pdf-generated-date').textContent = 'Generated: ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        };
+
+        // ═══════ PURCHASE ORDER PDF GENERATOR ═══════
+        window.generatePOPdf = function(index, autoSendEmail = false) {
+            const rec = records[index];
+            if (!rec) { alert('PO record not found.'); return; }
+
+            // Resolve supplier KYC data and embed it into the record for the new window
+            const vendors = JSON.parse(localStorage.getItem('manti_supplier_kyc_records')) || [];
+            let supplierObj = vendors.find(v => v.id === rec.vendor);
+            if (!supplierObj) {
+                supplierObj = vendors.find(v => v.name === rec.vendor);
+            }
+            // Create a copy with embedded supplier data for serialization
+            const recWithSupplier = Object.assign({}, rec, { _supplierData: supplierObj || null });
+
+            populatePOTemplate(recWithSupplier);
+
+            // --- Generate PDF ---
+            const element = document.getElementById('po-pdf-template');
+            const origLeft = element.style.left;
+            element.style.left = '0';
+
+            const opt = {
+                margin: 0,
+                filename: `${rec.id || 'PurchaseOrder'}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, width: 794 },
+                jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait', hotfixes: ['px_scaling'] }
+            };
+
+            if (!autoSendEmail) {
+                const linkData = serializePOData(recWithSupplier);
+                const linkUrl = window.location.origin + window.location.pathname + "?data=" + encodeURIComponent(linkData) + "&action=print";
+                window.open(linkUrl, '_blank');
+                element.style.left = origLeft || '-9999px';
+                return;
+            }
+
+            html2pdf().set(opt).from(element).save().then(async () => {
+                element.style.left = origLeft || '-9999px';
+
+                if (autoSendEmail) {
+                    const vendors = JSON.parse(localStorage.getItem('manti_supplier_kyc_records')) || [];
+                    let vendorObj = vendors.find(v => v.id === rec.vendor);
+                    if (!vendorObj) {
+                        vendorObj = vendors.find(v => v.name === rec.vendor);
+                    }
+                    const targetEmail = vendorObj ? (vendorObj.email || '') : '';
+
+                    // Serialize data for the online link
+                    const linkData = serializePOData(rec);
+                    let linkUrl = window.location.origin + window.location.pathname + "?data=" + encodeURIComponent(linkData);
+
+                    // Try to compress/shorten the URL
+                    try {
+                        const response = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(linkUrl));
+                        if (response.ok) {
+                            linkUrl = await response.text();
+                        }
+                    } catch (e) {
+                        console.warn("Could not shorten URL", e);
+                    }
+
+                    const subject = `Purchase Order ${rec.id} from MANTI JEWEL ART PRIVATE LIMITED`;
+                    const message = `Dear Supplier,
+
+Please find our Purchase Order ${rec.id} attached.
+
+Order Details:
+- PO Number: ${rec.id}
+- Date: ${rec.date || '—'}
+- Due Date: ${rec.dueDate || '—'}
+- Total Amount: ₹${parseFloat(rec.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}
+
+You can securely view and print this Purchase Order online here:
+${linkUrl}
+
+Thank you!
+Manti Jewel Art Private Limited`;
+
+                    const mailtoLink = `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+                    alert(`Purchase Order saved and PDF downloaded! Opening email composer to send to ${targetEmail || 'vendor'}...`);
+                    window.location.href = mailtoLink;
+                }
+            }).catch(err => {
+                console.error('PDF generation error:', err);
+                element.style.left = origLeft || '-9999px';
+                alert('Error generating PDF. Please try again.');
+            });
+        };
+
+        function serializePOData(rec) {
+            const jsonStr = JSON.stringify(rec);
+            return btoa(unescape(encodeURIComponent(jsonStr)));
+        }
+
+        // --- Handle URL query parameters for shared view ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataParam = urlParams.get('data');
+            if (dataParam) {
+                try {
+                    const jsonStr = decodeURIComponent(escape(atob(dataParam)));
+                    const rec = JSON.parse(jsonStr);
+
+                    // Hide main app content
+                    const appContainer = document.querySelector('.dashboard-container');
+                    if (appContainer) appContainer.style.display = 'none';
+
+                    // Position and styling for the template
+                    const template = document.getElementById('po-pdf-template');
+                    if (template) {
+                        template.style.position = 'static';
+                        template.style.margin = '30px auto';
+                        template.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
+                        template.style.display = 'block';
+                        document.body.style.background = '#e2e8f0';
+                        document.body.style.minHeight = '100vh';
+                        document.body.style.padding = '20px';
+                    }
+
+                    // Populate template immediately (uses embedded _supplierData if available)
+                    populatePOTemplate(rec);
+
+                    // Also re-populate after cloud data loads (fallback for old URLs without embedded supplier data)
+                    document.addEventListener('CloudDataLoaded', () => {
+                        populatePOTemplate(rec);
+                    });
+
+                    // Add print / download header
+                    const printHeader = document.createElement('div');
+                    printHeader.style.cssText = "background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; max-width: 794px; margin: 0 auto 20px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); font-family: 'Inter', sans-serif;";
+                    printHeader.className = "print-only-hide";
+                    printHeader.innerHTML = `
+                        <div style="font-weight: 700; color: #111827; font-size: 1.1rem;">Purchase Order ${rec.id}</div>
+                        <button id="download-po-btn" class="btn-liquid btn-primary" style="padding: 8px 16px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                            Print / Download PDF
+                        </button>
+                    `;
+                    document.body.prepend(printHeader);
+
+                    // Hide standard body margins/paddings when printing
+                    const printStyle = document.createElement('style');
+                    printStyle.innerHTML = `
+                        @media print {
+                            .print-only-hide { display: none !important; }
+                            body { background: white !important; padding: 0 !important; margin: 0 !important; }
+                            #po-pdf-template { margin: 0 !important; box-shadow: none !important; }
+                        }
+                    `;
+                    document.head.appendChild(printStyle);
+
+                    document.getElementById('download-po-btn').addEventListener('click', () => {
+                        window.print();
+                    });
+
+                    if (urlParams.get('action') === 'print') {
+                        setTimeout(() => {
+                            window.print();
+                        }, 500);
+                    }
+                } catch (e) {
+                    console.error("Failed to load PO from URL", e);
+                    alert("This Purchase Order link appears to be invalid or broken.");
+                }
+            }
         });
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>

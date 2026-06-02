@@ -569,7 +569,7 @@
                     </td>
                     <td>${pmt.reference || '-'}</td>
                     <td>${pmt.account || '-'}</td>
-                    <td style="text-align: right; font-weight: 700; color: #059669;">₹ ${parseFloat(pmt.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td style="text-align: right; font-weight: 700; color: #059669;">₹ ${parseFloat(pmt.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style="text-align: center;">
                         <button onclick="deletePayment('${pmt.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer;" title="Delete Payment">
                             <i data-lucide="trash-2" style="width:18px; height:18px;"></i>
@@ -798,8 +798,8 @@
                             Payment Pending
                         </span>
                     </td>
-                    <td style="text-align: right;">${o.amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                    <td style="text-align: right; color: var(--danger); font-weight: 600;">${o.due.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td style="text-align: right;">${o.amt.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td style="text-align: right; color: var(--danger); font-weight: 600;">${o.due.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td style="text-align: right;">
                         <input type="number" class="payment-cell-input" data-po-id="${o.id}" data-due="${o.due}" placeholder="0.00" oninput="calculateSummary()">
                     </td>
@@ -857,11 +857,11 @@
             
             const excess = amountEntered - amountApplied;
 
-            document.getElementById('sum-entered').textContent = '₹ ' + amountEntered.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            document.getElementById('sum-applied').textContent = '₹ ' + amountApplied.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('sum-entered').textContent = '₹ ' + amountEntered.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('sum-applied').textContent = '₹ ' + amountApplied.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             
             const excessEl = document.getElementById('sum-excess');
-            excessEl.textContent = '₹ ' + Math.abs(excess).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            excessEl.textContent = '₹ ' + Math.abs(excess).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             if (amountApplied > amountEntered && amountEntered > 0) {
                 excessEl.previousElementSibling.textContent = "Amount Over-Applied:";
@@ -1026,6 +1026,11 @@
             renderPaymentsHistory();
             updatePayIdDisplay();
         }
+    </script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>

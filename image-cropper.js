@@ -51,10 +51,10 @@ function initCropperUI() {
 
     document.getElementById('manti-cropper-done').addEventListener('click', () => {
         if (cropperInstance) {
-            // Compress and output canvas heavily to save Supabase free tier storage
+            // Compress and output canvas to save Supabase free tier storage, but keep quality high
             const canvas = cropperInstance.getCroppedCanvas({
-                maxWidth: 800,
-                maxHeight: 800,
+                maxWidth: 1200,
+                maxHeight: 1200,
                 fillColor: '#fff',
                 imageSmoothingEnabled: true,
                 imageSmoothingQuality: 'high',
@@ -63,7 +63,7 @@ function initCropperUI() {
             if (canvas) {
                 canvas.toBlob((blob) => {
                     closeCropper(blob);
-                }, 'image/webp', 0.70); // Aggressive WEBP compression to hit ~50KB per file
+                }, 'image/webp', 0.85); // Balanced WEBP compression for better quality while saving space
 
             } else {
                 closeCropper(null);

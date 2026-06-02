@@ -548,5 +548,10 @@
             }, 800);
         }
     </script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
+    </script>
 </body>
 </html>

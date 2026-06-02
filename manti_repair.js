@@ -11,6 +11,7 @@ function repairFinancialData() {
     let journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
     const accounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
     let payments = JSON.parse(localStorage.getItem('manti_payments_made') || '[]');
+    const stocks = JSON.parse(localStorage.getItem('manti_stock_history') || '[]');
     
     // Default account for legacy sync (first available cash/bank account)
     const defaultAccount = accounts.length > 0 ? accounts[0].name : 'Cash';
@@ -188,12 +189,35 @@ function repairFinancialData() {
         });
     });
 
+    // 4. Stock Adjustments (Buy only)
+    stocks.filter(s => s.type === 'Buy').forEach(s => {
+        const wt = parseFloat(s.weight) || 0;
+        const amountMatch = (s.note || '').match(/₹\s*(\d+(\.\d+)?)/);
+        const amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+        
+        if (amount > 0) {
+            newJournals.push({
+                id: 'STK-BUY-' + s.id,
+                date: s.date,
+                reference: s.id,
+                notes: `Stock Purchase: ${s.metal} (${s.weight}g)`,
+                total: amount,
+                lines: [
+                    { account: 'Inventory', desc: `Purchase ${s.metal}`, contact: 'General Vendor', debit: amount, credit: 0 },
+                    { account: defaultAccount, desc: `Paid from ${defaultAccount}`, contact: 'General Vendor', debit: 0, credit: amount }
+                ],
+                timestamp: new Date(s.date).toISOString()
+            });
+        }
+    });
+
     // Replace all system-generated journals, keeping any user-created Manual Journals
     const manualJournals = journals.filter(j => 
         !j.id.startsWith('PUR-') && 
         !j.id.startsWith('PMT-') && 
         !j.id.startsWith('DIR-PMT-') && 
         !j.id.startsWith('JV-EXP-') && 
+        !j.id.startsWith('STK-BUY-') &&
         !(j.id.startsWith('JV-') && cleanExpenses.some(e => e.id === j.id.replace('JV-', '')))
     );
 

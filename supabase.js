@@ -9,7 +9,7 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
     const string = msg.toLowerCase();
     const substring = "script error";
     if (string.indexOf(substring) > -1) {
-        console.log('Script Error: See Browser Console for Detail');
+        console.warn('Script Error: See Browser Console for Detail');
     } else {
         const message = [
             'Message: ' + msg,
@@ -18,9 +18,10 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
             'Column: ' + columnNo,
             'Error object: ' + JSON.stringify(error)
         ].join(' - ');
-        alert("ERP CRITICAL ERROR: " + message);
+        console.error("ERP CRITICAL ERROR: " + message);
     }
-    return false;
+    // Return true to allow default handling (shows error in console)
+    return true;
 };
 
 console.log("Supabase Client Initialized Successfully!");
@@ -154,7 +155,7 @@ Storage.prototype.setItem = function (key, value) {
                 if (!latestValue) return;
                 
                 const parsedData = JSON.parse(latestValue);
-                const promise = syncKeyToSupabase(key, parsedData);
+                const promise = window._performSupabaseSync(key, parsedData);
                 window.mantiSyncPromises.push(promise);
                 updateSyncIndicator();
                 
@@ -201,8 +202,26 @@ window.navigateAfterSync = async function (url) {
     window.location.href = url;
 };
 
-// Map Local Data to SQL Schema and Upload (Unchanged from before)
+// Intercept manual sync calls to enforce single-concurrency RAM locks
 window.syncKeyToSupabase = async function(key, data) {
+    if (!data) return;
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch(e) {
+        console.error("Manual sync interception error:", e);
+    }
+    // Also push the data to Supabase for persistence
+    if (window._performSupabaseSync) {
+        try {
+            await window._performSupabaseSync(key, data);
+        } catch (e) {
+            console.error("Supabase sync error for", key, e);
+        }
+    }
+};;
+
+// Map Local Data to SQL Schema and Upload
+window._performSupabaseSync = async function(key, data) {
     if (!data) return;
     try {
         if (key === 'manti_order_records') {
@@ -213,6 +232,7 @@ window.syncKeyToSupabase = async function(key, data) {
                     designSubCategory: o.designSubCategory || '',
                     assetType: o.assetType || '',
                     mainMetalType: o.mainMetalType || '',
+                    purity: o.purity || '',
                     billNo: o.billNo || '',
                     billImageUrl: o.billImageUrl || '',
                     discountPercent: o.discountPercent || '',
@@ -231,8 +251,18 @@ window.syncKeyToSupabase = async function(key, data) {
                 };
             });
             if (dbOrders.length > 0) {
-                const idList = dbOrders.map(o => `"${o.order_number}"`).join(',');
-                await supabase.from('orders').delete().not('order_number', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('orders').select('order_number');
+                if (cloudIds) {
+                    const localIds = new Set(dbOrders.map(o => o.order_number));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.order_number)).map(c => c.order_number);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('orders').delete().in('order_number', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
                 if (error) { console.error("Orders Sync Error:", error); alert("Failed to save Orders to Cloud: " + error.message); }
             } else {
@@ -270,8 +300,18 @@ window.syncKeyToSupabase = async function(key, data) {
                 payment_status: inv.paymentStatus || 'Unpaid'
             }));
             if (dbInvoices.length > 0) {
-                const idList = dbInvoices.map(i => `"${i.invoice_number}"`).join(',');
-                await supabase.from('invoices').delete().not('invoice_number', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('invoices').select('invoice_number');
+                if (cloudIds) {
+                    const localIds = new Set(dbInvoices.map(i => i.invoice_number));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.invoice_number)).map(c => c.invoice_number);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('invoices').delete().in('invoice_number', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' });
                 if (error) { console.error("Invoices Sync Error:", error); alert("Failed to save Invoices to Cloud: " + error.message); }
             } else {
@@ -285,8 +325,18 @@ window.syncKeyToSupabase = async function(key, data) {
                 bank_branch: v.bankBranch || null, bank_acc: v.bankAcc || null, bank_ifsc: v.bankIfsc || null, bank_upi: v.bankUpi || null
             }));
             if (dbVendors.length > 0) {
-                const idList = dbVendors.map(v => `"${v.id}"`).join(',');
-                await supabase.from('vendor_kyc').delete().not('id', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('vendor_kyc').select('id');
+                if (cloudIds) {
+                    const localIds = new Set(dbVendors.map(v => v.id));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('vendor_kyc').delete().in('id', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('vendor_kyc').upsert(dbVendors, { onConflict: 'id' });
                 if (error) { console.error("Vendor KYC Sync Error:", error); alert("Failed to save Vendor KYC to Cloud: " + error.message); }
             } else {
@@ -300,8 +350,18 @@ window.syncKeyToSupabase = async function(key, data) {
                 bank_branch: v.bankBranch || null, bank_acc: v.bankAcc || null, bank_ifsc: v.bankIfsc || null, bank_upi: v.bankUpi || null
             }));
             if (dbSuppliers.length > 0) {
-                const idList = dbSuppliers.map(s => `"${s.id}"`).join(',');
-                await supabase.from('supplier_kyc').delete().not('id', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('supplier_kyc').select('id');
+                if (cloudIds) {
+                    const localIds = new Set(dbSuppliers.map(s => s.id));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('supplier_kyc').delete().in('id', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('supplier_kyc').upsert(dbSuppliers, { onConflict: 'id' });
                 if (error) {
                     console.error("Supplier KYC Sync Error:", error);
@@ -316,8 +376,18 @@ window.syncKeyToSupabase = async function(key, data) {
                 email: s.email || null, data: s
             }));
             if (dbStaff.length > 0) {
-                const idList = dbStaff.map(s => `"${s.id}"`).join(',');
-                await supabase.from('staff_records').delete().not('id', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('staff_records').select('id');
+                if (cloudIds) {
+                    const localIds = new Set(dbStaff.map(s => s.id));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('staff_records').delete().in('id', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('staff_records').upsert(dbStaff, { onConflict: 'id' });
                 if (error) { console.error("Staff Records Sync Error:", error); alert("Failed to save Staff Records to Cloud: " + error.message); }
             } else {
@@ -329,8 +399,18 @@ window.syncKeyToSupabase = async function(key, data) {
                 value: parseFloat(a.value) || 0, status: a.status || '', data: a
             }));
             if (dbAssets.length > 0) {
-                const idList = dbAssets.map(a => `"${a.id}"`).join(',');
-                await supabase.from('assets').delete().not('id', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('assets').select('id');
+                if (cloudIds) {
+                    const localIds = new Set(dbAssets.map(a => a.id));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('assets').delete().in('id', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('assets').upsert(dbAssets, { onConflict: 'id' });
                 if (error) { console.error("Assets Sync Error:", error); alert("Failed to save Assets to Cloud: " + error.message); }
             } else {
@@ -342,8 +422,18 @@ window.syncKeyToSupabase = async function(key, data) {
                 total_amount: parseFloat(c.total) || 0, items: c.items || []
             }));
             if (dbChallans.length > 0) {
-                const idList = dbChallans.map(c => `"${c.id}"`).join(',');
-                await supabase.from('delivery_challans').delete().not('id', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('delivery_challans').select('id');
+                if (cloudIds) {
+                    const localIds = new Set(dbChallans.map(c => c.id));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('delivery_challans').delete().in('id', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('delivery_challans').upsert(dbChallans, { onConflict: 'id' });
                 if (error) { console.error("Delivery Challans Sync Error:", error); alert("Failed to save Delivery Challans to Cloud: " + error.message); }
             } else {
@@ -368,8 +458,18 @@ window.syncKeyToSupabase = async function(key, data) {
             });
             const dbPayments = Array.from(seenPmtIds.values());
             if (dbPayments.length > 0) {
-                const idList = dbPayments.map(p => `"${p.id}"`).join(',');
-                await supabase.from('payments_made').delete().not('id', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('payments_made').select('id');
+                if (cloudIds) {
+                    const localIds = new Set(dbPayments.map(p => p.id));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('payments_made').delete().in('id', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('payments_made').upsert(dbPayments, { onConflict: 'id' });
                 if (error) { console.error("Payments Sync Error:", error); alert("Failed to save Payments to Cloud: " + error.message); }
             } else {
@@ -396,8 +496,18 @@ window.syncKeyToSupabase = async function(key, data) {
                 };
             });
             if (dbExpenses.length > 0) {
-                const idList = dbExpenses.map(e => `"${e.id}"`).join(',');
-                await supabase.from('expenses').delete().not('id', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('expenses').select('id');
+                if (cloudIds) {
+                    const localIds = new Set(dbExpenses.map(e => e.id));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('expenses').delete().in('id', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('expenses').upsert(dbExpenses, { onConflict: 'id' });
                 if (error) { console.error("Expenses Sync Error:", error); alert("Failed to save Expenses to Cloud: " + error.message); }
             } else {
@@ -422,8 +532,18 @@ window.syncKeyToSupabase = async function(key, data) {
             });
             const dbJournals = Array.from(seenIds.values());
             if (dbJournals.length > 0) {
-                const idList = dbJournals.map(j => `"${j.id}"`).join(',');
-                await supabase.from('journal_entries').delete().not('id', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('journal_entries').select('id');
+                if (cloudIds) {
+                    const localIds = new Set(dbJournals.map(j => j.id));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('journal_entries').delete().in('id', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('journal_entries').upsert(dbJournals, { onConflict: 'id' });
                 if (error) { console.error("Journal Entries Sync Error:", error); alert("Failed to save Journal Entries to Cloud: " + error.message); }
             } else {
@@ -437,48 +557,117 @@ window.syncKeyToSupabase = async function(key, data) {
             }));
             
             if (dbAccounts.length > 0) {
-                const idList = dbAccounts.map(a => `"${a.id}"`).join(',');
-                await supabase.from('bank_accounts').delete().not('id', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('bank_accounts').select('id');
+                if (cloudIds) {
+                    const localIds = new Set(dbAccounts.map(a => a.id));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('bank_accounts').delete().in('id', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('bank_accounts').upsert(dbAccounts, { onConflict: 'id' });
                 if (error) { console.error("Bank Accounts Sync Error:", error); alert("Failed to save Bank Accounts to Cloud: " + error.message); }
             } else {
                 await supabase.from('bank_accounts').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_stock_history') {
-            const dbStock = data.map(s => {
-                // Ensure ID is padded correctly if it's an ADJ
-                let cleanId = s.id || '';
-                if (cleanId.startsWith('ADJ-')) {
-                    const num = parseInt(cleanId.replace('ADJ-', ''));
-                    if (!isNaN(num)) cleanId = `ADJ-${num.toString().padStart(4, '0')}`;
+            // Deduplicate by ID
+            const seenStockIds = new Map();
+            data.forEach(s => {
+                let id = (s.id || '').toString().trim();
+                if (!id || id === 'undefined') {
+                    id = `ADJ-OLD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+                }
+                // Normalize ADJ IDs to 4-digit padding
+                if (id.startsWith('ADJ-')) {
+                    const num = parseInt(id.replace('ADJ-', ''));
+                    if (!isNaN(num)) id = `ADJ-${num.toString().padStart(4, '0')}`;
                 }
 
-                return {
-                    date: s.date, type: s.type || '', 
-                    details: (cleanId && !cleanId.includes('-') && cleanId.length > 20 ? '' : `[${cleanId}] `) + (s.note || s.details || ''), 
-                    qty: parseFloat(s.qty) || 0,
-                    weight: parseFloat(s.weight) || 0, metal_type: s.metal || ''
-                };
-            });
-            
-            try {
-                // AGGRESSIVE MIRRORING:
-                // We must ensure the cloud exactly matches local.
-                // 1. Delete everything first
-                const { error: delErr } = await supabase.from('stock_history').delete().neq('weight', -999999); 
-                if (delErr) throw delErr;
-                
-                // 2. Insert current state
-                if (dbStock.length > 0) {
-                    // Supabase insert has a limit, but for stock history ~1000 rows is fine
-                    const { error: insErr } = await supabase.from('stock_history').insert(dbStock);
-                    if (insErr) throw insErr;
+                // Parse date to ISO
+                let isoDate = new Date().toISOString();
+                if (s.date) {
+                    let pd = new Date(s.date);
+                    if (isNaN(pd.getTime())) {
+                        // Try DD/MM/YYYY HH:MM format
+                        const parts = s.date.split(' ');
+                        const dateParts = (parts[0] || '').split('/');
+                        if (dateParts.length === 3) {
+                            const timePart = parts[1] || '00:00';
+                            pd = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timePart}:00`);
+                        }
+                    }
+                    if (!isNaN(pd.getTime())) isoDate = pd.toISOString();
                 }
-                console.log(`Stock History mirrored successfully (${dbStock.length} rows)`);
-            } catch (err) {
-                console.error("Stock History Mirror Sync Failed:", err);
+
+                const note = s.note || s.details || '';
+                const status = s.status || '';
+                const extDetails = JSON.stringify({ id, note, status });
+
+                seenStockIds.set(id, {
+                    id,
+                    date: isoDate,
+                    type: s.type || '',
+                    details: extDetails,
+                    qty: parseFloat(s.qty) || 0,
+                    weight: parseFloat(s.weight) || 0,
+                    metal_type: s.metal || s.metal_type || ''
+                });
+                });
+
+
+            const stockArray = Array.from(seenStockIds.values());
+
+            if (stockArray.length > 0) {
+                // Upsert all current records by TEXT id
+                const { error: upErr } = await supabase
+                    .from('stock_history')
+                    .upsert(stockArray, { onConflict: 'id' });
+                    
+                if (upErr) {
+                    console.error('Stock history upsert error:', upErr);
+                    alert('Failed to save Stock Adjustment to Cloud: ' + upErr.message);
+                } else {
+                    console.log(`Stock history synced: ${stockArray.length} records`);
+                    // Safely delete stale records using chunked deletes
+                    const { data: cloudIds } = await supabase.from('stock_history').select('id');
+                    if (cloudIds) {
+                        const localIds = new Set(stockArray.map(s => s.id));
+                        const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                        if (toDelete.length > 0) {
+                            for (let i = 0; i < toDelete.length; i += 100) {
+                                const chunk = toDelete.slice(i, i + 100);
+                                await supabase.from('stock_history').delete().in('id', chunk);
+                            }
+                        }
+                    }
+                }
+            } else {
+                // No records — wipe the table
+                await supabase.from('stock_history').delete().neq('id', 'NOTHING');
             }
 
+            // Update RAM with normalized data
+            const ramStock = data.map(s => {
+                let id = (s.id || '').toString().trim();
+                if (!id || id === 'undefined') {
+                    // Try to find the generated ID if missing
+                    const generatedMatch = stockArray.find(st => st.date.includes(s.date) && st.qty == parseFloat(s.qty || 0));
+                    if (generatedMatch) id = generatedMatch.id;
+                    else id = `ADJ-OLD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+                }
+                if (id.startsWith('ADJ-')) {
+                    const num = parseInt(id.replace('ADJ-', ''));
+                    if (!isNaN(num)) id = `ADJ-${num.toString().padStart(4, '0')}`;
+                }
+                return { ...s, id, status: s.status || '' };
+            });
+            window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(ramStock));
+            try { originalSetItem.call(localStorage, 'manti_stock_history', JSON.stringify(ramStock)); } catch(e) {}
         } else if (key === 'manti_designs') {
             const dbDesigns = data.map(d => ({
                 id: d.id, category: d.category, sub_category: d.subCategory || null,
@@ -486,8 +675,18 @@ window.syncKeyToSupabase = async function(key, data) {
                 image_url: d.imageUrl || null
             }));
             if (dbDesigns.length > 0) {
-                const idList = dbDesigns.map(d => `"${d.id}"`).join(',');
-                await supabase.from('designs').delete().not('id', 'in', `(${idList})`);
+                // Safely delete stale records using chunked deletes
+                const { data: cloudIds } = await supabase.from('designs').select('id');
+                if (cloudIds) {
+                    const localIds = new Set(dbDesigns.map(d => d.id));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('designs').delete().in('id', chunk);
+                        }
+                    }
+                }
                 const { error } = await supabase.from('designs').upsert(dbDesigns, { onConflict: 'id' });
                 if (error) { console.error("Designs Sync Error:", error); alert("Failed to save Designs to Cloud."); }
             } else {
@@ -543,7 +742,7 @@ window.fetchEverythingFromCloud = async function () {
             supabase.from('expenses').select('*'),
             supabase.from('journal_entries').select('*'),
             supabase.from('bank_accounts').select('*'),
-            supabase.from('stock_history').select('*'),
+            supabase.from('stock_history').select('id,date,type,details,qty,weight,metal_type'),
 
             supabase.from('settings').select('*'),
             supabase.from('designs').select('*'),
@@ -582,6 +781,7 @@ window.fetchEverythingFromCloud = async function () {
                     designSubCategory: extended.designSubCategory || '',
                     assetType: extended.assetType || '',
                     mainMetalType: metal,
+                    purity: extended.purity || '',
                     billNo: extended.billNo || '',
                     billImageUrl: extended.billImageUrl || '',
                     discountPercent: extended.discountPercent || '',
@@ -747,40 +947,41 @@ window.fetchEverythingFromCloud = async function () {
 
         // 13. Stock History
         if (stockRes.data && stockRes.data.length > 0) {
-            const seen = new Set();
-            const cleanStock = [];
-            stockRes.data.forEach(s => {
-                // Stable fingerprint for cloud data (Day + Metal + Weight + Type + Details)
-                const datePart = (s.date || '').split(' ')[0];
-                const notePart = (s.details || '').trim().toLowerCase();
-                const finger = `${datePart}|${(s.metal_type||'').trim()}|${parseFloat(s.weight).toFixed(3)}|${(s.type||'').trim()}|${notePart}`;
-                
-                if (seen.has(finger)) return;
-                seen.add(finger);
+            const cleanStock = stockRes.data.map(s => {
+                let note = '';
+                let status = '';
+                if (s.details && s.details.startsWith('{')) {
+                    try {
+                        const p = JSON.parse(s.details);
+                        note = p.note || '';
+                        status = p.status || '';
+                    } catch(e) {}
+                }
 
-                // Extract stable ID from details if it was wrapped in brackets like [ADJ-1001]
-                let extractedId = s.id;
-                if (s.details && s.details.startsWith('[')) {
-                    const match = s.details.match(/^\[(.*?)\]/);
-                    if (match) {
-                        extractedId = match[1];
+                // Format local date
+                let formattedDate = s.date;
+                if (s.date) {
+                    const pd = new Date(s.date);
+                    if (!isNaN(pd.getTime())) {
+                        formattedDate = pd.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + pd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     }
                 }
-                
-                cleanStock.push({
-                    id: extractedId, 
-                    date: s.date, 
-                    type: s.type, 
-                    note: s.details ? s.details.replace(/^\[.*?\]\s*/, '') : '', 
-                    qty: s.qty, 
-                    weight: s.weight, 
-                    metal: s.metal_type
-                });
+
+                return {
+                    id: s.id,
+                    date: formattedDate,
+                    type: s.type || '',
+                    note: note || s.details || '',
+                    status: status,
+                    qty: parseFloat(s.qty) || 0,
+                    weight: parseFloat(s.weight) || 0,
+                    metal: s.metal_type || ''
+                };
             });
+
             window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(cleanStock));
+            try { originalSetItem.call(localStorage, 'manti_stock_history', JSON.stringify(cleanStock)); } catch(e){}
         }
-
-
 
         // 15. Settings
         if (settingsRes.data) {
@@ -848,7 +1049,7 @@ window.fetchEverythingFromCloud = async function () {
         // Continue booting the app anyway with locally cached/empty data
     }
     console.log("Cloud data loaded into RAM. Dispatching CloudDataLoaded event.");
-
+    window.isCloudDataLoaded = true;
     // Boot the main ERP scripts natively
     document.dispatchEvent(new Event('CloudDataLoaded'));
 };

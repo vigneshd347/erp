@@ -51,6 +51,7 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="melting.html" class="nav-item nested ">Melting</a>
                         <a href="jobwork.html" class="nav-item nested ">Job Work</a>
                         <a href="design-book.html" class="nav-item nested ">Design Book</a>
                                             <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
@@ -195,7 +196,10 @@
                                     <option value="" disabled selected>Select Metal Type</option>
                                     <option value="Gold">1. Gold</option>
                                     <option value="Silver">2. Silver</option>
-                                    <option value="Others">3. others</option>
+                                    <option value="Copper">3. Copper</option>
+                                    <option value="Zinc">4. Zinc</option>
+                                    <option value="Iridium">5. Iridium</option>
+                                    <option value="Others">6. Others</option>
                                 </select>
                             </div>
                             <input type="number" step="0.001" id="ord-qty" placeholder="Weight (g)" required>
@@ -645,6 +649,11 @@
         });
     </script>
     <script src="liquid-button.js"></script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
+    </script>
 </body>
 
 </html>

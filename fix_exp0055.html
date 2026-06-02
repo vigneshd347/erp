@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fix EXP-0055 Category</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; }
+  h2 { color: #1e3a5f; }
+  .success { color: #16a34a; font-weight: 700; font-size: 1.1rem; }
+  .error { color: #dc2626; font-weight: 700; font-size: 1.1rem; }
+  button { padding: 6px 14px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; }
+</style>
+</head>
+<body>
+<h2>Fix EXP-0055 Category</h2>
+<div id="output"></div>
+
+<script>
+const output = document.getElementById('output');
+let expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+
+let exp = expenses.find(e => e.id === 'EXP-0055');
+
+if (!exp) {
+    output.innerHTML = '<p class="error">❌ EXP-0055 not found in this browser. Please open this page in the browser you use for the ERP.</p>';
+} else {
+    let html = `<p>Found <b>EXP-0055</b>.</p>`;
+    html += `<p>Current Category: <b>${exp.category || 'undefined'}</b></p>`;
+    html += `<p>Select a valid category to fix it:</p>`;
+    html += `<select id="newCat" style="padding: 6px; font-size: 1rem;">
+        <option value="Consumables">Consumables</option>
+        <option value="Fuel">Fuel</option>
+        <option value="Maintenance">Maintenance</option>
+        <option value="Office Supplies">Office Supplies</option>
+        <option value="Others" selected>Others</option>
+    </select>
+    <button onclick="fixExp()">Fix Category</button>
+    <div id="result" style="margin-top:15px;"></div>
+    `;
+    output.innerHTML = html;
+}
+
+function fixExp() {
+    let expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+    let expIndex = expenses.findIndex(e => e.id === 'EXP-0055');
+    if(expIndex > -1) {
+        expenses[expIndex].category = document.getElementById('newCat').value;
+        localStorage.setItem('manti_expenses', JSON.stringify(expenses));
+        
+        // Push update to supabase if available
+        if (window.syncKeyToSupabase) {
+            window.syncKeyToSupabase('manti_expenses', expenses);
+        }
+
+        document.getElementById('result').innerHTML = `<p class="success">✅ EXP-0055 category fixed to ${expenses[expIndex].category}!</p>`;
+        setTimeout(() => { window.location.href = 'expenses.html'; }, 1500);
+    }
+}
+</script>
+<script src="supabase.js"></script>
+</body>
+</html>

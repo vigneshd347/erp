@@ -269,15 +269,28 @@
                 lucide.createIcons();
             });
 
-            // GST -> PAN Auto Extraction
+            // GST -> PAN Auto Extraction & Business Info Fetch
             document.getElementById('v-gst').addEventListener('input', function(e) {
                 let val = e.target.value.trim().toUpperCase();
                 e.target.value = val;
+                // Auto-fill PAN if empty
                 if (val.length === 15) {
                     let panField = document.getElementById('v-pan');
                     if (!panField.value.trim()) {
                         panField.value = val.substring(2, 12);
                     }
+                    // Fetch business details using GSTIN
+                    fetch(`https://api.example.com/gstin/${val}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data && data.businessName) {
+                                document.getElementById('v-name').value = data.businessName;
+                            }
+                            if (data && data.address) {
+                                document.getElementById('v-address').value = data.address;
+                            }
+                        })
+                        .catch(err => console.error('Failed to fetch GST details:', err));
                 }
             });
 

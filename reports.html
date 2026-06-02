@@ -122,9 +122,11 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="melting.html" class="nav-item nested ">Melting</a>
+                        <a href="stock-adjustment.html" class="nav-item nested ">Stock Adjustment</a>
                         <a href="jobwork.html" class="nav-item nested ">Job Work</a>
                         <a href="design-book.html" class="nav-item nested ">Design Book</a>
-                                            <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
+                        <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
 </div>
                 </div>
 
@@ -174,6 +176,10 @@
                 <a href="staff.html" class="nav-item">
                     <div class="icon"><i data-lucide="users"></i></div>
                     <span class="label">Staff</span>
+                </a>
+                <a href="worker-data-sheet.html" class="nav-item">
+                    <div class="icon"><i data-lucide="user-check"></i></div>
+                    <span class="label">Worker Data Sheet</span>
                 </a>
                 <a href="reports.html" class="nav-item">
                     <div class="icon"><i data-lucide="bar-chart-3"></i></div>
@@ -293,12 +299,7 @@
                         </ul>
                     </div>
                     
-                    <div class="report-group">
-                        <div class="report-group-title">Saved Snapshots <span style="font-size: 0.65rem; background: #e0f2fe; color: #0284c7; padding: 2px 6px; border-radius: 10px; margin-left: 6px;">New</span></div>
-                        <ul class="report-list" id="saved-snapshots-list">
-                            <li><span style="color: #9ca3af; font-size: 0.85rem; font-style: italic;">No snapshots saved yet</span></li>
-                        </ul>
-                    </div>
+
                 </div>
 
                 <select id="report-type" style="display:none;"></select>
@@ -418,9 +419,7 @@
                             // Initialize on load just in case
                             setTimeout(updateMonthDropdown, 100);
                         </script>
-                        <button type="button" class="btn-success" id="btn-save-snapshot" style="display: none; height: 38px; padding: 0 16px; border-radius: 6px; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; white-space: nowrap; flex: 0 0 auto; min-width: max-content;" onclick="saveReportSnapshot()">
-                            <i data-lucide="save" style="width: 16px; height: 16px;"></i> <span style="white-space: nowrap;">Save Snapshot</span>
-                        </button>
+
                         <input type="text" id="search-report" class="input-wrapper" placeholder="Search data..." onkeyup="filterTable('search-report', 'report-table')" style="height: 38px; width: 180px; padding: 0 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px; outline: none; flex: 0 0 auto;">
                         <button type="button" class="btn-outline" style="height: 38px; padding: 0 16px; border-radius: 6px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; white-space: nowrap; background: white; flex: 0 0 auto; min-width: max-content;" id="btn-customize-columns-inner">
                             <i data-lucide="settings-2" style="width: 16px; height: 16px;"></i> <span style="white-space: nowrap;">Customize Report</span>
@@ -483,7 +482,8 @@
     </div>
 
     <script src="liquid-button.js"></script>
-    <script src="script.js?v=24"></script>
+    <script src="script.js?v=25"></script>
+    <script src="manti_repair.js"></script>
     <script>
         document.addEventListener('CloudDataLoaded', () => {
             // Initialize Lucide icons immediately on page load (fixes sidebar icons)
@@ -498,95 +498,7 @@
             window.manti_custom_reports = JSON.parse(localStorage.getItem('manti_custom_reports')) || {};
             let currentActiveView = null; // Stores { name, baseType, columns: [{name, visible}] }
 
-            // Snapshot Logic
-            window.refreshSnapshotsList = function() {
-                const list = document.getElementById('saved-snapshots-list');
-                if (!list) return;
-                
-                const snaps = JSON.parse(localStorage.getItem('manti_report_snapshots')) || [];
-                if (snaps.length === 0) {
-                    list.innerHTML = '<li><span style="color: #9ca3af; font-size: 0.85rem; font-style: italic;">No snapshots saved yet</span></li>';
-                    return;
-                }
-                
-                list.innerHTML = '';
-                snaps.slice().reverse().forEach(snap => {
-                    const d = new Date(snap.date);
-                    const formatted = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    
-                    list.innerHTML += `
-                        <li style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                            <a class="report-link" onclick="loadSnapshot('${snap.id}')" style="font-size: 0.85rem;" title="${snap.title}">
-                                <i data-lucide="file-clock" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> 
-                                ${snap.title} <br><span style="color: #6b7280; font-size: 0.75rem;">${formatted}</span>
-                            </a>
-                            <button onclick="deleteSnapshot('${snap.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 2px;"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
-                        </li>
-                    `;
-                });
-                
-                if (window.lucide) window.lucide.createIcons();
-            };
-            
-            window.saveReportSnapshot = function() {
-                const tableHtml = document.getElementById('report-table').outerHTML;
-                const reportTitleText = document.getElementById('report-title').textContent;
-                
-                // UUID v4 format to conform to Supabase schemas
-                const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                    return v.toString(16);
-                });
 
-                const snapshot = {
-                    id: uuid,
-                    title: reportTitleText,
-                    date: new Date().toISOString(),
-                    html: tableHtml,
-                    type: window._currentReportType
-                };
-                
-                const snapshots = JSON.parse(localStorage.getItem('manti_report_snapshots')) || [];
-                snapshots.push(snapshot);
-                localStorage.setItem('manti_report_snapshots', JSON.stringify(snapshots));
-                
-                alert("Report Snapshot Saved Successfully!");
-                refreshSnapshotsList();
-            };
-
-            window.loadSnapshot = function(id) {
-                const snaps = JSON.parse(localStorage.getItem('manti_report_snapshots')) || [];
-                const snap = snaps.find(s => s.id === id);
-                if (!snap) return;
-                
-                document.getElementById('report-title').textContent = snap.title;
-                document.getElementById('report-subtitle').textContent = "Archived Snapshot - Read Only";
-                
-                const tableContainer = document.getElementById('report-container');
-                tableContainer.innerHTML = snap.html;
-                
-                document.querySelector('.report-selector-section').style.display = 'none';
-                document.querySelector('.generator-header').style.display = 'none';
-                document.getElementById('report-container-wrapper').style.display = 'block';
-                document.getElementById('empty-state-greeting').style.display = 'none';
-                
-                document.getElementById('btn-save-snapshot').style.display = 'none';
-                document.getElementById('report-year-filter').style.display = 'none';
-                document.getElementById('report-month-filter').style.display = 'none';
-                document.getElementById('search-report').style.display = 'none';
-                document.getElementById('btn-customize-columns-inner').style.display = 'none';
-            };
-            
-            window.deleteSnapshot = function(id) {
-                if(!confirm('Delete this saved snapshot permanently?')) return;
-                let snaps = JSON.parse(localStorage.getItem('manti_report_snapshots')) || [];
-                snaps = snaps.filter(s => s.id !== id);
-                localStorage.setItem('manti_report_snapshots', JSON.stringify(snaps));
-                refreshSnapshotsList();
-            };
-            
-            // Initialization Call
-            refreshSnapshotsList();
 
             // Date Filter Helper
             function isWithinDateFilter(dateString) {
@@ -625,12 +537,7 @@
                 document.getElementById('search-report').style.display = 'block';
                 document.getElementById('btn-customize-columns-inner').style.display = 'flex';
                 
-                const btnSaveSnapshot = document.getElementById('btn-save-snapshot');
-                if (type === 'overall-valuation' || type === 'inventory' || type === 'profit-loss') {
-                    if (btnSaveSnapshot) btnSaveSnapshot.style.display = 'flex';
-                } else {
-                    if (btnSaveSnapshot) btnSaveSnapshot.style.display = 'none';
-                }
+
 
                 const searchInput = document.getElementById('search-report');
 
@@ -729,7 +636,7 @@
                                     <tr style="border-bottom: 1px solid #e2e8f0;">
                                         <td style="padding: 8px; font-weight: 500;">${monthNames[i]}</td>
                                         <td style="padding: 8px;">${data.count}</td>
-                                        <td style="padding: 8px; font-weight: 600; color: #3b82f6;">${data.totalQty.toFixed(3)}</td>
+                                        <td style="padding: 8px; font-weight: 600; color: #3b82f6;">${data.totalQty.toFixed(2)}</td>
                                     </tr>
                                 `;
                                 totalYearlyOrders += data.count;
@@ -741,7 +648,7 @@
                                     <tr style="background: #e2e8f0; font-weight: bold;">
                                         <td style="padding: 8px;">YEAR TOTAL</td>
                                         <td style="padding: 8px;">${totalYearlyOrders}</td>
-                                        <td style="padding: 8px; color: #1d4ed8;">${totalYearlyQty.toFixed(3)}</td>
+                                        <td style="padding: 8px; color: #1d4ed8;">${totalYearlyQty.toFixed(2)}</td>
                                     </tr>
                                     </tbody>
                                 </table>
@@ -794,7 +701,7 @@
                             bodyHtml += `
                                 <tr style="background: #f8fafc; font-weight: bold;">
                                     <td colspan="5" style="text-align: right; color: #475569;">${monthNames[i]} Total:</td>
-                                    <td colspan="2" style="color: #3b82f6;">${data.totalQty.toFixed(3)}</td>
+                                    <td colspan="2" style="color: #3b82f6;">${data.totalQty.toFixed(2)}</td>
                                 </tr>
                             `;
                         }
@@ -966,8 +873,14 @@
                 }
 
                 else if (type === 'purchase-orders') {
-                    reportTitle.textContent = `Purchase Orders Report`;
-                    document.getElementById('report-subtitle').textContent = new Date().toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
+                    const filterYear = document.getElementById('report-year-filter').value;
+                    const filterMonth = document.getElementById('report-month-filter').value;
+                    const isYearlyMode = !isNaN(parseInt(filterYear)) && filterMonth === 'all';
+                    const targetYear = parseInt(filterYear);
+
+                    reportTitle.textContent = isYearlyMode ? `${targetYear} Yearly Purchase Orders Report` : `Purchase Orders Report`;
+                    if (!isYearlyMode) document.getElementById('report-subtitle').textContent = new Date().toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
+                    else document.getElementById('report-subtitle').textContent = '';
 
                     const allOrders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
                     const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
@@ -1000,7 +913,144 @@
                         'Others':      { bg:'#f3f4f6', color:'#374151' }
                     };
 
-                    reportHead.innerHTML = `
+                    if (pos.length === 0) {
+                        reportHead.innerHTML = `<tr><th>Notice</th></tr>`;
+                        reportBody.innerHTML = `<tr><td style="text-align:center;padding:48px;color:#9ca3af;">No purchase orders found for this period.</td></tr>`;
+                    } else if (isYearlyMode) {
+                        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                        let monthlyData = {};
+                        for (let i = 0; i < 12; i++) {
+                            monthlyData[i] = { pos: [], count: 0, totalAmount: 0 };
+                        }
+                        
+                        pos.forEach(o => {
+                            const d = new Date(o.date);
+                            if (isNaN(d.getTime())) return;
+                            const m = d.getMonth();
+                            monthlyData[m].pos.push(o);
+                            monthlyData[m].count++;
+                            if (o.status !== 'Cancelled') {
+                                monthlyData[m].totalAmount += parseFloat(o.amount) || 0;
+                            }
+                        });
+
+                        let summaryHtml = `
+                            <div style="margin-bottom: 30px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <h3 style="margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px;">${targetYear} Monthly Purchase Summary</h3>
+                                <table width="100%" data-no-filter="true" style="border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                            <th style="padding: 8px;">Month</th>
+                                            <th style="padding: 8px;">Total POs</th>
+                                            <th style="padding: 8px;">Amount (₹) (Excl. Cancelled)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        let totalYearlyCount = 0;
+                        let totalYearlyAmount = 0;
+                        
+                        for (let i = 0; i < 12; i++) {
+                            const data = monthlyData[i];
+                            const now = new Date();
+                            const isPastOrCurrentMonth = (targetYear < now.getFullYear()) || (targetYear === now.getFullYear() && i <= now.getMonth());
+                            
+                            if (isPastOrCurrentMonth || data.count > 0) {
+                                summaryHtml += `
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 8px; font-weight: 500;">${monthNames[i]}</td>
+                                        <td style="padding: 8px;">${data.count}</td>
+                                        <td style="padding: 8px; font-weight: 600; color: #059669;">${data.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    </tr>
+                                `;
+                                totalYearlyCount += data.count;
+                                totalYearlyAmount += data.totalAmount;
+                            }
+                        }
+                        
+                        summaryHtml += `
+                                    <tr style="background: #e2e8f0; font-weight: bold;">
+                                        <td style="padding: 8px;">YEAR TOTAL</td>
+                                        <td style="padding: 8px;">${totalYearlyCount}</td>
+                                        <td style="padding: 8px; color: #047857;">${totalYearlyAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <h3 style="margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px;">${targetYear} Detailed Purchase Orders</h3>
+                        `;
+                        
+                        reportHead.innerHTML = `<tr><td colspan="9" style="padding: 0;">${summaryHtml}</td></tr>`;
+                        
+                        let bodyHtml = '';
+                        for (let i = 0; i < 12; i++) {
+                            const data = monthlyData[i];
+                            if (data.count === 0) continue; 
+                            
+                            bodyHtml += `
+                                <tr style="background: #f1f5f9;">
+                                    <td colspan="9" style="padding: 12px 10px; font-weight: bold; color: #0f172a; font-size: 1.05rem; border-left: 4px solid #0ea5e9;">
+                                        ${monthNames[i]} ${targetYear}
+                                    </td>
+                                </tr>
+                                <tr style="background:#f8fafc;">
+                                    <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">PO #</th>
+                                    <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Date</th>
+                                    <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Supplier</th>
+                                    <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Category</th>
+                                    <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Items</th>
+                                    <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Bill No.</th>
+                                    <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;text-align:right;">Amount (₹)</th>
+                                    <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;text-align:center;">Status</th>
+                                    <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Remark</th>
+                                </tr>
+                            `;
+                            
+                            data.pos.sort((a,b) => new Date(a.date)-new Date(b.date)).forEach(o => {
+                                const status = o.status || 'Open';
+                                const sc = statusStyle[status] || { bg:'#f3f4f6', color:'#374151', dot:'#9ca3af' };
+                                const cat = cats.includes(o.category) ? o.category : (o.category || '—');
+                                const cs = catStyle[cat] || { bg:'#f3f4f6', color:'#374151' };
+                                const supplierName = supplierMap[o.vendor] || o.vendor || '—';
+                                const amt = parseFloat(o.amount) || 0;
+
+                                let itemsSummary = '—';
+                                if (o.items && o.items.length > 0) {
+                                    itemsSummary = o.items.map(it => it.desc).filter(Boolean).join(', ');
+                                    if (itemsSummary.length > 50) itemsSummary = itemsSummary.slice(0,47) + '…';
+                                } else if (o.product) { itemsSummary = o.product; }
+
+                                bodyHtml += `
+                                    <tr class="po-rpt-row" data-po-status="${status}" style="border-bottom:1px solid #f3f4f6;">
+                                        <td style="padding:13px 14px;font-weight:700;color:#0284c7;">${o.id||'—'}</td>
+                                        <td style="padding:13px 14px;color:#374151;">${o.date||'—'}</td>
+                                        <td style="padding:13px 14px;font-weight:600;color:#1f2937;">${supplierName}</td>
+                                        <td style="padding:13px 14px;">${cat!=='-'?'<span style="background:'+cs.bg+';color:'+cs.color+';font-size:0.7rem;font-weight:700;padding:3px 9px;border-radius:20px;">'+cat+'</span>':'—'}</td>
+                                        <td style="padding:13px 14px;color:#374151;font-size:0.84rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemsSummary}</td>
+                                        <td style="padding:13px 14px;color:#6b7280;font-size:0.82rem;">${o.billNo||'—'}</td>
+                                        <td style="padding:13px 14px;text-align:right;font-weight:700;color:#059669;">${amt>0?'₹ '+amt.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</td>
+                                        <td style="padding:13px 14px;text-align:center;">
+                                            <span style="display:inline-flex;align-items:center;gap:4px;background:${sc.bg};color:${sc.color};font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:20px;">
+                                                <span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};flex-shrink:0;"></span>${status}
+                                            </span>
+                                        </td>
+                                        <td style="padding:13px 14px;color:#6b7280;font-size:0.82rem;">${o.remark||'—'}</td>
+                                    </tr>`;
+                            });
+                            
+                            bodyHtml += `
+                                <tr style="background: #f8fafc; font-weight: bold;">
+                                    <td colspan="6" style="text-align: right; color: #475569;">${monthNames[i]} Total (Excl. Cancelled):</td>
+                                    <td style="color: #059669;">₹ ${data.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            `;
+                        }
+                        reportBody.innerHTML = bodyHtml;
+                        window._poStatusFilter = 'All';
+                    } else {
+                        reportHead.innerHTML = `
                     <tr><td colspan="9" style="padding:0;border:none;">
                         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 20px 14px;">
                             <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;">
@@ -1057,9 +1107,6 @@
                         <th style="padding:11px 14px;font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;">Remark</th>
                     </tr>`;
 
-                    if (pos.length === 0) {
-                        reportBody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:48px;color:#9ca3af;">No purchase orders found for this period.</td></tr>`;
-                    } else {
                         let bodyHtml = '';
                         let totalExclCancelled = 0;
                         pos.sort((a,b) => new Date(b.date)-new Date(a.date)).forEach(o => {
@@ -1081,7 +1128,7 @@
                                 <td style="padding:13px 14px;font-weight:700;color:#0284c7;">${o.id||'—'}</td>
                                 <td style="padding:13px 14px;color:#374151;">${o.date||'—'}</td>
                                 <td style="padding:13px 14px;font-weight:600;color:#1f2937;">${supplierName}</td>
-                                <td style="padding:13px 14px;">${cat!=='—'?`<span style="background:${cs.bg};color:${cs.color};font-size:0.7rem;font-weight:700;padding:3px 9px;border-radius:20px;">${cat}</span>`:'—'}</td>
+                                <td style="padding:13px 14px;">${cat!=='-'?'<span style="background:'+cs.bg+';color:'+cs.color+';font-size:0.7rem;font-weight:700;padding:3px 9px;border-radius:20px;">'+cat+'</span>':'—'}</td>
                                 <td style="padding:13px 14px;color:#374151;font-size:0.84rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itemsSummary}</td>
                                 <td style="padding:13px 14px;color:#6b7280;font-size:0.82rem;">${o.billNo||'—'}</td>
                                 <td style="padding:13px 14px;text-align:right;font-weight:700;color:#059669;">${amt>0?'₹ '+amt.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</td>
@@ -1100,10 +1147,9 @@
                             <td colspan="2"></td>
                         </tr>`;
                         reportBody.innerHTML = bodyHtml;
+                        window._poStatusFilter = 'All';
                     }
-                    window._poStatusFilter = 'All';
                 }
-
                 else if (type === 'finance-summary') {
                     reportTitle.textContent = `Financial Summary (${new Date().toLocaleDateString()})`;
                     const allOrders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
@@ -1172,26 +1218,138 @@
                     if (window.lucide) window.lucide.createIcons();
                 }
                 else if (type === 'expenses') {
-                    reportTitle.textContent = `Expense Details Report (${new Date().toLocaleDateString()})`;
+                    const filterYear = document.getElementById('report-year-filter').value;
+                    const filterMonth = document.getElementById('report-month-filter').value;
+                    const isYearlyMode = !isNaN(parseInt(filterYear)) && filterMonth === 'all';
+                    const targetYear = parseInt(filterYear);
+
+                    reportTitle.textContent = isYearlyMode ? `${targetYear} Yearly Expense Report` : `Expense Details Report (${new Date().toLocaleDateString()})`;
                     const expenses = JSON.parse(localStorage.getItem('manti_expenses')) || [];
                     const filtered = expenses.filter(e => isWithinDateFilter(e.date) && e.doc_status !== 'Draft');
                     
-                    reportHead.innerHTML = `
-                        <tr>
-                            <th>Date</th>
-                            <th>Expense ID</th>
-                            <th>Category</th>
-                            <th>Vendor</th>
-                            <th>Paid Through</th>
-                            <th>Description</th>
-                            <th>Amount</th>
-                        </tr>
-                    `;
-                    let bodyHtml = '';
-                    let total = 0;
                     if (filtered.length === 0) {
-                        bodyHtml = `<tr><td colspan="7" style="text-align:center;">No expenses found for this period.</td></tr>`;
+                        reportHead.innerHTML = `<tr><th>Notice</th></tr>`;
+                        reportBody.innerHTML = `<tr><td style="text-align:center;">No expenses found for this period.</td></tr>`;
+                    } else if (isYearlyMode) {
+                        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                        let monthlyData = {};
+                        for (let i = 0; i < 12; i++) {
+                            monthlyData[i] = { expenses: [], count: 0, totalAmount: 0 };
+                        }
+                        
+                        filtered.forEach(e => {
+                            const d = new Date(e.date);
+                            if (isNaN(d.getTime())) return;
+                            const m = d.getMonth();
+                            monthlyData[m].expenses.push(e);
+                            monthlyData[m].count++;
+                            monthlyData[m].totalAmount += parseFloat(e.amount) || 0;
+                        });
+
+                        let summaryHtml = `
+                            <div style="margin-bottom: 30px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <h3 style="margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px;">${targetYear} Monthly Expense Summary</h3>
+                                <table width="100%" data-no-filter="true" style="border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid #cbd5e1; color: #475569;">
+                                            <th style="padding: 8px;">Month</th>
+                                            <th style="padding: 8px;">Expense Count</th>
+                                            <th style="padding: 8px;">Total Amount (₹)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        let totalYearlyCount = 0;
+                        let totalYearlyAmount = 0;
+                        for (let i = 0; i < 12; i++) {
+                            const data = monthlyData[i];
+                            const now = new Date();
+                            const isPastOrCurrentMonth = (targetYear < now.getFullYear()) || (targetYear === now.getFullYear() && i <= now.getMonth());
+                            
+                            if (isPastOrCurrentMonth || data.count > 0) {
+                                summaryHtml += `
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 8px; font-weight: 500;">${monthNames[i]}</td>
+                                        <td style="padding: 8px;">${data.count}</td>
+                                        <td style="padding: 8px; font-weight: 600; color: #ef4444;">${data.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    </tr>
+                                `;
+                                totalYearlyCount += data.count;
+                                totalYearlyAmount += data.totalAmount;
+                            }
+                        }
+                        summaryHtml += `
+                                    <tr style="background: #e2e8f0; font-weight: bold;">
+                                        <td style="padding: 8px;">YEAR TOTAL</td>
+                                        <td style="padding: 8px;">${totalYearlyCount}</td>
+                                        <td style="padding: 8px; color: #b91c1c;">${totalYearlyAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <h3 style="margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px;">${targetYear} Detailed Expenses</h3>
+                        `;
+                        
+                        reportHead.innerHTML = `<tr><td colspan="7" style="padding: 0;">${summaryHtml}</td></tr>`;
+                        
+                        let bodyHtml = '';
+                        for (let i = 0; i < 12; i++) {
+                            const data = monthlyData[i];
+                            if (data.count === 0) continue;
+                            
+                            bodyHtml += `
+                                <tr style="background: #f1f5f9;">
+                                    <td colspan="7" style="padding: 12px 10px; font-weight: bold; color: #0f172a; font-size: 1.05rem; border-left: 4px solid #ef4444;">
+                                        ${monthNames[i]} ${targetYear}
+                                    </td>
+                                </tr>
+                                <tr style="background: #f8fafc; font-size: 0.85rem; color: #475569; font-weight: 600;">
+                                    <td>Date</td>
+                                    <td>Expense ID</td>
+                                    <td>Category</td>
+                                    <td>Vendor</td>
+                                    <td>Paid Through</td>
+                                    <td>Description</td>
+                                    <td>Amount</td>
+                                </tr>
+                            `;
+                            
+                            data.expenses.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(e => {
+                                bodyHtml += `
+                                    <tr>
+                                        <td>${e.date}</td>
+                                        <td>${e.id}</td>
+                                        <td>${e.expense_account || e.account || '-'}</td>
+                                        <td>${e.vendor || '-'}</td>
+                                        <td>${e.paid_through || e.paidThrough || '-'}</td>
+                                        <td>${e.notes || e.reference || '-'}</td>
+                                        <td style="font-weight: 600;">₹ ${(parseFloat(e.amount) || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                    </tr>
+                                `;
+                            });
+                            
+                            bodyHtml += `
+                                <tr style="background: #f8fafc; font-weight: bold;">
+                                    <td colspan="6" style="text-align: right; color: #475569;">${monthNames[i]} Total:</td>
+                                    <td style="color: #ef4444;">₹ ${data.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                                </tr>
+                            `;
+                        }
+                        reportBody.innerHTML = bodyHtml;
                     } else {
+                        reportHead.innerHTML = `
+                            <tr>
+                                <th>Date</th>
+                                <th>Expense ID</th>
+                                <th>Category</th>
+                                <th>Vendor</th>
+                                <th>Paid Through</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                        `;
+                        let bodyHtml = '';
+                        let total = 0;
                         filtered.forEach(e => {
                             total += parseFloat(e.amount) || 0;
                             bodyHtml += `
@@ -1212,8 +1370,8 @@
                                 <td style="font-weight: 800; color: #ef4444;">₹ ${total.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                             </tr>
                         `;
+                        reportBody.innerHTML = bodyHtml;
                     }
-                    reportBody.innerHTML = bodyHtml;
                 }
                 else if (type === 'banking-ledger') {
                     reportTitle.textContent = `Banking & Journal Ledger (${new Date().toLocaleDateString()})`;
@@ -1444,12 +1602,12 @@
                                 <tr>
                                     <td><strong>${b.jobnum}</strong></td>
                                     <td>${b.worker}</td>
-                                    <td style="color: #3b82f6;">${b.metal_issue.toFixed(3)}</td>
-                                    <td style="color: #10b981;">${(b.metal_rec + b.powder + b.wastage).toFixed(3)}</td>
-                                    <td style="${mBalStyle}">${metalBal.toFixed(3)}</td>
-                                    <td style="color: #8b5cf6;">${b.solder_issue.toFixed(3)}</td>
-                                    <td style="color: #10b981;">${b.solder_rec.toFixed(3)}</td>
-                                    <td style="${sBalStyle}">${solderBal.toFixed(3)}</td>
+                                    <td style="color: #3b82f6;">${b.metal_issue.toFixed(2)}</td>
+                                    <td style="color: #10b981;">${(b.metal_rec + b.powder + b.wastage).toFixed(2)}</td>
+                                    <td style="${mBalStyle}">${metalBal.toFixed(2)}</td>
+                                    <td style="color: #8b5cf6;">${b.solder_issue.toFixed(2)}</td>
+                                    <td style="color: #10b981;">${b.solder_rec.toFixed(2)}</td>
+                                    <td style="${sBalStyle}">${solderBal.toFixed(2)}</td>
                                 </tr>
                             `;
                         }
@@ -1550,14 +1708,14 @@
                         } else if (jwType === 'wastage') {
                             if (loss <= 0) return; // Only show rows with actual loss in the wastage view
                             const lossStyle = loss > 0 ? 'color: red; font-weight: bold;' : '';
-                            rRow += `<td style="${lossStyle}">${loss.toFixed(3)}</td><td>${j.jobnum || '-'}</td><td>${j.process || '-'}</td><td>${worker}</td>`;
+                            rRow += `<td style="${lossStyle}">${loss.toFixed(2)}</td><td>${j.jobnum || '-'}</td><td>${j.process || '-'}</td><td>${worker}</td>`;
                         }
 
-                        rRow += `<td>${j.item || '-'}</td><td>${issueWt > 0 ? issueWt.toFixed(3) : '-'}</td><td>${receiveWt > 0 ? receiveWt.toFixed(3) : '-'}</td>`;
+                        rRow += `<td>${j.item || '-'}</td><td>${issueWt > 0 ? issueWt.toFixed(2) : '-'}</td><td>${receiveWt > 0 ? receiveWt.toFixed(2) : '-'}</td>`;
                         if (jwType !== 'wastage') {
                             const lossStyle = loss > 0 ? 'color: red;' : '';
                             let lossStr = '-';
-                            if (j.status === '2. Receive') lossStr = loss.toFixed(3);
+                            if (j.status === '2. Receive') lossStr = loss.toFixed(2);
                             rRow += `<td style="${lossStyle}">${lossStr}</td>`;
                         }
                         rRow += '</tr>';
@@ -1578,12 +1736,78 @@
                     const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
                     const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
                     const jobRecords = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
-                    const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {};
+                    const balances = window.calculateMantiBalances ? window.calculateMantiBalances() : {};
 
                     const inventoryData = {
-                        'Gold': { 'Metal': { inflow: 0, outflow: 0, balance: balances.gold_22k || 0 }, 'Pure (24K)': { inflow: 0, outflow: 0, balance: balances.pure_gold || 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } },
-                        'Silver': { 'Metal': { inflow: 0, outflow: 0, balance: balances.silver_925 || 0 }, 'Pure (999)': { inflow: 0, outflow: 0, balance: balances.pure_silver || 0 }, 'Solder': { inflow: 0, outflow: 0 }, 'Scrap': { inflow: 0, outflow: 0 }, 'Dust': { inflow: 0, outflow: 0 } }
+                        'Gold': { 
+                            '99.99': { inflow: 0, outflow: 0, balance: balances.pure_gold_9999 || 0 }, 
+                            '99.9': { inflow: 0, outflow: 0, balance: balances.pure_gold_999 || 0 }, 
+                            '99.5': { inflow: 0, outflow: 0, balance: balances.pure_gold_995 || 0 }, 
+                            '22K': { inflow: 0, outflow: 0, balance: balances.gold_22k || 0 }, 
+                            'Solder': { inflow: 0, outflow: 0, balance: balances.solder || 0 }, 
+                            'Scrap': { inflow: 0, outflow: 0 }, 
+                            'Dust': { inflow: 0, outflow: 0 } 
+                        },
+                        'Silver': { 
+                            '99.99': { inflow: 0, outflow: 0, balance: balances.pure_silver_9999 || 0 }, 
+                            '99.9': { inflow: 0, outflow: 0, balance: balances.pure_silver_999 || 0 }, 
+                            '99.5': { inflow: 0, outflow: 0, balance: balances.pure_silver_995 || 0 }, 
+                            '925': { inflow: 0, outflow: 0, balance: balances.silver_925 || 0 }, 
+                            'Solder': { inflow: 0, outflow: 0 }, 
+                            'Scrap': { inflow: 0, outflow: 0 }, 
+                            'Dust': { inflow: 0, outflow: 0 } 
+                        },
+                        'Copper': {
+                            'Metal': { inflow: 0, outflow: 0, balance: balances.copper || 0 }
+                        },
+                        'Zinc': {
+                            'Metal': { inflow: 0, outflow: 0, balance: balances.zinc || 0 }
+                        },
+                        'Iridium': {
+                            'Metal': { inflow: 0, outflow: 0, balance: balances.iridium || 0 }
+                        }
                     };
+
+                    function parseMetalAndType(metalKey) {
+                        const low = (metalKey || '').toLowerCase();
+                        let m = 'Unknown';
+                        let t = 'Metal';
+                        
+                        if (low.includes('gold')) {
+                            m = 'Gold';
+                            if (low.includes('9999') || low.includes('99.99')) t = '99.99';
+                            else if (low.includes('999') || low.includes('99.9')) t = '99.9';
+                            else if (low.includes('995') || low.includes('99.5')) t = '99.5';
+                            else if (low.includes('22k')) t = '22K';
+                            else if (low.includes('solder')) t = 'Solder';
+                            else if (low.includes('scrap')) t = 'Scrap';
+                            else if (low.includes('dust')) t = 'Dust';
+                            else t = '22K';
+                        } else if (low.includes('silver')) {
+                            m = 'Silver';
+                            if (low.includes('9999') || low.includes('99.99')) t = '99.99';
+                            else if (low.includes('999') || low.includes('99.9')) t = '99.9';
+                            else if (low.includes('995') || low.includes('99.5')) t = '99.5';
+                            else if (low.includes('925')) t = '925';
+                            else if (low.includes('solder')) t = 'Solder';
+                            else if (low.includes('scrap')) t = 'Scrap';
+                            else if (low.includes('dust')) t = 'Dust';
+                            else t = '925';
+                        } else if (low.includes('copper')) {
+                            m = 'Copper';
+                            t = 'Metal';
+                        } else if (low.includes('zinc')) {
+                            m = 'Zinc';
+                            t = 'Metal';
+                        } else if (low.includes('iridium')) {
+                            m = 'Iridium';
+                            t = 'Metal';
+                        } else if (low.includes('solder')) {
+                            m = 'Gold';
+                            t = 'Solder';
+                        }
+                        return { m, t };
+                    }
 
                     function initType(metal, type) {
                         const m = metal || 'Unknown';
@@ -1593,32 +1817,55 @@
                     }
 
                     // In-Flow: POs
+                    // We only count POs that ARE NOT already recorded in the stock history to avoid double counting.
                     orders.forEach(o => {
                         if (o.type === 'Purchase Order' && o.qty && o.status === 'Completed') {
-                            const m = o.mainMetalType || 'Unknown';
-                            let t = 'Metal';
-                            const prodDesc = (o.product || '').toLowerCase();
-                            if (prodDesc.includes('solder')) t = 'Solder';
-                            else if (prodDesc.includes('scrap')) t = 'Scrap';
-                            else if (prodDesc.includes('dust')) t = 'Dust';
-                            initType(m, t);
-                            inventoryData[m][t].inflow += (parseFloat(o.qty) || 0);
+                            // Check if this PO is already in history
+                            const isAlreadyInHistory = history.some(h => (h.note && h.note.includes(o.id)) || (h.details && h.details.includes(o.id)));
+                            if (isAlreadyInHistory) return;
+
+                            const wt = parseFloat(o.qty) || 0;
+                            const m = (o.mainMetalType || '').toLowerCase();
+                            let key = '';
+                            const p = String(o.purity || '').trim().toLowerCase();
+                            const prod = (o.product || '').toLowerCase();
+                            const itemsDesc = (o.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
+
+                            if (m.includes('gold')) {
+                                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
+                                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_gold_999';
+                                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_gold_995';
+                                else if (p === '24k' || prod.includes('24k') || prod.includes('pure') || itemsDesc.includes('24k') || itemsDesc.includes('pure')) key = 'pure_gold_999';
+                                else key = 'gold_22k';
+                            } else if (m.includes('silver')) {
+                                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_silver_9999';
+                                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_silver_999';
+                                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_silver_995';
+                                else if (prod.includes('pure') || itemsDesc.includes('pure')) key = 'pure_silver_999';
+                                else key = 'silver_925';
+                            } else if (m.includes('copper')) key = 'copper';
+                            else if (m.includes('zinc')) key = 'zinc';
+                            else if (m.includes('iridium')) key = 'iridium';
+
+                            if (key) {
+                                const { m: metalGroup, t: typeGroup } = parseMetalAndType(key);
+                                initType(metalGroup, typeGroup);
+                                inventoryData[metalGroup][typeGroup].inflow += wt;
+                            }
                         }
                     });
+
 
                     // Activity: History (Deductions from sales or Stock Adjustments)
                     history.forEach(h => {
                         const wt = parseFloat(h.weight) || 0;
                         if (wt !== 0) {
-                            const metalStr = (h.metal || '').toLowerCase();
-                            const m = metalStr.includes('gold') ? 'Gold' : (metalStr.includes('silver') ? 'Silver' : 'Unknown');
-                            initType(m, 'Metal');
-                            
+                            const { m: metalGroup, t: typeGroup } = parseMetalAndType(h.metal);
+                            initType(metalGroup, typeGroup);
                             if (wt < 0) {
-                                inventoryData[m]['Metal'].outflow += Math.abs(wt);
+                                inventoryData[metalGroup][typeGroup].outflow += Math.abs(wt);
                             } else {
-                                // Manual additions via Stock Adjustment often bypass POs, count as Inflow
-                                inventoryData[m]['Metal'].inflow += wt;
+                                inventoryData[metalGroup][typeGroup].inflow += wt;
                             }
                         }
                     });
@@ -1627,32 +1874,73 @@
                     jobRecords.forEach(r => {
                         if (r.doc_status === 'Draft') return;
                         const so = orders.find(o => o.id === r.jobnum);
-                        const mainM = so ? (so.mainMetalType || 'Unknown') : 'Unknown';
+                        let key = '';
+                        if (so) {
+                            const mainM = (so.mainMetalType || '').toLowerCase();
+                            const p = String(so.purity || '').trim().toLowerCase();
+                            const prod = (so.product || '').toLowerCase();
+                            const itemsDesc = (so.items || []).map(i => String(i.desc || '').toLowerCase()).join(' ');
 
-                        if (r.status === '1. Issue') {
-                            if (r.issueLines && r.issueLines.length > 0) {
-                                r.issueLines.forEach(l => {
-                                    const subType = l.type || 'Metal';
-                                    initType(mainM, subType);
-                                    inventoryData[mainM][subType].outflow += (parseFloat(l.weight) || 0);
-                                });
-                            } else if (parseFloat(r.issueWt) > 0) {
-                                initType(mainM, 'Metal'); 
-                                inventoryData[mainM]['Metal'].outflow += (parseFloat(r.issueWt) || 0);
+                            if (mainM.includes('gold')) {
+                                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
+                                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_gold_999';
+                                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_gold_995';
+                                else if (p === '24k' || prod.includes('24k') || prod.includes('pure') || itemsDesc.includes('24k') || itemsDesc.includes('pure')) key = 'pure_gold_999';
+                                else key = 'gold_22k';
+                            } else if (mainM.includes('silver')) {
+                                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_silver_9999';
+                                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_silver_999';
+                                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_silver_995';
+                                else if (prod.includes('pure') || itemsDesc.includes('pure')) key = 'pure_silver_999';
+                                else key = 'silver_925';
                             }
-                        } else if (r.status === '2. Receive') {
-                            if (r.receiveLines && r.receiveLines.length > 0) {
-                                r.receiveLines.forEach(l => {
-                                    const subType = l.type || 'Metal';
-                                    if (subType !== 'Wastage' && subType !== 'Wastage(Loss)') {
-                                        initType(mainM, subType);
-                                        // Receiving back reduces the "active" outflow for that job
-                                        inventoryData[mainM][subType].outflow -= (parseFloat(l.weight) || 0);
-                                    }
-                                });
-                            } else if (parseFloat(r.receiveWt) > 0) {
-                                initType(mainM, 'Metal');
-                                inventoryData[mainM]['Metal'].outflow -= (parseFloat(r.receiveWt) || 0);
+                        }
+                        
+                        // Fallback for older records
+                        if (!key) {
+                            const workerM = (r.worker || '').toLowerCase();
+                            if (workerM.includes('gold')) key = 'gold_22k';
+                            else if (workerM.includes('silver')) key = 'silver_925';
+                        }
+
+                        if (key) {
+                            const { m: metalGroup, t: typeGroup } = parseMetalAndType(key);
+                            initType(metalGroup, typeGroup);
+                            
+                            if (r.status === '1. Issue') {
+                                if (r.issueLines && r.issueLines.length > 0) {
+                                    r.issueLines.forEach(l => {
+                                        const subType = l.type || 'Metal';
+                                        let finalType = typeGroup;
+                                        if (subType === 'Solder') finalType = 'Solder';
+                                        else if (subType === 'Scrap') finalType = 'Scrap';
+                                        else if (subType === 'Dust') finalType = 'Dust';
+                                        
+                                        initType(metalGroup, finalType);
+                                        inventoryData[metalGroup][finalType].outflow += (parseFloat(l.weight) || 0);
+                                    });
+                                } else if (parseFloat(r.issueWt) > 0) {
+                                    inventoryData[metalGroup][typeGroup].outflow += (parseFloat(r.issueWt) || 0);
+                                }
+                            }
+
+                            if (r.status === '2. Receive') {
+                                if (r.receiveLines && r.receiveLines.length > 0) {
+                                    r.receiveLines.forEach(l => {
+                                        const subType = l.type || 'Metal';
+                                        if (subType !== 'Wastage' && subType !== 'Wastage(Loss)') {
+                                            let finalType = typeGroup;
+                                            if (subType === 'Solder') finalType = 'Solder';
+                                            else if (subType === 'Scrap') finalType = 'Scrap';
+                                            else if (subType === 'Dust') finalType = 'Dust';
+                                            
+                                            initType(metalGroup, finalType);
+                                            inventoryData[metalGroup][finalType].outflow -= (parseFloat(l.weight) || 0);
+                                        }
+                                    });
+                                } else if (parseFloat(r.receiveWt) > 0) {
+                                    inventoryData[metalGroup][typeGroup].outflow -= (parseFloat(r.receiveWt) || 0);
+                                }
                             }
                         }
                     });
@@ -1672,9 +1960,9 @@
                             summaryHtml += `
                                 <tr>
                                     <td style="font-weight: 600;">${metal} <span style="color: #6b7280; font-weight: normal; font-size: 0.9em;">- ${type}</span></td>
-                                    <td style="color: #10b981;">${data.inflow.toFixed(3)}</td>
-                                    <td style="color: #ef4444;">${data.outflow.toFixed(3)}</td>
-                                    <td style="font-weight: 700; ${textColor}">${effectiveAvailable.toFixed(3)}</td>
+                                    <td style="color: #10b981;">${data.inflow.toFixed(2)}</td>
+                                    <td style="color: #ef4444;">${data.outflow.toFixed(2)}</td>
+                                    <td style="font-weight: 700; ${textColor}">${effectiveAvailable.toFixed(2)}</td>
                                 </tr>
                             `;
                         }
@@ -1700,11 +1988,11 @@
 
                         // Combine and sort history/orders/jobs
                         let events = [];
-                        orders.forEach(o => { if(o.type === 'Purchase Order' && o.status === 'Completed') events.push({ date: o.date, ref: o.id + ' (Purchase)', cat: (o.mainMetalType||'') + ' ' + (o.product||''), qty: parseFloat(o.qty)||0 }); });
-                        history.forEach(h => { events.push({ date: h.date, ref: (h.note || 'Adjustment/Sale'), cat: h.metal, qty: parseFloat(h.weight)||0 }); });
+                        orders.forEach(o => { if(o.type === 'Purchase Order' && o.status === 'Completed') events.push({ date: o.date, ref: o.id, cat: (o.mainMetalType||'') + ' ' + (o.product||''), qty: parseFloat(o.qty)||0 }); });
+                        history.forEach(h => { events.push({ date: h.date, ref: (h.id || h.note || 'ADJ-OLD'), cat: h.metal, qty: parseFloat(h.weight)||0 }); });
                         jobRecords.forEach(r => {
-                            if(r.status === '1. Issue') events.push({ date: r.date, ref: r.jobnum + ' (Iss to ' + (r.worker||'-') + ')', cat: r.process, qty: -(parseFloat(r.issueWt)||0) });
-                            if(r.status === '2. Receive') events.push({ date: r.date, ref: r.jobnum + ' (Ret from ' + (r.worker||'-') + ')', cat: r.process, qty: (parseFloat(r.receiveWt)||0) });
+                            if(r.status === '1. Issue') events.push({ date: r.date, ref: r.jobnum + '-ISS', cat: r.process, qty: -(parseFloat(r.issueWt)||0) });
+                            if(r.status === '2. Receive') events.push({ date: r.date, ref: r.jobnum + '-RET', cat: r.process, qty: (parseFloat(r.receiveWt)||0) });
                         });
 
                         events.sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -1717,7 +2005,7 @@
                                     <td style="font-size: 0.85rem; color: #475569;">${e.ref}</td>
                                     <td style="font-size: 0.85rem;">${e.cat}</td>
                                     <td style="text-align: right; font-weight: 600; color: ${isNeg ? '#ef4444' : '#10b981'};">
-                                        ${isNeg ? '' : '+'}${e.qty.toFixed(3)}g
+                                        ${isNeg ? '' : '+'}${e.qty.toFixed(2)}g
                                     </td>
                                 </tr>
                             `;
@@ -1949,7 +2237,7 @@
                                     <tr style="border-bottom: 1px solid #e2e8f0;">
                                         <td style="padding: 8px; font-weight: 500;">${monthNames[i]}</td>
                                         <td style="padding: 8px;">${data.count}</td>
-                                        <td style="padding: 8px; font-weight: 600; color: #3b82f6;">${data.totalWeight.toFixed(3)}</td>
+                                        <td style="padding: 8px; font-weight: 600; color: #3b82f6;">${data.totalWeight.toFixed(2)}</td>
                                     </tr>
                                 `;
                                 totalYearlyCount += data.count;
@@ -1961,7 +2249,7 @@
                                     <tr style="background: #e2e8f0; font-weight: bold;">
                                         <td style="padding: 8px;">YEAR TOTAL</td>
                                         <td style="padding: 8px;">${totalYearlyCount}</td>
-                                        <td style="padding: 8px; color: #1d4ed8;">${totalYearlyWt.toFixed(3)}</td>
+                                        <td style="padding: 8px; color: #1d4ed8;">${totalYearlyWt.toFixed(2)}</td>
                                     </tr>
                                     </tbody>
                                 </table>
@@ -2008,7 +2296,7 @@
                                         <td><strong>${j.jobnum || '-'}</strong></td>
                                         <td>${j.worker || '-'}</td>
                                         <td>${j.item || '-'}</td>
-                                        <td style="font-weight: 600;">${parseFloat(weight).toFixed(3)}</td>
+                                        <td style="font-weight: 600;">${parseFloat(weight).toFixed(2)}</td>
                                         <td>${j.process || '-'}</td>
                                         <td><span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${j.status}</span></td>
                                         <td>${invoiceAction}</td>
@@ -2019,7 +2307,7 @@
                             bodyHtml += `
                                 <tr style="background: #f8fafc; font-weight: bold;">
                                     <td colspan="4" style="text-align: right; color: #475569;">${monthNames[i]} Total:</td>
-                                    <td colspan="4" style="color: #3b82f6;">${data.totalWeight.toFixed(3)}</td>
+                                    <td colspan="4" style="color: #3b82f6;">${data.totalWeight.toFixed(2)}</td>
                                 </tr>
                             `;
                         }
@@ -2069,7 +2357,7 @@
                                     <td><strong>${j.jobnum || '-'}</strong></td>
                                     <td>${j.worker || '-'}</td>
                                     <td>${j.item || '-'}</td>
-                                    <td style="font-weight: 600;">${parseFloat(weight).toFixed(3)}</td>
+                                    <td style="font-weight: 600;">${parseFloat(weight).toFixed(2)}</td>
                                     <td>${j.process || '-'}</td>
                                     <td><span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${j.status}</span></td>
                                     <td>${invoiceAction}</td>
@@ -2111,7 +2399,8 @@
                         'Commission Expense', 'Professional Fees', 'Travel Expense', 'Maintenance', 
                         'Insurance', 'Taxes and Licenses', 'Miscellaneous', 'Telephone & Internet', 
                         'Advertising', 'Repairs and Maintenance', 'Salary Expense', 'Salaries and Wages',
-                        'Rent Expense', 'Office Expense', 'Freight & Courier', 'Other Expenses'
+                        'Rent Expense', 'Office Expense', 'Freight & Courier', 'Other Expenses',
+                        'Fuel', 'Tools'
                     ];
                     
                     journals.forEach(j => {
@@ -2125,7 +2414,7 @@
                     });
 
                     // Also include Materials/COGS from Journals into COGS if not covered by POs
-                    const cogsAccountNames = ['Cost of Goods Sold', 'Materials', 'Purchases', 'Purchases Account'];
+                    const cogsAccountNames = ['Cost of Goods Sold', 'Materials', 'Purchases', 'Purchases Account', 'Consumables'];
                     journals.forEach(j => {
                         if (!isWithinDateFilter(j.date)) return;
                         (j.lines || []).forEach(l => {
@@ -2286,10 +2575,8 @@
                     const gold22kRate  = (parseFloat(metalRates.pureGold)   || 0) / 24 * 22;
                     const silver925Rate = (parseFloat(metalRates.pureSilver) || 0) * 0.925;
 
-                    // Read manti_stock_balances directly — this is the single source of truth.
-                    // It is updated by: stock-adjustment.html (Buy/Adjust), purchases.html (PO completion),
-                    // and script.js deductInvoiceStock(). All paths write here, so it's always current.
-                    const stockBalances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {
+                    // Read stock balances dynamically from history - the new single source of truth.
+                    const stockBalances = window.calculateMantiBalances ? window.calculateMantiBalances() : {
                         pure_gold: 0, gold_22k: 0, pure_silver: 0, silver_925: 0
                     };
 
@@ -2342,19 +2629,19 @@
                             <td style="text-align: right; color: #0284c7; font-weight: 600;">${totalInv.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
                         ${gold22kQty !== 0 ? `<tr style="font-size:0.85rem; color:#6b7280;">
-                            <td style="padding-left: 50px;">Gold 22K — ${gold22kQty.toFixed(3)}g × ₹${gold22kRate.toFixed(2)}/g</td>
+                            <td style="padding-left: 50px;">Gold 22K — ${gold22kQty.toFixed(2)}g × ₹${gold22kRate.toFixed(2)}/g</td>
                             <td style="text-align:right; color:${gold22kQty>0?'#059669':'#dc2626'};">${(gold22kQty*gold22kRate).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
                         </tr>` : ''}
                         ${silver925Qty !== 0 ? `<tr style="font-size:0.85rem; color:#6b7280;">
-                            <td style="padding-left: 50px;">Silver 925 — ${silver925Qty.toFixed(3)}g × ₹${silver925Rate.toFixed(2)}/g</td>
+                            <td style="padding-left: 50px;">Silver 925 — ${silver925Qty.toFixed(2)}g × ₹${silver925Rate.toFixed(2)}/g</td>
                             <td style="text-align:right; color:${silver925Qty>0?'#059669':'#dc2626'};">${(silver925Qty*silver925Rate).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
                         </tr>` : ''}
                         ${pureGoldQty !== 0 ? `<tr style="font-size:0.85rem; color:#6b7280;">
-                            <td style="padding-left: 50px;">Pure Gold (24K) — ${pureGoldQty.toFixed(3)}g × ₹${pureGoldRate.toFixed(2)}/g</td>
+                            <td style="padding-left: 50px;">Pure Gold (24K) — ${pureGoldQty.toFixed(2)}g × ₹${pureGoldRate.toFixed(2)}/g</td>
                             <td style="text-align:right; color:${pureGoldQty>0?'#059669':'#dc2626'};">${(pureGoldQty*pureGoldRate).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
                         </tr>` : ''}
                         ${pureSilverQty !== 0 ? `<tr style="font-size:0.85rem; color:#6b7280;">
-                            <td style="padding-left: 50px;">Pure Silver (999) — ${pureSilverQty.toFixed(3)}g × ₹${pureSilverRate.toFixed(2)}/g</td>
+                            <td style="padding-left: 50px;">Pure Silver (999) — ${pureSilverQty.toFixed(2)}g × ₹${pureSilverRate.toFixed(2)}/g</td>
                             <td style="text-align:right; color:${pureSilverQty>0?'#059669':'#dc2626'};">${(pureSilverQty*pureSilverRate).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
                         </tr>` : ''}
                         <tr ondblclick="window.location.href='create-invoice.html'" style="cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" title="Double click to view Invoices">
@@ -2564,7 +2851,7 @@
                     
                     if (sumColumns.includes(idx) && hasValue[idx]) {
                         // Format clearly to 3 digits ALWAYS
-                        td.innerText = totals[idx].toFixed(3);
+                        td.innerText = totals[idx].toFixed(2);
                         td.style.color = '#0284c7';
                         td.style.fontSize = '1.05rem';
                     } else {
@@ -2830,6 +3117,11 @@
             };
 
         });
+    </script>
+    <!-- Lucide icons: guaranteed init after full DOM parse -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (window.lucide) lucide.createIcons();
     </script>
 </body>
 

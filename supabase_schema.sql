@@ -363,3 +363,10 @@ CREATE POLICY "Public Update Access Bills" ON storage.objects FOR UPDATE USING (
 
 DROP POLICY IF EXISTS "Public Delete Access Bills" ON storage.objects;
 CREATE POLICY "Public Delete Access Bills" ON storage.objects FOR DELETE USING (bucket_id = 'bills');
+
+-- 20. FIX: Migrate stock_history ID from UUID to TEXT to support custom ADJ-XXX/PO-XXX prefixes and clean upserts
+ALTER TABLE public.stock_history DROP CONSTRAINT IF EXISTS stock_history_pkey CASCADE;
+ALTER TABLE public.stock_history ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE public.stock_history ALTER COLUMN id TYPE TEXT USING id::text;
+ALTER TABLE public.stock_history ADD PRIMARY KEY (id);
+
