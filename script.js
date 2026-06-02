@@ -2294,7 +2294,7 @@ window.calculateMantiBalances = function() {
     const calcSeenFingers = new Set();
 
     history.forEach(h => {
-        if (h.status === 'Pending Approval') return;
+        if (h.status === 'Pending Approval' || h.status === 'Deleted') return;
 
         const isPO = h.id && typeof h.id === 'string' && h.id.startsWith('PO-');
         const isExplicitAdj = h.id && typeof h.id === 'string' && h.id.startsWith('ADJ-');

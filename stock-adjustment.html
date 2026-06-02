@@ -438,6 +438,8 @@ function loadLocalData() {
             // We iterate original history in reverse to show newest first
             for (let i = history.length - 1; i >= 0; i--) {
                 const rec = history[i];
+                if (rec.status === 'Deleted') continue;
+
                 const isAdd = rec.type === 'Buy' || rec.weight > 0;
                 const color = isAdd ? '#10b981' : '#ef4444';
 
@@ -569,8 +571,12 @@ window.deleteAdjustment = function (recId, fallbackIndex) {
         }
     }
 
-    // Remove the record from history
-    history.splice(idx, 1);
+    // Set status to 'Deleted' and zero weight to act as a tombstone
+    // This prevents the migration script from endlessly re-adding deleted POs
+    if (record) {
+        record.status = 'Deleted';
+        record.weight = 0;
+    }
 
     // Persist changes
     localStorage.setItem('manti_stock_history', JSON.stringify(history));
