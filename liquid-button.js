@@ -1,6 +1,9 @@
 // Vanilla JS adaptation of canvas-based Liquid Button
 // CloudDataLoaded removed, running instantly
 
+if (!window._liquidButtonLoaded) {
+window._liquidButtonLoaded = true;
+(function() {
     // Global mouse tracking
     let mouseX = 0, mouseY = 0;
     let mouseLastX = 0, mouseLastY = 0;
@@ -87,6 +90,7 @@
             this.buttonHeight = this.button.offsetHeight;
 
             this.canvas = document.createElement('canvas');
+            this.canvas.style.pointerEvents = 'none';
             this.button.appendChild(this.canvas);
             
             this.canvas.width = this.buttonWidth + 100;
@@ -266,3 +270,6 @@
         if (shouldInit) initLiquidButtons();
     });
     observer.observe(document.body, { childList: true, subtree: true });
+
+})(); // end IIFE
+} // end duplicate-load guard
