@@ -12,6 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=2"></script>
+    <script src="letterhead-data.js"></script>
     <style>
         .form-grid {
             display: grid;
@@ -755,10 +756,14 @@
             }
         };
 
-        // Fetch background image
+        // Get letterhead base64 - use pre-embedded data for reliability
         async function getLetterheadBase64() {
+            // Primary: use the pre-embedded base64 from letterhead-data.js
+            if (window.LETTERHEAD_B64) return window.LETTERHEAD_B64;
+            // Fallback: try fetch (may fail with spaces in filename on some servers)
             try {
-                const response = await fetch('Manti Jewel_letterpad-1_page-0001.png');
+                const response = await fetch('Manti%20Jewel_letterpad-1_page-0001.png');
+                if (!response.ok) throw new Error('fetch failed');
                 const blob = await response.blob();
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -767,7 +772,7 @@
                     reader.readAsDataURL(blob);
                 });
             } catch (e) {
-                console.error("Letterhead background error:", e);
+                console.warn('Letterhead fetch failed, PDF will have no background:', e);
                 return null;
             }
         }
