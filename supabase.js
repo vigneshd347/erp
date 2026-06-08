@@ -251,8 +251,8 @@ window._performSupabaseSync = async function(key, data) {
                 };
             });
             if (dbOrders.length > 0) {
-                // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('orders').select('order_number');
+                // Safely delete stale records using chunked deletes (exclude Customer Orders)
+                const { data: cloudIds } = await supabase.from('orders').select('order_number').not('type', 'eq', 'Customer Order');
                 if (cloudIds) {
                     const localIds = new Set(dbOrders.map(o => o.order_number));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.order_number)).map(c => c.order_number);
@@ -266,7 +266,56 @@ window._performSupabaseSync = async function(key, data) {
                 const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
                 if (error) { console.error("Orders Sync Error:", error); alert("Failed to save Orders to Cloud: " + error.message); }
             } else {
-                await supabase.from('orders').delete().neq('order_number', 'NON_EXISTENT');
+                await supabase.from('orders').delete().not('type', 'eq', 'Customer Order');
+            }
+        } else if (key === 'manti_customer_orders') {
+            const dbOrders = data.map(o => {
+                const remarkData = {
+                    customerDetails: o.customerDetails || {},
+                    product: o.product || '',
+                    size: o.size || '',
+                    weightMin: o.weightMin || 0,
+                    weightMax: o.weightMax || 0,
+                    mcPercent: o.mcPercent || '',
+                    mcAmount: o.mcAmount || '',
+                    estimatedValue: o.estimatedValue || 0,
+                    images: o.images || [],
+                    pdfUrl: o.pdfUrl || '',
+                    remark: o.remark || '-'
+                };
+                return {
+                    order_number: o.id,
+                    type: 'Customer Order',
+                    date: o.date,
+                    due_date: null,
+                    customer_name: o.customerDetails?.name || '',
+                    vendor_id: '',
+                    product_name: o.product || '',
+                    total_weight: parseFloat(o.weightMax) || 0,
+                    weight_unit: 'g',
+                    remark: JSON.stringify(remarkData),
+                    total_amount: parseFloat(o.estimatedValue) || 0,
+                    paid_amount: 0,
+                    status: o.status || 'Open'
+                };
+            });
+            if (dbOrders.length > 0) {
+                // Safely delete stale customer orders from the cloud database
+                const { data: cloudIds } = await supabase.from('orders').select('order_number').eq('type', 'Customer Order');
+                if (cloudIds) {
+                    const localIds = new Set(dbOrders.map(o => o.order_number));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.order_number)).map(c => c.order_number);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('orders').delete().in('order_number', chunk);
+                        }
+                    }
+                }
+                const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
+                if (error) { console.error("Customer Orders Sync Error:", error); alert("Failed to save Customer Orders to Cloud: " + error.message); }
+            } else {
+                await supabase.from('orders').delete().eq('type', 'Customer Order');
             }
         } else if (key === 'manti_jobwork_records') {
             const dbJobs = data.map(j => ({
@@ -812,7 +861,10 @@ window.fetchEverythingFromCloud = async function () {
 
         // 1. Orders
         if (ordersRes.data) {
-            const mappedOrders = ordersRes.data.map(o => {
+            const standardOrders = [];
+            const customerOrders = [];
+            
+            ordersRes.data.forEach(o => {
                 let extended = {};
                 let remark = o.remark;
                 if (o.remark && o.remark.startsWith('{')) {
@@ -821,40 +873,63 @@ window.fetchEverythingFromCloud = async function () {
                         remark = extended.remark || '-';
                     } catch(e) {}
                 }
-                let metal = extended.mainMetalType || '';
-                if (!metal && o.product_name) {
-                    const p = o.product_name.toLowerCase();
-                    if (p.includes('gold')) metal = 'Gold';
-                    else if (p.includes('silver')) metal = 'Silver';
-                    else if (p.includes('copper')) metal = 'Copper';
-                    else if (p.includes('zinc')) metal = 'Zinc';
-                    else if (p.includes('iridium')) metal = 'Iridium';
-                }
                 
-                return {
-                    id: o.order_number, type: o.type, date: o.date, dueDate: o.due_date,
-                    customer: o.customer_name, vendor: o.vendor_id, product: o.product_name, 
-                    weight: o.total_weight, qty: o.total_weight,
-                    amount: o.total_amount, paidAmount: o.paid_amount, status: o.status,
-                    unit: o.weight_unit, remark: remark, timestamp: o.created_at,
-                    items: extended.items || [],
-                    category: extended.category || '',
-                    designSubCategory: extended.designSubCategory || '',
-                    assetType: extended.assetType || '',
-                    mainMetalType: metal,
-                    purity: extended.purity || '',
-                    billNo: extended.billNo || '',
-                    billImageUrl: extended.billImageUrl || '',
-                    discountPercent: extended.discountPercent || '',
-                    discountAmount: extended.discountAmount || '',
-                    roundOff: extended.roundOff || '',
-                    mcPercent: extended.mcPercent || '',
-                    mcAmount: extended.mcAmount || ''
-                };
+                if (o.type === 'Customer Order') {
+                    customerOrders.push({
+                        id: o.order_number,
+                        type: o.type,
+                        date: o.date,
+                        customerDetails: extended.customerDetails || { name: o.customer_name },
+                        product: o.product_name,
+                        size: extended.size || '',
+                        weightMin: extended.weightMin || 0,
+                        weightMax: extended.weightMax || 0,
+                        mcPercent: extended.mcPercent || '',
+                        mcAmount: extended.mcAmount || '',
+                        estimatedValue: o.total_amount,
+                        images: extended.images || [],
+                        pdfUrl: extended.pdfUrl || '',
+                        status: o.status,
+                        timestamp: o.created_at
+                    });
+                } else {
+                    let metal = extended.mainMetalType || '';
+                    if (!metal && o.product_name) {
+                        const p = o.product_name.toLowerCase();
+                        if (p.includes('gold')) metal = 'Gold';
+                        else if (p.includes('silver')) metal = 'Silver';
+                        else if (p.includes('copper')) metal = 'Copper';
+                        else if (p.includes('zinc')) metal = 'Zinc';
+                        else if (p.includes('iridium')) metal = 'Iridium';
+                    }
+                    
+                    standardOrders.push({
+                        id: o.order_number, type: o.type, date: o.date, dueDate: o.due_date,
+                        customer: o.customer_name, vendor: o.vendor_id, product: o.product_name, 
+                        weight: o.total_weight, qty: o.total_weight,
+                        amount: o.total_amount, paidAmount: o.paid_amount, status: o.status,
+                        unit: o.weight_unit, remark: remark, timestamp: o.created_at,
+                        items: extended.items || [],
+                        category: extended.category || '',
+                        designSubCategory: extended.designSubCategory || '',
+                        assetType: extended.assetType || '',
+                        mainMetalType: metal,
+                        purity: extended.purity || '',
+                        billNo: extended.billNo || '',
+                        billImageUrl: extended.billImageUrl || '',
+                        discountPercent: extended.discountPercent || '',
+                        discountAmount: extended.discountAmount || '',
+                        roundOff: extended.roundOff || '',
+                        mcPercent: extended.mcPercent || '',
+                        mcAmount: extended.mcAmount || ''
+                    });
+                }
             });
-            window.ERP_MEMORY.set('manti_order_records', JSON.stringify(mappedOrders));
+            window.ERP_MEMORY.set('manti_order_records', JSON.stringify(standardOrders));
+            window.ERP_MEMORY.set('manti_customer_orders', JSON.stringify(customerOrders));
         } else {
             window.ERP_MEMORY.set('manti_order_records', '[]');
+            window.ERP_MEMORY.set('manti_customer_orders', '[]');
         }
 
         // 2. Job Works

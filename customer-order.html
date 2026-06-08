@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Customer Order Form</title>
+    <link rel="stylesheet" href="style.css?v=25">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js?v=2"></script>
+    <style>
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: all 0.2s ease;
+        }
+
+        .form-section:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .form-section h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 18px;
+            border-bottom: 2px solid var(--accent-light);
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .field-group label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            background: #f8fafc;
+            outline: none;
+            transition: all 0.15s ease;
+            box-sizing: border-box;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--accent);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        input:disabled,
+        textarea:disabled {
+            background: #e2e8f0;
+            cursor: not-allowed;
+            color: #94a3b8;
+        }
+
+        .file-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8fafc;
+            transition: all 0.2s ease;
+        }
+
+        .file-upload-label:hover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        /* Lightbox styling */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            backdrop-filter: blur(4px);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2.2rem;
+            color: white;
+            cursor: pointer;
+            font-weight: 700;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+        }
+
+        /* ===== Letterhead Background ===== */
+        /* Apply to html so it sits below dashboard-container */
+        html {
+            background-image: url('Manti Jewel_letterpad-1_page-0001.png');
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-color: #f0ece4;
+        }
+
+        /* Make dashboard-container transparent so bg shows through */
+        .dashboard-container {
+            background: transparent !important;
+        }
+
+        /* Light overlay on main-content for readability */
+        .main-content {
+            background: rgba(255, 255, 255, 0.78) !important;
+            backdrop-filter: blur(2px);
+        }
+
+        /* Form sections: semi-transparent glass cards */
+        .form-section {
+            background: rgba(255, 255, 255, 0.92) !important;
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.7) !important;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important;
+        }
+
+        /* ===== Metal Selector ===== */
+        .metal-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .purity-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .purity-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: #f8fafc;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .purity-pill input[type="radio"] {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--accent);
+            cursor: pointer;
+            padding: 0;
+            border: none;
+            background: none;
+            box-shadow: none;
+        }
+        .purity-pill:has(input:checked) {
+            background: var(--accent-light);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .purity-pill.gold:has(input:checked) {
+            background: #fef9c3;
+            border-color: #ca8a04;
+            color: #92400e;
+        }
+        .purity-pill.silver:has(input:checked) {
+            background: #f1f5f9;
+            border-color: #64748b;
+            color: #334155;
+        }
+
+        /* Loader Overlay */
+        .loader-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--accent-light);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="Asset 23.png" alt="Manti Logo">
+                <span>Manti ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item">
+                    <div class="icon"><i data-lucide="layout-dashboard"></i></div>
+                    <span class="label">Dashboard</span>
+                </a>
+
+                <a href="quotation.html" class="nav-item">
+
+                    <div class="icon"><i data-lucide="file-text"></i></div>
+
+                    <span class="label">Quotations</span>
+
+                </a>
+
+                <div class="nav-group expanded">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="box"></i></div>
+                        <span class="label">Items</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content" style="display: flex;">
+                        <a href="inventory.html" class="nav-item nested">Inventory</a>
+                        <a href="melting.html" class="nav-item nested">Melting</a>
+                        <a href="stock-adjustment.html" class="nav-item nested">Stock Adjustment</a>
+                        <a href="jobwork.html" class="nav-item nested">Job Work</a>
+                        <a href="design-book.html" class="nav-item nested">Design Book</a>
+                        <a href="tree-making.html" class="nav-item nested">Tree Making</a>
+                    </div>
+                </div>
+
+                <a href="assets.html" class="nav-item">
+                    <div class="icon"><i data-lucide="hard-drive"></i></div>
+                    <span class="label">Asset Management</span>
+                </a>
+
+                <div class="nav-group expanded">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-bag"></i></div>
+                        <span class="label">Sales</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content" style="display: flex;">
+                        <a href="sales-form.html" class="nav-item nested">Sales Orders</a>
+                        <a href="delivery-challans.html" class="nav-item nested">Delivery Challans</a>
+                        <a href="create-invoice.html" class="nav-item nested">Invoices</a>
+                        <a href="customer-order.html" class="nav-item nested active">Customer Orders</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="shopping-cart"></i></div>
+                        <span class="label">Purchases</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="purchases.html" class="nav-item nested">Purchase Orders</a>
+                        <a href="payment-made.html" class="nav-item nested">Payments</a>
+                        <a href="expenses.html" class="nav-item nested">Expenses</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-header" onclick="toggleNavGroup(this)">
+                        <div class="icon"><i data-lucide="briefcase"></i></div>
+                        <span class="label">Accountant</span>
+                        <i data-lucide="chevron-down" class="chevron"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="banking.html" class="nav-item nested">Banking</a>
+                        <a href="journal-entry.html" class="nav-item nested">Manual Journals</a>
+                    </div>
+                </div>
+
+                <a href="staff.html" class="nav-item">
+                    <div class="icon"><i data-lucide="users"></i></div>
+                    <span class="label">Staff</span>
+                </a>
+                <a href="worker-data-sheet.html" class="nav-item">
+                    <div class="icon"><i data-lucide="user-check"></i></div>
+                    <span class="label">Worker Data Sheet</span>
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <div class="icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="label">Reports</span>
+                </a>
+                <a href="admin.html" class="nav-item">
+                    <div class="icon"><i data-lucide="settings"></i></div>
+                    <span class="label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="name">Admin User</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="generator-header" style="margin-bottom: 24px;">
+                <div class="header-content header-flex">
+                    <a href="index.html">
+                        <img src="Asset 23.png" alt="Manti Logo" class="header-logo">
+                    </a>
+                    <div>
+                        <h1>New Customer Order</h1>
+                        <p>Create gold/silver order specifications, calculate estimates, and sync to Supabase</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Order Form -->
+            <form id="order-form" class="form-container">
+                <div class="form-grid">
+                    <!-- Customer Details Section -->
+                    <section class="form-section">
+                        <h3><i data-lucide="user" style="width: 18px; color: var(--accent);"></i> Customer Details</h3>
+                        <div class="field-group">
+                            <div>
+                                <label for="cust-name">Customer Name *</label>
+                                <input type="text" id="cust-name" placeholder="Enter Full Name" required>
+                            </div>
+                            <div>
+                                <label for="cust-mobile">Mobile Number *</label>
+                                <input type="text" id="cust-mobile" placeholder="e.g. 9876543210" required>
+                            </div>
+                            <div>
+                                <label for="cust-email">Email Address</label>
+                                <input type="email" id="cust-email" placeholder="e.g. customer@example.com">
+                            </div>
+                            <div>
+                                <label for="cust-address">Address *</label>
+                                <textarea id="cust-address" placeholder="Full Billing / Shipping Address" rows="3" required style="resize: vertical;"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Order Specifications Section -->
+                    <section class="form-section">
+                        <h3><i data-lucide="file-text" style="width: 18px; color: var(--accent);"></i> Order Specifications</h3>
+                        <div class="field-group">
+                            <div class="field-row">
+                                <div>
+                                    <label for="order-id">Order Number</label>
+                                    <input type="text" id="order-id" readonly style="background:#f1f5f9; font-weight:700; color:var(--primary);">
+                                </div>
+                                <div>
+                                    <label for="order-date">Order Date *</label>
+                                    <input type="date" id="order-date" required title="Order Date">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="prod-type">Product Type *</label>
+                                <select id="prod-type" required>
+                                    <option value="" disabled selected>Select Product</option>
+                                    <option value="Ring">Ring</option>
+                                    <option value="Bangle">Bangle</option>
+                                    <option value="Necklace">Necklace</option>
+                                    <option value="Earring">Earring</option>
+                                    <option value="Bracelet">Bracelet</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <!-- Metal Type & Purity -->
+                            <div class="metal-group">
+                                <div>
+                                    <label>Metal Type *</label>
+                                    <div class="purity-pills" id="metal-type-pills">
+                                        <label class="purity-pill" id="pill-gold">
+                                            <input type="radio" name="metal-type" value="Gold" id="metal-gold" required>
+                                            🥇 Gold
+                                        </label>
+                                        <label class="purity-pill" id="pill-silver">
+                                            <input type="radio" name="metal-type" value="Silver" id="metal-silver">
+                                            🥈 Silver
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="purity-container" style="display:none;">
+                                    <label>Purity *</label>
+                                    <div class="purity-pills" id="purity-pills"></div>
+                                </div>
+                            </div>
+
+                            <div id="size-container" style="display: none;">
+                                <label for="prod-size">Size *</label>
+                                <input type="text" id="prod-size" placeholder="Enter size (e.g., 12, 2.4)">
+                            </div>
+
+                            <div class="field-row">
+                                <div>
+                                    <label for="weight-min">Min Weight (g) *</label>
+                                    <input type="number" step="0.01" id="weight-min" placeholder="e.g. 8.5" required min="0.01">
+                                </div>
+                                <div>
+                                    <label for="weight-max">Max Weight (g) *</label>
+                                    <input type="number" step="0.01" id="weight-max" placeholder="e.g. 10.0" required min="0.01">
+                                </div>
+                            </div>
+
+                            <div class="field-row">
+                                <div>
+                                    <label for="mc-percent">Making Charges %</label>
+                                    <input type="number" step="0.01" id="mc-percent" placeholder="e.g. 12%">
+                                </div>
+                                <div>
+                                    <label for="mc-amount">Making Charges (₹)</label>
+                                    <input type="number" step="0.01" id="mc-amount" placeholder="e.g. 4500">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="est-value">Estimate Value (₹) *</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="number" step="0.01" id="est-value" placeholder="Enter estimate or calculate" required min="1" style="flex: 1;">
+                                    <button type="button" class="btn-liquid btn-outline" id="btn-calc-est" style="padding: 0 16px; font-size: 0.82rem; height: 42px; display: flex; align-items: center; justify-content: center; font-weight: 600;" title="Calculate based on current Gold Rate and Max Weight">
+                                        <i data-lucide="calculator" style="width:16px; height:16px; margin-right:4px;"></i> Calc
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Upload References Section -->
+                    <section class="form-section">
+                        <h3><i data-lucide="image" style="width: 18px; color: var(--accent);"></i> Reference Images</h3>
+                        <div class="field-group">
+                            <label class="file-upload-label">
+                                <i data-lucide="upload-cloud" style="width:36px; height:36px; color:#94a3b8; margin-bottom:8px;"></i>
+                                <span style="font-size:0.85rem; font-weight:600; color:#475569;">Choose Images</span>
+                                <span style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">Supports multiple JPG/PNG files</span>
+                                <input type="file" id="ref-images" multiple accept="image/*" style="display: none;">
+                            </label>
+
+                            <div id="preview-grid"></div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Form Footer Actions -->
+                <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 12px;">
+                    <button type="button" class="btn-liquid btn-outline" onclick="window.location.href='index.html'">Cancel</button>
+                    <button type="submit" class="btn-liquid btn-primary" id="btn-submit-order" style="display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="check-circle-2" style="width:16px; height:16px;"></i> Submit & Download PDF
+                    </button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox-modal" class="modal">
+        <span class="close-modal">&times;</span>
+        <img id="lightbox-img" src="" alt="Actual Size reference">
+    </div>
+
+    <!-- Loader Screen -->
+    <div id="loader-overlay" class="loader-overlay">
+        <div class="spinner"></div>
+        <div id="loader-text" style="font-weight: 700; color: var(--text-main); font-size: 1.1rem;">Processing Order...</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Syncing to cloud databases and generating files. Please wait.</div>
+    </div>
+
+    <script>
+        // Init Lucide
+        lucide.createIcons();
+
+        // Check active sidebar state
+        const toggleNavGroup = (el) => {
+            const group = el.closest('.nav-group');
+            group.classList.toggle('expanded');
+            const content = group.querySelector('.nav-group-content');
+            content.style.display = group.classList.contains('expanded') ? 'flex' : 'none';
+        };
+
+        const form = document.getElementById('order-form');
+        const prodSelect = document.getElementById('prod-type');
+        const sizeContainer = document.getElementById('size-container');
+        const sizeInput = document.getElementById('prod-size');
+        const mcPercent = document.getElementById('mc-percent');
+        const mcAmount = document.getElementById('mc-amount');
+        const weightMax = document.getElementById('weight-max');
+        const estValue = document.getElementById('est-value');
+        const btnCalc = document.getElementById('btn-calc-est');
+        const refImagesInput = document.getElementById('ref-images');
+        const previewGrid = document.getElementById('preview-grid');
+        const lightboxModal = document.getElementById('lightbox-modal');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const loaderText = document.getElementById('loader-text');
+
+        let selectedFiles = [];
+
+        // Set default order date to today
+        document.getElementById('order-date').valueAsDate = new Date();
+
+        // Increment order id MANOR-xxxx
+        document.addEventListener('CloudDataLoaded', () => {
+            generateOrderNumber();
+        });
+        // Fallback if event already fired
+        if (window.isCloudDataLoaded) {
+            generateOrderNumber();
+        }
+
+        function generateOrderNumber() {
+            const existingOrders = JSON.parse(localStorage.getItem('manti_customer_orders') || '[]');
+            let maxNum = 1000;
+            existingOrders.forEach(o => {
+                if (o.id && o.id.startsWith('MANOR-')) {
+                    const suffix = parseInt(o.id.replace('MANOR-', ''));
+                    if (!isNaN(suffix) && suffix > maxNum) {
+                        maxNum = suffix;
+                    }
+                }
+            });
+            document.getElementById('order-id').value = `MANOR-${maxNum + 1}`;
+        }
+
+        // Product selection size toggler
+        prodSelect.addEventListener('change', () => {
+            if (prodSelect.value === 'Ring' || prodSelect.value === 'Bangle') {
+                sizeContainer.style.display = 'block';
+                sizeInput.required = true;
+            } else {
+                sizeContainer.style.display = 'none';
+                sizeInput.required = false;
+                sizeInput.value = '';
+            }
+        });
+
+        // ===== Metal Type & Purity Logic =====
+        const METAL_PURITIES = {
+            Gold:   [{ label: '22 Kt', value: '22kt' }, { label: '18 Kt', value: '18kt' }],
+            Silver: [{ label: '925 (Sterling)', value: '925' }, { label: '800', value: '800' }]
+        };
+
+        function renderPurityPills(metal) {
+            const container = document.getElementById('purity-container');
+            const pillsDiv  = document.getElementById('purity-pills');
+            pillsDiv.innerHTML = '';
+            const purities = METAL_PURITIES[metal] || [];
+            purities.forEach((p, i) => {
+                const lbl = document.createElement('label');
+                lbl.className = `purity-pill ${metal.toLowerCase()}`;
+                lbl.innerHTML = `
+                    <input type="radio" name="metal-purity" value="${p.value}" ${i === 0 ? 'required' : ''}>
+                    ${p.label}
+                `;
+                pillsDiv.appendChild(lbl);
+            });
+            // Auto-select first option
+            const first = pillsDiv.querySelector('input[type=radio]');
+            if (first) first.checked = true;
+            container.style.display = 'block';
+        }
+
+        document.querySelectorAll('input[name="metal-type"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                renderPurityPills(radio.value);
+                // Update pill highlight
+                document.querySelectorAll('#metal-type-pills .purity-pill').forEach(p => {
+                    p.classList.remove('gold', 'silver');
+                });
+                radio.closest('.purity-pill').classList.add(radio.value.toLowerCase());
+            });
+        });
+
+
+        // Making Charges lock
+        mcPercent.addEventListener('input', () => {
+            if (mcPercent.value.trim() !== '') {
+                mcAmount.disabled = true;
+                mcAmount.placeholder = 'Disabled';
+            } else {
+                mcAmount.disabled = false;
+                mcAmount.placeholder = 'e.g. 4500';
+            }
+        });
+
+        mcAmount.addEventListener('input', () => {
+            if (mcPercent.value.trim() !== '') {
+                mcPercent.disabled = true;
+                mcPercent.placeholder = 'Disabled';
+            } else {
+                mcPercent.disabled = false;
+                mcPercent.placeholder = 'e.g. 12%';
+            }
+        });
+
+        // Estimate calculator (metal-aware)
+        btnCalc.addEventListener('click', () => {
+            const wMax = parseFloat(weightMax.value) || 0;
+            if (wMax <= 0) {
+                alert('Please enter a maximum weight value first.');
+                return;
+            }
+            const rates = JSON.parse(localStorage.getItem('manti_metal_rates') || '{}');
+            const metalType = document.querySelector('input[name="metal-type"]:checked')?.value || 'Gold';
+            const purity    = document.querySelector('input[name="metal-purity"]:checked')?.value || '22kt';
+
+            let ratePerGram = 7500; // fallback
+            if (metalType === 'Gold') {
+                if (purity === '22kt') ratePerGram = parseFloat(rates.gold22k || rates.pureGold) || 7500;
+                else if (purity === '18kt') ratePerGram = parseFloat(rates.gold18k) || (parseFloat(rates.gold22k || rates.pureGold) || 7500) * (18/22);
+            } else if (metalType === 'Silver') {
+                if (purity === '925') ratePerGram = parseFloat(rates.silver925 || rates.silver) || 100;
+                else if (purity === '800') ratePerGram = parseFloat(rates.silver800 || rates.silver) || 85;
+            }
+
+            let estimate = wMax * ratePerGram;
+            const pctVal = parseFloat(mcPercent.value) || 0;
+            const amtVal = parseFloat(mcAmount.value) || 0;
+            if (pctVal > 0) estimate += estimate * (pctVal / 100);
+            else if (amtVal > 0) estimate += amtVal;
+
+            estValue.value = Math.round(estimate);
+        });
+
+
+        // Image files handling
+        refImagesInput.addEventListener('change', () => {
+            Array.from(refImagesInput.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedFiles.push({ file, base64: e.target.result });
+                    renderPreviews();
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function renderPreviews() {
+            previewGrid.innerHTML = '';
+            selectedFiles.forEach((item, index) => {
+                const container = document.createElement('div');
+                container.style = 'position:relative; width:80px; height:80px; border:1px solid var(--border); border-radius:6px; overflow:hidden; background:#f8fafc; cursor:pointer; display:inline-block; margin-right:10px; margin-bottom:10px;';
+                
+                const img = document.createElement('img');
+                img.src = item.base64;
+                img.style = 'width:100%; height:100%; object-fit:cover;';
+                img.onclick = () => {
+                    lightboxImg.src = item.base64;
+                    lightboxModal.style.display = 'flex';
+                };
+
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '&times;';
+                removeBtn.type = 'button';
+                removeBtn.style = 'position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(239,68,68,0.9); color:white; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; font-weight:bold; padding:0; line-height:1;';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    selectedFiles.splice(index, 1);
+                    renderPreviews();
+                };
+
+                container.appendChild(img);
+                container.appendChild(removeBtn);
+                previewGrid.appendChild(container);
+            });
+        }
+
+        // Lightbox modal close handlers
+        lightboxModal.querySelector('.close-modal').onclick = () => {
+            lightboxModal.style.display = 'none';
+        };
+        lightboxModal.onclick = (e) => {
+            if (e.target === lightboxModal) {
+                lightboxModal.style.display = 'none';
+            }
+        };
+
+        // Fetch background image
+        async function getLetterheadBase64() {
+            try {
+                const response = await fetch('Manti Jewel_letterpad-1_page-0001.png');
+                const blob = await response.blob();
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) {
+                console.error("Letterhead background error:", e);
+                return null;
+            }
+        }
+
+        // Form Submit
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const orderId = document.getElementById('order-id').value;
+            const orderDate = document.getElementById('order-date').value;
+            const custName = document.getElementById('cust-name').value;
+            const custMobile = document.getElementById('cust-mobile').value;
+            const custEmail = document.getElementById('cust-email').value;
+            const custAddress = document.getElementById('cust-address').value;
+            const prodType = document.getElementById('prod-type').value;
+            const prodSize = document.getElementById('prod-size').value;
+            const metalType = document.querySelector('input[name="metal-type"]:checked')?.value || '';
+            const metalPurity = document.querySelector('input[name="metal-purity"]:checked')?.value || '';
+            const wMin = parseFloat(document.getElementById('weight-min').value);
+            const wMax = parseFloat(document.getElementById('weight-max').value);
+            const mcPct = parseFloat(mcPercent.value) || 0;
+            const mcAmt = parseFloat(mcAmount.value) || 0;
+            const estVal = parseFloat(estValue.value);
+
+            if (!metalType) {
+                alert('Please select a Metal Type (Gold or Silver).');
+                return;
+            }
+            if (!metalPurity) {
+                alert('Please select a Purity for the selected metal.');
+                return;
+            }
+
+
+            loaderText.textContent = "Generating Order PDF...";
+            loaderOverlay.style.display = "flex";
+
+            // 1. Generate jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            const bgB64 = await getLetterheadBase64();
+            if (bgB64) {
+                doc.addImage(bgB64, 'PNG', 0, 0, 210, 297);
+            }
+
+            // Write Details
+            doc.setFont('Helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.setTextColor(37, 99, 235);
+            doc.text('CUSTOMER ORDER FORM', 105, 55, { align: 'center' });
+            
+            doc.setFont('Helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(55, 65, 81);
+            
+            doc.text(`Order No: ${orderId}`, 14, 68);
+            doc.text(`Date: ${orderDate}`, 150, 68);
+            
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(226, 232, 240);
+            doc.line(14, 72, 196, 72);
+            
+            doc.setFont('Helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(30, 41, 59);
+            doc.text('Customer Details', 14, 82);
+            
+            doc.setFont('Helvetica', 'normal');
+            doc.setFontSize(9.5);
+            doc.setTextColor(71, 85, 105);
+            doc.text(`Name: ${custName}`, 14, 90);
+            doc.text(`Mobile: ${custMobile}`, 14, 97);
+            doc.text(`Email: ${custEmail || '-'}`, 14, 104);
+            doc.text(`Address: ${custAddress}`, 14, 111);
+            
+            doc.line(14, 122, 196, 122);
+            
+            doc.setFont('Helvetica', 'bold');
+            doc.text('Order Specifications', 14, 132);
+            
+            doc.setFont('Helvetica', 'normal');
+            doc.setTextColor(71, 85, 105);
+            doc.text(`Product Type: ${prodType}`, 14, 140);
+            if (prodType === 'Ring' || prodType === 'Bangle') {
+                doc.text(`Size: ${prodSize}`, 14, 147);
+            }
+            const metalLine = metalType ? `Metal: ${metalType}${metalPurity ? ' (' + metalPurity.toUpperCase() + ')' : ''}` : '';
+            let yPos = 154;
+            if (metalLine) { doc.text(metalLine, 14, yPos); yPos += 7; }
+            doc.text(`Weight Range: ${wMin}g to ${wMax}g`, 14, yPos); yPos += 7;
+
+            
+            let mcText = 'Making Charges: Not Specified';
+            if (mcPct > 0) {
+                mcText = `Making Charges: ${mcPct}%`;
+            } else if (mcAmt > 0) {
+                mcText = `Making Charges: Rs. ${mcAmt.toLocaleString('en-IN')}`;
+            }
+            doc.text(mcText, 14, yPos);
+            
+            doc.line(14, 172, 196, 172);
+            
+            doc.setFont('Helvetica', 'bold');
+            doc.setFontSize(13);
+            doc.setTextColor(37, 99, 235);
+            doc.text(`Estimated Value: Rs. ${parseFloat(estVal).toLocaleString('en-IN')}`, 14, 185);
+            
+            doc.setFont('Helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.setTextColor(71, 85, 105);
+            doc.text('Customer Signature', 30, 240);
+            doc.text('Authorized Signatory', 140, 240);
+            
+            doc.line(30, 235, 80, 235);
+            doc.line(140, 235, 190, 235);
+
+            // Append uploaded images at actual size on next pages
+            for (const item of selectedFiles) {
+                doc.addPage();
+                
+                const img = new Image();
+                img.src = item.base64;
+                await new Promise((resolve) => { img.onload = resolve; });
+
+                let width = img.width;
+                let height = img.height;
+                const maxWidth = 190;
+                const maxHeight = 260;
+
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width = width * ratio;
+                height = height * ratio;
+
+                const x = (210 - width) / 2;
+                const y = (297 - height) / 2;
+
+                doc.addImage(item.base64, 'JPEG', x, y, width, height);
+                doc.setFontSize(9);
+                doc.setTextColor(120);
+                doc.text(`Reference Image for Order ${orderId}`, 10, 12);
+            }
+
+            const pdfBlob = doc.output('blob');
+
+            // Download PDF locally
+            doc.save(`${orderId}.pdf`);
+
+            // 2. Upload Files to Supabase Storage
+            loaderText.textContent = "Uploading images & files...";
+            
+            const uploadedImageUrls = [];
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const item = selectedFiles[i];
+                const file = item.file;
+                const cleanName = file.name.replace(/[^a-zA-Z0-9.]/g, "_");
+                const filePath = `customer-orders/ref-images/${orderId}_${i}_${cleanName}`;
+                
+                try {
+                    const { data, error } = await window.supabase.storage.from('designs').upload(filePath, file, { upsert: true });
+                    if (error) throw error;
+                    
+                    const { data: urlData } = window.supabase.storage.from('designs').getPublicUrl(filePath);
+                    uploadedImageUrls.push(urlData.publicUrl);
+                } catch (err) {
+                    console.error("Image upload failed:", err);
+                }
+            }
+
+            let pdfUrl = '';
+            try {
+                const pdfPath = `customer-orders/pdfs/${orderId}.pdf`;
+                const { data, error } = await window.supabase.storage.from('bills').upload(pdfPath, pdfBlob, {
+                    contentType: 'application/pdf',
+                    upsert: true
+                });
+                if (error) throw error;
+                
+                const { data: urlData } = window.supabase.storage.from('bills').getPublicUrl(pdfPath);
+                pdfUrl = urlData.publicUrl;
+            } catch (err) {
+                console.error("PDF upload failed:", err);
+            }
+
+            // 3. Save Order Object
+            loaderText.textContent = "Saving order record...";
+            const newOrder = {
+                id: orderId,
+                type: 'Customer Order',
+                date: orderDate,
+                customerDetails: {
+                    name: custName,
+                    mobile: custMobile,
+                    email: custEmail,
+                    address: custAddress
+                },
+                product: prodType,
+                size: prodSize,
+                metalType: metalType,
+                metalPurity: metalPurity,
+                weightMin: wMin,
+                weightMax: wMax,
+                mcPercent: mcPct,
+                mcAmount: mcAmt,
+                estimatedValue: estVal,
+                images: uploadedImageUrls,
+                pdfUrl: pdfUrl,
+                status: 'Open'
+            };
+
+            const existingOrders = JSON.parse(localStorage.getItem('manti_customer_orders') || '[]');
+            existingOrders.unshift(newOrder);
+            localStorage.setItem('manti_customer_orders', JSON.stringify(existingOrders));
+
+            // Wait a brief moment for database sync locks to trigger
+            setTimeout(() => {
+                loaderOverlay.style.display = "none";
+                alert("Customer Order Created Successfully!");
+                window.location.href = "reports.html";
+            }, 1000);
+        });
+    </script>
+</body>
+
+</html>

@@ -113,6 +113,14 @@
                     <div class="icon"><i data-lucide="layout-dashboard"></i></div>
                     <span class="label">Dashboard</span>
                 </a>
+
+                <a href="quotation.html" class="nav-item">
+
+                    <div class="icon"><i data-lucide="file-text"></i></div>
+
+                    <span class="label">Quotations</span>
+
+                </a>
                 
                 <div class="nav-group ">
                     <div class="nav-group-header" onclick="toggleNavGroup(this)">
@@ -145,6 +153,8 @@
                         <a href="sales-orders.html" class="nav-item nested ">Sales Orders</a>
                         <a href="delivery-challans.html" class="nav-item nested ">Delivery Challans</a>
                         <a href="create-invoice.html" class="nav-item nested ">Invoices</a>
+
+                        <a href="customer-order.html" class="nav-item nested ">Customer Orders</a>
                     </div>
                 </div>
 
@@ -264,6 +274,7 @@
                             <li><a class="report-link" onclick="selectReport('sales-orders', this)">Sales Orders</a></li>
                             <li><a class="report-link" onclick="selectReport('purchase-orders', this)">Purchase Orders</a></li>
                             <li><a class="report-link" onclick="selectReport('quotations', this)"><i data-lucide="file-text" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Quotations</a></li>
+                            <li><a class="report-link" onclick="selectReport('customer-orders', this)"><i data-lucide="shopping-bag" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Customer Orders</a></li>
                             <li><a class="report-link" onclick="selectReport('vendor-supplier', this)"><i data-lucide="users" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Vendor &amp; Supplier</a></li>
                         </ul>
                     </div>
@@ -2795,6 +2806,80 @@
                         reportBody.innerHTML = bodyHtml;
                     }
                 }
+
+                else if (type === 'customer-orders') {
+                    reportTitle.textContent = `Customer Orders Report (${new Date().toLocaleDateString()})`;
+
+                    const orders = JSON.parse(localStorage.getItem('manti_customer_orders') || '[]');
+                    const filtered = orders.filter(o => isWithinDateFilter(o.date));
+
+                    filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                    const totalCount = filtered.length;
+                    const grandTotalSum = filtered.reduce((s, o) => s + (parseFloat(o.estimatedValue) || 0), 0);
+
+                    reportHead.innerHTML = `
+                        <tr><td colspan="7" style="padding:0;border:none;">
+                            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:20px 20px 14px;">
+                                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;">
+                                    <div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:6px;">Total Customer Orders</div>
+                                    <div style="font-size:1.8rem;font-weight:800;color:#111827;">${totalCount}</div>
+                                </div>
+                                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px;">
+                                    <div style="font-size:0.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;margin-bottom:6px;">Total Estimated Value</div>
+                                    <div style="font-size:1.8rem;font-weight:800;color:#2563eb;">₹ ${grandTotalSum.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                                </div>
+                            </div>
+                        </td></tr>
+                        <tr>
+                            <th>Order No.</th>
+                            <th>Date</th>
+                            <th>Customer Name</th>
+                            <th>Mobile</th>
+                            <th>Product</th>
+                            <th>Metal / Purity</th>
+                            <th style="text-align:right;">Estimate Value (₹)</th>
+                            <th style="text-align:center;">Action</th>
+                        </tr>
+                    `;
+
+                    if (filtered.length === 0) {
+                        reportBody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:#9ca3af;">No customer orders found for this period. Create customer orders from the Customer Orders page to see them here.</td></tr>`;
+                    } else {
+                        // Store filtered orders for index-based access (avoids JSON-in-onclick issues)
+                        window._coReportOrders = filtered;
+                        let bodyHtml = '';
+                        filtered.forEach((o, idx) => {
+                            const amt = parseFloat(o.estimatedValue) || 0;
+                            bodyHtml += `
+                                <tr style="border-bottom:1px solid #f3f4f6; cursor:pointer;" onclick="previewOrderPDF(${idx})" title="Click to preview order">
+                                    <td style="padding:13px 14px;font-weight:700;color:#2563eb;">${o.id}</td>
+                                    <td style="padding:13px 14px;color:#374151;">${o.date}</td>
+                                    <td style="padding:13px 14px;font-weight:600;color:#1f2937;">${o.customerDetails?.name || '—'}</td>
+                                    <td style="padding:13px 14px;color:#374151;">${o.customerDetails?.mobile || '—'}</td>
+                                    <td style="padding:13px 14px;color:#374151;">${o.product} ${o.size ? '(' + o.size + ')' : ''}</td>
+                                    <td style="padding:13px 14px;">
+                                        ${o.metalType ? `<span style="display:inline-flex;align-items:center;gap:4px;background:${o.metalType==='Gold'?'#fef9c3':'#f1f5f9'};color:${o.metalType==='Gold'?'#92400e':'#334155'};border-radius:20px;padding:2px 10px;font-size:0.78rem;font-weight:700;border:1px solid ${o.metalType==='Gold'?'#fbbf24':'#94a3b8'};">${o.metalType === 'Gold' ? '🥇' : '🥈'} ${o.metalType} ${o.metalPurity ? '('+o.metalPurity.toUpperCase()+')' : ''}</span>` : '—'}
+                                    </td>
+                                    <td style="padding:13px 14px;text-align:right;font-weight:700;color:#2563eb;">₹ ${amt.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                    <td style="padding:13px 14px;text-align:center;">
+                                        <button type="button" class="btn-text" style="font-size:0.78rem;background:#e0f2fe;color:#0284c7;padding:4px 10px;border-radius:4px;border:1px solid #bae6fd;font-weight:600;">View PDF</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+
+                        // Grand total row
+                        bodyHtml += `
+                            <tr style="background:#f8fafc;border-top:2px solid #e5e7eb;">
+                                <td colspan="6" style="padding:14px;text-align:right;font-weight:700;color:#374151;">Grand Total (${totalCount} orders):</td>
+                                <td style="padding:14px;text-align:right;font-weight:800;color:#2563eb;font-size:1rem;">₹ ${grandTotalSum.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td></td>
+                            </tr>
+                        `;
+                        reportBody.innerHTML = bodyHtml;
+                    }
+                }
                 
                 let genericTitle = 'Report';
                 if(type === 'sales-orders') genericTitle = 'Sales Orders Report';
@@ -2810,6 +2895,7 @@
                 if(type === 'inventory') genericTitle = 'Inventory & Stock Report';
                 if(type === 'production') genericTitle = 'Production Report';
                 if(type === 'quotations') genericTitle = 'Quotations Report';
+                if(type === 'customer-orders') genericTitle = 'Customer Orders Report';
                 if(type === 'profit-loss') genericTitle = 'Profit & Loss Statement';
                 
                 if (currentActiveView && currentActiveView.name) {
@@ -3242,6 +3328,288 @@
     <script>
         if (window.lucide) lucide.createIcons();
     </script>
+<!-- ===== Customer Order PDF Preview Modal ===== -->
+<div id="co-pdf-modal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(15,23,42,0.88); backdrop-filter:blur(6px); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
+    <div style="width:100%; max-width:820px; background:#fff; border-radius:16px; box-shadow:0 25px 60px rgba(0,0,0,0.4); overflow:hidden; display:flex; flex-direction:column; max-height:92vh;">
+        <!-- Header -->
+        <div id="co-pdf-modal-header" style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; background:linear-gradient(135deg,#1e40af,#2563eb); color:#fff;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span id="co-pdf-modal-title" style="font-weight:700; font-size:1rem;">Customer Order Preview</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button id="co-pdf-download-btn" onclick="downloadCurrentOrderPDF()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:8px; padding:6px 14px; font-size:0.82rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download PDF
+                </button>
+                <button onclick="closeCoPdfModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:8px; padding:6px 12px; font-size:1.1rem; font-weight:700; cursor:pointer; line-height:1;">✕</button>
+            </div>
+        </div>
+
+        <!-- Body: loading spinner then content -->
+        <div id="co-pdf-modal-body" style="flex:1; overflow:auto; background:#f8fafc; min-height:300px; display:flex; align-items:center; justify-content:center;">
+            <div id="co-pdf-spinner" style="text-align:center;">
+                <div style="width:44px;height:44px;border:4px solid #e0e7ff;border-top-color:#2563eb;border-radius:50%;animation:cospin 0.9s linear infinite;margin:0 auto 14px;"></div>
+                <p style="color:#6b7280;font-size:0.9rem;">Loading order preview…</p>
+            </div>
+            <iframe id="co-pdf-iframe" src="" style="display:none; width:100%; height:70vh; border:none;"></iframe>
+            <!-- Fallback rich HTML card -->
+            <div id="co-order-card" style="display:none; width:100%; padding:32px; font-family:'Inter',sans-serif;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes cospin { 100% { transform:rotate(360deg); } }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+    // Current order being previewed
+    window._currentPreviewOrder = null;
+
+    window.closeCoPdfModal = function() {
+        const modal = document.getElementById('co-pdf-modal');
+        modal.style.display = 'none';
+        document.getElementById('co-pdf-iframe').src = '';
+        document.getElementById('co-pdf-iframe').style.display = 'none';
+        document.getElementById('co-order-card').style.display = 'none';
+        document.getElementById('co-pdf-spinner').style.display = 'block';
+    };
+
+    // Close on backdrop click
+    document.getElementById('co-pdf-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeCoPdfModal();
+    });
+
+    window.previewOrderPDF = async function(idx) {
+        const orders = window._coReportOrders;
+        if (!orders || !orders[idx]) return;
+        const o = orders[idx];
+        window._currentPreviewOrder = o;
+
+        const modal = document.getElementById('co-pdf-modal');
+        const iframe = document.getElementById('co-pdf-iframe');
+        const card = document.getElementById('co-order-card');
+        const spinner = document.getElementById('co-pdf-spinner');
+        const titleEl = document.getElementById('co-pdf-modal-title');
+
+        // Show modal & reset state
+        modal.style.display = 'flex';
+        spinner.style.display = 'block';
+        iframe.style.display = 'none';
+        card.style.display = 'none';
+        titleEl.textContent = `Order ${o.id} — ${o.customerDetails?.name || ''}`;
+
+        // Try Supabase PDF URL first
+        if (o.pdfUrl && o.pdfUrl.trim() !== '') {
+            iframe.src = o.pdfUrl;
+            iframe.onload = function() {
+                spinner.style.display = 'none';
+                iframe.style.display = 'block';
+            };
+            iframe.onerror = function() {
+                spinner.style.display = 'none';
+                renderOrderCard(o, card);
+            };
+        } else {
+            // Regenerate PDF with jsPDF and show as blob URL
+            spinner.style.display = 'block';
+            try {
+                const blobUrl = await regenerateOrderPDFBlob(o);
+                iframe.src = blobUrl;
+                iframe.onload = function() {
+                    spinner.style.display = 'none';
+                    iframe.style.display = 'block';
+                };
+                iframe.onerror = function() {
+                    spinner.style.display = 'none';
+                    renderOrderCard(o, card);
+                };
+            } catch(err) {
+                console.error('PDF regen error:', err);
+                spinner.style.display = 'none';
+                renderOrderCard(o, card);
+            }
+        }
+    };
+
+    async function getLetterheadBase64ForReport() {
+        try {
+            const response = await fetch('Manti Jewel_letterpad-1_page-0001.png');
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(blob);
+            });
+        } catch(e) { return null; }
+    }
+
+    async function regenerateOrderPDFBlob(o) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+
+        const bgB64 = await getLetterheadBase64ForReport();
+        if (bgB64) doc.addImage(bgB64, 'PNG', 0, 0, 210, 297);
+
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.setTextColor(37, 99, 235);
+        doc.text('CUSTOMER ORDER FORM', 105, 55, { align: 'center' });
+
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(55, 65, 81);
+        doc.text(`Order No: ${o.id}`, 14, 68);
+        doc.text(`Date: ${o.date}`, 150, 68);
+
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(226, 232, 240);
+        doc.line(14, 72, 196, 72);
+
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(30, 41, 59);
+        doc.text('Customer Details', 14, 82);
+
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.setTextColor(71, 85, 105);
+        doc.text(`Name: ${o.customerDetails?.name || '-'}`, 14, 90);
+        doc.text(`Mobile: ${o.customerDetails?.mobile || '-'}`, 14, 97);
+        doc.text(`Email: ${o.customerDetails?.email || '-'}`, 14, 104);
+        const addrLines = doc.splitTextToSize(`Address: ${o.customerDetails?.address || '-'}`, 180);
+        doc.text(addrLines, 14, 111);
+
+        doc.line(14, 122, 196, 122);
+
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(30, 41, 59);
+        doc.text('Order Specifications', 14, 132);
+
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.setTextColor(71, 85, 105);
+        doc.text(`Product Type: ${o.product}`, 14, 140);
+        if (o.size) doc.text(`Size: ${o.size}`, 14, 147);
+        doc.text(`Weight Range: ${o.weightMin}g to ${o.weightMax}g`, 14, 154);
+
+        let mcText = 'Making Charges: Not Specified';
+        if (o.mcPercent > 0) mcText = `Making Charges: ${o.mcPercent}%`;
+        else if (o.mcAmount > 0) mcText = `Making Charges: Rs. ${parseFloat(o.mcAmount).toLocaleString('en-IN')}`;
+        doc.text(mcText, 14, 161);
+
+        doc.line(14, 172, 196, 172);
+
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(37, 99, 235);
+        doc.text(`Estimated Value: Rs. ${parseFloat(o.estimatedValue).toLocaleString('en-IN')}`, 14, 185);
+
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.setTextColor(71, 85, 105);
+        doc.text('Customer Signature', 30, 240);
+        doc.text('Authorized Signatory', 140, 240);
+        doc.line(30, 235, 80, 235);
+        doc.line(140, 235, 190, 235);
+
+        // Append reference images if stored as URLs
+        if (o.images && o.images.length > 0) {
+            for (const imgUrl of o.images) {
+                try {
+                    doc.addPage();
+                    doc.setFontSize(9);
+                    doc.setTextColor(120);
+                    doc.text(`Reference Image for Order ${o.id}`, 10, 12);
+                    // Try to load image via fetch + blob
+                    const resp = await fetch(imgUrl);
+                    const blob = await resp.blob();
+                    const b64 = await new Promise(res => { const r = new FileReader(); r.onloadend = () => res(r.result); r.readAsDataURL(blob); });
+                    doc.addImage(b64, 'JPEG', 10, 20, 190, 260);
+                } catch(e) { /* skip on error */ }
+            }
+        }
+
+        const blob = doc.output('blob');
+        return URL.createObjectURL(blob);
+    }
+
+    function renderOrderCard(o, card) {
+        const cd = o.customerDetails || {};
+        const amt = parseFloat(o.estimatedValue) || 0;
+        let mcText = 'Not Specified';
+        if (o.mcPercent > 0) mcText = `${o.mcPercent}%`;
+        else if (o.mcAmount > 0) mcText = `₹ ${parseFloat(o.mcAmount).toLocaleString('en-IN')}`;
+
+        const imagesHtml = (o.images && o.images.length > 0)
+            ? o.images.map(u => `<img src="${u}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;cursor:pointer;" onclick="window.open('${u}','_blank')" title="Click to open full size">`).join('')
+            : '<span style="color:#9ca3af;font-size:0.85rem;">No reference images uploaded.</span>';
+
+        card.innerHTML = `
+            <div style="max-width:600px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+                <div style="background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;padding:24px;">
+                    <div style="font-size:0.75rem;opacity:0.8;margin-bottom:4px;">CUSTOMER ORDER FORM</div>
+                    <div style="font-size:1.4rem;font-weight:800;">${o.id}</div>
+                    <div style="font-size:0.85rem;opacity:0.9;margin-top:4px;">Date: ${o.date}</div>
+                </div>
+                <div style="padding:24px;display:grid;gap:20px;">
+                    <div>
+                        <div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Customer Details</div>
+                        <div style="display:grid;gap:6px;font-size:0.9rem;color:#374151;">
+                            <div><strong>Name:</strong> ${cd.name || '—'}</div>
+                            <div><strong>Mobile:</strong> ${cd.mobile || '—'}</div>
+                            <div><strong>Email:</strong> ${cd.email || '—'}</div>
+                            <div><strong>Address:</strong> ${cd.address || '—'}</div>
+                        </div>
+                    </div>
+                    <hr style="border:none;border-top:1px solid #f3f4f6;">
+                    <div>
+                        <div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Order Specifications</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.88rem;">
+                            <div style="background:#f9fafb;border-radius:8px;padding:12px;"><div style="color:#9ca3af;font-size:0.7rem;font-weight:600;">PRODUCT</div><div style="font-weight:700;margin-top:4px;">${o.product}${o.size ? ' (Size: '+o.size+')' : ''}</div></div>
+                            <div style="background:#f9fafb;border-radius:8px;padding:12px;"><div style="color:#9ca3af;font-size:0.7rem;font-weight:600;">WEIGHT RANGE</div><div style="font-weight:700;margin-top:4px;">${o.weightMin}g – ${o.weightMax}g</div></div>
+                            <div style="background:#f9fafb;border-radius:8px;padding:12px;"><div style="color:#9ca3af;font-size:0.7rem;font-weight:600;">MAKING CHARGES</div><div style="font-weight:700;margin-top:4px;">${mcText}</div></div>
+                            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;"><div style="color:#1d4ed8;font-size:0.7rem;font-weight:600;">ESTIMATED VALUE</div><div style="font-weight:800;font-size:1.1rem;color:#2563eb;margin-top:4px;">₹ ${amt.toLocaleString('en-IN',{minimumFractionDigits:2})}</div></div>
+                        </div>
+                    </div>
+                    ${o.images && o.images.length > 0 ? `
+                    <div>
+                        <div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Reference Images</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:10px;">${imagesHtml}</div>
+                    </div>` : ''}
+                </div>
+            </div>
+        `;
+        card.style.display = 'block';
+    }
+
+    window.downloadCurrentOrderPDF = async function() {
+        const o = window._currentPreviewOrder;
+        if (!o) return;
+        const btn = document.getElementById('co-pdf-download-btn');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '⏳ Generating...';
+        btn.disabled = true;
+        try {
+            const blobUrl = await regenerateOrderPDFBlob(o);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `${o.id}.pdf`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        } catch(err) {
+            alert('Could not generate PDF: ' + err.message);
+        } finally {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+        }
+    };
+</script>
+
 </body>
 
 </html>
