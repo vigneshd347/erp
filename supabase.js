@@ -293,15 +293,33 @@ window._performSupabaseSync = async function(key, data) {
                 if (error) { console.error("Job Works Sync Error:", error); alert("Failed to save Job Works to Cloud: " + error.message); }
             }
         } else if (key === 'manti_saved_invoices') {
-            const dbInvoices = Object.values(data).map(inv => ({
-                invoice_number: inv.invoiceData.invoiceNum, date: inv.invoiceData.date, customer_data: inv.customerData || {},
-                items: inv.items || [], subtotal: parseFloat(inv.totals?.subtotal?.replace(/[^0-9.-]+/g, "")) || 0,
-                tax_rate: parseFloat(inv.totals?.taxRate) || 0, total_amount: parseFloat(inv.totals?.grandTotal?.replace(/[^0-9.-]+/g, "")) || 0,
-                payment_status: inv.paymentStatus || 'Unpaid'
-            }));
+            const dbInvoices = Object.values(data).map(inv => {
+                let val = inv;
+                if (typeof inv === 'string') {
+                    try {
+                        val = JSON.parse(decodeURIComponent(escape(atob(inv))));
+                    } catch(e) {}
+                }
+                const sub = val.totals?.subtotal || val.subTotal || "0";
+                const tax = val.totals?.taxRate || val.taxRate || "0";
+                const gt = val.totals?.grandTotal || val.grandTotal || "0";
+                return {
+                    invoice_number: val.invoiceData?.invoiceNum || val.inv_no || '',
+                    date: val.invoiceData?.date || val.inv_date || new Date().toISOString().split('T')[0],
+                    customer_data: val.customerData || {
+                        bill_name: val.bill_name, bill_address: val.bill_address, bill_state: val.bill_state, bill_gstin: val.bill_gstin, bill_mobile: val.bill_mobile, bill_email: val.bill_email,
+                        ship_name: val.ship_name, ship_address: val.ship_address, ship_state: val.ship_state, ship_gstin: val.ship_gstin, ship_mobile: val.ship_mobile, ship_email: val.ship_email
+                    },
+                    items: val.items || [],
+                    subtotal: parseFloat(String(sub).replace(/[^0-9.-]+/g, "")) || 0,
+                    tax_rate: parseFloat(String(tax).replace(/[^0-9.-]+/g, "")) || 0,
+                    total_amount: parseFloat(String(gt).replace(/[^0-9.-]+/g, "")) || 0,
+                    payment_status: val.paymentStatus || val.status || 'Unpaid'
+                };
+            });
             if (dbInvoices.length > 0) {
-                // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('invoices').select('invoice_number');
+                // Safely delete stale invoices (not quotations)
+                const { data: cloudIds } = await supabase.from('invoices').select('invoice_number').not('payment_status', 'in', '("Quotation","Quotation_Draft")');
                 if (cloudIds) {
                     const localIds = new Set(dbInvoices.map(i => i.invoice_number));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.invoice_number)).map(c => c.invoice_number);
@@ -315,7 +333,50 @@ window._performSupabaseSync = async function(key, data) {
                 const { error } = await supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' });
                 if (error) { console.error("Invoices Sync Error:", error); alert("Failed to save Invoices to Cloud: " + error.message); }
             } else {
-                await supabase.from('invoices').delete().neq('invoice_number', 'NON_EXISTENT');
+                await supabase.from('invoices').delete().not('payment_status', 'in', '("Quotation","Quotation_Draft")');
+            }
+        } else if (key === 'manti_saved_quotations') {
+            const dbQuotations = Object.values(data).map(quot => {
+                let val = quot;
+                if (typeof quot === 'string') {
+                    try {
+                        val = JSON.parse(decodeURIComponent(escape(atob(quot))));
+                    } catch(e) {}
+                }
+                const sub = val.totals?.subtotal || val.subTotal || "0";
+                const tax = val.totals?.taxRate || val.taxRate || "0";
+                const gt = val.totals?.grandTotal || val.grandTotal || "0";
+                return {
+                    invoice_number: val.quotationData?.quotNum || val.inv_no || '',
+                    date: val.quotationData?.date || val.inv_date || new Date().toISOString().split('T')[0],
+                    customer_data: val.customerData || {
+                        bill_name: val.bill_name, bill_address: val.bill_address, bill_state: val.bill_state, bill_gstin: val.bill_gstin, bill_mobile: val.bill_mobile, bill_email: val.bill_email,
+                        ship_name: val.ship_name, ship_address: val.ship_address, ship_state: val.ship_state, ship_gstin: val.ship_gstin, ship_mobile: val.ship_mobile, ship_email: val.ship_email
+                    },
+                    items: val.items || [],
+                    subtotal: parseFloat(String(sub).replace(/[^0-9.-]+/g, "")) || 0,
+                    tax_rate: parseFloat(String(tax).replace(/[^0-9.-]+/g, "")) || 0,
+                    total_amount: parseFloat(String(gt).replace(/[^0-9.-]+/g, "")) || 0,
+                    payment_status: val.status || 'Quotation'
+                };
+            });
+            if (dbQuotations.length > 0) {
+                // Safely delete stale quotations
+                const { data: cloudIds } = await supabase.from('invoices').select('invoice_number').in('payment_status', ['Quotation', 'Quotation_Draft']);
+                if (cloudIds) {
+                    const localIds = new Set(dbQuotations.map(q => q.invoice_number));
+                    const toDelete = cloudIds.filter(c => !localIds.has(c.invoice_number)).map(c => c.invoice_number);
+                    if (toDelete.length > 0) {
+                        for (let i = 0; i < toDelete.length; i += 100) {
+                            const chunk = toDelete.slice(i, i + 100);
+                            await supabase.from('invoices').delete().in('invoice_number', chunk);
+                        }
+                    }
+                }
+                const { error } = await supabase.from('invoices').upsert(dbQuotations, { onConflict: 'invoice_number' });
+                if (error) { console.error("Quotations Sync Error:", error); alert("Failed to save Quotations to Cloud: " + error.message); }
+            } else {
+                await supabase.from('invoices').delete().in('payment_status', ['Quotation', 'Quotation_Draft']);
             }
         } else if (key === 'manti_vendor_kyc_records') {
             const dbVendors = data.map(v => ({
@@ -826,18 +887,32 @@ window.fetchEverythingFromCloud = async function () {
             window.ERP_MEMORY.set('manti_jobwork_records', '[]');
         }
 
-        // 3. Invoices
+        // 3. Invoices & Quotations
         if (invoicesRes.data) {
             const invoiceMap = {};
+            const quotationMap = {};
             invoicesRes.data.forEach(inv => {
-                invoiceMap[inv.invoice_number] = {
-                    invoiceData: { invoiceNum: inv.invoice_number, date: inv.date },
-                    customerData: inv.customer_data, items: inv.items,
-                    totals: { subtotal: inv.subtotal, taxRate: inv.tax_rate, grandTotal: inv.total_amount },
-                    paymentStatus: inv.payment_status
-                };
+                if (inv.payment_status === 'Quotation' || inv.payment_status === 'Quotation_Draft') {
+                    quotationMap[inv.invoice_number] = {
+                        quotationData: { quotNum: inv.invoice_number, date: inv.date },
+                        customerData: inv.customer_data, items: inv.items,
+                        totals: { subtotal: inv.subtotal, taxRate: inv.tax_rate, grandTotal: inv.total_amount },
+                        status: inv.payment_status
+                    };
+                } else {
+                    invoiceMap[inv.invoice_number] = {
+                        invoiceData: { invoiceNum: inv.invoice_number, date: inv.date },
+                        customerData: inv.customer_data, items: inv.items,
+                        totals: { subtotal: inv.subtotal, taxRate: inv.tax_rate, grandTotal: inv.total_amount },
+                        paymentStatus: inv.payment_status
+                    };
+                }
             });
             window.ERP_MEMORY.set('manti_saved_invoices', JSON.stringify(invoiceMap));
+            window.ERP_MEMORY.set('manti_saved_quotations', JSON.stringify(quotationMap));
+        } else {
+            window.ERP_MEMORY.set('manti_saved_invoices', '{}');
+            window.ERP_MEMORY.set('manti_saved_quotations', '{}');
         }
 
         // 4. Vendor KYC

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New Sales Order – Manti ERP</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="style.css?v=17" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+        /* Premium background */
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            font-family: 'Inter', sans-serif;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 25px;
+        }
+        .product-card {
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        .preview-img {
+            max-height: 80px;
+            object-fit: contain;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-6GOUuw/MVjfKZwj6KnnOGvI1FOHveGG7G7U0KYCUpWuUsZpkeGZQrvMdaNYZg/ehV5EhzADXr2BcZ4IoVt9NWg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="dashboard-container" style="padding: 2rem;">
+        <aside class="sidebar"></aside>
+        <main class="main-content">
+            <header class="content-header">
+                <h1>New Sales Order</h1>
+            </header>
+            <section class="glass" id="order-form-section">
+                <form id="order-form" class="form-container" style="display:none;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
+                        <!-- Order Identity -->
+                        <section class="form-section">
+                            <h3>Order Identity</h3>
+                            <div class="field-group">
+                                <input type="text" id="ord-id" placeholder="Order ID" readonly style="background:#f3f4f6;cursor:not-allowed;font-weight:700;color:var(--primary);" />
+                                <input type="date" id="ord-date" required title="Order Date" />
+                                <input type="date" id="ord-due-date" required title="Due Date" />
+                            </div>
+                        </section>
+                        <!-- Customer Details -->
+                        <section class="form-section">
+                            <h3>Customer &amp; Vendor</h3>
+                            <div class="field-group">
+                                <select id="ord-vendor" required></select>
+                                <input type="text" id="ord-customer-name" placeholder="Customer Name (editable)" required />
+                                <textarea id="ord-customer-kyc" rows="3" placeholder="KYC details (editable)" style="resize:vertical;"></textarea>
+                            </div>
+                        </section>
+                    </div>
+                    <hr />
+                    <!-- Products Container -->
+                    <div id="products-container"></div>
+                    <button type="button" class="btn-liquid btn-outline" id="add-product-btn" style="margin-top:10px;">
+                        <i data-lucide="plus"></i> Add Product
+                    </button>
+                    <hr />
+                    <!-- Pricing & Commitment -->
+                    <section class="form-section">
+                        <h3>Pricing &amp; Commitment</h3>
+                        <div class="field-group">
+                            <input type="number" step="0.01" id="ord-mc-percent" placeholder="MC %" />
+                            <input type="number" step="0.01" id="ord-mc-amount" placeholder="MC Amount (₹)" />
+                            <input type="number" step="0.01" id="ord-amount" placeholder="Final Amount (₹)" />
+                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                <input type="checkbox" id="ord-is-fixed" /> Fixed Rate Commitment
+                            </label>
+                            <input type="file" id="ord-advance-img" accept="image/*" />
+                            <input type="text" id="ord-estimated-value" placeholder="Estimated Value (₹)" readonly />
+                        </div>
+                    </section>
+                    <div style="text-align:right;margin-top:15px;display:flex;gap:10px;justify-content:flex-end;">
+                        <button type="button" class="btn-liquid btn-outline" id="cancel-order">Cancel</button>
+                        <button type="submit" class="btn-liquid btn-primary" id="save-so-btn">Submit &amp; Download PDF</button>
+                    </div>
+                </form>
+                <!-- Auto generated shareable link -->
+                <div id="share-link-container" style="margin-top:15px;display:none;">
+                    <input type="text" id="share-link" readonly style="width:100%;padding:8px;" />
+                    <button type="button" class="btn-liquid btn-outline" id="copy-link">Copy Link</button>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>
+        // Utility to create DOM elements
+        const $ = (sel) => document.querySelector(sel);
+        const $$ = (sel) => document.querySelectorAll(sel);
+        // Load vendor list from localStorage (same as sales-orders)
+        const vendorSelect = $('#ord-vendor');
+        const vendors = JSON.parse(localStorage.getItem('manti_vendor_kyc_records')) || [];
+        vendors.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.name ? `${v.name} (${v.id})` : v.id;
+            vendorSelect.appendChild(opt);
+        });
+        // Load KYC details when a vendor is selected
+        vendorSelect.addEventListener('change', () => {
+            const sel = vendors.find(v => v.id === vendorSelect.value);
+            if (sel) {
+                $('#ord-customer-name').value = sel.name || '';
+                $('#ord-customer-kyc').value = JSON.stringify(sel.kyc || {}, null, 2);
+            }
+        });
+        // Product handling
+        let productCount = 0;
+        const productsContainer = $('#products-container');
+        const addProductBtn = $('#add-product-btn');
+        function createProductCard(index) {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.dataset.index = index;
+            card.innerHTML = `
+                <div>
+                    <label>Product Name</label>
+                    <input type="text" class="prod-name" placeholder="Product / Description" required />
+                </div>
+                <div>
+                    <label>Images (multiple)</label>
+                    <input type="file" class="prod-images" accept="image/*" multiple />
+                    <div class="preview-grid"></div>
+                </div>
+                <div>
+                    <label>Category / Size</label>
+                    <select class="prod-category" required>
+                        <option value="" disabled selected>Select Category</option>
+                        <option value="Bangle">Bangle</option>
+                        <option value="Ring">Ring</option>
+                        <option value="Earring">Earring</option>
+                        <option value="Necklace">Necklace</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="text" class="prod-size" placeholder="Size (optional)" style="margin-top:4px;" />
+                </div>
+                <div>
+                    <label>Metal / Purity</label>
+                    <select class="prod-metal" required>
+                        <option value="" disabled selected>Select Metal</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Silver">Silver</option>
+                        <option value="Copper">Copper</option>
+                        <option value="Zinc">Zinc</option>
+                        <option value="Iridium">Iridium</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <select class="prod-purity" style="margin-top:4px;">
+                        <option value="" disabled selected>Select Purity</option>
+                        <option value="22kt">22kt</option>
+                        <option value="18kt">18kt</option>
+                        <option value="925">925</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Weight (g) Min‑Max</label>
+                    <input type="number" step="0.01" class="prod-weight-min" placeholder="Min" required />
+                    <input type="number" step="0.01" class="prod-weight-max" placeholder="Max" required />
+                </div>
+                <div>
+                    <button type="button" class="btn-liquid btn-outline" onclick="removeProduct(${index})">Remove</button>
+                </div>
+            `;
+            // Image preview handling
+            const imgInput = card.querySelector('.prod-images');
+            const previewGrid = card.querySelector('.preview-grid');
+            imgInput.addEventListener('change', () => {
+                previewGrid.innerHTML = '';
+                Array.from(imgInput.files).forEach(f => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'preview-img';
+                        previewGrid.appendChild(img);
+                    };
+                    reader.readAsDataURL(f);
+                });
+            });
+            return card;
+        }
+        function addProduct() {
+            const idx = productCount++;
+            const card = createProductCard(idx);
+            productsContainer.appendChild(card);
+        }
+        function removeProduct(idx) {
+            const card = productsContainer.querySelector(`.product-card[data-index="${idx}"]`);
+            if (card) card.remove();
+        }
+        addProductBtn.addEventListener('click', addProduct);
+        // Auto-generate order ID & show form
+        const toggleBtn = document.getElementById('add-order-btn') || document.createElement('button');
+        // We'll just open the form on page load for this new page
+        const form = $('#order-form');
+        function resetForm() {
+            form.reset();
+            $('#ord-id').value = 'SO-' + Date.now();
+            $('#ord-date').valueAsDate = new Date();
+            productsContainer.innerHTML = '';
+            productCount = 0;
+            addProduct();
+        }
+        resetForm();
+        form.style.display = 'block';
+        // Cancel button
+        $('#cancel-order').addEventListener('click', () => {
+            form.style.display = 'none';
+        });
+        // Submit handling – save to localStorage, generate PDF, and share link
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const records = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+            // Gather product details
+            const prodCards = $$(".product-card");
+            const products = [];
+            prodCards.forEach(c => {
+                const name = c.querySelector('.prod-name').value.trim();
+                const images = [];
+                const files = c.querySelector('.prod-images').files;
+                Array.from(files).forEach(f => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => images.push(ev.target.result);
+                    reader.readAsDataURL(f);
+                });
+                const category = c.querySelector('.prod-category').value;
+                const size = c.querySelector('.prod-size').value.trim();
+                const metal = c.querySelector('.prod-metal').value;
+                const purity = c.querySelector('.prod-purity').value;
+                const weightMin = parseFloat(c.querySelector('.prod-weight-min').value) || 0;
+                const weightMax = parseFloat(c.querySelector('.prod-weight-max').value) || 0;
+                products.push({ name, images, category, size, metal, purity, weightMin, weightMax });
+            });
+            const rec = {
+                id: $('#ord-id').value,
+                date: $('#ord-date').value,
+                dueDate: $('#ord-due-date').value,
+                vendor: $('#ord-vendor').value,
+                customerName: $('#ord-customer-name').value,
+                customerKyc: $('#ord-customer-kyc').value,
+                products,
+                mcPercent: $('#ord-mc-percent').value,
+                mcAmount: $('#ord-mc-amount').value,
+                amount: $('#ord-amount').value,
+                isFixed: $('#ord-is-fixed').checked,
+                advanceImg: null,
+                estimatedValue: $('#ord-estimated-value').value,
+                status: 'Open'
+            };
+            // Advance payment image async handling
+            const advFile = $('#ord-advance-img').files[0];
+            if (advFile) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    rec.advanceImg = ev.target.result;
+                    finalizeSave();
+                };
+                reader.readAsDataURL(advFile);
+            } else {
+                finalizeSave();
+            }
+            function finalizeSave() {
+                records.unshift(rec);
+                localStorage.setItem('manti_order_records', JSON.stringify(records));
+                generatePDF(rec);
+                generateShareLink(rec.id);
+                form.style.display = 'none';
+            }
+        });
+        // PDF generation using jsPDF
+        async function generatePDF(rec) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFont('Helvetica');
+            doc.setFontSize(14);
+            doc.text('Sales Order', 105, 15, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`ID: ${rec.id}`, 14, 30);
+            doc.text(`Date: ${rec.date}`, 14, 37);
+            doc.text(`Vendor: ${rec.vendor}`, 14, 44);
+            doc.text(`Customer: ${rec.customerName}`, 14, 51);
+            // Table header
+            let y = 60;
+            doc.autoTable({
+                startY: y,
+                head: [['Product', 'Category', 'Size', 'Metal', 'Purity', 'Weight (g)'] ],
+                body: rec.products.map(p => [p.name, p.category, p.size, p.metal, p.purity, `${p.weightMin}-${p.weightMax}`]),
+                theme: 'grid',
+                styles: {fontSize: 8}
+            });
+            // Amounts
+            y = doc.lastAutoTable.finalY + 10;
+            doc.text(`MC %: ${rec.mcPercent || '-'}   MC Amount: ${rec.mcAmount || '-'}   Total Amount: ${rec.amount || '-'}`, 14, y);
+            doc.save(`${rec.id}.pdf`);
+        }
+        // Shareable link generation
+        function generateShareLink(id) {
+            const url = `${window.location.origin}${window.location.pathname}?order=${id}`;
+            $('#share-link').value = url;
+            $('#share-link-container').style.display = 'block';
+        }
+        $('#copy-link').addEventListener('click', () => {
+            $('#share-link').select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard');
+        });
+        // Initialize Lucide icons
+        if (window.lucide) lucide.createIcons();
+    </script>
+</body>
+</html>

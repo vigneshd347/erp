@@ -259,11 +259,12 @@
                 </style>
                 <div class="report-directory">
                     <div class="report-group">
-                        <div class="report-group-title">Sales & Purchases</div>
+                        <div class="report-group-title">Sales &amp; Purchases</div>
                         <ul class="report-list">
                             <li><a class="report-link" onclick="selectReport('sales-orders', this)">Sales Orders</a></li>
                             <li><a class="report-link" onclick="selectReport('purchase-orders', this)">Purchase Orders</a></li>
-                            <li><a class="report-link" onclick="selectReport('vendor-supplier', this)"><i data-lucide="users" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Vendor & Supplier</a></li>
+                            <li><a class="report-link" onclick="selectReport('quotations', this)"><i data-lucide="file-text" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Quotations</a></li>
+                            <li><a class="report-link" onclick="selectReport('vendor-supplier', this)"><i data-lucide="users" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Vendor &amp; Supplier</a></li>
                         </ul>
                     </div>
                     
@@ -2677,6 +2678,123 @@
                     if (searchInput) searchInput.style.display = 'none';
                     table.setAttribute('data-no-filter', 'true');
                 }
+
+                else if (type === 'quotations') {
+                    reportTitle.textContent = `Quotations Report (${new Date().toLocaleDateString()})`;
+
+                    // Load all saved quotations (object keyed by quot no)
+                    const rawQuotations = JSON.parse(localStorage.getItem('manti_saved_quotations') || '{}');
+
+                    // Decode each Base64 entry
+                    const quotations = [];
+                    Object.entries(rawQuotations).forEach(([key, b64]) => {
+                        try {
+                            const decoded = JSON.parse(decodeURIComponent(escape(atob(b64))));
+                            decoded._key = key;
+                            quotations.push(decoded);
+                        } catch(e) {
+                            console.warn('Could not decode quotation:', key, e);
+                        }
+                    });
+
+                    // Apply date filter
+                    const filtered = quotations.filter(q => isWithinDateFilter(q.inv_date || q.timestamp));
+
+                    // Sort newest first
+                    filtered.sort((a, b) => new Date(b.inv_date || b.timestamp) - new Date(a.inv_date || a.timestamp));
+
+                    // Summary counts
+                    const totalCount    = filtered.length;
+                    const confirmedList = filtered.filter(q => q.status === 'Quotation');
+                    const draftList     = filtered.filter(q => q.status === 'Quotation_Draft');
+
+                    // Compute grand total values
+                    const parseAmt = v => parseFloat((v || '0').toString().replace(/[^0-9.-]/g, '')) || 0;
+                    const grandTotalSum = filtered.reduce((s, q) => s + parseAmt(q.grandTotal), 0);
+                    const confirmedSum  = confirmedList.reduce((s, q) => s + parseAmt(q.grandTotal), 0);
+
+                    // Status style
+                    const statusStyle = {
+                        'Quotation':       { bg: '#dcfce7', color: '#166534', dot: '#16a34a', label: 'Confirmed' },
+                        'Quotation_Draft': { bg: '#fef9c3', color: '#92400e', dot: '#d97706', label: 'Draft' }
+                    };
+
+                    // Build header with summary cards
+                    reportHead.innerHTML = `
+                        <tr><td colspan="7" style="padding:0;border:none;">
+                            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 20px 14px;">
+                                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;">
+                                    <div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:6px;">Total Quotations</div>
+                                    <div style="font-size:1.8rem;font-weight:800;color:#111827;">${totalCount}</div>
+                                </div>
+                                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px;">
+                                    <div style="font-size:0.7rem;font-weight:700;color:#166534;text-transform:uppercase;margin-bottom:6px;">Confirmed</div>
+                                    <div style="font-size:1.8rem;font-weight:800;color:#16a34a;">${confirmedList.length}</div>
+                                    <div style="font-size:0.78rem;color:#9ca3af;margin-top:4px;">₹ ${confirmedSum.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                                </div>
+                                <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:16px;">
+                                    <div style="font-size:0.7rem;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:6px;">Drafts</div>
+                                    <div style="font-size:1.8rem;font-weight:800;color:#d97706;">${draftList.length}</div>
+                                </div>
+                                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px;">
+                                    <div style="font-size:0.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;margin-bottom:6px;">Total Value</div>
+                                    <div style="font-size:1.8rem;font-weight:800;color:#2563eb;">₹ ${grandTotalSum.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                                </div>
+                            </div>
+                        </td></tr>
+                        <tr>
+                            <th>Quot. No.</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th style="text-align:right;">Value (₹)</th>
+                            <th style="text-align:center;">Status</th>
+                            <th>Saved On</th>
+                        </tr>
+                    `;
+
+                    if (filtered.length === 0) {
+                        reportBody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:#9ca3af;">No quotations found for this period. Save quotations from the Quotation page to see them here.</td></tr>`;
+                    } else {
+                        let bodyHtml = '';
+                        filtered.forEach(q => {
+                            const sc = statusStyle[q.status] || { bg:'#f3f4f6', color:'#374151', dot:'#9ca3af', label: q.status || '—' };
+                            const amt = parseAmt(q.grandTotal);
+                            const itemCount = (q.items || []).filter(i => i.desc).length;
+                            const itemSummary = (q.items || []).map(i => i.desc).filter(Boolean).join(', ');
+                            const displayItems = itemSummary.length > 60 ? itemSummary.slice(0,57) + '…' : (itemSummary || '—');
+                            const savedOn = q.timestamp ? new Date(q.timestamp).toLocaleDateString('en-IN') : '—';
+                            const invDate = q.inv_date || '—';
+                            const customer = q.bill_name || q.ship_name || '—';
+
+                            bodyHtml += `
+                                <tr style="border-bottom:1px solid #f3f4f6; cursor:pointer;" onclick="window.location.href='quotation.html'" title="Open Quotation Form">
+                                    <td style="padding:13px 14px;font-weight:700;color:#f97316;">${q._key || q.inv_no || '—'}</td>
+                                    <td style="padding:13px 14px;color:#374151;">${invDate}</td>
+                                    <td style="padding:13px 14px;font-weight:600;color:#1f2937;">${customer}</td>
+                                    <td style="padding:13px 14px;color:#374151;font-size:0.84rem;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${itemSummary}">${displayItems}</td>
+                                    <td style="padding:13px 14px;text-align:right;font-weight:700;color:#2563eb;">${amt > 0 ? '₹ ' + amt.toLocaleString('en-IN',{minimumFractionDigits:2}) : '—'}</td>
+                                    <td style="padding:13px 14px;text-align:center;">
+                                        <span style="display:inline-flex;align-items:center;gap:4px;background:${sc.bg};color:${sc.color};font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:20px;">
+                                            <span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};flex-shrink:0;"></span>${sc.label}
+                                        </span>
+                                    </td>
+                                    <td style="padding:13px 14px;color:#6b7280;font-size:0.82rem;">${savedOn}</td>
+                                </tr>
+                            `;
+                        });
+
+                        // Grand total row
+                        bodyHtml += `
+                            <tr style="background:#f8fafc;border-top:2px solid #e5e7eb;">
+                                <td colspan="4" style="padding:14px;text-align:right;font-weight:700;color:#374151;">Grand Total (${totalCount} quotations):</td>
+                                <td style="padding:14px;text-align:right;font-weight:800;color:#2563eb;font-size:1rem;">₹ ${grandTotalSum.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        `;
+                        reportBody.innerHTML = bodyHtml;
+                    }
+                }
                 
                 let genericTitle = 'Report';
                 if(type === 'sales-orders') genericTitle = 'Sales Orders Report';
@@ -2691,6 +2809,7 @@
                 if(type === 'jobwork-metal') genericTitle = 'Metal Balance Report';
                 if(type === 'inventory') genericTitle = 'Inventory & Stock Report';
                 if(type === 'production') genericTitle = 'Production Report';
+                if(type === 'quotations') genericTitle = 'Quotations Report';
                 if(type === 'profit-loss') genericTitle = 'Profit & Loss Statement';
                 
                 if (currentActiveView && currentActiveView.name) {

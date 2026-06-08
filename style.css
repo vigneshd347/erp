@@ -1427,15 +1427,29 @@ td {
     }
 
     .modal {
-        display: none !important;
-    }
+    display: none !important;
+}
 
-    body,
-    html {
-        overflow: visible !important;
-        height: auto !important;
-        min-height: auto !important;
-    }
+body,
+html {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+}
+
+/* Hide main page components */
+.dashboard-container,
+.main-content,
+.sidebar {
+    display: none !important;
+}
+
+/* Show print template */
+#invoice-template,
+.print-page {
+    display: block !important;
+}
+
 }
 
 .print-only {

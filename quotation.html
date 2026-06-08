@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manti ERP - Create Invoice</title>
+    <title>Manti ERP - Create Quotation</title>
     <link rel="stylesheet" href="style.css?v=17">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -125,19 +125,16 @@
                         <img src="Asset 23.png" alt="Manti Logo" class="header-logo">
                     </a>
                     <div>
-                        <h1>Invoice</h1>
+                        <h1>Quotation</h1>
                         <p>MANTI JEWEL ART PRIVATE LIMITED</p>
                     </div>
                 </div>
                 <div class="actions">
-                    <button type="button" id="btn-push-irp" class="btn-liquid btn-accent" onclick="pushToIRP()" title="Generate e-Invoice via GST Portal">
-                        <i data-lucide="zap" style="width:16px;height:16px;"></i> e-Invoice
-                    </button>
-                    <button type="button" id="save-draft-invoice" class="btn-liquid btn-secondary">Draft</button>
-                    <button type="button" id="complete-invoice" class="btn-liquid btn-primary">Complete</button>
+                    <button type="button" id="save-quotation" class="btn-liquid btn-primary">Save Quotation</button>
+                    <button type="button" id="save-quotation-draft" class="btn-liquid btn-secondary">Draft</button>
                     <button type="button" id="show-preview" class="btn-liquid btn-outline">Preview</button>
-                     <button type="button" id="print-invoice" class="btn-liquid btn-secondary">Print Invoice</button>
- 
+                    <button type="button" id="print-invoice" class="btn-liquid btn-secondary">Print Quotation</button>
+                    <button type="button" id="convert-to-po" class="btn-liquid btn-primary">Convert to PO</button>
                     <button id="reset-form" class="btn-liquid btn-outline">Reset</button>
                 </div>
             </header>
@@ -178,32 +175,19 @@
                     </section>
 
                     <section class="form-section">
-                        <h3>Invoice Info</h3>
+                        <h3>Quotation Info</h3>
+   
                         <div class="field-row">
-                            <input type="text" name="inv_no" placeholder="Inv No">
-                            <input type="date" name="inv_date" id="current-date">
+                            <input type="text" name="inv_no" placeholder="Quotation No." value="MAN-QUOT-">
                         </div>
                         <div class="field-row">
-                            <input type="text" name="payment_mode" placeholder="Payment Mode">
-                            <select name="payment_status" id="payment-status" onchange="togglePaymentDisplay()">
-                                <option value="paid">Paid</option>
-                                <option value="pending" selected>Pending</option>
-                            </select>
+                            <input type="date" name="inv_date" id="current-date" title="Quotation Date">
                         </div>
                         <div class="field-row">
-                            <select name="buyer_order" id="so-select" onchange="handleSOSelect(this)"
-                                style="padding: 10px; border: 1.5px solid #d1d5db; border-radius: 8px; background: #f9fafb; color: #374151; font-size: 0.9rem;">
-                                <option value="">Buyer's Order No (Select SO)</option>
-                            </select>
-                            <input type="text" name="supplier_ref" placeholder="Supplier's Ref.">
+                            <input type="date" name="quot_expiry" id="quot-expiry-date" title="Quotation Expiry Date">
                         </div>
                         <div class="field-row">
-                            <input type="text" name="vehicle_no" placeholder="Vehicle No">
                             <input type="date" name="delivery_date" placeholder="Delivery Date">
-                        </div>
-                        <div class="field-row">
-                            <input type="text" name="transport_details" placeholder="Transport Details">
-                            <input type="text" name="eway_bill" placeholder="E-Way Bill No">
                         </div>
                     </section>
                 </div>
@@ -219,7 +203,8 @@
                                 <th width="100">Weight (g)</th>
                                 <th width="150">Metal Type</th>
                                 <th width="120">Rate</th>
-                                <th width="80">MC %</th>
+                                <th width="60">MC %</th>
+                                <th width="80">Taxable</th>
                                 <th width="120">Total</th>
                                 <th width="40"></th>
                             </tr>
@@ -241,19 +226,17 @@
 
                 <!-- Calculation Summary -->
                 <div class="summary-container">
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem; flex: 1; min-width: 250px;">
-                        <div class="bank-details-info" style="margin-bottom: 0.25rem;">
-                            <p class="info-note" style="margin: 0;">Bank details and metal rates are managed in the <a href="admin.html">Admin Settings</a>.</p>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                            <h3 style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase; color: var(--secondary); margin: 0; padding-bottom: 0.5rem; border-bottom: 2px solid var(--accent); display: inline-block;">Terms & Conditions</h3>
-                            <textarea name="terms_conditions" id="inv-terms" rows="4" placeholder="Enter terms and conditions for this invoice..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.82rem; resize: vertical; line-height: 1.6;">1. Goods once sold will not be taken back or exchanged.
-2. Subject to local jurisdiction.
-3. Interest @ 18% p.a. will be charged if payment is not made within due date.</textarea>
-                        </div>
+                    <!-- Terms & Conditions Box -->
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <h3 style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase; color: var(--secondary); margin: 0; padding-bottom: 0.5rem; border-bottom: 2px solid var(--accent); display: inline-block;">Terms & Conditions</h3>
+                        <textarea name="terms_conditions" id="quot-terms" rows="8" placeholder="Enter terms and conditions for this quotation..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.82rem; resize: vertical; line-height: 1.6;">1. Prices are valid until the quotation expiry date.
+2. GST will be charged as applicable.
+3. Delivery timeline will be confirmed upon order confirmation.
+4. Payment terms: As mutually agreed.
+5. This is a quotation only and not a confirmed order.</textarea>
                     </div>
 
-                    <div class="totals-panel">
+                    <div class="totals-panel" style="background: #fff; color: #1e293b; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                         <div class="total-row">
                             <span>Sub-Total:</span>
                             <span id="sub-total">₹ 0.00</span>
@@ -273,7 +256,7 @@
                                     <option value="percent">%</option>
                                 </select>
                             </span>
-                            <input type="number" name="discount_val" id="discount_val" value="0" min="0" step="0.01" class="small-input" style="border-color:#fed7aa !important;" placeholder="0">
+                            <input type="number" name="discount_val" id="discount_val" value="0" min="0" step="0.01" class="small-input" style="border-color:#fed7aa !important; background: #f8fafc !important; color: #1e293b !important;" placeholder="0">
                         </div>
                         <div class="total-row" style="font-size:0.82rem; color:#ea580c; display:none;" id="discount-display-row">
                             <span>Discount Applied:</span>
@@ -281,17 +264,17 @@
                         </div>
                         <div class="total-row">
                             <span>Insurance/Freight:</span>
-                            <input type="number" name="freight_amt" value="0.00" step="0.01" class="small-input">
+                            <input type="number" name="freight_amt" value="0.00" step="0.01" class="small-input" style="border-color: #cbd5e1 !important; background: #f8fafc !important; color: #1e293b !important;">
                         </div>
                         <div class="total-row">
                             <span>Round Off:</span>
-                            <input type="number" name="round_off" value="0.00" step="0.01" class="small-input">
+                            <input type="number" name="round_off" value="0.00" step="0.01" class="small-input" style="border-color: #cbd5e1 !important; background: #f8fafc !important; color: #1e293b !important;">
                         </div>
-                        <div class="total-row highlight">
+                        <div class="total-row highlight" style="border-top-color: #e2e8f0; color: #1e293b;">
                             <span>Grand Total:</span>
                             <span id="grand-total">₹ 0.00</span>
                         </div>
-                        <p id="total-words" class="total-words"></p>
+                        <p id="total-words" class="total-words" style="color: #64748b;"></p>
                     </div>
                 </div>
             </form>
@@ -473,8 +456,12 @@
 
     <!-- Printable Template -->
     <div id="invoice-template">
-        <img src="header.jpg" alt="Invoice Header"
-            style="width: 100%; height: auto; display: block; margin-bottom: 20px;">
+        <div style="position: relative; width: 100%;">
+            <img src="header.jpg" alt="Quotation Header"
+                style="width: 100%; height: auto; display: block; margin-bottom: 20px;">
+            <div style="position: absolute; top: 0; right: 0; width: 48%; height: 45%; background: white;"></div>
+            <div style="position: absolute; right: 0; top: 12px; background: white; padding: 6px 12px; font-size: 1.6rem; font-weight: 800; color: #ea580c; letter-spacing: 1px; min-width: 200px; text-align: right; text-transform: uppercase; font-family: 'Inter', sans-serif;">Quotation</div>
+        </div>
 
         <div class="p-details-row">
             <div class="p-details-left">
@@ -494,46 +481,25 @@
 
                 <div class="p-thin-orange-hr mt-10 mb-10" style="margin-left: 0;"></div>
 
-                <h4 class="p-section-title">Ship To</h4>
-                <div class="kv-grid">
-                    <div>Name</div>
-                    <div>: <span id="p-ship-name"></span></div>
-                    <div>Address</div>
-                    <div>: <span id="p-ship-address"></span></div>
-                    <div>Mobile / Email</div>
-                    <div>: <span id="p-ship-contact"></span></div>
-                    <div>Pin Code</div>
-                    <div>: <span id="p-ship-state"></span></div>
-                    <div>GSTIN</div>
-                    <div>: <span id="p-ship-gstin"></span></div>
-                </div>
+
             </div>
 
             <div class="p-details-right">
-                <div class="kv-grid mt-20">
-                    <div># Inv. No</div>
+                <div class="field-row">
+                    <div># Quotation No</div>
                     <div>: <span id="p-inv-no"></span></div>
-                    <div>Inv. Date</div>
-                    <div>: <span id="p-inv-date"></span></div>
-                    <div>Payment Mode</div>
-                    <div>: <span id="p-payment-mode"></span></div>
                 </div>
-
-                <div class="p-thin-orange-hr mt-10 mb-10"></div>
-
-                <div class="kv-grid">
-                    <div>Buyer's Order No</div>
-                    <div>: <span id="p-buyer-order"></span></div>
-                    <div>Supplier's Ref.</div>
-                    <div>: <span id="p-supplier-ref"></span></div>
-                    <div>Vehicle Number</div>
-                    <div>: <span id="p-vehicle"></span></div>
+                <div class="field-row">
+                    <div>Quotation Date</div>
+                    <div>: <span id="p-inv-date"></span></div>
+                </div>
+                <div class="field-row">
                     <div>Delivery Date</div>
                     <div>: <span id="p-delivery-date"></span></div>
-                    <div>Transport Details</div>
-                    <div>: <span id="p-transport"></span></div>
-                    <div>E-Way Bill No</div>
-                    <div>: <span id="p-eway-bill"></span></div>
+                </div>
+                <div class="field-row">
+                    <div style="color: #dc2626; font-weight: 700;">Valid Until</div>
+                    <div>: <span id="p-quot-expiry" style="color: #dc2626; font-weight: 700;"></span></div>
                 </div>
             </div>
         </div>
@@ -550,7 +516,7 @@
                         <th width="80">Metal Type</th>
                         <th width="70">Rate</th>
                         <th width="60">MC %</th>
-                        <th width="80">Taxable</th>
+                        
                     </tr>
                 </thead>
                 <tbody id="p-items-body"></tbody>
@@ -580,9 +546,7 @@
                 <h4 class="p-blue-title ms-5">Summary</h4>
                 <table class="summary-table">
                     <tr>
-                        <td class="st-label">Taxable Amt</td>
-                        <td class="st-colon">:</td>
-                        <td class="st-val"><span id="p-sub-total-print"></span></td>
+
                     </tr>
                     <tr>
                         <td class="st-label">CGST Amt (1.5%)</td>
@@ -594,7 +558,7 @@
                         <td class="st-colon">:</td>
                         <td class="st-val"><span id="p-sgst-total-print"></span></td>
                     </tr>
-                    <tr id="p-discount-row" style="display:none;">
+                        <tr id="p-discount-row">
                         <td class="st-label" style="color:#ea580c;">Discount</td>
                         <td class="st-colon">:</td>
                         <td class="st-val" style="color:#ea580c;"><span id="p-discount-print">-</span></td>
@@ -620,21 +584,21 @@
 
         <div class="p-words-section">
             <div class="p-words-header">
-                <h4 class="p-blue-title line-title">Invoice Total in Word :</h4>
+                <h4 class="p-blue-title line-title">Quotation Total in Words :</h4>
                 <div class="p-words-text" id="p-total-words"
                     style="margin-top: 0; border-bottom: none; margin-right: 10px;"></div>
                 <div class="p-line"></div>
+                <div class="terms-qr-group" style="display:flex; gap:1rem; align-items:flex-start;">
+                    <div id="payment-qr" class="qr-container" style="align-items: flex-start; padding-left: 0; margin-top: 10px;">
+                        <img id="qr-image" src="" alt="Payment QR" style="width: 90px; height: 90px; margin-bottom: 3px;">
+                        <p style="font-size:0.8rem; font-weight: bold;">Scan to Pay</p>
+                    </div>
+                    <div id="p-terms-section" style="margin-top: 8px; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.72rem; line-height: 1.5; color: #475569;">
+                        <div style="font-weight: 700; color: var(--brand-blue); font-size: 0.78rem; margin-bottom: 3px;">Terms &amp; Conditions</div>
+                        <div id="p-terms-content" style="white-space: pre-line;"></div>
+                    </div>
+                </div>
             </div>
-
-            <div id="payment-qr" class="qr-container"
-                style="align-items: flex-start; padding-left: 0; margin-top: 10px;">
-                <img id="qr-image" src="" alt="Payment QR" style="width: 90px; height: 90px; margin-bottom: 3px;">
-                <p style="font-size: 0.8rem; font-weight: bold;">Scan to Pay</p>
-            </div>
-        <!-- Terms & Conditions in Print -->
-        <div id="p-terms-section" style="margin-top: 8px; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.72rem; line-height: 1.5; color: #475569;">
-            <div style="font-weight: 700; color: var(--brand-blue); font-size: 0.78rem; margin-bottom: 3px;">Terms & Conditions</div>
-            <div id="p-terms-content" style="white-space: pre-line;"></div>
         </div>
 
         <div class="p-sign-grid">
@@ -661,7 +625,7 @@
             <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button id="send-whatsapp" class="btn-liquid btn-outline">Send WhatsApp</button>
                 <button id="send-email" class="btn-liquid btn-outline">Send Email</button>
-                <button id="print-from-preview" class="btn-liquid btn-primary">Print This Invoice</button>
+                <button id="print-from-preview" class="btn-liquid btn-primary">Print This Quotation</button>
             </div>
         </div>
     </div>
@@ -673,17 +637,37 @@
     <script src="liquid-button.js"></script>
     <script src="script.js?v=24"></script>
 
-    <!-- Invoice-specific logic -->
+    <!-- Quotation-specific logic -->
     <script>
     document.addEventListener('CloudDataLoaded', () => {
-        // Patch syncWithTemplate to also sync T&C
+        // Auto-set Quotation Expiry Date to 1 day from today
+        const expiryInput = document.getElementById('quot-expiry-date');
+        if (expiryInput && !expiryInput.value) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            expiryInput.value = tomorrow.toISOString().split('T')[0];
+        }
+
+        // Patch syncWithTemplate to also sync expiry date and T&C
         const origSync = window.syncWithTemplate;
         if (typeof origSync === 'function') {
             window.syncWithTemplate = function() {
                 origSync.apply(this, arguments);
 
+                // Sync Quotation Expiry Date
+                const expiryVal = document.getElementById('quot-expiry-date')?.value || '';
+                const pExpiry = document.getElementById('p-quot-expiry');
+                if (pExpiry) {
+                    if (expiryVal) {
+                        const d = new Date(expiryVal + 'T00:00:00');
+                        pExpiry.textContent = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    } else {
+                        pExpiry.textContent = '-';
+                    }
+                }
+
                 // Sync Terms & Conditions
-                const termsTextarea = document.getElementById('inv-terms');
+                const termsTextarea = document.getElementById('quot-terms');
                 const pTerms = document.getElementById('p-terms-content');
                 if (termsTextarea && pTerms) {
                     pTerms.textContent = termsTextarea.value || '';

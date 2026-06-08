@@ -548,7 +548,7 @@ document.addEventListener('CloudDataLoaded', () => {
     // Check if handling a shared link
     const urlParams = new URLSearchParams(window.location.search);
     const sharedData = urlParams.get('data');
-    if (sharedData && window.location.pathname.includes('create-invoice')) {
+    if (sharedData && (window.location.pathname.includes('create-invoice') || window.location.pathname.includes('quotation'))) {
         handleSharedInvoice(sharedData);
         return; // Skip normal init
     }
@@ -753,6 +753,39 @@ function onNumberInput(el) {
 }
 
 if (addItemBtn) addItemBtn.addEventListener('click', addNewRow);
+// Convert to PO functionality
+if (document.getElementById('convert-to-po')) {
+    document.getElementById('convert-to-po').addEventListener('click', convertToPO);
+}
+function convertToPO() {
+    // Collect form data
+    const form = document.getElementById('invoice-form');
+    if (!form) return;
+    const data = new FormData(form);
+    const po = {};
+    data.forEach((value, key) => {
+        if (key !== 'items') po[key] = value;
+    });
+    // Generate PO number
+    const existingPOs = JSON.parse(localStorage.getItem('purchase_orders') || '[]');
+    const poNo = 'PO-' + String(existingPOs.length + 1).padStart(4, '0');
+    po.id = poNo;
+    po.type = 'Purchase Order';
+    existingPOs.push(po);
+    localStorage.setItem('purchase_orders', JSON.stringify(existingPOs));
+    // Create Sales Order
+    const existingSOs = JSON.parse(localStorage.getItem('sales_orders') || '[]');
+    const soNo = 'SO-' + String(existingSOs.length + 1).padStart(4, '0');
+    const so = { ...po, type: 'Sales Order', id: soNo, approved: false };
+    // Approval prompt
+    if (confirm('Approve this sales order?')) {
+        so.approved = true;
+    }
+    existingSOs.push(so);
+    localStorage.setItem('sales_orders', JSON.stringify(existingSOs));
+    alert('PO ' + poNo + ' created. Sales Order ' + soNo + (so.approved ? ' approved.' : ' pending approval.'));
+}
+
 
 // Build SO options for the Buyer's Order dropdown
 function getSOOptions() {
@@ -1015,7 +1048,9 @@ function calculateRow(input) {
     const weightInput = row.querySelector('input[name="weight"]');
     const metalSelect = row.querySelector('select[name="metal_type"]');
 
-    if (metalSelect && metalSelect.value !== 'none' && metalSelect.value !== 'other') {
+    // Skip stock check on quotation page — quotations are estimates, not actual sales
+    const isQuotationPage = window.location.pathname.includes('quotation');
+    if (!isQuotationPage && metalSelect && metalSelect.value !== 'none' && metalSelect.value !== 'other') {
         const metalType = metalSelect.value;
         const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {};
         const available = balances[metalType] || 0;
@@ -1065,9 +1100,27 @@ function calculateGrandTotal() {
         sgst += totalGst / 2;
     });
 
+    // Discount
+    const discountType = document.getElementById('discount_type')?.value || 'amount';
+    const discountVal  = parseFloat(document.getElementById('discount_val')?.value) || 0;
+    let discountAmt = 0;
+    if (discountVal > 0) {
+        if (discountType === 'percent') {
+            discountAmt = (subTotal + cgst + sgst) * (discountVal / 100);
+        } else {
+            discountAmt = discountVal;
+        }
+    }
+
+    // Show/hide discount display row
+    const discDisplayRow = document.getElementById('discount-display-row');
+    const discAmtDisplay = document.getElementById('discount-amount-display');
+    if (discDisplayRow) discDisplayRow.style.display = discountAmt > 0 ? 'flex' : 'none';
+    if (discAmtDisplay) discAmtDisplay.textContent = `- ₹ ${discountAmt.toFixed(2)}`;
+
     // Get additional charges
     const freightVal = parseFloat(document.querySelector('input[name="freight_amt"]')?.value) || 0;
-    const rawGrandTotal = subTotal + cgst + sgst + freightVal;
+    const rawGrandTotal = subTotal + cgst + sgst - discountAmt + freightVal;
     const roundOff = Math.round(rawGrandTotal) - rawGrandTotal;
     const grandTotal = rawGrandTotal + roundOff;
 
@@ -1114,6 +1167,7 @@ function numberToWords(num) {
 let __stockDeducted = false;
 
 function deductInvoiceStock() {
+    if (window.location.pathname.includes('quotation')) return;
     if (__stockDeducted) return;
     const rows = itemsBody ? itemsBody.querySelectorAll('tr') : [];
     if (rows.length === 0) return;
@@ -1158,7 +1212,7 @@ const printBtn = document.getElementById('print-invoice');
 if (printBtn) {
     printBtn.addEventListener('click', () => {
         if (typeof syncWithTemplate === 'function') syncWithTemplate();
-        if (typeof deductInvoiceStock === 'function') deductInvoiceStock();
+        if (typeof deductInvoiceStock === 'function' && !window.location.pathname.includes('quotation')) deductInvoiceStock();
         // Mark SO as completed if this is a despatch invoice
         if (window.__pendingDespatchSoId) {
             if (typeof markSOCompleted === 'function') markSOCompleted(window.__pendingDespatchSoId);
@@ -1229,6 +1283,48 @@ if (completeBtn) {
             populateSODropdown();
         }
     });
+}
+
+// Quotation Save & Draft Functionality
+const saveQuotationBtn = document.getElementById('save-quotation');
+if (saveQuotationBtn) {
+    saveQuotationBtn.addEventListener('click', () => {
+        saveQuotationData('Quotation');
+    });
+}
+
+const saveQuotationDraftBtn = document.getElementById('save-quotation-draft');
+if (saveQuotationDraftBtn) {
+    saveQuotationDraftBtn.addEventListener('click', () => {
+        saveQuotationData('Quotation_Draft');
+    });
+}
+
+function saveQuotationData(status) {
+    const quotNoInput = invoiceForm.querySelector('[name="inv_no"]');
+    const quotNo = quotNoInput ? quotNoInput.value.trim() : '';
+    if (!quotNo) {
+        alert("Please enter a Quotation Number before saving.");
+        return;
+    }
+
+    if (typeof syncWithTemplate === 'function') syncWithTemplate();
+
+    const serializedData = serializeInvoiceData(status);
+    let savedQuotations = JSON.parse(localStorage.getItem('manti_saved_quotations')) || {};
+    savedQuotations[quotNo] = serializedData;
+    localStorage.setItem('manti_saved_quotations', JSON.stringify(savedQuotations));
+
+    alert(`Quotation ${status === 'Quotation_Draft' ? 'Draft ' : ''}Saved Successfully ✅`);
+    if (status === 'Quotation') {
+        invoiceForm.reset();
+        // Reset/init form rows
+        const itemsBody = document.getElementById('items-body');
+        if (itemsBody) {
+            itemsBody.innerHTML = '';
+            if (typeof addNewRow === 'function') addNewRow();
+        }
+    }
 }
 
 // Preview Functionality
@@ -1397,7 +1493,7 @@ function handleSharedInvoice(base64Data) {
         const isEditMode = urlParams.get('edit') === 'true';
 
         // If it's a draft and we want to edit, populate the form
-        if (isEditMode && data.status === 'Draft') {
+        if (isEditMode && (data.status === 'Draft' || data.status === 'Quotation_Draft')) {
             fillInvoiceForm(data);
             return;
         }
@@ -1534,6 +1630,22 @@ function handleSharedInvoice(base64Data) {
             if (el) el.textContent = val;
         });
 
+        // Discount print row
+        const discVal = parseFloat(data.discount_val) || 0;
+        const pDiscRow = document.getElementById('p-discount-row');
+        const pDiscPrint = document.getElementById('p-discount-print');
+        if (pDiscRow) pDiscRow.style.display = discVal > 0 ? '' : 'none';
+        if (pDiscPrint && discVal > 0) {
+            const label = data.discount_type === 'percent' ? ` (${discVal}%)` : '';
+            const subTotalNum = parseFloat((data.subTotal || '0').replace(/[^\d.]/g, '')) || 0;
+            const cgstNum     = parseFloat((data.cgstTotal || '0').replace(/[^\d.]/g, '')) || 0;
+            const sgstNum     = parseFloat((data.sgstTotal || '0').replace(/[^\d.]/g, '')) || 0;
+            const discAmt = data.discount_type === 'percent'
+                ? (subTotalNum + cgstNum + sgstNum) * (discVal / 100)
+                : discVal;
+            pDiscPrint.textContent = `- ₹ ${discAmt.toFixed(2)}${label}`;
+        }
+
         // Use the existing paginator logic! It works perfectly on the cloned template.
         // We override allRows gathering to fetch from the newly populated pItemsBody
         const template = document.getElementById('invoice-template');
@@ -1618,7 +1730,8 @@ const emailBtn = document.getElementById('send-email');
 if (emailBtn) emailBtn.addEventListener('click', () => shareInvoice('email'));
 
 function togglePaymentDisplay() {
-    const status = document.getElementById('payment-status').value;
+    const statusEl = document.getElementById('payment-status');
+    const status = statusEl ? statusEl.value : 'pending';
     const seal = document.getElementById('paid-seal');
     const qr = document.getElementById('payment-qr');
     const bankSection = document.querySelector('.p-bank-info');
@@ -1673,6 +1786,7 @@ function generateQRCode() {
 }
 
 function syncWithTemplate() {
+    if (!invoiceForm) return;
     const formData = new FormData(invoiceForm);
 
     // Sync single fields
@@ -1760,7 +1874,8 @@ function syncWithTemplate() {
     });
 
     // Add Taxable row at the bottom of table
-    const subTotalVal = document.getElementById('sub-total').textContent;
+    const subTotalEl = document.getElementById('sub-total');
+    const subTotalVal = subTotalEl ? subTotalEl.textContent : '₹ 0.00';
     const taxableRow = document.createElement('tr');
     taxableRow.className = 'taxable-row';
     taxableRow.innerHTML = `
@@ -1777,16 +1892,31 @@ function syncWithTemplate() {
     if (footerBar) footerBar.textContent = footerText;
 
     // Sync totals
-    const subTotalStr = document.getElementById('sub-total').textContent;
+    const subTotalStr = document.getElementById('sub-total') ? document.getElementById('sub-total').textContent : '₹ 0.00';
 
     // Summary IDs
-    const cgstVal = document.getElementById('cgst-total').textContent;
-    const sgstVal = document.getElementById('sgst-total').textContent;
-    const wordsVal = document.getElementById('total-words').textContent;
-    const grandTotalVal = document.getElementById('grand-total').textContent;
+    const cgstVal = document.getElementById('cgst-total') ? document.getElementById('cgst-total').textContent : '₹ 0.00';
+    const sgstVal = document.getElementById('sgst-total') ? document.getElementById('sgst-total').textContent : '₹ 0.00';
+    const wordsVal = document.getElementById('total-words') ? document.getElementById('total-words').textContent : '';
+    const grandTotalVal = document.getElementById('grand-total') ? document.getElementById('grand-total').textContent : '₹ 0.00';
 
     const freightVal = document.querySelector('input[name="freight_amt"]')?.value || '0.00';
     const roundOffVal = document.querySelector('input[name="round_off"]')?.value || '0.00';
+    const discountTypeVal = document.getElementById('discount_type')?.value || 'amount';
+    const discountInputVal = parseFloat(document.getElementById('discount_val')?.value) || 0;
+
+    // Compute discount amount for print
+    let discountAmtForPrint = 0;
+    if (discountInputVal > 0) {
+        if (discountTypeVal === 'percent') {
+            const st = parseFloat((subTotalStr||'0').replace(/[^\d.]/g,'')) || 0;
+            const cg = parseFloat((cgstVal||'0').replace(/[^\d.]/g,'')) || 0;
+            const sg = parseFloat((sgstVal||'0').replace(/[^\d.]/g,'')) || 0;
+            discountAmtForPrint = (st + cg + sg) * (discountInputVal / 100);
+        } else {
+            discountAmtForPrint = discountInputVal;
+        }
+    }
 
     // 'Sub-Total' label in table is now 'Taxable'
     // Already added above
@@ -1805,6 +1935,16 @@ function syncWithTemplate() {
         const el = document.getElementById(id);
         if (el) el.textContent = val;
     });
+
+        // Discount print row
+        const pDiscRow = document.getElementById('p-discount-row');
+        const pDiscPrint = document.getElementById('p-discount-print');
+        // Always display the discount row in the print preview
+        if (pDiscRow) pDiscRow.style.display = '';
+        // Compute display text (show zero if no discount)
+        const label = discountTypeVal === 'percent' ? ` (${discountInputVal}%)` : '';
+        const amount = discountAmtForPrint.toFixed(2);
+        pDiscPrint.textContent = `- ₹ ${amount}${label}`;
 
     paginateInvoice();
 }
@@ -1862,17 +2002,21 @@ function paginateInvoice() {
             cloneBody.appendChild(contRow);
         }
 
-        if (!isLastPage) {
-            const footerGrid = clone.querySelector('.p-footer-grid');
-            const wordsSection = clone.querySelector('.p-words-section');
-            const signGrid = clone.querySelector('.p-sign-grid');
+        const footerGrid = clone.querySelector('.p-footer-grid');
+        const wordsSection = clone.querySelector('.p-words-section');
+        const signGrid = clone.querySelector('.p-sign-grid');
+        const termsSection = clone.querySelector('#p-terms-section');
 
+        if (!isLastPage) {
             if (footerGrid) footerGrid.style.display = 'none';
             if (wordsSection) wordsSection.style.display = 'none';
             if (signGrid) signGrid.style.display = 'none';
+            if (termsSection) termsSection.style.display = 'none';
 
             clone.style.pageBreakAfter = 'always';
             clone.style.breakAfter = 'page';
+        } else {
+            if (termsSection) termsSection.style.display = 'block';
         }
 
         if (index > 0) {
