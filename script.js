@@ -1051,8 +1051,7 @@ function calculateRow(input) {
     // Skip stock check on quotation page — quotations are estimates, not actual sales
     const isQuotationPage = window.location.pathname.includes('quotation');
     if (!isQuotationPage && metalSelect && metalSelect.value !== 'none' && metalSelect.value !== 'other') {
-        const metalType = metalSelect.value;
-        const balances = JSON.parse(localStorage.getItem('manti_stock_balances')) || {};
+        const balances = window.calculateMantiBalances ? window.calculateMantiBalances() : (JSON.parse(localStorage.getItem('manti_stock_balances')) || {});
         const available = balances[metalType] || 0;
 
         let totalReq = 0;

@@ -1160,8 +1160,7 @@ window.fetchEverythingFromCloud = async function () {
             const ignoredKeys = [
                 'manti_vendor_kyc_records', 'manti_supplier_kyc_records', 'manti_staff_records',
                 'manti_assets', 'manti_delivery_challan_records', 'manti_payments_made',
-                'manti_expenses', 'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history',
-                'manti_stock_balances'
+                'manti_expenses', 'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history'
             ];
             settingsRes.data.forEach(s => {
                 if (!ignoredKeys.includes(s.setting_key)) {

@@ -546,6 +546,7 @@ function loadLocalData() {
     // ------- Sync to Supabase (await to guarantee order) -------
     if (window.syncKeyToSupabase) {
         await window.syncKeyToSupabase('manti_stock_history', history);
+        await window.syncKeyToSupabase('manti_stock_balances', balances);
     }
 
     // ------- Refresh UI -------
@@ -599,6 +600,7 @@ window.deleteAdjustment = async function (recId, fallbackIndex) {
     // Sync to Supabase (await to ensure sync completes before reload/refresh)
     if (window.syncKeyToSupabase) {
         await window.syncKeyToSupabase('manti_stock_history', history);
+        await window.syncKeyToSupabase('manti_stock_balances', balances);
     }
 
     // Re‑load data and render UI
@@ -651,7 +653,7 @@ window.deleteAdjustment = async function (recId, fallbackIndex) {
             }
         };
 
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             if (!window.isCloudDataLoaded) {
@@ -674,50 +676,70 @@ window.deleteAdjustment = async function (recId, fallbackIndex) {
             }
 
             let weight = weightInput;
-            if (type === 'Adjust') {
+            if (type === 'Consumption') {
                 weight = -weightInput; // Deduct
             }
 
             // Check if deduct goes below 0
-            if (type === 'Adjust' && (balances[metal] || 0) + weight < 0) {
+            if (type === 'Consumption' && (balances[metal] || 0) + weight < 0) {
                 if (!confirm("This will result in negative stock. Proceed?")) return;
             }
 
-            const now = new Date();
-            const formattedDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            // Disable submit button to prevent double-clicks
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Saving...';
+            submitBtn.disabled = true;
 
-            // Robust ID generation
-            let maxAdjNum = 1000;
-            history.forEach(h => {
-                if (h.id && h.id.startsWith('ADJ-')) {
-                    const num = parseInt(h.id.replace('ADJ-', ''));
-                    if (!isNaN(num) && num > maxAdjNum) maxAdjNum = num;
+            try {
+                const now = new Date();
+                const formattedDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                // Robust ID generation
+                let maxAdjNum = 1000;
+                history.forEach(h => {
+                    if (h.id && h.id.startsWith('ADJ-')) {
+                        const num = parseInt(h.id.replace('ADJ-', ''));
+                        if (!isNaN(num) && num > maxAdjNum) maxAdjNum = num;
+                    }
+                });
+                const newId = `ADJ-${maxAdjNum + 1}`;
+
+                history.push({
+                    id: newId,
+                    date: formattedDate,
+                    type: type,
+                    metal: metal,
+                    weight: weight,
+                    note: note,
+                    status: 'Active'
+                });
+
+                // Update balances locally immediately so UI is responsive
+                balances[metal] = parseFloat(((balances[metal] || 0) + weight).toFixed(3));
+                localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+
+                localStorage.setItem('manti_stock_history', JSON.stringify(history));
+
+                if (window.syncKeyToSupabase) {
+                    await window.syncKeyToSupabase('manti_stock_history', history);
+                    await window.syncKeyToSupabase('manti_stock_balances', balances);
                 }
-            });
-            const newId = `ADJ-${maxAdjNum + 1}`;
 
-            history.push({
-                id: newId,
-                date: formattedDate,
-                type: type,
-                metal: metal,
-                weight: weight,
-                note: note,
-                status: 'Pending Approval'
-            });
-
-            localStorage.setItem('manti_stock_history', JSON.stringify(history));
-
-            if (window.syncKeyToSupabase) {
-                window.syncKeyToSupabase('manti_stock_history', history);
+                form.reset();
+                document.getElementById('purity-wrapper').style.display = 'block';
+                document.getElementById('adj-purity').disabled = true;
+                document.getElementById('adj-purity').innerHTML = '<option value="" disabled selected>Select Metal first</option>';
+                loadLocalData();
+                renderData();
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred while saving.");
+            } finally {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                if (window.lucide) window.lucide.createIcons();
             }
-
-            form.reset();
-            document.getElementById('purity-wrapper').style.display = 'block';
-            document.getElementById('adj-purity').disabled = true;
-            document.getElementById('adj-purity').innerHTML = '<option value="" disabled selected>Select Metal first</option>';
-            loadLocalData();
-            renderData();
         });
 
 

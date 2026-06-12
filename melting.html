@@ -503,57 +503,43 @@
             history.push(meltingOp);
 
             // Record input consumption
+            let inputIdx = 1;
             for (const [metal, wt] of Object.entries(inputs)) {
                 balances[metal] = parseFloat(((balances[metal] || 0) - wt).toFixed(3));
                 stockHistory.push({
-                    id: mltId,
+                    id: mltId + '-C' + inputIdx,
                     date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     type: 'Melting Consumption',
                     metal: metal,
                     weight: -wt,
-                    note: `Used in ${meltingOp.type}`
+                    note: `Used in ${meltingOp.type}`,
+                    status: 'Active'
                 });
+                inputIdx++;
             }
 
             // Record output production
             stockHistory.push({
-                id: mltId,
+                id: mltId + '-P',
                 date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 type: 'Melting Production',
                 metal: outputMetal,
                 weight: outputWeight,
-                note: `Produced via ${meltingOp.type}`
+                note: `Produced via ${meltingOp.type}`,
+                status: 'Active'
             });
 
             balances[outputMetal] = parseFloat(((balances[outputMetal] || 0) + outputWeight).toFixed(3));
-            // Also add matching pure metal entry for alloy
-            if (type === 'alloy') {
-                const purityElem = document.getElementById('alloy-purity');
-                if (purityElem) {
-                    // Derive base metal name from selected key (e.g., pure_silver_925 -> silver)
-                    const base = selectedMetalKey.replace('pure_', '').split('_')[0];
-                    const purityKey = `pure_${base}_${purityElem.value.replace('.', '')}`;
-                    // Record pure metal production in history
-                    stockHistory.push({
-                        id: mltId,
-                        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                        type: 'Melting Production',
-                        metal: purityKey,
-                        weight: outputWeight,
-                        note: `Added pure ${purityKey} via ${meltingOp.type}`
-                    });
-                    balances[purityKey] = parseFloat(((balances[purityKey] || 0) + outputWeight).toFixed(3));
-                }
-            }
 
             localStorage.setItem('manti_melting_history', JSON.stringify(history));
             localStorage.setItem('manti_stock_history', JSON.stringify(stockHistory));
             // Update balances persistently after recording history
             localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+
             if (window.syncKeyToSupabase) {
-                window.syncKeyToSupabase('manti_melting_history', history);
-                window.syncKeyToSupabase('manti_stock_history', stockHistory);
-                window.syncKeyToSupabase('manti_stock_balances', balances);
+                await window.syncKeyToSupabase('manti_melting_history', history);
+                await window.syncKeyToSupabase('manti_stock_history', stockHistory);
+                await window.syncKeyToSupabase('manti_stock_balances', balances);
             }
 
             document.getElementById('save-status').style.display = 'block';
@@ -619,7 +605,7 @@
             if (!confirm("Are you sure you want to delete this melting record? This will reverse the inventory changes.")) return;
 
             const history = JSON.parse(localStorage.getItem('manti_melting_history') || '[]');
-            const balances = JSON.parse(localStorage.getItem('manti_stock_balances') || '{}');
+            const balances = window.calculateMantiBalances ? window.calculateMantiBalances() : JSON.parse(localStorage.getItem('manti_stock_balances') || '{}');
             const stockHistory = JSON.parse(localStorage.getItem('manti_stock_history') || '[]');
 
             const record = history[index];
