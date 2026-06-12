@@ -526,6 +526,11 @@ function loadLocalData() {
         return;
     }
 
+    if (history[idx].status !== 'Pending Approval') {
+        console.warn('Record is not pending approval, skipping approve:', history[idx]);
+        return;
+    }
+
     console.log('Approving adjustment', { idx, record: history[idx] });
 
     // ------- Update status and balances -------
@@ -575,6 +580,10 @@ window.deleteAdjustment = async function (recId, fallbackIndex) {
     }
 
     const record = history[idx];
+    if (record && record.status === 'Deleted') {
+        console.warn('Record is already deleted, skipping delete:', record);
+        return;
+    }
     // If the record was already active/approved, revert its effect on balances
     if (record && record.status !== 'Pending Approval' && record.status !== 'Deleted') {
         let metalKey = record.metal;
