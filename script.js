@@ -2345,15 +2345,10 @@ function runInventoryMigration() {
     }
 }
 
-// Trigger migration on load
-document.addEventListener('DOMContentLoaded', () => {
-    runInventoryMigration();
-    runStockCalibration();
-});
-
-// Also trigger on sync
+// Trigger migration and calibration ONLY after cloud data has loaded to prevent blank-state calibration from wiping history
 document.addEventListener('CloudDataLoaded', () => {
     runInventoryMigration();
+    runStockCalibration();
 });
 
 /**
