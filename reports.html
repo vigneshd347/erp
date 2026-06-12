@@ -2839,31 +2839,56 @@
                             <th>Product</th>
                             <th>Metal / Purity</th>
                             <th style="text-align:right;">Estimate Value (₹)</th>
-                            <th style="text-align:center;">Action</th>
+                            <th style="text-align:center;">Status</th>
+                            <th style="text-align:center;">Actions</th>
                         </tr>
                     `;
 
                     if (filtered.length === 0) {
-                        reportBody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:#9ca3af;">No customer orders found for this period. Create customer orders from the Customer Orders page to see them here.</td></tr>`;
+                        reportBody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:48px;color:#9ca3af;">No customer orders found for this period. Create customer orders from the Customer Orders page to see them here.</td></tr>`;
                     } else {
                         // Store filtered orders for index-based access (avoids JSON-in-onclick issues)
                         window._coReportOrders = filtered;
                         let bodyHtml = '';
                         filtered.forEach((o, idx) => {
                             const amt = parseFloat(o.estimatedValue) || 0;
+                            const status = o.status || 'Open';
+
+                            // Status badge config
+                            const statusCfg = {
+                                'Open':              { bg:'#eff6ff', color:'#1d4ed8', border:'#bfdbfe', label:'Open' },
+                                'Converted to PO':   { bg:'#f0fdf4', color:'#166534', border:'#86efac', label:'Converted to PO' },
+                                'Rejected':          { bg:'#fef2f2', color:'#991b1b', border:'#fca5a5', label:'Rejected' }
+                            };
+                            const sc = statusCfg[status] || statusCfg['Open'];
+                            const statusBadge = `<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.73rem;font-weight:700;background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};">${sc.label}</span>`;
+
+                            // Action buttons
+                            const isOpen = status === 'Open';
+                            const approveBtn = isOpen
+                                ? `<button type="button" onclick="event.stopPropagation(); approveCustomerOrder(${idx})" style="font-size:0.75rem;background:#dcfce7;color:#166534;padding:4px 10px;border-radius:4px;border:1px solid #86efac;font-weight:700;cursor:pointer;white-space:nowrap;">&#10003; Approve</button>`
+                                : '';
+                            const rejectBtn = isOpen
+                                ? `<button type="button" onclick="event.stopPropagation(); rejectCustomerOrder(${idx})" style="font-size:0.75rem;background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:4px;border:1px solid #fca5a5;font-weight:700;cursor:pointer;white-space:nowrap;">&#10007; Reject</button>`
+                                : '';
+                            const viewBtn = `<button type="button" onclick="event.stopPropagation(); previewOrderPDF(${idx})" style="font-size:0.75rem;background:#e0f2fe;color:#0284c7;padding:4px 10px;border-radius:4px;border:1px solid #bae6fd;font-weight:600;cursor:pointer;white-space:nowrap;">PDF</button>`;
+
                             bodyHtml += `
                                 <tr style="border-bottom:1px solid #f3f4f6; cursor:pointer;" onclick="previewOrderPDF(${idx})" title="Click to preview order">
                                     <td style="padding:13px 14px;font-weight:700;color:#2563eb;">${o.id}</td>
                                     <td style="padding:13px 14px;color:#374151;">${o.date}</td>
-                                    <td style="padding:13px 14px;font-weight:600;color:#1f2937;">${o.customerDetails?.name || '—'}</td>
-                                    <td style="padding:13px 14px;color:#374151;">${o.customerDetails?.mobile || '—'}</td>
+                                    <td style="padding:13px 14px;font-weight:600;color:#1f2937;">${o.customerDetails?.name || '\u2014'}</td>
+                                    <td style="padding:13px 14px;color:#374151;">${o.customerDetails?.mobile || '\u2014'}</td>
                                     <td style="padding:13px 14px;color:#374151;">${o.product} ${o.size ? '(' + o.size + ')' : ''}</td>
                                     <td style="padding:13px 14px;">
-                                        ${o.metalType ? `<span style="display:inline-flex;align-items:center;gap:4px;background:${o.metalType==='Gold'?'#fef9c3':'#f1f5f9'};color:${o.metalType==='Gold'?'#92400e':'#334155'};border-radius:20px;padding:2px 10px;font-size:0.78rem;font-weight:700;border:1px solid ${o.metalType==='Gold'?'#fbbf24':'#94a3b8'};">${o.metalType === 'Gold' ? '🥇' : '🥈'} ${o.metalType} ${o.metalPurity ? '('+o.metalPurity.toUpperCase()+')' : ''}</span>` : '—'}
+                                        ${o.metalType ? `<span style="display:inline-flex;align-items:center;gap:4px;background:${o.metalType==='Gold'?'#fef9c3':'#f1f5f9'};color:${o.metalType==='Gold'?'#92400e':'#334155'};border-radius:20px;padding:2px 10px;font-size:0.78rem;font-weight:700;border:1px solid ${o.metalType==='Gold'?'#fbbf24':'#94a3b8'};">${o.metalType === 'Gold' ? '\uD83E\uDD47' : '\uD83E\uDD48'} ${o.metalType} ${o.metalPurity ? '('+o.metalPurity.toUpperCase()+')' : ''}</span>` : '\u2014'}
                                     </td>
                                     <td style="padding:13px 14px;text-align:right;font-weight:700;color:#2563eb;">₹ ${amt.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                    <td style="padding:13px 14px;text-align:center;">${statusBadge}</td>
                                     <td style="padding:13px 14px;text-align:center;">
-                                        <button type="button" class="btn-text" style="font-size:0.78rem;background:#e0f2fe;color:#0284c7;padding:4px 10px;border-radius:4px;border:1px solid #bae6fd;font-weight:600;">View PDF</button>
+                                        <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">
+                                            ${approveBtn}${rejectBtn}${viewBtn}
+                                        </div>
                                     </td>
                                 </tr>
                             `;
@@ -2874,7 +2899,7 @@
                             <tr style="background:#f8fafc;border-top:2px solid #e5e7eb;">
                                 <td colspan="6" style="padding:14px;text-align:right;font-weight:700;color:#374151;">Grand Total (${totalCount} orders):</td>
                                 <td style="padding:14px;text-align:right;font-weight:800;color:#2563eb;font-size:1rem;">₹ ${grandTotalSum.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
-                                <td></td>
+                                <td colspan="2"></td>
                             </tr>
                         `;
                         reportBody.innerHTML = bodyHtml;
@@ -3611,6 +3636,100 @@
             btn.disabled = false;
         }
     };
+
+    // ===== Approve / Reject Customer Order =====
+    function _updateCustomerOrderStatus(idx, newStatus, confirmMsg) {
+        const orders = window._coReportOrders;
+        if (!orders || !orders[idx]) return;
+        if (!confirm(confirmMsg)) return;
+
+        const order = orders[idx];
+        order.status = newStatus;
+        order.updatedAt = new Date().toISOString();
+
+        // Persist back to localStorage
+        const all = JSON.parse(localStorage.getItem('manti_customer_orders') || '[]');
+        const i = all.findIndex(o => o.id === order.id);
+        if (i !== -1) {
+            all[i] = order;
+        } else {
+            all.unshift(order);
+        }
+        localStorage.setItem('manti_customer_orders', JSON.stringify(all));
+
+        // If approved → also create a Purchase Order record
+        if (newStatus === 'Converted to PO') {
+            const poRecords = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+            const alreadyExists = poRecords.some(r => r.sourceId === order.id);
+            if (!alreadyExists) {
+                const poId = 'PO-' + order.id;
+                poRecords.unshift({
+                    id: poId,
+                    type: 'Purchase Order',
+                    sourceId: order.id,
+                    date: new Date().toISOString().split('T')[0],
+                    supplier: order.customerDetails?.name || 'Customer',
+                    product: order.product,
+                    metalType: order.metalType || '',
+                    metalPurity: order.metalPurity || '',
+                    weightMin: order.weightMin,
+                    weightMax: order.weightMax,
+                    estimatedValue: order.estimatedValue,
+                    status: 'Open',
+                    notes: `Auto-created from Customer Order ${order.id}`
+                });
+                localStorage.setItem('manti_order_records', JSON.stringify(poRecords));
+            }
+        }
+
+        // Show toast notification
+        _showCOToast(
+            newStatus === 'Converted to PO'
+                ? `✅ Order ${order.id} approved & converted to PO!`
+                : `❌ Order ${order.id} has been rejected.`,
+            newStatus === 'Converted to PO' ? '#166534' : '#991b1b'
+        );
+
+        // Refresh the report table
+        if (typeof window.loadReport === 'function') {
+            window.loadReport('customer-orders');
+        }
+    }
+
+    window.approveCustomerOrder = function(idx) {
+        _updateCustomerOrderStatus(
+            idx,
+            'Converted to PO',
+            'Approve this order and convert it to a Purchase Order?'
+        );
+    };
+
+    window.rejectCustomerOrder = function(idx) {
+        _updateCustomerOrderStatus(
+            idx,
+            'Rejected',
+            'Are you sure you want to reject this order? This cannot be undone easily.'
+        );
+    };
+
+    function _showCOToast(message, bgColor) {
+        let toast = document.getElementById('co-action-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'co-action-toast';
+            toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:999999;padding:14px 22px;border-radius:10px;color:#fff;font-weight:700;font-size:0.9rem;box-shadow:0 8px 32px rgba(0,0,0,0.2);transition:all 0.3s ease;opacity:0;transform:translateY(10px);pointer-events:none;max-width:360px;';
+            document.body.appendChild(toast);
+        }
+        toast.style.background = bgColor || '#1e40af';
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+        }, 3500);
+    }
 </script>
 
 </body>

@@ -455,7 +455,7 @@ function loadLocalData() {
                     iridium: 'Iridium (100%)'
                 };
 
-                const isPending = !rec.status || rec.status === 'Pending Approval';
+                const isPending = rec.status === 'Pending Approval';
                 const statusBadge = isPending
                     ? `<span style="background: #e0e7ff; color: #4f46e5; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Pending PO</span>`
                     : `<span style="background: ${color}20; color: ${color}; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${rec.type}</span>`;
@@ -500,6 +500,10 @@ function loadLocalData() {
         });
 
       window.approveAdjustment = async function (recId, fallbackIndex) {
+    if (!window.isCloudDataLoaded) {
+        alert("Please wait for cloud data to finish syncing before making changes.");
+        return;
+    }
     if (!confirm("Approve this PO Stock and add to inventory?")) return;
 
     // ------- Resolve the index -------
@@ -527,7 +531,9 @@ function loadLocalData() {
     // ------- Update status and balances -------
     history[idx].status = 'Active';
     const adj = history[idx];
-    const metalKey = adj.metal;
+    let metalKey = adj.metal;
+    if (metalKey === 'pure_gold') metalKey = 'pure_gold_999';
+    if (metalKey === 'pure_silver') metalKey = 'pure_silver_999';
     const amt = parseFloat(adj.weight);
     console.log('Before balance update', { metalKey, previous: balances[metalKey] || 0, amt });
     balances[metalKey] = parseFloat(((balances[metalKey] || 0) + amt).toFixed(3));
@@ -539,15 +545,19 @@ function loadLocalData() {
 
     // ------- Sync to Supabase (await to guarantee order) -------
     if (window.syncKeyToSupabase) {
-        await window.syncKeyToSupabase('manti_stock_balances', balances);
         await window.syncKeyToSupabase('manti_stock_history', history);
     }
 
     // ------- Refresh UI -------
+    loadLocalData();
     renderData();
 };
 
-window.deleteAdjustment = function (recId, fallbackIndex) {
+window.deleteAdjustment = async function (recId, fallbackIndex) {
+    if (!window.isCloudDataLoaded) {
+        alert("Please wait for cloud data to finish syncing before making changes.");
+        return;
+    }
     if (!confirm("Are you sure you want to delete this stock adjustment? This will revert the metal balance.")) return;
 
     // Determine the correct index
@@ -564,9 +574,11 @@ window.deleteAdjustment = function (recId, fallbackIndex) {
     }
 
     const record = history[idx];
-    // If the record was already approved (Active), revert its effect on balances
-    if (record && record.status === 'Active') {
-        const metalKey = record.metal;
+    // If the record was already active/approved, revert its effect on balances
+    if (record && record.status !== 'Pending Approval' && record.status !== 'Deleted') {
+        let metalKey = record.metal;
+        if (metalKey === 'pure_gold') metalKey = 'pure_gold_999';
+        if (metalKey === 'pure_silver') metalKey = 'pure_silver_999';
         const amt = parseFloat(record.weight);
         if (!isNaN(amt) && balances.hasOwnProperty(metalKey)) {
             balances[metalKey] = parseFloat(((balances[metalKey] || 0) - amt).toFixed(3));
@@ -584,10 +596,9 @@ window.deleteAdjustment = function (recId, fallbackIndex) {
     localStorage.setItem('manti_stock_history', JSON.stringify(history));
     localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
 
-    // Sync to Supabase (async, but we don't await to keep UI responsive)
+    // Sync to Supabase (await to ensure sync completes before reload/refresh)
     if (window.syncKeyToSupabase) {
-        window.syncKeyToSupabase('manti_stock_history', history);
-        window.syncKeyToSupabase('manti_stock_balances', balances);
+        await window.syncKeyToSupabase('manti_stock_history', history);
     }
 
     // Re‑load data and render UI
@@ -642,6 +653,11 @@ window.deleteAdjustment = function (recId, fallbackIndex) {
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
+
+            if (!window.isCloudDataLoaded) {
+                alert("Please wait for cloud data to finish syncing before making changes.");
+                return;
+            }
 
             const type = document.getElementById('adj-type').value;
             const metal = document.getElementById('adj-purity').value; // combined key from purity

@@ -776,8 +776,30 @@ window._performSupabaseSync = async function(key, data) {
                 }
                 return { ...s, id, status: s.status || '' };
             });
-            window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(ramStock));
-            try { originalSetItem.call(localStorage, 'manti_stock_history', JSON.stringify(ramStock)); } catch(e) {}
+            // Safely merge normalized IDs into the latest local data instead of blindly overwriting
+            const currentRAM = window.ERP_MEMORY.get('manti_stock_history');
+            if (currentRAM) {
+                try {
+                    const currentData = JSON.parse(currentRAM);
+                    let merged = false;
+                    currentData.forEach(s => {
+                        const match = ramStock.find(r => r.date === s.date && Math.abs((parseFloat(r.weight) || 0) - (parseFloat(s.weight) || 0)) < 0.001 && r.type === s.type);
+                        if (match && s.id !== match.id) {
+                            s.id = match.id;
+                            merged = true;
+                        }
+                    });
+                    if (merged) {
+                        window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(currentData));
+                        originalSetItem.call(localStorage, 'manti_stock_history', JSON.stringify(currentData));
+                    }
+                } catch (e) {
+                    console.error("Error merging stock IDs:", e);
+                }
+            } else {
+                window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(ramStock));
+                try { originalSetItem.call(localStorage, 'manti_stock_history', JSON.stringify(ramStock)); } catch(e) {}
+            }
         } else if (key === 'manti_designs') {
             const dbDesigns = data.map(d => ({
                 id: d.id, category: d.category, sub_category: d.subCategory || null,
