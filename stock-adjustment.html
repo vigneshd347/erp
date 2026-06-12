@@ -392,17 +392,22 @@
 
 function loadLocalData() {
     history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
-    // Load balances from localStorage if they exist; otherwise compute or default to zeros
-    const storedBalances = localStorage.getItem('manti_stock_balances');
-    if (storedBalances) {
-        balances = JSON.parse(storedBalances);
-        console.log('Loaded balances from localStorage', balances);
-    } else if (window.calculateMantiBalances) {
+    if (window.calculateMantiBalances) {
         balances = window.calculateMantiBalances();
         console.log('Calculated balances via calculateMantiBalances', balances);
+        localStorage.setItem('manti_stock_balances', JSON.stringify(balances));
+        if (window.syncKeyToSupabase) {
+            window.syncKeyToSupabase('manti_stock_balances', balances);
+        }
     } else {
-        balances = { pure_gold_9999: 0, pure_gold_999: 0, pure_gold_995: 0, gold_22k: 0, pure_silver_9999: 0, pure_silver_999: 0, pure_silver_995: 0, silver_925: 0 };
-        console.log('Initialized default balances', balances);
+        const storedBalances = localStorage.getItem('manti_stock_balances');
+        if (storedBalances) {
+            balances = JSON.parse(storedBalances);
+            console.log('Loaded balances from localStorage', balances);
+        } else {
+            balances = { pure_gold_9999: 0, pure_gold_999: 0, pure_gold_995: 0, gold_22k: 0, pure_silver_9999: 0, pure_silver_999: 0, pure_silver_995: 0, silver_925: 0 };
+            console.log('Initialized default balances', balances);
+        }
     }
     console.log('Loaded history (post‑load)', JSON.stringify(history, null, 2));
 }
