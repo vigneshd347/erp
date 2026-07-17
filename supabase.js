@@ -86,11 +86,12 @@ window.migrateDataToSupabase = async function () {
 // clear the physical disk, and force a cloud fetch on every single page load.
 
 // 1. Wipe all local data to guarantee compliance with "no data stored on device"
-Object.keys(localStorage).forEach(key => {
-    if (key.startsWith('manti_')) {
-        localStorage.removeItem(key);
-    }
-});
+// DISABLED TO PREVENT ACCIDENTAL DATA LOSS ON OTHER DEVICES/BROWSERS
+// Object.keys(localStorage).forEach(key => {
+//     if (key.startsWith('manti_')) {
+//         localStorage.removeItem(key);
+//     }
+// });
 
 // 2. In-Memory Ephemeral Storage
 window.ERP_MEMORY = new Map();
