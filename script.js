@@ -655,6 +655,30 @@ function getDefaultHsn() {
     return saved ? (JSON.parse(saved).hsnCode || '7113') : '7113';
 }
 
+function updateSOInvoicedWeight(soId, addedWeight) {
+    if (!soId) return;
+    const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+    const idx = orders.findIndex(o => o.id === soId);
+    if (idx >= 0) {
+        const current = parseFloat(orders[idx].invoicedWeight) || 0;
+        orders[idx].invoicedWeight = (current + addedWeight).toFixed(3);
+        localStorage.setItem('manti_order_records', JSON.stringify(orders));
+    }
+}
+
+function calculateTotalInvoiceWeight() {
+    const rows = itemsBody ? itemsBody.querySelectorAll('tr') : [];
+    let total = 0;
+    rows.forEach(r => {
+        const wtIn = r.querySelector('input[name="weight"]');
+        if (wtIn) {
+            const w = parseFloat(wtIn.value) || 0;
+            total += w;
+        }
+    });
+    return total;
+}
+
 function addNewRow() {
     const rowCount = itemsBody.children.length + 1;
     const hsn = getDefaultHsn();
@@ -797,7 +821,7 @@ function getSOOptions() {
     });
     let html = "<option value=''>Buyer's Order No (Select SO)</option>";
     orders.forEach(o => {
-        if (o.type === 'Sales Order' && despatchedSOs.has(o.id) && o.status !== 'Completed') {
+        if (o.type === 'Sales Order' && despatchedSOs.has(o.id) && o.status !== 'Completed' && (!o.invoicedWeight || parseFloat(o.invoicedWeight) < parseFloat(o.qty || 0))) {
             let mcInfo = '';
             if (o.mcPercent) mcInfo = ` | MC ${o.mcPercent}%`;
             else if (o.mcAmount) mcInfo = ` | MC ₹${parseFloat(o.mcAmount).toLocaleString()}`;
@@ -928,7 +952,13 @@ function handleSOSelect(select) {
     if (!row) return;
 
     row.querySelector('input[name="desc"]').value = so.product || '';
-    row.querySelector('input[name="weight"]').value = despatchWt > 0 ? despatchWt.toFixed(3) : (so.qty || '');
+    // Calculate remaining weight to invoice
+    const requiredWeight = parseFloat(so.qty) || 0;
+    const invoicedWeight = parseFloat(so.invoicedWeight) || 0;
+    const remainingWeight = Math.max(0, requiredWeight - invoicedWeight);
+    // Use despatch weight if it provides a specific remaining amount, otherwise fallback to remainingWeight
+    const weightToUse = (despatchWt > 0) ? Math.min(despatchWt, remainingWeight) : remainingWeight;
+    row.querySelector('input[name="weight"]').value = weightToUse > 0 ? weightToUse.toFixed(3) : '';
 
     let metalVal = 'none';
     if (so.mainMetalType === 'Gold') metalVal = 'gold_22k';
@@ -940,13 +970,19 @@ function handleSOSelect(select) {
         row.querySelector('input[name="mc_pct"]').value = so.mcPercent;
         calculateRow(row.querySelector('input[name="mc_pct"]'));
     } else if (so.mcAmount) {
-        const weight = parseFloat(row.querySelector('input[name="weight"]').value) || 0;
-        const rate = parseFloat(row.querySelector('input[name="rate"]').value) || 0;
-        const base = weight * rate;
-        if (base > 0) {
-            const pct = (parseFloat(so.mcAmount) / base * 100).toFixed(1);
-            row.querySelector('input[name="mc_pct"]').value = pct;
+        const isSilver = metalVal && metalVal.includes('silver');
+        if (isSilver) {
+            row.querySelector('input[name="mc_pct"]').value = so.mcAmount;
             calculateRow(row.querySelector('input[name="mc_pct"]'));
+        } else {
+            const weight = parseFloat(row.querySelector('input[name="weight"]').value) || 0;
+            const rate = parseFloat(row.querySelector('input[name="rate"]').value) || 0;
+            const base = weight * rate;
+            if (base > 0) {
+                const pct = (parseFloat(so.mcAmount) / base * 100).toFixed(1);
+                row.querySelector('input[name="mc_pct"]').value = pct;
+                calculateRow(row.querySelector('input[name="mc_pct"]'));
+            }
         }
     }
 
@@ -990,7 +1026,16 @@ function markSOCompleted(soId) {
     const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
     const idx = orders.findIndex(o => o.id === soId);
     if (idx >= 0) {
-        orders[idx].status = 'Completed';
+        // Check if invoiced weight meets required weight
+        const so = orders[idx];
+        const requiredWeight = (so.qty && parseFloat(so.qty) > 0) ? parseFloat(so.qty) : 0; // fallback to 0
+        const invoicedWeight = parseFloat(orders[idx].invoicedWeight) || 0;
+        if (invoicedWeight >= requiredWeight) {
+            orders[idx].status = 'Completed';
+        } else {
+            // Keep status as pending/in progress
+            orders[idx].status = 'In Progress';
+        }
         localStorage.setItem('manti_order_records', JSON.stringify(orders));
     }
 }
@@ -1011,6 +1056,7 @@ function updateRowNumbers() {
 function handleMetalChange(select) {
     const row = select.closest('tr');
     const rateInput = row.querySelector('input[name="rate"]');
+    const mcInput = row.querySelector('input[name="mc_pct"]');
     const metalType = select.value;
 
     let price = 0;
@@ -1030,6 +1076,17 @@ function handleMetalChange(select) {
     }
 
     rateInput.value = price;
+
+    if (mcInput) {
+        if (metalType && metalType.includes('silver')) {
+            mcInput.placeholder = '₹ Amt';
+            mcInput.title = 'Making Charge (Amount)';
+        } else {
+            mcInput.placeholder = '0';
+            mcInput.title = 'Making Charge (%)';
+        }
+    }
+
     calculateRow(select);
 }
 
@@ -1052,6 +1109,7 @@ function calculateRow(input) {
     const isQuotationPage = window.location.pathname.includes('quotation');
     if (!isQuotationPage && metalSelect && metalSelect.value !== 'none' && metalSelect.value !== 'other') {
         const balances = window.calculateMantiBalances ? window.calculateMantiBalances() : (JSON.parse(localStorage.getItem('manti_stock_balances')) || {});
+        const metalType = metalSelect.value;
         const available = balances[metalType] || 0;
 
         let totalReq = 0;
@@ -1071,9 +1129,15 @@ function calculateRow(input) {
 
     const weight = parseFloat(weightInput.value) || 0;
     const rate = parseFloat(row.querySelector('input[name="rate"]').value) || 0;
-    const mcPct = parseFloat(row.querySelector('input[name="mc_pct"]').value) || 0;
+    const mcVal = parseFloat(row.querySelector('input[name="mc_pct"]').value) || 0;
+    const metalType = metalSelect ? metalSelect.value : '';
 
-    const taxable = (weight * rate) * (1 + (mcPct / 100));
+    let taxable = 0;
+    if (metalType && metalType.includes('silver')) {
+        taxable = weight * (rate + mcVal);
+    } else {
+        taxable = (weight * rate) * (1 + (mcVal / 100));
+    }
 
     row.querySelector('.row-total').textContent = taxable > 0 ? `₹ ${taxable.toFixed(2)}` : '-';
     calculateGrandTotal();
@@ -1088,10 +1152,18 @@ function calculateGrandTotal() {
     rows.forEach(row => {
         const weight = parseFloat(row.querySelector('input[name="weight"]').value) || 0;
         const rate = parseFloat(row.querySelector('input[name="rate"]').value) || 0;
-        const mcPct = parseFloat(row.querySelector('input[name="mc_pct"]').value) || 0;
+        const mcVal = parseFloat(row.querySelector('input[name="mc_pct"]').value) || 0;
+        const metalSelect = row.querySelector('select[name="metal_type"]');
+        const metalType = metalSelect ? metalSelect.value : '';
         const gstPct = 3; // Fixed 3%
 
-        const taxable = (weight * rate) * (1 + (mcPct / 100));
+        let taxable = 0;
+        if (metalType && metalType.includes('silver')) {
+            taxable = weight * (rate + mcVal);
+        } else {
+            taxable = (weight * rate) * (1 + (mcVal / 100));
+        }
+
         const totalGst = taxable * (gstPct / 100);
 
         subTotal += taxable;
@@ -1239,8 +1311,16 @@ if (draftInvoiceBtn) {
         // Serialize and save as Draft
         const serializedData = serializeInvoiceData('Draft');
         let savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
-        savedInvoices[soId] = serializedData;
+        // Ensure we store an array of invoices per SO
+        if (!Array.isArray(savedInvoices[soId])) {
+            savedInvoices[soId] = [];
+        }
+        savedInvoices[soId].push(serializedData);
         localStorage.setItem('manti_saved_invoices', JSON.stringify(savedInvoices));
+
+        // Update cumulative invoiced weight for this SO
+        const totalWeight = calculateTotalInvoiceWeight();
+        updateSOInvoicedWeight(soId, totalWeight);
 
         alert('Invoice Saved as Draft ✅');
         // We don't reset the form for drafts, allowing continued editing
@@ -1265,8 +1345,16 @@ if (completeBtn) {
             // Serialize and save to Production Report
             const serializedData = serializeInvoiceData('Completed');
             let savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
-            savedInvoices[soId] = serializedData;
+            // Ensure we store an array of invoices per SO
+            if (!Array.isArray(savedInvoices[soId])) {
+                savedInvoices[soId] = [];
+            }
+            savedInvoices[soId].push(serializedData);
             localStorage.setItem('manti_saved_invoices', JSON.stringify(savedInvoices));
+
+            // Update cumulative invoiced weight for this SO
+            const totalWeight = calculateTotalInvoiceWeight();
+            updateSOInvoicedWeight(soId, totalWeight);
 
             // Mark completed and clean up
             if (typeof markSOCompleted === 'function') markSOCompleted(soId);
@@ -1316,12 +1404,15 @@ function saveQuotationData(status) {
 
     alert(`Quotation ${status === 'Quotation_Draft' ? 'Draft ' : ''}Saved Successfully ✅`);
     if (status === 'Quotation') {
-        invoiceForm.reset();
-        // Reset/init form rows
-        const itemsBody = document.getElementById('items-body');
-        if (itemsBody) {
-            itemsBody.innerHTML = '';
-            if (typeof addNewRow === 'function') addNewRow();
+        const startNew = confirm('Quotation saved! Do you want to clear the form and start a new quotation?');
+        if (startNew) {
+            invoiceForm.reset();
+            // Reset/init form rows
+            const itemsBody = document.getElementById('items-body');
+            if (itemsBody) {
+                itemsBody.innerHTML = '';
+                if (typeof addNewRow === 'function') addNewRow();
+            }
         }
     }
 }
@@ -1584,7 +1675,14 @@ function handleSharedInvoice(base64Data) {
                     const w = parseFloat(item.weight) || 0;
                     const r = parseFloat(item.rate) || 0;
                     const m = parseFloat(item.mc_pct) || 0;
-                    const taxable = w * r * (1 + m / 100);
+                    const isSilver = item.metal_text && item.metal_text.toLowerCase().includes('silver');
+
+                    let taxable = 0;
+                    if (isSilver) {
+                        taxable = w * (r + m);
+                    } else {
+                        taxable = w * r * (1 + m / 100);
+                    }
 
                     const pRow = document.createElement('tr');
                     pRow.innerHTML = `
@@ -1594,7 +1692,7 @@ function handleSharedInvoice(base64Data) {
                         <td>${item.weight || '-'}</td>
                         <td>${item.metal_text || '-'}</td>
                         <td>${item.rate || '-'}</td>
-                        <td>${item.mc_pct ? item.mc_pct + '%' : '0%'}</td>
+                        <td>${item.mc_pct ? (isSilver ? '₹ ' + item.mc_pct : item.mc_pct + '%') : '0%'}</td>
                         <td>${taxable > 0 ? taxable.toFixed(2) : '-'}</td>
                     `;
                     pItemsBody.appendChild(pRow);
@@ -1852,11 +1950,20 @@ function syncWithTemplate() {
         const desc = row.querySelector('input[name="desc"]').value;
         const hsn = row.querySelector('input[name="hsn"]').value;
         const weight = row.querySelector('input[name="weight"]').value;
-        const metalType = row.querySelector('select[name="metal_type"] option:checked').text;
+        const metalSelect = row.querySelector('select[name="metal_type"]');
+        const metalType = metalSelect ? metalSelect.value : '';
+        const metalText = metalSelect ? metalSelect.options[metalSelect.selectedIndex].text : '';
         const rate = row.querySelector('input[name="rate"]').value;
-        const mcPct = row.querySelector('input[name="mc_pct"]').value;
+        const mcVal = row.querySelector('input[name="mc_pct"]').value;
 
-        const taxable = (parseFloat(weight) || 0) * (parseFloat(rate) || 0) * (1 + (parseFloat(mcPct) || 0) / 100);
+        const isSilver = metalType && metalType.includes('silver');
+
+        let taxable = 0;
+        if (isSilver) {
+            taxable = (parseFloat(weight) || 0) * ((parseFloat(rate) || 0) + (parseFloat(mcVal) || 0));
+        } else {
+            taxable = (parseFloat(weight) || 0) * (parseFloat(rate) || 0) * (1 + (parseFloat(mcVal) || 0) / 100);
+        }
 
         const pRow = document.createElement('tr');
         pRow.innerHTML = `
@@ -1864,9 +1971,9 @@ function syncWithTemplate() {
             <td style="text-align: left; padding-left: 10px;">${desc || '-'}</td>
             <td>${hsn || '-'}</td>
             <td>${parseFloat(weight) || '-'}</td>
-            <td>${metalType}</td>
+            <td>${metalText}</td>
             <td>${parseFloat(rate) || '-'}</td>
-            <td>${parseFloat(mcPct) || 0}%</td>
+            <td>${mcVal ? (isSilver ? '₹ ' + mcVal : mcVal + '%') : '0%'}</td>
             <td>${taxable > 0 ? taxable.toFixed(2) : '-'}</td>
         `;
         pItemsBody.appendChild(pRow);
@@ -2194,6 +2301,10 @@ document.addEventListener('DOMContentLoaded', () => {
  * Stable Inventory De-duplication & ID Assignment
  */
 function runInventoryMigration() {
+    // Run Job Work to Stock History sync to ensure all job works are reflected in history
+    if (window.syncJobWorkToStockHistory) {
+        window.syncJobWorkToStockHistory();
+    }
     let history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
     let orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
     let changed = false;
@@ -2405,14 +2516,214 @@ function runStockCalibration() {
 }
 
 /**
+ * Sync Job Work Issues & Receives to Stock History
+ */
+window.syncJobWorkToStockHistory = function() {
+    let jobRecords = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
+    let history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
+    let orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
+    let jobRecordsChanged = false;
+
+    // 1. Ensure all job records have a stable ID
+    jobRecords.forEach(r => {
+        if (!r.id) {
+            r.id = 'JW-' + Date.now() + '-' + Math.floor(Math.random() * 1000000) + '-' + Math.floor(Math.random() * 1000);
+            jobRecordsChanged = true;
+        }
+    });
+
+    if (jobRecordsChanged) {
+        localStorage.setItem('manti_jobwork_records', JSON.stringify(jobRecords));
+        if (window.syncKeyToSupabase) {
+            window.syncKeyToSupabase('manti_jobwork_records', jobRecords);
+        }
+    }
+
+    // 2. Generate new/updated stock history entries from active job records
+    const newJWEntries = new Map();
+
+    jobRecords.forEach(r => {
+        if (r.doc_status === 'Draft') return; // Skip drafts
+
+        // Find the metal key using the same logic as calculateMantiBalances
+        const so = orders.find(o => o.id === r.jobnum);
+        const mainM = so ? (so.mainMetalType || '').toLowerCase() : '';
+        let metalKey = '';
+
+        if (so) {
+            const p = String(so.purity || '').trim().toLowerCase();
+            const prod = (so.product || '').toLowerCase();
+            const itemsDesc = (so.items || []).map(i => (String(i.desc || '') + ' ' + String(i.purity || '')).toLowerCase()).join(' ');
+
+            if (mainM.includes('gold')) {
+                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) metalKey = 'pure_gold_9999';
+                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) metalKey = 'pure_gold_999';
+                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) metalKey = 'pure_gold_995';
+                else if (p === '24k' || prod.includes('24k') || prod.includes('pure') || itemsDesc.includes('24k') || itemsDesc.includes('pure')) metalKey = 'pure_gold_999';
+                else metalKey = 'gold_22k';
+            } else if (mainM.includes('silver')) {
+                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) metalKey = 'pure_silver_9999';
+                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) metalKey = 'pure_silver_999';
+                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) metalKey = 'pure_silver_995';
+                else if (prod.includes('pure') || itemsDesc.includes('pure')) metalKey = 'pure_silver_999';
+                else metalKey = 'silver_925';
+            }
+        }
+
+        if (!metalKey) {
+            if (mainM.includes('gold')) metalKey = 'gold_22k';
+            else if (mainM.includes('silver')) metalKey = 'silver_925';
+            else metalKey = 'silver_925'; // Default fallback
+        }
+        else if (mainM.includes('copper')) metalKey = 'copper';
+        else if (mainM.includes('zinc')) metalKey = 'zinc';
+        else if (mainM.includes('iridium')) metalKey = 'iridium';
+
+        // Helper to format date/time
+        let formattedDate = '';
+        if (r.date) {
+            const dParts = r.date.split('-');
+            if (dParts.length === 3) {
+                formattedDate = `${dParts[2]}/${dParts[1]}/${dParts[0]} 12:00`;
+            } else {
+                formattedDate = r.date;
+            }
+        } else {
+            const now = new Date();
+            formattedDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        if (r.status === '1. Issue') {
+            if (r.issueLines && r.issueLines.length > 0) {
+                r.issueLines.forEach((line, idx) => {
+                    const lineKey = line.type === 'Solder' ? 'solder' : metalKey;
+                    const weight = -Math.abs(parseFloat(line.weight) || 0);
+                    const id = `${r.id}-ISS-${idx}`;
+                    newJWEntries.set(id, {
+                        id: id,
+                        date: formattedDate,
+                        type: 'Job Issue',
+                        metal: lineKey,
+                        weight: weight,
+                        note: `Issue [${line.type}] to ${r.worker} for Job: ${r.jobnum}, Process: ${r.process}`,
+                        status: 'Active'
+                    });
+                });
+            } else {
+                const weight = -Math.abs(parseFloat(r.issueWt) || 0);
+                const id = `${r.id}-ISS-0`;
+                newJWEntries.set(id, {
+                    id: id,
+                    date: formattedDate,
+                    type: 'Job Issue',
+                    metal: metalKey,
+                    weight: weight,
+                    note: `Issue to ${r.worker} for Job: ${r.jobnum}, Process: ${r.process}`,
+                    status: 'Active'
+                });
+            }
+        } else if (r.status === '2. Receive') {
+            if (r.receiveLines && r.receiveLines.length > 0) {
+                r.receiveLines.forEach((line, idx) => {
+                    if (line.type === 'Wastage') {
+                        const id = `${r.id}-REC-${idx}-wastage`;
+                        newJWEntries.set(id, {
+                            id: id,
+                            date: formattedDate,
+                            type: 'Job Wastage',
+                            metal: metalKey,
+                            weight: 0,
+                            note: `Wastage [${line.type}] from ${r.worker} for Job: ${r.jobnum}, Process: ${r.process} (${line.weight} g)`,
+                            status: 'Active'
+                        });
+                    } else {
+                        const lineKey = line.type === 'Solder' ? 'solder' : metalKey;
+                        const weight = Math.abs(parseFloat(line.weight) || 0);
+                        const id = `${r.id}-REC-${idx}`;
+                        newJWEntries.set(id, {
+                            id: id,
+                            date: formattedDate,
+                            type: 'Job Receive',
+                            metal: lineKey,
+                            weight: weight,
+                            note: `Receive [${line.type}] from ${r.worker} for Job: ${r.jobnum}, Process: ${r.process}`,
+                            status: 'Active'
+                        });
+                    }
+                });
+            } else {
+                const weight = Math.abs(parseFloat(r.receiveWt) || 0);
+                const id = `${r.id}-REC-0`;
+                newJWEntries.set(id, {
+                    id: id,
+                    date: formattedDate,
+                    type: 'Job Receive',
+                    metal: metalKey,
+                    weight: weight,
+                    note: `Receive from ${r.worker} for Job: ${r.jobnum}, Process: ${r.process}`,
+                    status: 'Active'
+                });
+            }
+        }
+    });
+
+    // 3. Reconcile with history
+    let historyChanged = false;
+    const updatedHistory = [];
+
+    history.forEach(h => {
+        const isJW = h.id && typeof h.id === 'string' && h.id.startsWith('JW-');
+        if (isJW) {
+            if (newJWEntries.has(h.id)) {
+                const newEnt = newJWEntries.get(h.id);
+                if (h.weight !== newEnt.weight || h.metal !== newEnt.metal || h.note !== newEnt.note || h.status !== newEnt.status || h.date !== newEnt.date) {
+                    h.weight = newEnt.weight;
+                    h.metal = newEnt.metal;
+                    h.note = newEnt.note;
+                    h.status = newEnt.status;
+                    h.date = newEnt.date;
+                    historyChanged = true;
+                }
+                updatedHistory.push(h);
+                newJWEntries.delete(h.id);
+            } else {
+                if (h.status !== 'Deleted' || h.weight !== 0) {
+                    h.status = 'Deleted';
+                    h.weight = 0;
+                    historyChanged = true;
+                }
+                updatedHistory.push(h);
+            }
+        } else {
+            updatedHistory.push(h);
+        }
+    });
+
+    // 4. Add new entries
+    if (newJWEntries.size > 0) {
+        newJWEntries.forEach(newEnt => {
+            updatedHistory.push(newEnt);
+        });
+        historyChanged = true;
+    }
+
+    if (historyChanged) {
+        localStorage.setItem('manti_stock_history', JSON.stringify(updatedHistory));
+        if (window.syncKeyToSupabase) {
+            window.syncKeyToSupabase('manti_stock_history', updatedHistory);
+        }
+        console.log("JW stock adjustments synchronized to history.");
+    }
+};
+
+/**
  * Global Inventory Calculator
- * Derives current stock balances from manti_stock_history, POs, and Job Work.
+ * Derives current stock balances from manti_stock_history and POs.
  * This is the new single source of truth for stock levels.
  */
 window.calculateMantiBalances = function() {
     const history = JSON.parse(localStorage.getItem('manti_stock_history')) || [];
     const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
-    const jobRecords = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
 
     // Initialize with zeros
     const balances = {
@@ -2491,64 +2802,6 @@ window.calculateMantiBalances = function() {
             else if (m.includes('iridium')) key = 'iridium';
 
             if (key && balances.hasOwnProperty(key)) {
-                balances[key] += wt;
-            }
-        }
-    });
-
-    // 3. Process Job Work (Outflow/Inflow)
-    jobRecords.forEach(r => {
-        if (r.doc_status === 'Draft') return;
-        const so = orders.find(o => o.id === r.jobnum);
-        const mainM = so ? (so.mainMetalType || '').toLowerCase() : '';
-        let key = '';
-
-        if (so) {
-            const p = String(so.purity || '').trim().toLowerCase();
-            const prod = (so.product || '').toLowerCase();
-            const itemsDesc = (so.items || []).map(i => (String(i.desc || '') + ' ' + String(i.purity || '')).toLowerCase()).join(' ');
-
-            if (mainM.includes('gold')) {
-                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_gold_9999';
-                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_gold_999';
-                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_gold_995';
-                else if (p === '24k' || prod.includes('24k') || prod.includes('pure') || itemsDesc.includes('24k') || itemsDesc.includes('pure')) key = 'pure_gold_999';
-                else key = 'gold_22k';
-            } else if (mainM.includes('silver')) {
-                if (p === '99.99' || prod.includes('99.99') || prod.includes('9999') || itemsDesc.includes('99.99') || itemsDesc.includes('9999')) key = 'pure_silver_9999';
-                else if (p === '99.9' || prod.includes('99.9') || prod.includes('999') || itemsDesc.includes('99.9') || itemsDesc.includes('999')) key = 'pure_silver_999';
-                else if (p === '99.5' || prod.includes('99.5') || prod.includes('995') || itemsDesc.includes('99.5') || itemsDesc.includes('995')) key = 'pure_silver_995';
-                else if (prod.includes('pure') || itemsDesc.includes('pure')) key = 'pure_silver_999';
-                else key = 'silver_925';
-            }
-        }
-
-        // Fallback for older records without SO data
-        if (!key) {
-            if (mainM.includes('gold')) key = 'gold_22k';
-            else if (mainM.includes('silver')) key = 'silver_925';
-        }
-        else if (mainM.includes('copper')) key = 'copper';
-        else if (mainM.includes('zinc')) key = 'zinc';
-        else if (mainM.includes('iridium')) key = 'iridium';
-
-        if (key && balances.hasOwnProperty(key)) {
-            if (r.status === '1. Issue') {
-                let wt = 0;
-                if (r.issueLines && r.issueLines.length > 0) {
-                    wt = r.issueLines.reduce((s, l) => s + (parseFloat(l.weight) || 0), 0);
-                } else {
-                    wt = parseFloat(r.issueWt) || 0;
-                }
-                balances[key] -= wt;
-            }
-            if (r.status === '2. Receive') {
-                let wt = 0;
-                if (r.receiveLines && r.receiveLines.length > 0) {
-                    wt = r.receiveLines.reduce((s, l) => s + (l.type !== 'Wastage' ? (parseFloat(l.weight) || 0) : 0), 0);
-                } else {
-                    wt = parseFloat(r.receiveWt) || 0;
-                }
                 balances[key] += wt;
             }
         }

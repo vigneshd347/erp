@@ -11,7 +11,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=2"></script>
+    <script src="supabase.js?v=3"></script>
     <script src="letterhead-data.js"></script>
     <style>
         .form-grid {
@@ -318,7 +318,7 @@
                         <i data-lucide="chevron-down" class="chevron"></i>
                     </div>
                     <div class="nav-group-content" style="display: flex;">
-                        <a href="sales-form.html" class="nav-item nested">Sales Orders</a>
+                        <a href="sales-orders.html" class="nav-item nested">Sales Orders</a>
                         <a href="delivery-challans.html" class="nav-item nested">Delivery Challans</a>
                         <a href="create-invoice.html" class="nav-item nested">Invoices</a>
                         <a href="customer-order.html" class="nav-item nested active">Customer Orders</a>
@@ -433,6 +433,15 @@
                                     <input type="date" id="order-date" required title="Order Date">
                                 </div>
                             </div>
+                            <div class="field-row">
+                                <div>
+                                    <label for="delivery-date">Delivery Date *</label>
+                                    <input type="date" id="delivery-date" required title="Expected Delivery Date" style="border-color: var(--accent);">
+                                </div>
+                                <div style="display:flex; align-items:flex-end;">
+                                    <span style="font-size:0.78rem; color:var(--text-muted); padding-bottom:10px;"><i data-lucide="calendar-clock" style="width:14px; display:inline; vertical-align:middle;"></i> Set expected delivery date</span>
+                                </div>
+                            </div>
 
                             <div>
                                 <label for="prod-type">Product Type *</label>
@@ -490,7 +499,7 @@
                                     <input type="number" step="0.01" id="mc-percent" placeholder="e.g. 12%">
                                 </div>
                                 <div>
-                                    <label for="mc-amount">Making Charges (₹)</label>
+                                    <label for="mc-amount">Making Charges (₹/gm)</label>
                                     <input type="number" step="0.01" id="mc-amount" placeholder="e.g. 4500">
                                 </div>
                             </div>
@@ -694,11 +703,22 @@
                 else if (purity === '800') ratePerGram = parseFloat(rates.silver800 || rates.silver) || 85;
             }
 
-            let estimate = wMax * ratePerGram;
             const pctVal = parseFloat(mcPercent.value) || 0;
             const amtVal = parseFloat(mcAmount.value) || 0;
-            if (pctVal > 0) estimate += estimate * (pctVal / 100);
-            else if (amtVal > 0) estimate += amtVal;
+
+            let estimate;
+            if (amtVal > 0) {
+                // MC in ₹: Estimate = max_weight * (rate + mc_amount_per_gram)
+                // mc_amount is total MC in ₹, so per gram = mc_amount / wMax
+                // Equivalent: Estimate = wMax * rate + mc_amount
+                estimate = wMax * (ratePerGram + amtVal);
+            } else if (pctVal > 0) {
+                // MC in %: Estimate = max_weight * rate * (1 + mc%/100)
+                estimate = wMax * ratePerGram * (1 + pctVal / 100);
+            } else {
+                // No MC
+                estimate = wMax * ratePerGram;
+            }
 
             estValue.value = Math.round(estimate);
         });
@@ -783,6 +803,7 @@
 
             const orderId = document.getElementById('order-id').value;
             const orderDate = document.getElementById('order-date').value;
+            const deliveryDate = document.getElementById('delivery-date').value;
             const custName = document.getElementById('cust-name').value;
             const custMobile = document.getElementById('cust-mobile').value;
             const custEmail = document.getElementById('cust-email').value;
@@ -816,7 +837,7 @@
 
             const bgB64 = await getLetterheadBase64();
             if (bgB64) {
-                doc.addImage(bgB64, 'PNG', 0, 0, 210, 297);
+                doc.addImage(bgB64, 'JPEG', 0, 0, 210, 297);
             }
 
             // Write Details
@@ -831,6 +852,7 @@
             
             doc.text(`Order No: ${orderId}`, 14, 68);
             doc.text(`Date: ${orderDate}`, 150, 68);
+            if (deliveryDate) doc.text(`Delivery Date: ${deliveryDate}`, 150, 75);
             
             doc.setLineWidth(0.5);
             doc.setDrawColor(226, 232, 240);
@@ -870,7 +892,7 @@
             if (mcPct > 0) {
                 mcText = `Making Charges: ${mcPct}%`;
             } else if (mcAmt > 0) {
-                mcText = `Making Charges: Rs. ${mcAmt.toLocaleString('en-IN')}`;
+                mcText = `Making Charges: Rs. ${mcAmt.toLocaleString('en-IN')} per gram`;
             }
             doc.text(mcText, 14, yPos);
             
@@ -963,6 +985,7 @@
                 id: orderId,
                 type: 'Customer Order',
                 date: orderDate,
+                deliveryDate: deliveryDate,
                 customerDetails: {
                     name: custName,
                     mobile: custMobile,
@@ -985,14 +1008,16 @@
 
             const existingOrders = JSON.parse(localStorage.getItem('manti_customer_orders') || '[]');
             existingOrders.unshift(newOrder);
-            localStorage.setItem('manti_customer_orders', JSON.stringify(existingOrders));
+            
+            if (window.syncKeyToSupabase) {
+                await window.syncKeyToSupabase('manti_customer_orders', existingOrders);
+            } else {
+                localStorage.setItem('manti_customer_orders', JSON.stringify(existingOrders));
+            }
 
-            // Wait a brief moment for database sync locks to trigger
-            setTimeout(() => {
-                loaderOverlay.style.display = "none";
-                alert("Customer Order Created Successfully!");
-                window.location.href = "reports.html";
-            }, 1000);
+            loaderOverlay.style.display = "none";
+            alert("Customer Order Created Successfully!");
+            window.location.href = "reports.html";
         });
     </script>
 </body>

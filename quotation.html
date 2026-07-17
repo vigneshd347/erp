@@ -16,7 +16,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=2"></script>
+    <script src="supabase.js?v=3"></script>
 </head>
 
 <body>
@@ -212,8 +212,7 @@
                                 <th width="100">Weight (g)</th>
                                 <th width="150">Metal Type</th>
                                 <th width="120">Rate</th>
-                                <th width="60">MC %</th>
-                                <th width="80">Taxable</th>
+                                <th width="60">MC %/₹</th>
                                 <th width="120">Total</th>
                                 <th width="40"></th>
                             </tr>
@@ -524,8 +523,8 @@
                         <th width="60">Weight (g)</th>
                         <th width="80">Metal Type</th>
                         <th width="70">Rate</th>
-                        <th width="60">MC %</th>
-                        
+                        <th width="60">MC %/₹</th>
+                        <th width="80">Taxable</th>
                     </tr>
                 </thead>
                 <tbody id="p-items-body"></tbody>
@@ -597,15 +596,15 @@
                 <div class="p-words-text" id="p-total-words"
                     style="margin-top: 0; border-bottom: none; margin-right: 10px;"></div>
                 <div class="p-line"></div>
-                <div class="terms-qr-group" style="display:flex; gap:1rem; align-items:flex-start;">
-                    <div id="payment-qr" class="qr-container" style="align-items: flex-start; padding-left: 0; margin-top: 10px;">
-                        <img id="qr-image" src="" alt="Payment QR" style="width: 90px; height: 90px; margin-bottom: 3px;">
-                        <p style="font-size:0.8rem; font-weight: bold;">Scan to Pay</p>
-                    </div>
-                    <div id="p-terms-section" style="margin-top: 8px; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.72rem; line-height: 1.5; color: #475569;">
-                        <div style="font-weight: 700; color: var(--brand-blue); font-size: 0.78rem; margin-bottom: 3px;">Terms &amp; Conditions</div>
-                        <div id="p-terms-content" style="white-space: pre-line;"></div>
-                    </div>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: flex-start; margin-top: 10px;">
+                <div id="payment-qr" style="flex-shrink: 0; text-align: center;">
+                    <img id="qr-image" src="" alt="Payment QR" style="width: 90px; height: 90px; margin-bottom: 3px;">
+                    <p style="font-size: 0.7rem; font-weight: 700; margin: 0;">Scan to Pay</p>
+                </div>
+                <div id="p-terms-section" style="flex: 1; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.72rem; line-height: 1.5; color: #475569;">
+                    <div style="font-weight: 700; color: var(--brand-blue); font-size: 0.78rem; margin-bottom: 3px;">Terms &amp; Conditions</div>
+                    <div id="p-terms-content" style="white-space: pre-line;"></div>
                 </div>
             </div>
         </div>

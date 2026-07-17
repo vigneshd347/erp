@@ -3,7 +3,9 @@ const SUPABASE_URL = 'https://stcomjtuuuchdafhssgv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0Y29tanR1dXVjaGRhZmhzc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTg2NDYsImV4cCI6MjA5MDM3NDY0Nn0.scmi8txiJEd334girnUK3EXGLFM6vvqPekRzE2DDaC0';
 
 // Initialize the Supabase client
-window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Store in a dedicated variable to avoid conflicts with the CDN library's global 'supabase' object
+window._supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.supabase = window._supabaseClient;
 
 window.onerror = function(msg, url, lineNo, columnNo, error) {
     const string = msg.toLowerCase();
@@ -46,7 +48,7 @@ window.migrateDataToSupabase = async function () {
             weight_unit: o.unit || 'g',
             remark: o.remark || '-'
         }));
-        const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
+        const { error } = await window.supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
         if (error) console.error("Error migrating orders:", error);
         else successCount++;
     }
@@ -64,8 +66,8 @@ window.migrateDataToSupabase = async function () {
             issue_wt: parseFloat(j.issueWt) || null,
             receive_wt: parseFloat(j.receiveWt) || null
         }));
-        await supabase.from('job_works').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // delete all
-        const { error } = await supabase.from('job_works').insert(dbJobs);
+        await window.supabase.from('job_works').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // delete all
+        const { error } = await window.supabase.from('job_works').insert(dbJobs);
         if (error) console.error("Error migrating job works:", error);
         else successCount++;
     }
@@ -210,19 +212,15 @@ window.syncKeyToSupabase = async function(key, data) {
     } catch(e) {
         console.error("Manual sync interception error:", e);
     }
-    // Also push the data to Supabase for persistence
-    if (window._performSupabaseSync) {
-        try {
-            await window._performSupabaseSync(key, data);
-        } catch (e) {
-            console.error("Supabase sync error for", key, e);
-        }
-    }
 };;
 
 // Map Local Data to SQL Schema and Upload
 window._performSupabaseSync = async function(key, data) {
     if (!data) return;
+    // Safety: ensure window.supabase always points to the client, not the CDN library
+    if (window._supabaseClient) {
+        window.supabase = window._supabaseClient;
+    }
     try {
         if (key === 'manti_order_records') {
             const dbOrders = data.map(o => {
@@ -240,7 +238,9 @@ window._performSupabaseSync = async function(key, data) {
                     roundOff: o.roundOff || '',
                     mcPercent: o.mcPercent || '',
                     mcAmount: o.mcAmount || '',
-                    remark: o.remark || '-'
+                    remark: o.remark || '-',
+                    isFixed: o.isFixed || false,
+                    sourceId: o.sourceId || ''
                 };
                 return {
                     order_number: o.id, type: o.type, date: o.date, due_date: o.dueDate || null,
@@ -252,21 +252,21 @@ window._performSupabaseSync = async function(key, data) {
             });
             if (dbOrders.length > 0) {
                 // Safely delete stale records using chunked deletes (exclude Customer Orders)
-                const { data: cloudIds } = await supabase.from('orders').select('order_number').not('type', 'eq', 'Customer Order');
+                const { data: cloudIds } = await window.supabase.from('orders').select('order_number').not('type', 'eq', 'Customer Order');
                 if (cloudIds) {
                     const localIds = new Set(dbOrders.map(o => o.order_number));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.order_number)).map(c => c.order_number);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('orders').delete().in('order_number', chunk);
+                            await window.supabase.from('orders').delete().in('order_number', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
+                const { error } = await window.supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
                 if (error) { console.error("Orders Sync Error:", error); alert("Failed to save Orders to Cloud: " + error.message); }
             } else {
-                await supabase.from('orders').delete().not('type', 'eq', 'Customer Order');
+                await window.supabase.from('orders').delete().not('type', 'eq', 'Customer Order');
             }
         } else if (key === 'manti_customer_orders') {
             const dbOrders = data.map(o => {
@@ -276,6 +276,9 @@ window._performSupabaseSync = async function(key, data) {
                     size: o.size || '',
                     weightMin: o.weightMin || 0,
                     weightMax: o.weightMax || 0,
+                    metalType: o.metalType || '',
+                    metalPurity: o.metalPurity || '',
+                    deliveryDate: o.deliveryDate || '',
                     mcPercent: o.mcPercent || '',
                     mcAmount: o.mcAmount || '',
                     estimatedValue: o.estimatedValue || 0,
@@ -287,7 +290,7 @@ window._performSupabaseSync = async function(key, data) {
                     order_number: o.id,
                     type: 'Customer Order',
                     date: o.date,
-                    due_date: null,
+                    due_date: o.deliveryDate || null,
                     customer_name: o.customerDetails?.name || '',
                     vendor_id: '',
                     product_name: o.product || '',
@@ -301,21 +304,21 @@ window._performSupabaseSync = async function(key, data) {
             });
             if (dbOrders.length > 0) {
                 // Safely delete stale customer orders from the cloud database
-                const { data: cloudIds } = await supabase.from('orders').select('order_number').eq('type', 'Customer Order');
+                const { data: cloudIds } = await window.supabase.from('orders').select('order_number').eq('type', 'Customer Order');
                 if (cloudIds) {
                     const localIds = new Set(dbOrders.map(o => o.order_number));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.order_number)).map(c => c.order_number);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('orders').delete().in('order_number', chunk);
+                            await window.supabase.from('orders').delete().in('order_number', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
+                const { error } = await window.supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
                 if (error) { console.error("Customer Orders Sync Error:", error); alert("Failed to save Customer Orders to Cloud: " + error.message); }
             } else {
-                await supabase.from('orders').delete().eq('type', 'Customer Order');
+                await window.supabase.from('orders').delete().eq('type', 'Customer Order');
             }
         } else if (key === 'manti_jobwork_records') {
             const dbJobs = data.map(j => ({
@@ -336,9 +339,9 @@ window._performSupabaseSync = async function(key, data) {
                 }
             }));
             if (dbJobs.length > 0) {
-                const { error: delErr } = await supabase.from('job_works').delete().neq('worker_id', 'NON_EXISTENT_MAGIC_STRING');
+                const { error: delErr } = await window.supabase.from('job_works').delete().neq('worker_id', 'NON_EXISTENT_MAGIC_STRING');
                 if (delErr) { console.error("Job Works Sync Error:", delErr); alert("Failed to clear Job Works for sync: " + delErr.message); }
-                const { error } = await supabase.from('job_works').insert(dbJobs);
+                const { error } = await window.supabase.from('job_works').insert(dbJobs);
                 if (error) { console.error("Job Works Sync Error:", error); alert("Failed to save Job Works to Cloud: " + error.message); }
             }
         } else if (key === 'manti_saved_invoices') {
@@ -368,21 +371,21 @@ window._performSupabaseSync = async function(key, data) {
             });
             if (dbInvoices.length > 0) {
                 // Safely delete stale invoices (not quotations)
-                const { data: cloudIds } = await supabase.from('invoices').select('invoice_number').not('payment_status', 'in', '("Quotation","Quotation_Draft")');
+                const { data: cloudIds } = await window.supabase.from('invoices').select('invoice_number').not('payment_status', 'in', '("Quotation","Quotation_Draft")');
                 if (cloudIds) {
                     const localIds = new Set(dbInvoices.map(i => i.invoice_number));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.invoice_number)).map(c => c.invoice_number);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('invoices').delete().in('invoice_number', chunk);
+                            await window.supabase.from('invoices').delete().in('invoice_number', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' });
+                const { error } = await window.supabase.from('invoices').upsert(dbInvoices, { onConflict: 'invoice_number' });
                 if (error) { console.error("Invoices Sync Error:", error); alert("Failed to save Invoices to Cloud: " + error.message); }
             } else {
-                await supabase.from('invoices').delete().not('payment_status', 'in', '("Quotation","Quotation_Draft")');
+                await window.supabase.from('invoices').delete().not('payment_status', 'in', '("Quotation","Quotation_Draft")');
             }
         } else if (key === 'manti_saved_quotations') {
             const dbQuotations = Object.values(data).map(quot => {
@@ -411,21 +414,21 @@ window._performSupabaseSync = async function(key, data) {
             });
             if (dbQuotations.length > 0) {
                 // Safely delete stale quotations
-                const { data: cloudIds } = await supabase.from('invoices').select('invoice_number').in('payment_status', ['Quotation', 'Quotation_Draft']);
+                const { data: cloudIds } = await window.supabase.from('invoices').select('invoice_number').in('payment_status', ['Quotation', 'Quotation_Draft']);
                 if (cloudIds) {
                     const localIds = new Set(dbQuotations.map(q => q.invoice_number));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.invoice_number)).map(c => c.invoice_number);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('invoices').delete().in('invoice_number', chunk);
+                            await window.supabase.from('invoices').delete().in('invoice_number', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('invoices').upsert(dbQuotations, { onConflict: 'invoice_number' });
+                const { error } = await window.supabase.from('invoices').upsert(dbQuotations, { onConflict: 'invoice_number' });
                 if (error) { console.error("Quotations Sync Error:", error); alert("Failed to save Quotations to Cloud: " + error.message); }
             } else {
-                await supabase.from('invoices').delete().in('payment_status', ['Quotation', 'Quotation_Draft']);
+                await window.supabase.from('invoices').delete().in('payment_status', ['Quotation', 'Quotation_Draft']);
             }
         } else if (key === 'manti_vendor_kyc_records') {
             const dbVendors = data.map(v => ({
@@ -436,21 +439,21 @@ window._performSupabaseSync = async function(key, data) {
             }));
             if (dbVendors.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('vendor_kyc').select('id');
+                const { data: cloudIds } = await window.supabase.from('vendor_kyc').select('id');
                 if (cloudIds) {
                     const localIds = new Set(dbVendors.map(v => v.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('vendor_kyc').delete().in('id', chunk);
+                            await window.supabase.from('vendor_kyc').delete().in('id', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('vendor_kyc').upsert(dbVendors, { onConflict: 'id' });
+                const { error } = await window.supabase.from('vendor_kyc').upsert(dbVendors, { onConflict: 'id' });
                 if (error) { console.error("Vendor KYC Sync Error:", error); alert("Failed to save Vendor KYC to Cloud: " + error.message); }
             } else {
-                await supabase.from('vendor_kyc').delete().neq('id', 'NON_EXISTENT');
+                await window.supabase.from('vendor_kyc').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_supplier_kyc_records') {
             const dbSuppliers = data.map(v => ({
@@ -461,24 +464,24 @@ window._performSupabaseSync = async function(key, data) {
             }));
             if (dbSuppliers.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('supplier_kyc').select('id');
+                const { data: cloudIds } = await window.supabase.from('supplier_kyc').select('id');
                 if (cloudIds) {
                     const localIds = new Set(dbSuppliers.map(s => s.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('supplier_kyc').delete().in('id', chunk);
+                            await window.supabase.from('supplier_kyc').delete().in('id', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('supplier_kyc').upsert(dbSuppliers, { onConflict: 'id' });
+                const { error } = await window.supabase.from('supplier_kyc').upsert(dbSuppliers, { onConflict: 'id' });
                 if (error) {
                     console.error("Supplier KYC Sync Error:", error);
                     alert("Failed to save Supplier KYC to Cloud: " + error.message + " (Check if the table exists in Supabase)");
                 }
             } else {
-                await supabase.from('supplier_kyc').delete().neq('id', 'NON_EXISTENT');
+                await window.supabase.from('supplier_kyc').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_staff_records') {
             const dbStaff = data.map(s => ({
@@ -487,21 +490,21 @@ window._performSupabaseSync = async function(key, data) {
             }));
             if (dbStaff.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('staff_records').select('id');
+                const { data: cloudIds } = await window.supabase.from('staff_records').select('id');
                 if (cloudIds) {
                     const localIds = new Set(dbStaff.map(s => s.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('staff_records').delete().in('id', chunk);
+                            await window.supabase.from('staff_records').delete().in('id', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('staff_records').upsert(dbStaff, { onConflict: 'id' });
+                const { error } = await window.supabase.from('staff_records').upsert(dbStaff, { onConflict: 'id' });
                 if (error) { console.error("Staff Records Sync Error:", error); alert("Failed to save Staff Records to Cloud: " + error.message); }
             } else {
-                await supabase.from('staff_records').delete().neq('id', 'NON_EXISTENT');
+                await window.supabase.from('staff_records').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_assets') {
             const dbAssets = data.map(a => ({
@@ -510,21 +513,21 @@ window._performSupabaseSync = async function(key, data) {
             }));
             if (dbAssets.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('assets').select('id');
+                const { data: cloudIds } = await window.supabase.from('assets').select('id');
                 if (cloudIds) {
                     const localIds = new Set(dbAssets.map(a => a.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('assets').delete().in('id', chunk);
+                            await window.supabase.from('assets').delete().in('id', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('assets').upsert(dbAssets, { onConflict: 'id' });
+                const { error } = await window.supabase.from('assets').upsert(dbAssets, { onConflict: 'id' });
                 if (error) { console.error("Assets Sync Error:", error); alert("Failed to save Assets to Cloud: " + error.message); }
             } else {
-                await supabase.from('assets').delete().neq('id', 'NON_EXISTENT');
+                await window.supabase.from('assets').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_delivery_challan_records') {
             const dbChallans = data.map(c => ({
@@ -533,21 +536,21 @@ window._performSupabaseSync = async function(key, data) {
             }));
             if (dbChallans.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('delivery_challans').select('id');
+                const { data: cloudIds } = await window.supabase.from('delivery_challans').select('id');
                 if (cloudIds) {
                     const localIds = new Set(dbChallans.map(c => c.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('delivery_challans').delete().in('id', chunk);
+                            await window.supabase.from('delivery_challans').delete().in('id', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('delivery_challans').upsert(dbChallans, { onConflict: 'id' });
+                const { error } = await window.supabase.from('delivery_challans').upsert(dbChallans, { onConflict: 'id' });
                 if (error) { console.error("Delivery Challans Sync Error:", error); alert("Failed to save Delivery Challans to Cloud: " + error.message); }
             } else {
-                await supabase.from('delivery_challans').delete().neq('id', 'NON_EXISTENT');
+                await window.supabase.from('delivery_challans').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_payments_made') {
             // Deduplicate by id before upserting
@@ -569,21 +572,21 @@ window._performSupabaseSync = async function(key, data) {
             const dbPayments = Array.from(seenPmtIds.values());
             if (dbPayments.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('payments_made').select('id');
+                const { data: cloudIds } = await window.supabase.from('payments_made').select('id');
                 if (cloudIds) {
                     const localIds = new Set(dbPayments.map(p => p.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('payments_made').delete().in('id', chunk);
+                            await window.supabase.from('payments_made').delete().in('id', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('payments_made').upsert(dbPayments, { onConflict: 'id' });
+                const { error } = await window.supabase.from('payments_made').upsert(dbPayments, { onConflict: 'id' });
                 if (error) { console.error("Payments Sync Error:", error); alert("Failed to save Payments to Cloud: " + error.message); }
             } else {
-                await supabase.from('payments_made').delete().neq('id', 'NON_EXISTENT');
+                await window.supabase.from('payments_made').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_expenses') {
             const dbExpenses = data.map(e => {
@@ -607,21 +610,21 @@ window._performSupabaseSync = async function(key, data) {
             });
             if (dbExpenses.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('expenses').select('id');
+                const { data: cloudIds } = await window.supabase.from('expenses').select('id');
                 if (cloudIds) {
                     const localIds = new Set(dbExpenses.map(e => e.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('expenses').delete().in('id', chunk);
+                            await window.supabase.from('expenses').delete().in('id', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('expenses').upsert(dbExpenses, { onConflict: 'id' });
+                const { error } = await window.supabase.from('expenses').upsert(dbExpenses, { onConflict: 'id' });
                 if (error) { console.error("Expenses Sync Error:", error); alert("Failed to save Expenses to Cloud: " + error.message); }
             } else {
-                await supabase.from('expenses').delete().neq('id', 'NON_EXISTENT');
+                await window.supabase.from('expenses').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_journal_entries') {
             // Map and deduplicate by id before upserting.
@@ -643,21 +646,21 @@ window._performSupabaseSync = async function(key, data) {
             const dbJournals = Array.from(seenIds.values());
             if (dbJournals.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('journal_entries').select('id');
+                const { data: cloudIds } = await window.supabase.from('journal_entries').select('id');
                 if (cloudIds) {
                     const localIds = new Set(dbJournals.map(j => j.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('journal_entries').delete().in('id', chunk);
+                            await window.supabase.from('journal_entries').delete().in('id', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('journal_entries').upsert(dbJournals, { onConflict: 'id' });
+                const { error } = await window.supabase.from('journal_entries').upsert(dbJournals, { onConflict: 'id' });
                 if (error) { console.error("Journal Entries Sync Error:", error); alert("Failed to save Journal Entries to Cloud: " + error.message); }
             } else {
-                await supabase.from('journal_entries').delete().neq('id', 'NON_EXISTENT');
+                await window.supabase.from('journal_entries').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_bank_accounts') {
             const dbAccounts = data.map(a => ({
@@ -668,21 +671,21 @@ window._performSupabaseSync = async function(key, data) {
             
             if (dbAccounts.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('bank_accounts').select('id');
+                const { data: cloudIds } = await window.supabase.from('bank_accounts').select('id');
                 if (cloudIds) {
                     const localIds = new Set(dbAccounts.map(a => a.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('bank_accounts').delete().in('id', chunk);
+                            await window.supabase.from('bank_accounts').delete().in('id', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('bank_accounts').upsert(dbAccounts, { onConflict: 'id' });
+                const { error } = await window.supabase.from('bank_accounts').upsert(dbAccounts, { onConflict: 'id' });
                 if (error) { console.error("Bank Accounts Sync Error:", error); alert("Failed to save Bank Accounts to Cloud: " + error.message); }
             } else {
-                await supabase.from('bank_accounts').delete().neq('id', 'NON_EXISTENT');
+                await window.supabase.from('bank_accounts').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_stock_history') {
             // Deduplicate by ID
@@ -734,7 +737,7 @@ window._performSupabaseSync = async function(key, data) {
 
             if (stockArray.length > 0) {
                 // Upsert all current records by TEXT id
-                const { error: upErr } = await supabase
+                const { error: upErr } = await window.supabase
                     .from('stock_history')
                     .upsert(stockArray, { onConflict: 'id' });
                     
@@ -744,21 +747,21 @@ window._performSupabaseSync = async function(key, data) {
                 } else {
                     console.log(`Stock history synced: ${stockArray.length} records`);
                     // Safely delete stale records using chunked deletes
-                    const { data: cloudIds } = await supabase.from('stock_history').select('id');
+                    const { data: cloudIds } = await window.supabase.from('stock_history').select('id');
                     if (cloudIds) {
                         const localIds = new Set(stockArray.map(s => s.id));
                         const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                         if (toDelete.length > 0) {
                             for (let i = 0; i < toDelete.length; i += 100) {
                                 const chunk = toDelete.slice(i, i + 100);
-                                await supabase.from('stock_history').delete().in('id', chunk);
+                                await window.supabase.from('stock_history').delete().in('id', chunk);
                             }
                         }
                     }
                 }
             } else {
                 // No records — wipe the table
-                await supabase.from('stock_history').delete().neq('id', 'NOTHING');
+                await window.supabase.from('stock_history').delete().neq('id', 'NOTHING');
             }
 
             // Update RAM with normalized data
@@ -808,21 +811,21 @@ window._performSupabaseSync = async function(key, data) {
             }));
             if (dbDesigns.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await supabase.from('designs').select('id');
+                const { data: cloudIds } = await window.supabase.from('designs').select('id');
                 if (cloudIds) {
                     const localIds = new Set(dbDesigns.map(d => d.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
                     if (toDelete.length > 0) {
                         for (let i = 0; i < toDelete.length; i += 100) {
                             const chunk = toDelete.slice(i, i + 100);
-                            await supabase.from('designs').delete().in('id', chunk);
+                            await window.supabase.from('designs').delete().in('id', chunk);
                         }
                     }
                 }
-                const { error } = await supabase.from('designs').upsert(dbDesigns, { onConflict: 'id' });
+                const { error } = await window.supabase.from('designs').upsert(dbDesigns, { onConflict: 'id' });
                 if (error) { console.error("Designs Sync Error:", error); alert("Failed to save Designs to Cloud."); }
             } else {
-                await supabase.from('designs').delete().neq('id', 'NON_EXISTENT');
+                await window.supabase.from('designs').delete().neq('id', 'NON_EXISTENT');
             }
         } else if (key === 'manti_trees') {
             const dbTrees = data.map(t => ({
@@ -833,14 +836,14 @@ window._performSupabaseSync = async function(key, data) {
             }));
             if (dbTrees.length > 0) {
                 const idList = dbTrees.map(t => `'${t.id}'`).join(',');
-                await supabase.from('trees').delete().not('id', 'in', `(${idList})`);
-                const { error } = await supabase.from('trees').upsert(dbTrees, { onConflict: 'id' });
+                await window.supabase.from('trees').delete().not('id', 'in', `(${idList})`);
+                const { error } = await window.supabase.from('trees').upsert(dbTrees, { onConflict: 'id' });
                 if (error) { console.error("Trees Sync Error:", error); alert("Failed to save Trees to Cloud."); }
             } else {
-                await supabase.from('trees').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                await window.supabase.from('trees').delete().neq('id', '00000000-0000-0000-0000-000000000000');
             }
         } else {
-            const { error } = await supabase.from('settings').upsert({
+            const { error } = await window.supabase.from('settings').upsert({
                 setting_key: key, setting_value: data, updated_at: new Date().toISOString()
             }, { onConflict: 'setting_key' });
             if (error) { console.error(`Settings Sync Error for ${key}:`, error); alert(`Failed to save ${key} to Cloud Settings: ` + error.message); }
@@ -854,6 +857,10 @@ window._performSupabaseSync = async function(key, data) {
 // Global Cloud Fetcher
 window.fetchEverythingFromCloud = async function () {
     console.log("Fetching all data directly from Supabase Cloud...");
+    // Safety: ensure window.supabase always points to the client, not the CDN library
+    if (window._supabaseClient) {
+        window.supabase = window._supabaseClient;
+    }
 
     try {
         const [
@@ -862,23 +869,23 @@ window.fetchEverythingFromCloud = async function () {
             paymentsRes, expensesRes, journalsRes, accountsRes,
             stockRes, settingsRes, designsRes, treesRes
         ] = await Promise.all([
-            supabase.from('orders').select('*'),
-            supabase.from('job_works').select('*'),
-            supabase.from('invoices').select('*'),
-            supabase.from('vendor_kyc').select('*'),
-            supabase.from('supplier_kyc').select('*'),
-            supabase.from('staff_records').select('*'),
-            supabase.from('assets').select('*'),
-            supabase.from('delivery_challans').select('*'),
-            supabase.from('payments_made').select('*'),
-            supabase.from('expenses').select('*'),
-            supabase.from('journal_entries').select('*'),
-            supabase.from('bank_accounts').select('*'),
-            supabase.from('stock_history').select('id,date,type,details,qty,weight,metal_type'),
+            window.supabase.from('orders').select('*'),
+            window.supabase.from('job_works').select('*'),
+            window.supabase.from('invoices').select('*'),
+            window.supabase.from('vendor_kyc').select('*'),
+            window.supabase.from('supplier_kyc').select('*'),
+            window.supabase.from('staff_records').select('*'),
+            window.supabase.from('assets').select('*'),
+            window.supabase.from('delivery_challans').select('*'),
+            window.supabase.from('payments_made').select('*'),
+            window.supabase.from('expenses').select('*'),
+            window.supabase.from('journal_entries').select('*'),
+            window.supabase.from('bank_accounts').select('*'),
+            window.supabase.from('stock_history').select('id,date,type,details,qty,weight,metal_type'),
 
-            supabase.from('settings').select('*'),
-            supabase.from('designs').select('*'),
-            supabase.from('trees').select('*')
+            window.supabase.from('settings').select('*'),
+            window.supabase.from('designs').select('*'),
+            window.supabase.from('trees').select('*')
         ]);
 
         // 1. Orders
@@ -901,14 +908,17 @@ window.fetchEverythingFromCloud = async function () {
                         id: o.order_number,
                         type: o.type,
                         date: o.date,
+                        deliveryDate: extended.deliveryDate || o.due_date || '',
                         customerDetails: extended.customerDetails || { name: o.customer_name },
                         product: o.product_name,
                         size: extended.size || '',
                         weightMin: extended.weightMin || 0,
                         weightMax: extended.weightMax || 0,
+                        metalType: extended.metalType || '',
+                        metalPurity: extended.metalPurity || '',
                         mcPercent: extended.mcPercent || '',
                         mcAmount: extended.mcAmount || '',
-                        estimatedValue: o.total_amount,
+                        estimatedValue: extended.estimatedValue || o.total_amount,
                         images: extended.images || [],
                         pdfUrl: extended.pdfUrl || '',
                         status: o.status,
@@ -943,7 +953,9 @@ window.fetchEverythingFromCloud = async function () {
                         discountAmount: extended.discountAmount || '',
                         roundOff: extended.roundOff || '',
                         mcPercent: extended.mcPercent || '',
-                        mcAmount: extended.mcAmount || ''
+                        mcAmount: extended.mcAmount || '',
+                        isFixed: extended.isFixed || false,
+                        sourceId: extended.sourceId || ''
                     });
                 }
             });
@@ -1183,7 +1195,7 @@ window.fetchEverythingFromCloud = async function () {
                 console.log("Found legacy designs in settings. Migrating...");
                 finalDesigns = legacy.setting_value;
                 // Silently push to the new table
-                await supabase.from('designs').upsert(finalDesigns.map(d => ({
+                await window.supabase.from('designs').upsert(finalDesigns.map(d => ({
                     id: d.id, category: d.category, sub_category: d.subCategory || null,
                     weight: parseFloat(d.weight) || 0, size: d.size || null,
                     image_url: d.imageUrl || null
@@ -1206,7 +1218,7 @@ window.fetchEverythingFromCloud = async function () {
                 console.log("Found legacy trees in settings. Migrating...");
                 finalTrees = legacy.setting_value;
                 // Silently push to the new table
-                await supabase.from('trees').upsert(finalTrees.map(t => ({
+                await window.supabase.from('trees').upsert(finalTrees.map(t => ({
                     id: t.id, tree_no: t.treeNo, date: t.date,
                     total_weight: parseFloat(t.totalWeight) || 0,
                     designs: t.designs || [],

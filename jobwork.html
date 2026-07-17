@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=2"></script>
+    <script src="supabase.js?v=3"></script>
 </head>
 
 <body>
@@ -815,7 +815,15 @@ window.toggleSections = toggleSections;
                 if (confirm("Delete this record?")) {
                     records.splice(index, 1);
                     localStorage.setItem('manti_jobwork_records', JSON.stringify(records));
+                    if (window.syncJobWorkToStockHistory) {
+                        window.syncJobWorkToStockHistory();
+                    }
+                    if (window.calculateMantiBalances) {
+                        const newBalances = window.calculateMantiBalances();
+                        localStorage.setItem('manti_stock_balances', JSON.stringify(newBalances));
+                    }
                     renderTable();
+                    updateJobBalanceDisplay();
                 }
             };
 
@@ -1014,6 +1022,14 @@ window.toggleSections = toggleSections;
                 }
 
                 localStorage.setItem('manti_jobwork_records', JSON.stringify(records));
+
+                if (window.syncJobWorkToStockHistory) {
+                    window.syncJobWorkToStockHistory();
+                }
+                if (window.calculateMantiBalances) {
+                    const newBalances = window.calculateMantiBalances();
+                    localStorage.setItem('manti_stock_balances', JSON.stringify(newBalances));
+                }
 
                 // If Despatch issue saved → redirect to invoice
                 if (!isReceive && currentProcess === '5. Despatch') {

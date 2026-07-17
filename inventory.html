@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Supabase Cloud Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=2"></script>
+    <script src="supabase.js?v=3"></script>
 </head>
 
 <body>
@@ -371,6 +371,7 @@
 
             // Activity: Invoices & Adjustments from history
             history.forEach(h => {
+                if (h.id && h.id.startsWith('JW-')) return;
                 const wt = parseFloat(h.weight) || 0;
                 if (wt !== 0) {
                     const { m: metalGroup, t: typeGroup } = parseMetalAndType(h.metal);
