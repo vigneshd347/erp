@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti Jewel Art - Home</title>
+    <link rel="stylesheet" href="style.css?v=18">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --gold-gradient: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+            --silver-gradient: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+            --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body { 
+            background-color: #f8fafc; 
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            color: #0f172a;
+        }
+
+        /* Top Navbar */
+        .top-navbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .nav-brand img {
+            height: 42px;
+            object-fit: contain;
+        }
+
+        .nav-brand span {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1e1b4b;
+            letter-spacing: -0.025em;
+        }
+
+        .nav-center-menu {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-link {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.2s;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #4f46e5;
+            background: #f1f5f9;
+        }
+
+        .nav-right-tools {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .cloud-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #dcfce7;
+            color: #15803d;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid #bbf7d0;
+        }
+
+        .clock-widget {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+
+        .user-profile-widget {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 4px 12px;
+            border-radius: 30px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+        }
+
+        .user-profile-widget img {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+        }
+
+        .user-profile-widget span {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        /* Home Content Layout */
+        .home-container {
+            max-width: 1200px;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Hero Banner */
+        .hero-banner {
+            background: var(--primary-gradient);
+            border-radius: 20px;
+            padding: 3rem;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.3);
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-banner h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-banner p {
+            font-size: 1.05rem;
+            color: #e0e7ff;
+            margin: 8px 0 0 0;
+            max-width: 600px;
+        }
+
+        /* Ticker / Rates Ticker */
+        .rates-ticker-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 2rem;
+            max-width: 500px;
+        }
+
+        .rate-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .rate-card.gold .rate-icon {
+            background: var(--gold-gradient);
+        }
+
+        .rate-card.silver .rate-icon {
+            background: var(--silver-gradient);
+        }
+
+        .rate-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .rate-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rate-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #e0e7ff;
+        }
+
+        .rate-val {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: white;
+            margin-top: 2px;
+        }
+
+        /* Hub Section */
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            margin-bottom: 3rem;
+        }
+
+        .module-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        .module-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: transparent;
+            transition: background 0.3s;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            border-color: #cbd5e1;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.06), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+
+        .module-card:hover::after {
+            background: var(--primary-gradient);
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .module-badge {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: transform 0.3s;
+        }
+
+        .module-card:hover .module-badge {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .module-info h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .module-info p {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin: 6px 0 0 0;
+            line-height: 1.4;
+        }
+
+        .module-arrow {
+            color: #94a3b8;
+            transition: transform 0.2s, color 0.2s;
+        }
+
+        .module-card:hover .module-arrow {
+            color: #4f46e5;
+            transform: translateX(4px);
+        }
+
+        /* Module Theme Badges */
+        .badge-dash { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+        .badge-quot { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
+        .badge-inv { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .badge-job { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); }
+        .badge-design { background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); }
+        .badge-tree { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); }
+        .badge-challan { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
+        .badge-invoice { background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); }
+        .badge-melting { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); }
+        .badge-assets { background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%); }
+
+    </style>
+</head>
+<body>
+
+    <!-- Top Navbar -->
+    <header class="top-navbar">
+        <a href="home.html" class="nav-brand">
+            <img src="Asset 23.png" alt="Manti Logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzRmNDZlNSIvPjxwYXRoIGQ9Ik0zMCA3MEw1MCAzMGwyMCA0MEgzMHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4='">
+            <span>Manti Jewel Art Pvt.Ltd</span>
+        </a>
+
+        <nav class="nav-center-menu">
+            <a href="home.html" class="nav-link active">Home</a>
+            <a href="index.html" class="nav-link">Dashboard</a>
+            <a href="design-book.html" class="nav-link">Design Book</a>
+            <a href="tree-making.html" class="nav-link">Tree Making</a>
+            <a href="jobwork.html" class="nav-link">Job Work</a>
+        </nav>
+
+        <div class="nav-right-tools">
+            <div class="cloud-badge">
+                <i data-lucide="cloud-check" style="width: 14px; height: 14px;"></i>
+                <span>Supabase Live</span>
+            </div>
+            <div class="clock-widget" id="live-clock">00:00:00</div>
+            <div class="user-profile-widget" onclick="window.location.href='admin.html'">
+                <img src="https://ui-avatars.com/api/?name=Admin&background=5454d4&color=fff" alt="User">
+                <span>Administrator</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Home Content Container -->
+    <div class="home-container">
+        
+        <!-- Hero Banner Card -->
+        <div class="hero-banner">
+            <h1>Welcome to Manti Jewel Art</h1>
+            <p>Empowering precise jewelry manufacturing, real-time inventory matching, casting tree production, and smart accounting workflow.</p>
+            
+            <!-- Live Metal Rates Ticker -->
+            <div class="rates-ticker-grid">
+                <div class="rate-card gold">
+                    <div class="rate-icon"><i data-lucide="coins"></i></div>
+                    <div class="rate-info">
+                        <span class="rate-label">Live Gold 24K / 10g</span>
+                        <span class="rate-val" id="gold-rate-val">₹ 74,500</span>
+                    </div>
+                </div>
+                <div class="rate-card silver">
+                    <div class="rate-icon"><i data-lucide="layers"></i></div>
+                    <div class="rate-info">
+                        <span class="rate-label">Live Silver / 1kg</span>
+                        <span class="rate-val" id="silver-rate-val">₹ 88,200</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Launchpad Hub -->
+        <h2 class="section-title">
+            <i data-lucide="layout-grid" style="color:#4f46e5; width:20px; height:20px;"></i>
+            Modules Launchpad
+        </h2>
+
+        <div class="modules-grid">
+            <!-- Dashboard -->
+            <a href="index.html" class="module-card">
+                <div class="module-header">
+                    <div class="module-badge badge-dash"><i data-lucide="layout-dashboard"></i></div>
+                    <i data-lucide="arrow-right" class="module-arrow"></i>
+                </div>
+                <div class="module-info">
+                    <h3>Analytics Dashboard</h3>
+                    <p>View visual sales metrics, metal balances, recent transaction logs, and overall system status.</p>
+                </div>
+            </a>
+
+            <!-- Design Book -->
+            <a href="design-book.html" class="module-card">
+                <div class="module-header">
+                    <div class="module-badge badge-design"><i data-lucide="gem"></i></div>
+                    <i data-lucide="arrow-right" class="module-arrow"></i>
+                </div>
+                <div class="module-info">
+                    <h3>Design Book Gallery</h3>
+                    <p>Browse jewelry master templates, catalog weights/sizes, and match images using AI pattern matching.</p>
+                </div>
+            </a>
+
+            <!-- Tree Making -->
+            <a href="tree-making.html" class="module-card">
+                <div class="module-header">
+                    <div class="module-badge badge-tree"><i data-lucide="network"></i></div>
+                    <i data-lucide="arrow-right" class="module-arrow"></i>
+                </div>
+                <div class="module-info">
+                    <h3>Tree Making</h3>
+                    <p>Aggregate catalog designs into casting trees, generate manufacturing records, and preview print templates.</p>
+                </div>
+            </a>
+
+            <!-- Quotations -->
+            <a href="quotation.html" class="module-card">
+                <div class="module-header">
+                    <div class="module-badge badge-quot"><i data-lucide="file-text"></i></div>
+                    <i data-lucide="arrow-right" class="module-arrow"></i>
+                </div>
+                <div class="module-info">
+                    <h3>Quotations</h3>
+                    <p>Draft client estimates, calculate gold/silver itemised margins, and print bills with QR codes.</p>
+                </div>
+            </a>
+
+            <!-- Inventory -->
+            <a href="inventory.html" class="module-card">
+                <div class="module-header">
+                    <div class="module-badge badge-inv"><i data-lucide="box"></i></div>
+                    <i data-lucide="arrow-right" class="module-arrow"></i>
+                </div>
+                <div class="module-info">
+                    <h3>Item Inventory</h3>
+                    <p>Track raw materials, finished jewelry items, barcodes, and current stock weights in hand.</p>
+                </div>
+            </a>
+
+            <!-- Job Work -->
+            <a href="jobwork.html" class="module-card">
+                <div class="module-header">
+                    <div class="module-badge badge-job"><i data-lucide="hammer"></i></div>
+                    <i data-lucide="arrow-right" class="module-arrow"></i>
+                </div>
+                <div class="module-info">
+                    <h3>Job Work & Artisans</h3>
+                    <p>Issue material to karigars (artisans), manage metal loss/dust recovery, and track active production lines.</p>
+                </div>
+            </a>
+
+            <!-- Melting -->
+            <a href="melting.html" class="module-card">
+                <div class="module-header">
+                    <div class="module-badge badge-melting"><i data-lucide="flame"></i></div>
+                    <i data-lucide="arrow-right" class="module-arrow"></i>
+                </div>
+                <div class="module-info">
+                    <h3>Melting Log</h3>
+                    <p>Record metal refining, alloy mixtures, purity tests, and casting crucible outcomes.</p>
+                </div>
+            </a>
+
+            <!-- Asset Management -->
+            <a href="assets.html" class="module-card">
+                <div class="module-header">
+                    <div class="module-badge badge-assets"><i data-lucide="hard-drive"></i></div>
+                    <i data-lucide="arrow-right" class="module-arrow"></i>
+                </div>
+                <div class="module-info">
+                    <h3>Asset Management</h3>
+                    <p>Manage machines, printers, high-value molds, casting tools, and scheduled maintenance schedules.</p>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        // Init Lucide Icons
+        if (window.lucide) lucide.createIcons();
+
+        // Live Clock Widget
+        function updateClock() {
+            const clock = document.getElementById('live-clock');
+            if (clock) {
+                const now = new Date();
+                clock.textContent = now.toLocaleTimeString();
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Load Gold/Silver rates dynamically from LocalStorage if available
+        function loadRates() {
+            try {
+                const rates = JSON.parse(localStorage.getItem('manti_rates')) || {};
+                const goldVal = document.getElementById('gold-rate-val');
+                const silverVal = document.getElementById('silver-rate-val');
+                
+                if (goldVal && rates.pureGold) {
+                    goldVal.textContent = '₹ ' + parseFloat(rates.pureGold).toLocaleString();
+                }
+                if (silverVal && rates.pureSilver) {
+                    silverVal.textContent = '₹ ' + parseFloat(rates.pureSilver).toLocaleString();
+                }
+            } catch(e) {
+                console.error("Rates loading failed:", e);
+            }
+        }
+        loadRates();
+        document.addEventListener('CloudDataLoaded', loadRates);
+    </script>
+</body>
+</html>
