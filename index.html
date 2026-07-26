@@ -404,6 +404,18 @@
         lucide.createIcons();
 
         document.addEventListener('CloudDataLoaded', () => {
+            console.log('%c[DASHBOARD] CloudDataLoaded event received!', 'color: #38bdf8; font-weight: bold;');
+            
+            // Debug: Show data counts
+            const debugOrders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+            const debugExpenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+            const debugJobs = JSON.parse(localStorage.getItem('manti_jobwork_records') || '[]');
+            console.log('%c[DASHBOARD] Data from localStorage:', 'color: #fbbf24;',
+                '\n  orders:', debugOrders.length,
+                '\n  expenses:', debugExpenses.length,
+                '\n  jobs:', debugJobs.length
+            );
+
             // Date
             const dateEl = document.getElementById('dashboard-date');
             if (dateEl) {

@@ -857,7 +857,7 @@ window._performSupabaseSync = async function(key, data) {
 
 // Global Cloud Fetcher
 window.fetchEverythingFromCloud = async function () {
-    console.log("Fetching all data directly from Supabase Cloud...");
+    console.log("%c[ERP DEBUG] fetchEverythingFromCloud STARTED", "color: #38bdf8; font-weight: bold;");
     // Safety: ensure window.supabase always points to the client, not the CDN library
     if (window._supabaseClient) {
         window.supabase = window._supabaseClient;
@@ -888,6 +888,16 @@ window.fetchEverythingFromCloud = async function () {
             window.supabase.from('designs').select('*'),
             window.supabase.from('trees').select('*')
         ]);
+
+        console.log("%c[ERP DEBUG] All 16 queries completed.", "color: #4ade80;",
+            "\n  orders:", ordersRes.data?.length ?? 'ERR:' + JSON.stringify(ordersRes.error),
+            "\n  expenses:", expensesRes.data?.length ?? 'ERR:' + JSON.stringify(expensesRes.error),
+            "\n  payments:", paymentsRes.data?.length ?? 'ERR:' + JSON.stringify(paymentsRes.error),
+            "\n  settings:", settingsRes.data?.length ?? 'ERR:' + JSON.stringify(settingsRes.error),
+            "\n  designs:", designsRes.data?.length ?? 'ERR:' + JSON.stringify(designsRes.error),
+            "\n  journals:", journalsRes.data?.length ?? 'ERR:' + JSON.stringify(journalsRes.error),
+            "\n  stock:", stockRes.data?.length ?? 'ERR:' + JSON.stringify(stockRes.error)
+        );
 
         // 1. Orders
         if (ordersRes.data) {
@@ -1191,7 +1201,7 @@ window.fetchEverythingFromCloud = async function () {
             }));
         } else {
             // Check if it exists in settings (legacy)
-            const legacy = settingsRes.data.find(s => s.setting_key === 'manti_designs');
+            const legacy = (settingsRes.data || []).find(s => s.setting_key === 'manti_designs');
             if (legacy && legacy.setting_value) {
                 console.log("Found legacy designs in settings. Migrating...");
                 finalDesigns = legacy.setting_value;
@@ -1214,7 +1224,7 @@ window.fetchEverythingFromCloud = async function () {
             }));
         } else {
             // Check if it exists in settings (legacy)
-            const legacy = settingsRes.data.find(s => s.setting_key === 'manti_trees');
+            const legacy = (settingsRes.data || []).find(s => s.setting_key === 'manti_trees');
             if (legacy && legacy.setting_value) {
                 console.log("Found legacy trees in settings. Migrating...");
                 finalTrees = legacy.setting_value;
@@ -1229,10 +1239,22 @@ window.fetchEverythingFromCloud = async function () {
         }
         window.ERP_MEMORY.set('manti_trees', JSON.stringify(finalTrees));
     } catch (e) {
-        console.error("Cloud Fetch Failed!", e);
+        console.error("%c[ERP DEBUG] Cloud Fetch CRASHED!", "color: #f87171; font-weight: bold;", e);
         // Continue booting the app anyway with locally cached/empty data
     }
-    console.log("Cloud data loaded into RAM. Dispatching CloudDataLoaded event.");
+
+    // Debug: Log final ERP_MEMORY state
+    const memKeys = [];
+    window.ERP_MEMORY.forEach((v, k) => {
+        try {
+            const p = JSON.parse(v);
+            const len = Array.isArray(p) ? p.length : (typeof p === 'object' && p !== null ? Object.keys(p).length : '(scalar)');
+            memKeys.push(`${k}: ${len}`);
+        } catch { memKeys.push(`${k}: ${v ? v.length + ' chars' : 'null'}`); }
+    });
+    console.log("%c[ERP DEBUG] ERP_MEMORY final state (%d keys):", "color: #fbbf24; font-weight: bold;", window.ERP_MEMORY.size, '\n  ' + memKeys.join('\n  '));
+
+    console.log("%c[ERP DEBUG] Dispatching CloudDataLoaded event NOW", "color: #38bdf8; font-weight: bold;");
     window.isCloudDataLoaded = true;
     // Boot the main ERP scripts natively
     document.dispatchEvent(new Event('CloudDataLoaded'));
