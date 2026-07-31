@@ -368,6 +368,23 @@
                             <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Depreciation (%)</label>
                             <input type="number" id="design-depreciation" step="0.1" min="0" max="100" placeholder="0.0" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box;">
                         </div>
+                        <div style="flex: 1;">
+                            <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Design Type</label>
+                            <select id="design-type" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; font-family:inherit; box-sizing:border-box;">
+                                <option value="" disabled selected>Select Type</option>
+                                <option value="mold">1. mold</option>
+                                <option value="3DM">2. 3DM</option>
+                                <option value="STL">3. STL</option>
+                                <option value="mold & 3DM">4. mold & 3DM</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                        <div style="flex: 1;">
+                            <label style="display:block; font-size:0.8rem; font-weight:600; color:#4b5563; margin-bottom:6px;">Designer Name</label>
+                            <input type="text" id="designer-name" placeholder="Enter Designer Name" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; outline:none; box-sizing:border-box;">
+                        </div>
                     </div>
 
                     <div style="margin-bottom: 24px;">
@@ -588,6 +605,16 @@
                         document.getElementById('design-preview').style.display = 'inline-block';
                         document.getElementById('design-existing-image').value = d.imageUrl;
                     }
+                    if (d.designType) {
+                        document.getElementById('design-type').value = d.designType;
+                    } else {
+                        document.getElementById('design-type').value = '';
+                    }
+                    if (d.designerName) {
+                        document.getElementById('designer-name').value = d.designerName;
+                    } else {
+                        document.getElementById('designer-name').value = '';
+                    }
                 }
             } else {
                 document.getElementById('modal-title').textContent = 'New Design';
@@ -597,6 +624,8 @@
                 document.getElementById('design-size').value = '';
                 document.getElementById('design-purchase-value').value = '';
                 document.getElementById('design-depreciation').value = '';
+                document.getElementById('design-type').value = '';
+                document.getElementById('designer-name').value = '';
                 handleCategoryChange(); // Set disabled states
                 updateDynamicDesignId();
             }
@@ -660,6 +689,8 @@
                     size: size,
                     purchaseValue: parseFloat(document.getElementById('design-purchase-value').value) || null,
                     depreciation: parseFloat(document.getElementById('design-depreciation').value) || null,
+                    designType: document.getElementById('design-type').value || null,
+                    designerName: document.getElementById('designer-name').value || '',
                     imageUrl: imageUrl || ''
                 };
 
@@ -791,9 +822,18 @@
                             </div>
                             <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 700;">${d.category}</h3>
                             ${d.subCategory ? `<p style="margin: 4px 0 0; font-size: 0.8rem; color: #64748b;">${d.subCategory}</p>` : ''}
+                            <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                                <span style="background: #f8fafc; color: #334155; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 500; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="user" style="width:12px;height:12px;"></i>${d.designerName || 'No Designer'}
+                                </span>
+                            </div>
                         </div>
                         
                         <div class="design-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Type</span>
+                                <span class="meta-value">${d.designType || '—'}</span>
+                            </div>
                             <div class="meta-item">
                                 <span class="meta-label">Tree Usage</span>
                                 <span class="meta-value" style="color: var(--primary);">${usageCount} pcs</span>
