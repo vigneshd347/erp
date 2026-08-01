@@ -184,6 +184,11 @@
                                         <!-- Dynamic options -->
                                     </select>
                                 </div>
+                                <div id="ord-designer-name-container" style="margin-bottom: 1rem;">
+                                    <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Designer Name <span style="color:#6b7280;font-weight:400;">(Buyer / Customer)</span></label>
+                                    <input type="text" id="ord-designer-name" list="designer-datalist" placeholder="Type or select Designer / Buyer Name" class="input-wrapper" style="width: 100%; border-color: #d1d5db;">
+                                    <datalist id="designer-datalist"></datalist>
+                                </div>
                                 <div style="margin-bottom: 1rem;">
                                     <label style="font-size: 0.85rem; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">Bill No. / Reference</label>
                                     <input type="text" id="ord-bill-no" placeholder="e.g. INV-123" class="input-wrapper" style="width: 100%; border-color: #d1d5db;">
@@ -275,6 +280,10 @@
                             <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #4b5563;">
                                 <span>Sub Total</span>
                                 <span id="po-sub-total" style="font-weight: 600;">0.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #4b5563;">
+                                <span>Freight Charges</span>
+                                <input type="number" id="po-freight-charges" placeholder="₹" step="0.01" min="0" class="input-wrapper" style="width: 100px; padding: 4px 8px; text-align: right;" oninput="calculatePOTotals()">
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #4b5563;">
                                 <span>Discount</span>
@@ -494,6 +503,7 @@
                 <table style="width: 100%; font-size: 0.9rem; line-height: 1.5; color: #1f2937; border-collapse: collapse;">
                     <tr><td style="width: 130px; font-weight: 600; padding-bottom: 3px; vertical-align: top;">Expected Delivery</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-due-date"></span></td></tr>
                     <tr><td style="font-weight: 600; padding-bottom: 3px; vertical-align: top;">Bill No.</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-bill-no"></span></td></tr>
+                    <tr id="po-pdf-designer-row" style="display:none;"><td style="font-weight: 600; padding-bottom: 3px; vertical-align: top;">Designer</td><td style="padding-bottom: 3px; vertical-align: top;">: <span id="po-pdf-designer-name" style="font-weight: 700; color: #7c3aed;"></span></td></tr>
                 </table>
             </div>
         </div>
@@ -532,6 +542,11 @@
                         <td class="st-label" style="padding: 5px 0; font-weight: 600; color: #475569; width: 140px; font-size: 0.8rem;">Taxable Amt</td>
                         <td class="st-colon" style="padding: 5px 0; width: 15px; text-align: center;">:</td>
                         <td class="st-val" style="padding: 5px 0; text-align: right; font-weight: 600; color: #1e293b; font-size: 0.8rem;"><span id="po-pdf-subtotal"></span></td>
+                    </tr>
+                    <tr id="po-pdf-freight-row">
+                        <td class="st-label" style="padding: 5px 0; font-weight: 600; color: #475569; font-size: 0.8rem;">Freight Charges</td>
+                        <td class="st-colon" style="padding: 5px 0; text-align: center;">:</td>
+                        <td class="st-val" style="padding: 5px 0; text-align: right; font-weight: 600; color: #1e293b; font-size: 0.8rem;"><span id="po-pdf-freight"></span></td>
                     </tr>
                     <tr id="po-pdf-discount-row">
                         <td class="st-label" style="padding: 5px 0; font-weight: 600; color: #dc2626; font-size: 0.8rem;">Discount</td>
@@ -729,16 +744,26 @@
                                     const assetType = this.parentElement.querySelector('.po-item-asset-type');
                                     const metalGroup = this.parentElement.querySelector('.po-item-metal-group');
                                     const subcat = this.parentElement.querySelector('.po-design-subcat');
+                                    const designTypeEl = this.parentElement.querySelector('.po-design-type');
                                     if(assetType) assetType.style.display = this.value === 'Assets' ? 'block' : 'none';
                                     if(metalGroup) metalGroup.style.display = this.value === 'Stock' ? 'flex' : 'none';
                                     if(subcat) subcat.style.display = this.value === 'Design' ? 'block' : 'none';
-                                    
-                                    const dtSize = document.querySelectorAll('.design-size-col, .design-size-cell');
-                                    const dtWt = document.querySelectorAll('.design-wt-col, .design-wt-cell');
+                                    if(designTypeEl) designTypeEl.style.display = this.value === 'Design' ? 'block' : 'none';
+                                    if(this.value === 'Design' && designTypeEl && !designTypeEl.value) { designTypeEl.value = 'Mold'; }
                                     if(this.value === 'Design') {
+                                        const dtSize = document.querySelectorAll('.design-size-col, .design-size-cell');
+                                        const dtWt = document.querySelectorAll('.design-wt-col, .design-wt-cell');
                                         dtSize.forEach(el => el.style.display = 'table-cell');
                                         dtWt.forEach(el => el.style.display = 'table-cell');
+                                        const vendorSel = document.getElementById('ord-vendor');
+                                        const designerInput = document.getElementById('ord-designer-name');
+                                        if(vendorSel && designerInput && !designerInput.value.trim()) {
+                                            const supps = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+                                            const vObj = supps.find(v => v.id === vendorSel.value || v.name === vendorSel.value);
+                                            designerInput.value = vObj ? (vObj.name || vObj.id) : vendorSel.value;
+                                        }
                                     }
+                                    if(window.updateDesignerVisibility) window.updateDesignerVisibility();
                                 ">
                                     <option value="" disabled ${!itemData.category ? 'selected' : ''}>Select Category</option>
                                     <option value="Stock" ${itemData.category === 'Stock' ? 'selected' : ''}>1. Stock</option>
@@ -788,6 +813,14 @@
                                     <option value="Necklace" ${itemData.designSubCat === 'Necklace' ? 'selected' : ''}>4. Necklace</option>
                                     <option value="Bracelet" ${itemData.designSubCat === 'Bracelet' ? 'selected' : ''}>5. Bracelet</option>
                                 </select>
+
+                                <select class="po-design-type input-wrapper" style="display: ${itemData.category === 'Design' ? 'block' : 'none'}; width: 100%; border: 1px solid #d1d5db; padding: 4px; font-size: 0.8rem; border-radius: 4px; background: #fff; margin-top: 4px;">
+                                    <option value="Mold" ${(!itemData.designType || itemData.designType === 'Mold') ? 'selected' : ''}>1. Mold</option>
+                                    <option value="3DM" ${itemData.designType === '3DM' ? 'selected' : ''}>2. 3DM</option>
+                                    <option value="STL" ${itemData.designType === 'STL' ? 'selected' : ''}>3. STL</option>
+                                    <option value="Mold & 3DM" ${itemData.designType === 'Mold & 3DM' ? 'selected' : ''}>4. Mold & 3DM</option>
+                                </select>
+
                                 <input type="hidden" class="po-detail-imageUrl" value="${itemData.detailImageUrl || ''}">
                                 <div class="po-detail-status" style="font-size: 0.72rem; color: #0284c7; font-weight: 600;"></div>
                             </div>
@@ -905,6 +938,7 @@
 
                 
                 calculatePOTotals();
+                if(window.updateDesignerVisibility) window.updateDesignerVisibility();
             }
 
             let lastDiscountAnchor = 'amount';
@@ -965,7 +999,10 @@
                 const roundOffInput = document.getElementById('po-round-off');
                 const roundOffAmount = parseFloat(roundOffInput?.value) || 0;
                 
-                const grandTotal = subtotal - discountAmount + gstTotal + roundOffAmount;
+                const freightInput = document.getElementById('po-freight-charges');
+                const freightAmount = parseFloat(freightInput?.value) || 0;
+
+                const grandTotal = subtotal - discountAmount + gstTotal + roundOffAmount + freightAmount;
                 
                 const subTotalEl = document.getElementById('po-sub-total');
                 const gstTotalEl = document.getElementById('po-gst-total');
@@ -977,10 +1014,80 @@
             };
 
             // Global listeners for footer inputs
-            ['po-discount-percent', 'po-discount-amount', 'po-round-off'].forEach(id => {
+            ['po-discount-percent', 'po-discount-amount', 'po-round-off', 'po-freight-charges'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('input', (e) => window.calculatePOTotals(e));
             });
+
+            // Designer Name datalist: populate from suppliers, customer orders & past POs
+            window.populateDesignerDropdown = function() {
+                const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+                const custOrders = JSON.parse(localStorage.getItem('manti_customer_orders') || '[]');
+                const poRecords = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+                const datalist = document.getElementById('designer-datalist');
+                if (!datalist) return;
+                datalist.innerHTML = '';
+                const seen = new Set();
+
+                // 1. Suppliers
+                suppliers.forEach(v => {
+                    const name = v.name || v.id;
+                    if (name && !seen.has(name)) {
+                        seen.add(name);
+                        const opt = document.createElement('option');
+                        opt.value = name;
+                        datalist.appendChild(opt);
+                    }
+                });
+
+                // 2. Customer Buyers
+                custOrders.forEach(o => {
+                    const name = o.customerDetails ? o.customerDetails.name : (o.customerName || '');
+                    if (name && !seen.has(name)) {
+                        seen.add(name);
+                        const opt = document.createElement('option');
+                        opt.value = name;
+                        datalist.appendChild(opt);
+                    }
+                });
+
+                // 3. Past PO Designers
+                poRecords.forEach(r => {
+                    if (r.designerName && !seen.has(r.designerName)) {
+                        seen.add(r.designerName);
+                        const opt = document.createElement('option');
+                        opt.value = r.designerName;
+                        datalist.appendChild(opt);
+                    }
+                });
+            };
+            window.populateDesignerDropdown();
+
+            // Auto-fetch selected Supplier Name into Designer Name field
+            document.getElementById('ord-vendor')?.addEventListener('change', function() {
+                const vendorIdOrName = this.value;
+                if (!vendorIdOrName) return;
+                const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+                const matchedVendor = suppliers.find(v => v.id === vendorIdOrName || v.name === vendorIdOrName);
+                const supplierName = matchedVendor ? (matchedVendor.name || matchedVendor.id) : vendorIdOrName;
+                
+                const designerInput = document.getElementById('ord-designer-name');
+                if (designerInput && (!designerInput.value || designerInput.value.trim() === '')) {
+                    designerInput.value = supplierName;
+                }
+            });
+
+            // Show/hide designer name based on category selection
+            window.updateDesignerVisibility = function() {
+                const allCategories = Array.from(document.querySelectorAll('.po-item-category')).map(s => s.value);
+                const mainCat = document.getElementById('ord-category')?.value;
+                const hasDesign = mainCat === 'Design' || allCategories.some(v => v === 'Design');
+                const container = document.getElementById('ord-designer-name-container');
+                if (container) container.style.display = hasDesign ? 'block' : 'none';
+            };
+
+            document.getElementById('po-items-body').addEventListener('change', window.updateDesignerVisibility);
+            document.getElementById('po-items-body').addEventListener('input', window.updateDesignerVisibility);
 
             if (addPoItemBtn) {
                 addPoItemBtn.addEventListener('click', () => addPORow());
@@ -1375,9 +1482,15 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                 const discPercentInput = document.getElementById('po-discount-percent');
                 const discAmountInput = document.getElementById('po-discount-amount');
                 const roundOffInput = document.getElementById('po-round-off');
+                const freightInput = document.getElementById('po-freight-charges');
+                const designerNameInput = document.getElementById('ord-designer-name');
                 if (discPercentInput) discPercentInput.value = rec.discountPercent || '';
                 if (discAmountInput) discAmountInput.value = rec.discountAmount || '';
                 if (roundOffInput) roundOffInput.value = rec.roundOff || '';
+                if (freightInput) freightInput.value = rec.freightCharges || '';
+                if (designerNameInput) designerNameInput.value = rec.designerName || '';
+                if (window.updateDesignerVisibility) window.updateDesignerVisibility();
+                if (window.populateDesignerDropdown) window.populateDesignerDropdown();
 
                 // Reload items into table
                 poItemsBody.innerHTML = '';
@@ -1449,7 +1562,6 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                         if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_payments_made', payments);
                     }
 
-                    // 3. Delete the PO itself
                     records.splice(index, 1);
                     localStorage.setItem('manti_order_records', JSON.stringify(records));
                     renderTable();
@@ -1457,77 +1569,100 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
             };
 
             function syncCompletedPO(rec) {
-                if (rec.status !== 'Completed') return;
+                if (rec.status === 'Cancelled') return;
 
-                if (rec.category === 'Design' && rec.items && rec.items.length > 0) {
+                const isDesignPO = rec.category === 'Design' || (rec.items && rec.items.some(it => it.category === 'Design' || it.designSubCat || it.designType));
+                if (isDesignPO && rec.items && rec.items.length > 0) {
                     let designs = JSON.parse(localStorage.getItem('manti_designs')) || [];
-                    const noteStr = 'Auto-added from PO: ' + rec.id;
+                    const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+                    const vendorObj = suppliers.find(v => v.id === rec.vendor || v.name === rec.vendor);
+                    const vendorName = vendorObj ? (vendorObj.name || vendorObj.id) : (rec.vendor || '');
+                    const effectiveDesigner = rec.designerName || vendorName || '';
                     
-                    // Prevent duplicate sync
-                    // We don't have a remarks/notes field per design natively in the schema, but we can store it or check if items exist.
-                    // For safety, let's look if a design with this generated ID or source note exists.
+                    // If designs for this PO already exist, update designType & designerName if missing or updated
+                    let updatedExisting = false;
+                    designs.forEach(d => {
+                        if (d._sourcePO === rec.id) {
+                            if (effectiveDesigner && d.designerName !== effectiveDesigner) {
+                                d.designerName = effectiveDesigner;
+                                updatedExisting = true;
+                            }
+                            const matchedItem = rec.items.find(it => (it.designType && d.designType !== it.designType) || (it.detailImageUrl && !d.imageUrl));
+                            if (matchedItem && matchedItem.designType && d.designType !== matchedItem.designType) {
+                                d.designType = matchedItem.designType;
+                                updatedExisting = true;
+                            }
+                        }
+                    });
+
                     if (designs.some(d => d._sourcePO === rec.id)) {
-                        return; // already synced
-                    }
+                        if (updatedExisting) {
+                            localStorage.setItem('manti_designs', JSON.stringify(designs));
+                            if (window.supabase && window.syncKeyToSupabase) {
+                                window.syncKeyToSupabase('manti_designs', designs);
+                            }
+                        }
+                    } else {
+                        let addedCount = 0;
+                        rec.items.forEach((it) => {
+                            // Process item if main category is Design, item category is Design, or designSubCat/designType is specified
+                            if (rec.category === 'Design' || it.category === 'Design' || it.designSubCat || it.designType) {
+                                let effectiveSubCat = it.designSubCat || 'Other';
+                                let prefix = 'DSG';
+                                if (effectiveSubCat === 'Bangle' || effectiveSubCat === 'Bracelet') prefix = 'BG';
+                                else if (effectiveSubCat === 'Ring') prefix = 'RG';
+                                else if (effectiveSubCat === 'Earring') prefix = 'ER';
+                                else if (effectiveSubCat === 'Necklace') prefix = 'NK';
+                                else if (effectiveSubCat === 'Mix') prefix = 'MX';
 
-                    let addedCount = 0;
-                    
-                    rec.items.forEach((it) => {
-                        // For designs, we only need to create ONE master template per item row, regardless of quantity purchased.
-                        // Per-item category
-                        let effectiveSubCat = it.designSubCat || 'Other';
-                        let prefix = 'DSG';
-                        if (effectiveSubCat === 'Bangle' || effectiveSubCat === 'Bracelet') prefix = 'BG';
-                        else if (effectiveSubCat === 'Ring') prefix = 'RG';
-                        else if (effectiveSubCat === 'Earring') prefix = 'ER';
-                        else if (effectiveSubCat === 'Necklace') prefix = 'NK';
-                        else if (effectiveSubCat === 'Mix') prefix = 'MX';
+                                let maxIdNum = 0;
+                                designs.forEach(d => {
+                                    if (d.id && d.id.startsWith(prefix)) {
+                                        const match = d.id.match(new RegExp(`^${prefix}(\\d+)`));
+                                        if (match) {
+                                            const num = parseInt(match[1], 10);
+                                            if (!isNaN(num) && num > maxIdNum) maxIdNum = num;
+                                        }
+                                    }
+                                });
 
-                        let maxIdNum = 0;
-                        designs.forEach(d => {
-                            if (d.id && d.id.startsWith(prefix)) {
-                                const match = d.id.match(new RegExp(`^${prefix}(\\d+)`));
-                                if (match) {
-                                    const num = parseInt(match[1], 10);
-                                    if (!isNaN(num) && num > maxIdNum) maxIdNum = num;
+                                const countStr = (maxIdNum + 1).toString().padStart(2, '0');
+                                let idStr = `${prefix}${countStr}`;
+                                
+                                const wt = parseFloat(it.designWt) || 0;
+                                if (wt > 0) idStr += `-${wt}`;
+                                if (it.designSize) idStr += `-${it.designSize}`;
+
+                                let specificSub = null;
+                                if (effectiveSubCat === 'Ring') {
+                                    const descL = String(it.desc || '').toLowerCase();
+                                    specificSub = descL.includes('gents') ? 'Gents ring' : 'Ladies ring'; // default
                                 }
+
+                                designs.unshift({
+                                    id: idStr,
+                                    category: effectiveSubCat === 'Bracelet' ? 'Bangle' : effectiveSubCat,
+                                    subCategory: specificSub,
+                                    weight: wt,
+                                    size: it.designSize || '',
+                                    designType: it.designType || '',
+                                    designerName: effectiveDesigner,
+                                    imageUrl: it.detailImageUrl || it.designImageUrl || '',
+                                    _sourcePO: rec.id 
+                                });
+                                addedCount++;
                             }
                         });
 
-                        const countStr = (maxIdNum + 1).toString().padStart(2, '0');
-                        let idStr = `${prefix}${countStr}`;
-                        
-                        const wt = parseFloat(it.designWt) || 0;
-                        if (wt > 0) idStr += `-${wt}`;
-                        if (it.designSize) idStr += `-${it.designSize}`;
-
-                        let specificSub = null;
-                        if (effectiveSubCat === 'Ring') {
-                            const descL = String(it.desc || '').toLowerCase();
-                            specificSub = descL.includes('gents') ? 'Gents ring' : 'Ladies ring'; // default
-                        }
-
-                        designs.unshift({
-                            id: idStr,
-                            category: effectiveSubCat === 'Bracelet' ? 'Bangle' : effectiveSubCat,
-                            subCategory: specificSub,
-                            weight: wt,
-                            size: it.designSize || '',
-                            imageUrl: it.detailImageUrl || it.designImageUrl || '',
-                            _sourcePO: rec.id 
-                        });
-                        addedCount++;
-                    });
-
-                    if (addedCount > 0) {
-                        localStorage.setItem('manti_designs', JSON.stringify(designs));
-                        alert(`${addedCount} new Design(s) routed to Design Book!`);
-                        if(window.supabase && window.syncKeyToSupabase) {
-                            window.syncKeyToSupabase('manti_designs', designs);
+                        if (addedCount > 0) {
+                            localStorage.setItem('manti_designs', JSON.stringify(designs));
+                            if(window.supabase && window.syncKeyToSupabase) {
+                                window.syncKeyToSupabase('manti_designs', designs);
+                            }
                         }
                     }
 
-                } else if (rec.category === 'Assets' && rec.items && rec.items.length > 0) {
+                } else if (rec.category === 'Assets' && rec.status === 'Completed' && rec.items && rec.items.length > 0) {
                     let assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
                     const noteStr = 'Auto-added from PO: ' + rec.id;
                     
@@ -1931,6 +2066,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                         designWt: row.querySelector('.po-design-wt')?.value || '',
                         designSize: row.querySelector('.po-design-size')?.value || '',
                         designSubCat: row.querySelector('.po-design-subcat')?.value || '',
+                        designType: row.querySelector('.po-design-type')?.value || '',
                         detailImageUrl: row.querySelector('.po-detail-imageUrl')?.value || ''
                     };
                     items.push(it);
@@ -1976,8 +2112,11 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                 
                 const roundOffInputStr = document.getElementById('po-round-off')?.value || '';
                 const ro = parseFloat(roundOffInputStr) || 0;
+
+                const freightInputStr = document.getElementById('po-freight-charges')?.value || '';
+                const freightAmt = parseFloat(freightInputStr) || 0;
                 
-                let totalAmount = rowSumWithoutGst - da + rowGstSum + ro;
+                let totalAmount = rowSumWithoutGst - da + rowGstSum + ro + freightAmt;
 
                 const rec = {
                     id: document.getElementById('ord-id').value || generateOrderId('Purchase Order'),
@@ -1993,6 +2132,8 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     discountPercent: dPercent,
                     discountAmount: dAmount,
                     roundOff: roundOffInputStr,
+                    freightCharges: freightInputStr,
+                    designerName: document.getElementById('ord-designer-name')?.value || '',
 
                     items: items,
                     qty: totalQty,
@@ -2048,7 +2189,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                 }
                 localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
 
-                if (rec.status === 'Completed' && typeof syncCompletedPO === 'function') {
+                if (typeof syncCompletedPO === 'function') {
                     syncCompletedPO(rec);
                 }
 
@@ -2200,6 +2341,16 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
             // Summary
             document.getElementById('po-pdf-subtotal').textContent = '₹ ' + subtotal.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
 
+            // Freight Charges
+            const freightVal = parseFloat(rec.freightCharges) || 0;
+            const freightPdfRow = document.getElementById('po-pdf-freight-row');
+            if (freightVal > 0) {
+                freightPdfRow.style.display = '';
+                document.getElementById('po-pdf-freight').textContent = '₹ ' + freightVal.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+            } else {
+                freightPdfRow.style.display = 'none';
+            }
+
             const da = parseFloat(rec.discountAmount) || 0;
             const discRow = document.getElementById('po-pdf-discount-row');
             if (da > 0) {
@@ -2227,6 +2378,18 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
             }
 
             document.getElementById('po-pdf-grand-total').textContent = '₹ ' + amt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+            // Designer Name — shown in PDF details for Design category POs
+            const pdfDesignerRow = document.getElementById('po-pdf-designer-row');
+            if (pdfDesignerRow) {
+                if (rec.designerName && rec.category === 'Design') {
+                    pdfDesignerRow.style.display = '';
+                    const el = document.getElementById('po-pdf-designer-name');
+                    if (el) el.textContent = rec.designerName;
+                } else {
+                    pdfDesignerRow.style.display = 'none';
+                }
+            }
 
             // Remarks
             const remarkSection = document.getElementById('po-pdf-remarks-box');
