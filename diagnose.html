@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ERP Cloud Data Diagnostic</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Inter', monospace; background: #0f172a; color: #e2e8f0; padding: 24px; }
+        h1 { color: #38bdf8; }
+        .section { background: #1e293b; padding: 16px; border-radius: 8px; margin: 12px 0; }
+        .ok { color: #4ade80; }
+        .warn { color: #fbbf24; }
+        .err { color: #f87171; }
+        pre { white-space: pre-wrap; word-break: break-all; font-size: 0.85rem; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: 8px; text-align: left; border-bottom: 1px solid #334155; }
+    </style>
+</head>
+<body>
+    <h1>🔍 ERP Cloud Data Diagnostic</h1>
+    <div id="output">Loading...</div>
+
+    <script>
+        const SUPABASE_URL = 'https://stcomjtuuuchdafhssgv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0Y29tanR1dXVjaGRhZmhzc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTg2NDYsImV4cCI6MjA5MDM3NDY0Nn0.scmi8txiJEd334girnUK3EXGLFM6vvqPekRzE2DDaC0';
+
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function diagnose() {
+            const out = document.getElementById('output');
+            let html = '';
+
+            // 1. Test connection
+            html += '<div class="section"><h3>1. Supabase Connection Test</h3>';
+            try {
+                const { data, error } = await client.from('settings').select('setting_key').limit(1);
+                if (error) {
+                    html += `<p class="err">❌ Connection Error: ${JSON.stringify(error)}</p>`;
+                } else {
+                    html += `<p class="ok">✅ Connection successful. Got ${data.length} row(s) from settings.</p>`;
+                }
+            } catch (e) {
+                html += `<p class="err">❌ Exception: ${e.message}</p>`;
+            }
+            html += '</div>';
+
+            // 2. Fetch all tables and count rows
+            const tables = [
+                'orders', 'job_works', 'invoices', 'vendor_kyc', 'supplier_kyc',
+                'staff_records', 'assets', 'delivery_challans', 'payments_made',
+                'expenses', 'journal_entries', 'bank_accounts', 'stock_history',
+                'settings', 'designs', 'trees'
+            ];
+
+            html += '<div class="section"><h3>2. Table Row Counts</h3><table><tr><th>Table</th><th>Rows</th><th>Status</th><th>Error</th></tr>';
+
+            for (const table of tables) {
+                try {
+                    const { data, error, count } = await client.from(table).select('*', { count: 'exact', head: true });
+                    if (error) {
+                        html += `<tr><td>${table}</td><td>-</td><td class="err">ERROR</td><td>${error.message}</td></tr>`;
+                    } else {
+                        const cls = count > 0 ? 'ok' : 'warn';
+                        html += `<tr><td>${table}</td><td class="${cls}">${count}</td><td class="${cls}">${count > 0 ? '✅' : '⚠️ EMPTY'}</td><td>-</td></tr>`;
+                    }
+                } catch (e) {
+                    html += `<tr><td>${table}</td><td>-</td><td class="err">EXCEPTION</td><td>${e.message}</td></tr>`;
+                }
+            }
+            html += '</table></div>';
+
+            // 3. Simulate the FULL fetchEverythingFromCloud logic and catch any crash
+            html += '<div class="section"><h3>3. Simulated fetchEverythingFromCloud</h3>';
+            try {
+                const results = await Promise.all([
+                    client.from('orders').select('*'),
+                    client.from('job_works').select('*'),
+                    client.from('invoices').select('*'),
+                    client.from('vendor_kyc').select('*'),
+                    client.from('supplier_kyc').select('*'),
+                    client.from('staff_records').select('*'),
+                    client.from('assets').select('*'),
+                    client.from('delivery_challans').select('*'),
+                    client.from('payments_made').select('*'),
+                    client.from('expenses').select('*'),
+                    client.from('journal_entries').select('*'),
+                    client.from('bank_accounts').select('*'),
+                    client.from('stock_history').select('id,date,type,details,qty,weight,metal_type'),
+                    client.from('settings').select('*'),
+                    client.from('designs').select('*'),
+                    client.from('trees').select('*')
+                ]);
+
+                const names = ['orders', 'job_works', 'invoices', 'vendor_kyc', 'supplier_kyc',
+                    'staff_records', 'assets', 'delivery_challans', 'payments_made',
+                    'expenses', 'journal_entries', 'bank_accounts', 'stock_history',
+                    'settings', 'designs', 'trees'];
+
+                html += '<table><tr><th>Query</th><th>data</th><th>error</th></tr>';
+                results.forEach((r, i) => {
+                    const dataLen = r.data ? r.data.length : 'NULL';
+                    const errMsg = r.error ? JSON.stringify(r.error) : '-';
+                    const cls = r.error ? 'err' : (r.data && r.data.length > 0 ? 'ok' : 'warn');
+                    html += `<tr><td>${names[i]}</td><td class="${cls}">${dataLen} rows</td><td>${errMsg}</td></tr>`;
+                });
+                html += '</table>';
+
+                // 3b. Test the specific crash points
+                const [ordersRes, jobsRes, invoicesRes, vendorRes, supplierRes, staffRes, assetsRes, challansRes, paymentsRes, expensesRes, journalsRes, accountsRes, stockRes, settingsRes, designsRes, treesRes] = results;
+
+                html += '<h4>Crash Point Tests:</h4><ul>';
+
+                // Test settingsRes.data null check (used in designs/trees fallback)
+                if (!settingsRes.data) {
+                    html += '<li class="err">❌ settingsRes.data is NULL — this will crash designs/trees migration!</li>';
+                } else {
+                    html += `<li class="ok">✅ settingsRes.data has ${settingsRes.data.length} entries</li>`;
+                }
+
+                // Test designs self-healing path
+                if (!designsRes.data || designsRes.data.length === 0) {
+                    if (!settingsRes.data) {
+                        html += '<li class="err">❌ Designs table empty + settings null = CRASH on settingsRes.data.find()</li>';
+                    } else {
+                        const legacy = settingsRes.data.find(s => s.setting_key === 'manti_designs');
+                        html += `<li class="warn">⚠️ Designs table empty, legacy fallback: ${legacy ? 'FOUND' : 'not found'}</li>`;
+                    }
+                } else {
+                    html += `<li class="ok">✅ designsRes.data has ${designsRes.data.length} designs</li>`;
+                }
+
+                // Test trees self-healing path
+                if (!treesRes.data || treesRes.data.length === 0) {
+                    if (!settingsRes.data) {
+                        html += '<li class="err">❌ Trees table empty + settings null = CRASH on settingsRes.data.find()</li>';
+                    } else {
+                        const legacy = settingsRes.data.find(s => s.setting_key === 'manti_trees');
+                        html += `<li class="warn">⚠️ Trees table empty, legacy fallback: ${legacy ? 'FOUND' : 'not found'}</li>`;
+                    }
+                } else {
+                    html += `<li class="ok">✅ treesRes.data has ${treesRes.data.length} trees</li>`;
+                }
+
+                html += '</ul>';
+
+                // 4. Show first 3 rows of orders and expenses for verification
+                html += '<h4>Sample Data:</h4>';
+                if (ordersRes.data && ordersRes.data.length > 0) {
+                    html += `<p>First order: <pre>${JSON.stringify(ordersRes.data[0], null, 2)}</pre></p>`;
+                }
+                if (expensesRes.data && expensesRes.data.length > 0) {
+                    html += `<p>First expense: <pre>${JSON.stringify(expensesRes.data[0], null, 2)}</pre></p>`;
+                }
+                if (paymentsRes.data && paymentsRes.data.length > 0) {
+                    html += `<p>First payment: <pre>${JSON.stringify(paymentsRes.data[0], null, 2)}</pre></p>`;
+                }
+
+            } catch (e) {
+                html += `<p class="err">❌ fetchEverythingFromCloud CRASHED: ${e.message}<br><pre>${e.stack}</pre></p>`;
+            }
+            html += '</div>';
+
+            // 4. Check ERP_MEMORY (if supabase.js is also loaded)
+            html += '<div class="section"><h3>4. ERP_MEMORY State</h3>';
+            if (window.ERP_MEMORY) {
+                html += `<p class="ok">ERP_MEMORY exists with ${window.ERP_MEMORY.size} keys</p>`;
+                html += '<table><tr><th>Key</th><th>Length</th></tr>';
+                window.ERP_MEMORY.forEach((v, k) => {
+                    try {
+                        const parsed = JSON.parse(v);
+                        const len = Array.isArray(parsed) ? parsed.length : (typeof parsed === 'object' ? Object.keys(parsed).length : '(scalar)');
+                        html += `<tr><td>${k}</td><td>${len}</td></tr>`;
+                    } catch {
+                        html += `<tr><td>${k}</td><td>${v ? v.length + ' chars' : 'null'}</td></tr>`;
+                    }
+                });
+                html += '</table>';
+            } else {
+                html += '<p class="warn">⚠️ ERP_MEMORY not available (supabase.js not loaded on this page)</p>';
+            }
+            html += '</div>';
+
+            out.innerHTML = html;
+        }
+
+        diagnose();
+    </script>
+</body>
+</html>
