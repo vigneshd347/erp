@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Driver Portal & Daily Feed</title>
+    <link rel="stylesheet" href="style.css?v=18">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .portal-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 480px;
+            padding: 32px 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+        .portal-header { text-align: center; margin-bottom: 24px; }
+        .portal-header img { height: 90px; margin-bottom: 16px; border-radius: 50%; box-shadow: 0 0 15px rgba(255, 191, 0, 0.2); }
+        .portal-header h1 { font-size: 1.5rem; font-weight: 800; margin: 0; color: #fff; }
+        .portal-header p { font-size: 0.85rem; color: #94a3b8; margin: 4px 0 0; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .form-group label { font-size: 0.8rem; font-weight: 600; color: #94a3b8; }
+        .form-group input, .form-group textarea, .form-group select {
+            padding: 12px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #6366f1; }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s;
+            margin-top: 8px;
+        }
+        .btn-submit:hover { opacity: 0.9; }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { background: #ef4444; color: #fff; }
+
+        .status-success {
+            background: #065f46;
+            color: #34d399;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .ocr-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #6366f1;
+            animation: ocr-spin 1s ease-in-out infinite;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        @keyframes ocr-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile Compact & User-Friendly Numpad Styling */
+        @media (max-width: 520px) {
+            body { padding: 8px !important; align-items: flex-start !important; }
+            .portal-card { padding: 18px 14px !important; border-radius: 14px !important; margin-top: 10px; }
+            .portal-header img { height: 80px !important; width: 80px !important; margin-bottom: 10px !important; }
+            .portal-header h1 { font-size: 1.25rem !important; }
+            .portal-header p { font-size: 0.78rem !important; }
+            .form-group label { font-size: 0.78rem !important; font-weight: 700; color: #a5b4fc; }
+            .form-group input, .form-group select, .form-group textarea {
+                padding: 14px 12px !important;
+                font-size: 1.15rem !important;
+                font-weight: 700 !important;
+                border-radius: 10px !important;
+            }
+            .btn-submit { padding: 16px !important; font-size: 1.05rem !important; border-radius: 10px !important; }
+        }
+        .km-numpad-helper {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        .km-quick-btn {
+            background: #334155;
+            color: #38bdf8;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        .km-quick-btn:active { background: #0284c7; color: #fff; }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-container" class="portal-card">
+        <div class="portal-header">
+            <img src="routex_logo.jpg" alt="RouteX Tours & Travels" style="height: 110px; width: 110px; object-fit: cover; border-radius: 50%; box-shadow: 0 0 20px rgba(255,191,0,0.4), 0 0 0 3px rgba(255,191,0,0.15);">
+            <h1>Driver Portal Sign In</h1>
+            <p>Enter your registered mobile number and password to feed daily car status.</p>
+        </div>
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Mobile Number (Registered Login ID)</label>
+                <input type="tel" id="login-phone" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-pass" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-submit">Sign In</button>
+        </form>
+    </div>
+
+    <!-- Feed Log Screen -->
+    <div id="feed-container" class="portal-card" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 16px;">
+            <div>
+                <h2 id="welcome-name" style="margin: 0; font-size: 1.2rem; color: #fff;">Hello, Driver</h2>
+                <p id="assigned-vehicle" style="margin: 4px 0 0; font-size: 0.8rem; color: #94a3b8;">Vehicle Assigned: -</p>
+            </div>
+            <button class="btn-logout" onclick="handleLogout()">Sign Out</button>
+        </div>
+
+        <div id="success-banner" class="status-success">✓ Logged successfully!</div>
+
+        <!-- Section 1: Start Trip -->
+        <div id="start-trip-section" style="display: none;">
+            <h3 style="font-size: 1.1rem; color: #6366f1; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="play-circle"></i> Start Your Shift / Trip
+            </h3>
+            <form id="start-trip-form" onsubmit="handleStartTrip(event)">
+                <div class="form-group">
+                    <label>Upload Odometer Image (Start) *</label>
+                    <input type="file" id="start-km-file" accept="image/*" required style="font-size: 0.85rem; border: 1px solid #334155; padding: 10px; border-radius: 8px; background: #0f172a; width: 100%; box-sizing: border-box;">
+                    <div id="start-ocr-status" style="font-size: 0.8rem; margin-top: 4px; display: none;"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Start KM Reading *</label>
+                    <div style="position: relative;">
+                        <input type="number" id="start-km" inputmode="numeric" pattern="[0-9]*" required placeholder="Odometer reading in Km" style="width: 100%; box-sizing: border-box; padding-right: 70px;">
+                        <span id="start-scan-badge" class="scan-badge" style="position: absolute; right: 10px; top: 12px; font-size: 0.75rem; background: #065f46; color: #34d399; padding: 2px 8px; border-radius: 12px; display: none; font-weight: bold;">✓ OCR</span>
+                    </div>
+                    <div class="km-numpad-helper">
+                        <button type="button" class="km-quick-btn" onclick="adjustInput('start-km', 10)">+10</button>
+                        <button type="button" class="km-quick-btn" onclick="adjustInput('start-km', 50)">+50</button>
+                        <button type="button" class="km-quick-btn" onclick="adjustInput('start-km', 100)">+100</button>
+                        <button type="button" class="km-quick-btn" onclick="adjustInput('start-km', 500)">+500</button>
+                        <button type="button" class="km-quick-btn" style="color:#f87171;" onclick="clearInput('start-km')">Clear</button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-submit">Start Trip & Save Odometer</button>
+            </form>
+        </div>
+
+        <!-- Section 2: End Trip -->
+        <div id="end-trip-section" style="display: none;">
+            <div style="background: #1e293b; border: 1px dashed #6366f1; padding: 14px; border-radius: 10px; margin-bottom: 20px; font-size: 0.85rem;">
+                <h4 style="margin: 0 0 6px 0; color: #a5b4fc; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="clock" style="width:16px; height:16px;"></i> Active Trip In Progress
+                </h4>
+                <div style="color: #94a3b8; display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+                    <div><strong>Start Time:</strong> <span id="trip-start-time">-</span></div>
+                    <div><strong>Start KM:</strong> <span id="trip-start-km">-</span> Km</div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 1.1rem; color: #10b981; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="check-circle"></i> End Your Shift / Trip
+            </h3>
+            
+            <form id="end-trip-form" onsubmit="handleEndTrip(event)">
+                <div class="form-group">
+                    <label>Upload Odometer Image (End) *</label>
+                    <input type="file" id="end-km-file" accept="image/*" required style="font-size: 0.85rem; border: 1px solid #334155; padding: 10px; border-radius: 8px; background: #0f172a; width: 100%; box-sizing: border-box;">
+                    <div id="end-ocr-status" style="font-size: 0.8rem; margin-top: 4px; display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>End KM Reading *</label>
+                    <div style="position: relative;">
+                        <input type="number" id="end-km" inputmode="numeric" pattern="[0-9]*" required placeholder="Odometer reading in Km" oninput="updateDistance()" style="width: 100%; box-sizing: border-box; padding-right: 70px;">
+                        <span id="end-scan-badge" class="scan-badge" style="position: absolute; right: 10px; top: 12px; font-size: 0.75rem; background: #065f46; color: #34d399; padding: 2px 8px; border-radius: 12px; display: none; font-weight: bold;">✓ OCR</span>
+                    </div>
+                    <div class="km-numpad-helper">
+                        <button type="button" class="km-quick-btn" onclick="adjustInput('end-km', 10)">+10</button>
+                        <button type="button" class="km-quick-btn" onclick="adjustInput('end-km', 50)">+50</button>
+                        <button type="button" class="km-quick-btn" onclick="adjustInput('end-km', 100)">+100</button>
+                        <button type="button" class="km-quick-btn" onclick="adjustInput('end-km', 500)">+500</button>
+                        <button type="button" class="km-quick-btn" style="color:#f87171;" onclick="clearInput('end-km')">Clear</button>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.8rem; font-weight: bold; color: #6366f1; margin: 8px 0 16px;">
+                    Total Distance Driven: <span id="dist-calc">0</span> Km
+                </div>
+
+                <!-- Fuel Details -->
+                <h4 id="fuel-section-heading" style="font-size: 0.9rem; color: #94a3b8; margin: 20px 0 12px; border-bottom: 1px solid #334155; padding-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                    <span id="fuel-type-badge" style="font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #1e3a5f; color: #60a5fa; display: none;"></span>
+                    Fuel / CNG Refueling Log (If Any)
+                </h4>
+                
+                <div class="form-group">
+                    <label>Upload Fuel Receipt Image</label>
+                    <input type="file" id="fuel-file" accept="image/*" style="font-size: 0.85rem; border: 1px solid #334155; padding: 10px; border-radius: 8px; background: #0f172a; width: 100%; box-sizing: border-box;">
+                    <div id="fuel-ocr-status" style="font-size: 0.8rem; margin-top: 4px; display: none;"></div>
+                </div>
+
+                <!-- Single Fuel Box -->
+                <div id="single-fuel-box" style="display: block;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label id="fuel-qty-label">Fuel Filled (Litres)</label>
+                            <div style="position: relative;">
+                                <input type="number" id="fuel-qty" inputmode="decimal" placeholder="e.g. 25.5" step="0.01" oninput="calculateMileage()" style="width: 100%; box-sizing: border-box; padding-right: 70px;">
+                                <span id="fuel-qty-scan-badge" class="scan-badge" style="position: absolute; right: 10px; top: 12px; font-size: 0.75rem; background: #065f46; color: #34d399; padding: 2px 8px; border-radius: 12px; display: none; font-weight: bold;">✓ OCR</span>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Fuel / CNG Cost (₹)</label>
+                            <div style="position: relative;">
+                                <input type="number" id="fuel-cost" inputmode="decimal" placeholder="e.g. 2500" step="0.01" oninput="calculateMileage()" style="width: 100%; box-sizing: border-box; padding-right: 70px;">
+                                <span id="fuel-cost-scan-badge" class="scan-badge" style="position: absolute; right: 10px; top: 12px; font-size: 0.75rem; background: #065f46; color: #34d399; padding: 2px 8px; border-radius: 12px; display: none; font-weight: bold;">✓ OCR</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #10b981; margin-bottom: 16px;">
+                        Calculated Mileage: <span id="mileage-calc">-</span> <span id="mileage-unit">Km/L</span>
+                    </div>
+                </div>
+
+                <!-- Dual Fuel Box (CNG + Petrol) -->
+                <div id="dual-fuel-box" style="display: none; background: #1e293b; border: 1px solid #3b82f6; padding: 14px; border-radius: 10px; margin-bottom: 16px;">
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #60a5fa; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <span>⛽ CNG + Petrol Individual Fuel Inputs</span>
+                    </div>
+                    
+                    <!-- Petrol Row -->
+                    <div style="font-weight: 600; font-size: 0.8rem; color: #fbbf24; margin-bottom: 6px;">1. Petrol Refueling:</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:0.78rem;">Petrol Filled (Litres)</label>
+                            <input type="number" id="petrol-qty" inputmode="decimal" placeholder="e.g. 10.5" step="0.01" oninput="calculateMileage()" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:0.78rem;">Petrol Cost (₹)</label>
+                            <input type="number" id="petrol-cost" inputmode="decimal" placeholder="e.g. 1050" step="0.01" oninput="calculateMileage()" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                    </div>
+
+                    <!-- CNG Row -->
+                    <div style="font-weight: 600; font-size: 0.8rem; color: #60a5fa; margin-bottom: 6px;">2. CNG Refueling:</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:0.78rem;">CNG Filled (kg)</label>
+                            <input type="number" id="cng-qty" inputmode="decimal" placeholder="e.g. 8.2" step="0.01" oninput="calculateMileage()" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-size:0.78rem;">CNG Cost (₹)</label>
+                            <input type="number" id="cng-cost" inputmode="decimal" placeholder="e.g. 740" step="0.01" oninput="calculateMileage()" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #34d399; display: flex; gap: 16px; flex-wrap: wrap;">
+                        <span>Petrol Mileage: <span id="petrol-mileage-calc">-</span> Km/L</span>
+                        <span>CNG Mileage: <span id="cng-mileage-calc">-</span> Km/kg</span>
+                        <span style="color: #fbbf24;">Total Fuel Cost: ₹<span id="dual-fuel-total-cost">0</span></span>
+                    </div>
+                </div>
+
+                <!-- Operational status & remarks -->
+                <h4 style="font-size: 0.9rem; color: #94a3b8; margin: 20px 0 12px; border-bottom: 1px solid #334155; padding-bottom: 6px;">Operational Remarks</h4>
+
+                <div class="form-group">
+                    <label>Vehicle Operational Status</label>
+                    <select id="feed-status" style="width: 100%; box-sizing: border-box;">
+                        <option value="Active">Normal / Good Condition</option>
+                        <option value="Maintenance">Need Maintenance / Repairs</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Operational Remarks / Notes</label>
+                    <textarea id="feed-remarks" rows="2" placeholder="e.g. Engine oil low, AC not cooling, normal trip, etc." style="width: 100%; box-sizing: border-box; resize: vertical;"></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">End Trip & Save Entry</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentDriver = null;
+        let activeTrip = null;
+        let startKmImageBase64 = '';
+        let endKmImageBase64 = '';
+
+        function adjustInput(id, delta) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const cur = parseFloat(el.value) || 0;
+            el.value = Math.max(0, cur + delta);
+            if (id === 'end-km') updateDistance();
+        }
+
+        function clearInput(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.value = '';
+                if (id === 'end-km') updateDistance();
+            }
+        }
+        let fuelReceiptImageBase64 = '';
+
+        // Auto check session
+        window.addEventListener('DOMContentLoaded', () => {
+            const session = localStorage.getItem('manti_active_driver_session');
+            if (session) {
+                currentDriver = JSON.parse(session);
+                showFeedScreen();
+            }
+
+            // Bind file uploads for base64 conversions and OCR scanning
+            setupImageHandlers();
+        });
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const phone = document.getElementById('login-phone').value.trim();
+            const pass = document.getElementById('login-pass').value;
+
+            const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const driver = drivers.find(d => d.phone === phone && d.password === pass);
+
+            if (!driver) {
+                alert("Invalid mobile number or password!");
+                return;
+            }
+
+            if (driver.status !== 'Active') {
+                alert("Your account is currently suspended. Please contact administrator.");
+                return;
+            }
+
+            // Always store base driver data (without stale fuelType)
+            currentDriver = driver;
+            localStorage.setItem('manti_active_driver_session', JSON.stringify(driver));
+            showFeedScreen();
+            document.getElementById('login-form').reset();
+        }
+
+        function showFeedScreen() {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('feed-container').style.display = 'block';
+
+            // Always re-fetch the latest driver record from registry (catches admin changes)
+            const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const freshDriver = drivers.find(d => d.phone === currentDriver.phone);
+            if (freshDriver) {
+                // Merge fresh data but keep session phone as key
+                currentDriver = freshDriver;
+            }
+
+            document.getElementById('welcome-name').textContent = `Hello, ${currentDriver.name}`;
+            
+            // Always look up the assigned vehicle's fuel type live from cars registry
+            let fuelType = '';
+            let assignedCar = currentDriver.car || '';
+            if (assignedCar && assignedCar !== 'Unassigned') {
+                const cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
+                const car = cars.find(c => c.reg === assignedCar);
+                if (car && car.fuel) {
+                    fuelType = car.fuel;
+                }
+            }
+            currentDriver.fuelType = fuelType;
+
+            // Update header info bar
+            const fuelBadge = fuelType ? ` | ⛽ ${fuelType}` : '';
+            document.getElementById('assigned-vehicle').textContent = `Vehicle: ${assignedCar || 'None'}${fuelBadge}`;
+
+            // Update fuel section labels dynamically
+            updateFuelLabels(fuelType);
+
+            // Save updated session with fresh fuelType
+            localStorage.setItem('manti_active_driver_session', JSON.stringify(currentDriver));
+
+            // Check active trips
+            refreshTripState();
+        }
+
+        function refreshTripState() {
+            const activeTrips = JSON.parse(localStorage.getItem('manti_active_trips') || '{}');
+            activeTrip = activeTrips[currentDriver.phone] || null;
+
+            if (activeTrip) {
+                // Trip in progress -> Show End Trip form
+                document.getElementById('start-trip-section').style.display = 'none';
+                document.getElementById('end-trip-section').style.display = 'block';
+                
+                document.getElementById('trip-start-time').textContent = new Date(activeTrip.startTimestamp).toLocaleString();
+                document.getElementById('trip-start-km').textContent = activeTrip.startKm;
+                
+                // Set default display for distance calculation
+                updateDistance();
+            } else {
+                // No active trip -> Show Start Trip form
+                document.getElementById('start-trip-section').style.display = 'block';
+                document.getElementById('end-trip-section').style.display = 'none';
+                
+                // Reset file fields
+                startKmImageBase64 = '';
+                endKmImageBase64 = '';
+                fuelReceiptImageBase64 = '';
+            }
+            
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('manti_active_driver_session');
+            currentDriver = null;
+            activeTrip = null;
+            document.getElementById('feed-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
+        }
+
+        function setupImageHandlers() {
+            // Start KM Image
+            const startFileEl = document.getElementById('start-km-file');
+            if (startFileEl) {
+                startFileEl.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Base64 Convert
+                        fileToBase64(file, (base64) => {
+                            startKmImageBase64 = base64;
+                        });
+                        // OCR Scan
+                        runOCR(file, 'start-ocr-status', 'start-scan-badge', 'start-km', 'odometer');
+                    }
+                });
+            }
+
+            // End KM Image
+            const endFileEl = document.getElementById('end-km-file');
+            if (endFileEl) {
+                endFileEl.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Base64 Convert
+                        fileToBase64(file, (base64) => {
+                            endKmImageBase64 = base64;
+                        });
+                        // OCR Scan
+                        runOCR(file, 'end-ocr-status', 'end-scan-badge', 'end-km', 'odometer');
+                    }
+                });
+            }
+
+            // Fuel Receipt Image
+            const fuelFileEl = document.getElementById('fuel-file');
+            if (fuelFileEl) {
+                fuelFileEl.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Base64 Convert
+                        fileToBase64(file, (base64) => {
+                            fuelReceiptImageBase64 = base64;
+                        });
+                        // OCR Scan
+                        runOCR(file, 'fuel-ocr-status', 'fuel-cost-scan-badge', 'fuel-cost', 'receipt');
+                    }
+                });
+            }
+        }
+
+        function fileToBase64(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                callback(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Tesseract OCR implementation
+        async function runOCR(file, statusElId, badgeElId, inputElId, type) {
+            const statusEl = document.getElementById(statusElId);
+            const badgeEl = document.getElementById(badgeElId);
+            const inputEl = document.getElementById(inputElId);
+            
+            if (!statusEl) return;
+            
+            statusEl.style.display = 'block';
+            statusEl.style.color = '#e2e8f0';
+            statusEl.innerHTML = '<span class="ocr-spinner"></span> Processing image with Tesseract OCR...';
+            
+            if (badgeEl) badgeEl.style.display = 'none';
+
+            try {
+                const result = await Tesseract.recognize(file, 'eng');
+                const text = result.data.text;
+                console.log("OCR Extracted Text:", text);
+                
+                if (type === 'odometer') {
+                    const km = extractOdometer(text);
+                    if (km !== null) {
+                        inputEl.value = km;
+                        statusEl.style.color = '#34d399';
+                        statusEl.innerHTML = `✓ Auto-filled odometer: <strong>${km} Km</strong>`;
+                        if (badgeEl) badgeEl.style.display = 'inline';
+                        
+                        if (inputElId === 'end-km') {
+                            updateDistance();
+                        }
+                    } else {
+                        statusEl.style.color = '#f87171';
+                        statusEl.innerHTML = '⚠ Odometer text was unclear. Please type manually.';
+                    }
+                } else if (type === 'receipt') {
+                    const { cost, qty } = extractFuelReceipt(text);
+                    let successMsg = [];
+                    
+                    if (cost !== null) {
+                        document.getElementById('fuel-cost').value = cost;
+                        const costBadge = document.getElementById('fuel-cost-scan-badge');
+                        if (costBadge) costBadge.style.display = 'inline';
+                        successMsg.push(`Cost: ₹${cost}`);
+                    }
+                    
+                    if (qty !== null) {
+                        document.getElementById('fuel-qty').value = qty;
+                        const qtyBadge = document.getElementById('fuel-qty-scan-badge');
+                        if (qtyBadge) qtyBadge.style.display = 'inline';
+                        successMsg.push(`Volume: ${qty} Ltr`);
+                    }
+                    
+                    if (successMsg.length > 0) {
+                        statusEl.style.color = '#34d399';
+                        statusEl.innerHTML = `✓ Auto-filled Fuel details: <strong>${successMsg.join(', ')}</strong>`;
+                        calculateMileage();
+                    } else {
+                        statusEl.style.color = '#f87171';
+                        statusEl.innerHTML = '⚠ Fuel details not detected on receipt. Please type manually.';
+                    }
+                }
+            } catch (err) {
+                console.error("Tesseract Error:", err);
+                statusEl.style.color = '#f87171';
+                statusEl.innerHTML = '⚠ OCR service error. Please type manually.';
+            }
+        }
+
+        function extractOdometer(text) {
+            const clean = text.toLowerCase().replace(/\s+/g, ' ');
+            
+            // Odometer match patterns (4-6 digits near keywords or standalone)
+            const kmPattern1 = /(?:km|odo|reading|val|kms|limit)\D*(\d{4,6})/i;
+            const kmPattern2 = /(\d{4,6})\D*(?:km|odo|reading|val|kms)/i;
+            
+            let match = clean.match(kmPattern1) || clean.match(kmPattern2);
+            if (match) {
+                return parseInt(match[1]);
+            }
+            
+            // Fallback: look for 5-digit or 6-digit numbers
+            const fallback = clean.match(/\b\d{5,6}\b/);
+            if (fallback) {
+                return parseInt(fallback[0]);
+            }
+            
+            // Second fallback: 4-digit numbers
+            const fallback2 = clean.match(/\b\d{4}\b/);
+            if (fallback2) {
+                return parseInt(fallback2[0]);
+            }
+            
+            return null;
+        }
+
+        function extractFuelReceipt(text) {
+            const clean = text.toLowerCase().replace(/\s+/g, ' ');
+            let cost = null;
+            let qty = null;
+
+            // Cost extraction pattern
+            const costPatterns = [
+                /(?:total|amount|sale|net|rs|rupees|paid|value|₹)\D*(\d+(?:\.\d{2})?)/i,
+                /(\d+(?:\.\d{2})?)\D*(?:rs|rupees|₹|total|amount|sale)/i
+            ];
+            
+            for (const pat of costPatterns) {
+                const m = clean.match(pat);
+                if (m) {
+                    cost = parseFloat(m[1]);
+                    break;
+                }
+            }
+
+            // Quantity extraction pattern
+            const qtyPatterns = [
+                /(?:qty|quantity|vol|volume|litres|ltr|ltrs|liter|lit)\D*(\d+(?:\.\d{2,3})?)/i,
+                /(\d+(?:\.\d{2,3})?)\D*(?:litres|ltr|ltrs|liter|lit|volume)/i
+            ];
+            
+            for (const pat of qtyPatterns) {
+                const m = clean.match(pat);
+                if (m) {
+                    qty = parseFloat(m[1]);
+                    break;
+                }
+            }
+
+            // Fallback for cost using largest decimal
+            if (!cost) {
+                const decimals = clean.match(/\b\d+\.\d{2}\b/g);
+                if (decimals) {
+                    const parsed = decimals.map(parseFloat);
+                    cost = Math.max(...parsed);
+                }
+            }
+
+            return { cost, qty };
+        }
+
+        function updateFuelLabels(fuelType) {
+            const ft = (fuelType || '').toUpperCase();
+            const hasCNG = ft.includes('CNG');
+            const hasPetrol = ft.includes('PETROL');
+            const isDual = hasCNG && hasPetrol;
+
+            const badge = document.getElementById('fuel-type-badge');
+            const qtyLabel = document.getElementById('fuel-qty-label');
+            const mileageUnit = document.getElementById('mileage-unit');
+            const singleBox = document.getElementById('single-fuel-box');
+            const dualBox = document.getElementById('dual-fuel-box');
+
+            if (badge) {
+                if (fuelType) {
+                    badge.textContent = fuelType;
+                    badge.style.display = 'inline';
+                    if (isDual) {
+                        badge.style.background = 'linear-gradient(135deg, #1e3a5f, #3b2a00)';
+                        badge.style.color = '#60a5fa';
+                    } else if (hasCNG) {
+                        badge.style.background = '#1e3a5f';
+                        badge.style.color = '#60a5fa';
+                    } else {
+                        badge.style.background = '#3b2a00';
+                        badge.style.color = '#fbbf24';
+                    }
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            if (isDual) {
+                if (singleBox) singleBox.style.display = 'none';
+                if (dualBox) dualBox.style.display = 'block';
+            } else {
+                if (singleBox) singleBox.style.display = 'block';
+                if (dualBox) dualBox.style.display = 'none';
+
+                if (qtyLabel) qtyLabel.textContent = hasCNG ? 'CNG Filled (kg)' : 'Fuel Filled (Litres)';
+                if (mileageUnit) mileageUnit.textContent = hasCNG ? 'Km/kg' : 'Km/L';
+            }
+        }
+
+        function updateDistance() {
+            const startKm = activeTrip ? activeTrip.startKm : 0;
+            const endKm = parseFloat(document.getElementById('end-km').value) || 0;
+            const diff = Math.max(0, endKm - startKm);
+            
+            document.getElementById('dist-calc').textContent = diff;
+            calculateMileage();
+        }
+
+        function calculateMileage() {
+            const startKm = activeTrip ? activeTrip.startKm : 0;
+            const endKm = parseFloat(document.getElementById('end-km').value) || 0;
+            const diff = Math.max(0, endKm - startKm);
+
+            const ft = (currentDriver && currentDriver.fuelType ? currentDriver.fuelType : '').toUpperCase();
+            const isDual = ft.includes('CNG') && ft.includes('PETROL');
+
+            if (isDual) {
+                const petrolQty = parseFloat(document.getElementById('petrol-qty').value) || 0;
+                const petrolCost = parseFloat(document.getElementById('petrol-cost').value) || 0;
+                const cngQty = parseFloat(document.getElementById('cng-qty').value) || 0;
+                const cngCost = parseFloat(document.getElementById('cng-cost').value) || 0;
+
+                const petrolMile = (diff > 0 && petrolQty > 0) ? (diff / petrolQty).toFixed(2) : '-';
+                const cngMile = (diff > 0 && cngQty > 0) ? (diff / cngQty).toFixed(2) : '-';
+
+                document.getElementById('petrol-mileage-calc').textContent = petrolMile;
+                document.getElementById('cng-mileage-calc').textContent = cngMile;
+                document.getElementById('dual-fuel-total-cost').textContent = (petrolCost + cngCost).toFixed(2);
+            } else {
+                const fuel = parseFloat(document.getElementById('fuel-qty').value) || 0;
+                if (diff > 0 && fuel > 0) {
+                    document.getElementById('mileage-calc').textContent = (diff / fuel).toFixed(2);
+                } else {
+                    document.getElementById('mileage-calc').textContent = '-';
+                }
+            }
+        }
+
+        function handleStartTrip(e) {
+            e.preventDefault();
+            const startKm = parseFloat(document.getElementById('start-km').value);
+            
+            if (isNaN(startKm) || startKm < 0) {
+                alert("Please enter a valid Start KM reading.");
+                return;
+            }
+
+            const activeTrips = JSON.parse(localStorage.getItem('manti_active_trips') || '{}');
+            activeTrips[currentDriver.phone] = {
+                startKm,
+                startTimestamp: new Date().toISOString(),
+                startKmImage: startKmImageBase64
+            };
+            
+            localStorage.setItem('manti_active_trips', JSON.stringify(activeTrips));
+            
+            // Show Success Banner
+            showBanner("Trip started successfully!");
+            
+            // Reset start trip form
+            document.getElementById('start-trip-form').reset();
+            document.getElementById('start-ocr-status').style.display = 'none';
+            document.getElementById('start-scan-badge').style.display = 'none';
+
+            refreshTripState();
+        }
+
+        function handleEndTrip(e) {
+            e.preventDefault();
+            const endKm = parseFloat(document.getElementById('end-km').value);
+            const carStatus = document.getElementById('feed-status').value;
+            const remarks = document.getElementById('feed-remarks').value.trim();
+
+            if (isNaN(endKm) || endKm < activeTrip.startKm) {
+                alert(`End KM reading cannot be less than Start KM reading (${activeTrip.startKm} Km)!`);
+                return;
+            }
+
+            const ft = (currentDriver && currentDriver.fuelType ? currentDriver.fuelType : '').toUpperCase();
+            const isDual = ft.includes('CNG') && ft.includes('PETROL');
+
+            let fuelQuantity = 0;
+            let fuelCost = 0;
+            let petrolQty = 0, petrolCost = 0, cngQty = 0, cngCost = 0;
+
+            if (isDual) {
+                petrolQty = parseFloat(document.getElementById('petrol-qty').value) || 0;
+                petrolCost = parseFloat(document.getElementById('petrol-cost').value) || 0;
+                cngQty = parseFloat(document.getElementById('cng-qty').value) || 0;
+                cngCost = parseFloat(document.getElementById('cng-cost').value) || 0;
+
+                fuelQuantity = petrolQty + cngQty;
+                fuelCost = petrolCost + cngCost;
+            } else {
+                fuelQuantity = parseFloat(document.getElementById('fuel-qty').value) || 0;
+                fuelCost = parseFloat(document.getElementById('fuel-cost').value) || 0;
+            }
+
+            // Create Log Record
+            const logEntry = {
+                timestamp: new Date().toISOString(),
+                startTimestamp: activeTrip.startTimestamp,
+                driverPhone: currentDriver.phone,
+                driverName: currentDriver.name,
+                carReg: currentDriver.car || 'Unassigned',
+                fuelType: currentDriver.fuelType || 'Petrol', // Saved fuel type of the vehicle
+                startKm: activeTrip.startKm,
+                endKm,
+                startKmImage: activeTrip.startKmImage,
+                endKmImage: endKmImageBase64,
+                fuelQuantity,
+                fuelCost,
+                petrolQty,
+                petrolCost,
+                cngQty,
+                cngCost,
+                isDualFuel: isDual,
+                fuelReceiptImage: fuelReceiptImageBase64,
+                status: carStatus,
+                remarks
+            };
+
+            // Save to logs
+            let logs = JSON.parse(localStorage.getItem('manti_car_logs') || '[]');
+            logs.push(logEntry);
+            localStorage.setItem('manti_car_logs', JSON.stringify(logs));
+
+            // Sync vehicle status in cars registry
+            if (currentDriver.car && currentDriver.car !== 'Unassigned') {
+                let cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
+                const idx = cars.findIndex(c => c.reg === currentDriver.car);
+                if (idx !== -1) {
+                    cars[idx].status = carStatus;
+                    localStorage.setItem('manti_cars', JSON.stringify(cars));
+                }
+            }
+
+            // Clear Active Trip
+            const activeTrips = JSON.parse(localStorage.getItem('manti_active_trips') || '{}');
+            delete activeTrips[currentDriver.phone];
+            localStorage.setItem('manti_active_trips', JSON.stringify(activeTrips));
+
+            // Show Success Banner
+            showBanner("Trip logged and completed successfully!");
+
+            // Reset end form
+            document.getElementById('end-trip-form').reset();
+            document.getElementById('end-ocr-status').style.display = 'none';
+            document.getElementById('end-scan-badge').style.display = 'none';
+            document.getElementById('fuel-ocr-status').style.display = 'none';
+            document.getElementById('fuel-cost-scan-badge').style.display = 'none';
+            document.getElementById('fuel-qty-scan-badge').style.display = 'none';
+            
+            document.getElementById('dist-calc').textContent = '0';
+            document.getElementById('mileage-calc').textContent = '-';
+
+            refreshTripState();
+        }
+
+        function showBanner(message) {
+            const banner = document.getElementById('success-banner');
+            banner.textContent = `✓ ${message}`;
+            banner.style.display = 'block';
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Fleet & Driver Master Report</title>
+    <link rel="stylesheet" href="style.css?v=18">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background: #f1f5f9; font-family: 'Inter', sans-serif; }
+        .report-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px; margin-bottom: 24px; }
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; text-align: center; }
+        .stat-box .num { font-size: 1.4rem; font-weight: 800; color: #1e293b; margin-top: 4px; }
+        .stat-box .lbl { font-size: 0.75rem; font-weight: 600; color: #64748b; }
+        .dash-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .dash-table th { background: #f8fafc; text-align: left; padding: 12px 14px; font-size: 0.78rem; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; }
+        .dash-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; color: #1e293b; }
+        .dash-table tr:hover td { background: #f8fafc; }
+        .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
+        .badge-active { background: #dcfce7; color: #15803d; }
+        .badge-inactive { background: #fee2e2; color: #b91c1c; }
+        .badge-cng { background: #e0f2fe; color: #0369a1; }
+        .badge-petrol { background: #fef3c7; color: #b45309; }
+        .badge-dual { background: linear-gradient(135deg,#e0f2fe,#fef3c7); color: #1e1b4b; border:1px solid #cbd5e1; }
+        @media print {
+            .sidebar, .quick-btn, .no-print { display: none !important; }
+            main { padding: 0 !important; }
+            .report-card { border: none; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar" id="sidebar-container"></aside>
+
+        <main class="main-content" style="flex:1; overflow-y:auto; padding:24px; background:#f1f5f9;">
+            <!-- Header -->
+            <header class="dashboard-header header-flex" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+                <div>
+                    <h1 style="font-size:1.4rem; font-weight:800; color:#1f2937; margin:0;">Fleet &amp; Driver Master Reports</h1>
+                    <p style="font-size:0.85rem; color:#6b7280; margin-top:4px;">Comprehensive single-page report portal for vehicle registries, driver KYC, daily trip logs, fuel consumption, and salary disbursements.</p>
+                </div>
+                <div style="display:flex; gap:12px;" class="no-print">
+                    <button onclick="window.print()" style="padding:10px 16px; border-radius:8px; background:#fff; border:1px solid #cbd5e1; font-weight:600; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                        <i data-lucide="printer" style="width:15px;height:15px;"></i> Print Report
+                    </button>
+                    <a href="car.html" class="quick-btn outline" style="display:flex; align-items:center; gap:8px; text-decoration:none; padding:10px 16px; border-radius:8px; font-weight:600; background:#6366f1; color:#fff; font-size:0.85rem;">
+                        <i data-lucide="arrow-left" style="width:16px; height:16px;"></i> Fleet Management
+                    </a>
+                </div>
+            </header>
+
+            <!-- Report Selector Section (Dropdown) -->
+            <div class="report-card no-print" style="background: linear-gradient(135deg, #ffffff, #f8fafc); border: 1px solid #cbd5e1;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:40px; height:40px; border-radius:10px; background:#e0e7ff; color:#4f46e5; display:flex; align-items:center; justify-content:center;">
+                            <i data-lucide="bar-chart-3" style="width:22px; height:22px;"></i>
+                        </div>
+                        <div>
+                            <label style="font-size:0.78rem; font-weight:700; color:#64748b; text-transform:uppercase; display:block;">Select Report View</label>
+                            <select id="report-view-selector" onchange="changeReportView()" style="font-size:1.05rem; font-weight:800; color:#1e293b; padding:6px 12px; border:1px solid #6366f1; border-radius:8px; outline:none; background:#fff; cursor:pointer;">
+                                <option value="all">📊 All Fleet Master Overview (Single Combined View)</option>
+                                <option value="cars">🚗 Vehicle Registry &amp; Status Report</option>
+                                <option value="drivers">👨‍✈️ Driver Accounts &amp; KYC Profile Report</option>
+                                <option value="trips">📋 Daily Shift &amp; Odometer Trip Logs Report</option>
+                                <option value="fuel">⛽ Fuel &amp; Energy Expense Breakdown (CNG &amp; Petrol)</option>
+                                <option value="salary">💰 Driver Salary Disbursement &amp; Advance Report</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="text" id="report-search-input" placeholder="Filter records..." onkeyup="filterReportTable()" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; outline:none; width:200px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overview Section -->
+            <div id="section-overview" class="report-card">
+                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="layout-dashboard" style="color:#6366f1; width:20px; height:20px;"></i> Master Fleet Executive Summary
+                </h2>
+                <div class="grid-stats">
+                    <div class="stat-box"><div class="lbl">Total Fleet Vehicles</div><div class="num" id="cnt-cars">0</div></div>
+                    <div class="stat-box"><div class="lbl">Registered Drivers</div><div class="num" id="cnt-drivers">0</div></div>
+                    <div class="stat-box"><div class="lbl">Total Shift Logs</div><div class="num" id="cnt-trips">0</div></div>
+                    <div class="stat-box"><div class="lbl">Total Distance Driven</div><div class="num" id="cnt-dist">0 Km</div></div>
+                    <div class="stat-box"><div class="lbl">Total Fuel Expense</div><div class="num" id="cnt-fuel-cost" style="color:#dc2626;">₹0</div></div>
+                    <div class="stat-box"><div class="lbl">Total Salary Paid</div><div class="num" id="cnt-salary-paid" style="color:#059669;">₹0</div></div>
+                </div>
+            </div>
+
+            <!-- Cars Section -->
+            <div id="section-cars" class="report-card">
+                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="car" style="color:#4f46e5; width:20px; height:20px;"></i> 1. Vehicle Registry &amp; Assignment Report
+                </h2>
+                <div style="overflow-x:auto;">
+                    <table class="dash-table" id="tbl-cars">
+                        <thead>
+                            <tr>
+                                <th>Reg Number</th>
+                                <th>Car Model</th>
+                                <th>Fuel Type</th>
+                                <th>Status</th>
+                                <th>Assigned Driver</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-cars"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Drivers Section -->
+            <div id="section-drivers" class="report-card">
+                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="users" style="color:#059669; width:20px; height:20px;"></i> 2. Driver Profiles &amp; KYC Credentials Report
+                </h2>
+                <div style="overflow-x:auto;">
+                    <table class="dash-table" id="tbl-drivers">
+                        <thead>
+                            <tr>
+                                <th>Driver Name</th>
+                                <th>Mobile (Login ID)</th>
+                                <th>License No.</th>
+                                <th>Assigned Vehicle</th>
+                                <th>PAN Number</th>
+                                <th>Join Date</th>
+                                <th>Monthly Salary</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-drivers"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Daily Trip Logs Section -->
+            <div id="section-trips" class="report-card">
+                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="file-text" style="color:#0284c7; width:20px; height:20px;"></i> 3. Daily Shift &amp; Odometer Trip Logs Report
+                </h2>
+                <div style="overflow-x:auto;">
+                    <table class="dash-table" id="tbl-trips">
+                        <thead>
+                            <tr>
+                                <th>Date &amp; Time</th>
+                                <th>Driver</th>
+                                <th>Vehicle</th>
+                                <th>Fuel Type</th>
+                                <th>Start KM</th>
+                                <th>End KM</th>
+                                <th>Distance</th>
+                                <th>Fuel Logged</th>
+                                <th>Fuel Cost</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-trips"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Fuel Breakdown Section -->
+            <div id="section-fuel" class="report-card">
+                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="zap" style="color:#d97706; width:20px; height:20px;"></i> 4. Fuel &amp; Energy Expense Breakdown (CNG &amp; Petrol)
+                </h2>
+                <div style="overflow-x:auto;">
+                    <table class="dash-table" id="tbl-fuel">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Vehicle</th>
+                                <th>Driver</th>
+                                <th>Fuel Type</th>
+                                <th>Petrol Qty (L)</th>
+                                <th>Petrol Cost</th>
+                                <th>CNG Qty (kg)</th>
+                                <th>CNG Cost</th>
+                                <th>Total Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-fuel"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Salary Disbursements Section -->
+            <div id="section-salary" class="report-card">
+                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="indian-rupee" style="color:#16a34a; width:20px; height:20px;"></i> 5. Driver Salary Disbursement Records
+                </h2>
+                <div style="overflow-x:auto;">
+                    <table class="dash-table" id="tbl-salary">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Driver Name</th>
+                                <th>Month</th>
+                                <th>Type</th>
+                                <th>Base Salary</th>
+                                <th>Advance Deduct</th>
+                                <th>Bonus</th>
+                                <th>Net Payable</th>
+                                <th>Amount Paid</th>
+                                <th>Payment Mode</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-salary"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js?v=24"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) document.getElementById('sidebar-container').innerHTML = sidebar.innerHTML;
+            loadReportData();
+            if (window.lucide) lucide.createIcons();
+        });
+
+        function loadReportData() {
+            const cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
+            const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const logs = JSON.parse(localStorage.getItem('manti_car_logs') || '[]');
+            const salaryRecs = JSON.parse(localStorage.getItem('manti_salary_records') || '[]');
+
+            // Stats
+            document.getElementById('cnt-cars').textContent = cars.length;
+            document.getElementById('cnt-drivers').textContent = drivers.length;
+            document.getElementById('cnt-trips').textContent = logs.length;
+
+            let totalDist = 0;
+            let totalFuelCost = 0;
+            logs.forEach(l => {
+                const dist = Math.max(0, (parseFloat(l.endKm) || 0) - (parseFloat(l.startKm) || 0));
+                totalDist += dist;
+                totalFuelCost += (parseFloat(l.fuelCost) || 0);
+            });
+            document.getElementById('cnt-dist').textContent = `${totalDist.toLocaleString('en-IN')} Km`;
+            document.getElementById('cnt-fuel-cost').textContent = `₹${totalFuelCost.toLocaleString('en-IN')}`;
+
+            const totalSalaryPaid = salaryRecs.reduce((s, r) => s + (parseFloat(r.amountPaid) || 0), 0);
+            document.getElementById('cnt-salary-paid').textContent = `₹${totalSalaryPaid.toLocaleString('en-IN')}`;
+
+            // Render 1: Cars
+            const bodyCars = document.getElementById('body-cars');
+            bodyCars.innerHTML = '';
+            cars.forEach(c => {
+                const ft = (c.fuel || '').toUpperCase();
+                const badgeClass = ft.includes('CNG') && ft.includes('PETROL') ? 'badge-dual' : ft.includes('CNG') ? 'badge-cng' : 'badge-petrol';
+                const assignedDrv = drivers.find(d => d.car === c.reg);
+                bodyCars.innerHTML += `
+                    <tr>
+                        <td style="font-weight:700;">${c.reg}</td>
+                        <td>${c.model}</td>
+                        <td><span class="badge ${badgeClass}">${c.fuel || 'Petrol'}</span></td>
+                        <td><span class="badge ${c.status === 'Active' ? 'badge-active' : 'badge-inactive'}">${c.status || 'Active'}</span></td>
+                        <td style="font-weight:600; color:#4f46e5;">${assignedDrv ? assignedDrv.name + ' (' + assignedDrv.phone + ')' : 'Unassigned'}</td>
+                    </tr>
+                `;
+            });
+
+            // Render 2: Drivers
+            const bodyDrivers = document.getElementById('body-drivers');
+            bodyDrivers.innerHTML = '';
+            drivers.forEach(d => {
+                bodyDrivers.innerHTML += `
+                    <tr>
+                        <td style="font-weight:700;">${d.name}</td>
+                        <td>${d.phone}</td>
+                        <td>${d.license || '-'}</td>
+                        <td style="color:#4f46e5; font-weight:600;">${d.car || 'Unassigned'}</td>
+                        <td>${d.pan || '-'}</td>
+                        <td>${d.joinDate || '-'}</td>
+                        <td>₹${(parseFloat(d.monthlySalary) || 0).toLocaleString('en-IN')}</td>
+                        <td><span class="badge ${d.status !== 'Suspended' ? 'badge-active' : 'badge-inactive'}">${d.status || 'Active'}</span></td>
+                    </tr>
+                `;
+            });
+
+            // Render 3: Trip Logs
+            const bodyTrips = document.getElementById('body-trips');
+            bodyTrips.innerHTML = '';
+            const sortedLogs = [...logs].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            sortedLogs.forEach(l => {
+                const dist = Math.max(0, (parseFloat(l.endKm) || 0) - (parseFloat(l.startKm) || 0));
+                let fuelText = '-';
+                if (l.isDualFuel) {
+                    fuelText = `Petrol: ${l.petrolQty || 0}L | CNG: ${l.cngQty || 0}kg`;
+                } else if (l.fuelQuantity) {
+                    fuelText = `${l.fuelQuantity} ${(l.fuelType || '').includes('CNG') ? 'kg' : 'L'}`;
+                }
+                bodyTrips.innerHTML += `
+                    <tr>
+                        <td>${new Date(l.timestamp).toLocaleString('en-IN')}</td>
+                        <td style="font-weight:700;">${l.driverName || l.driverPhone}</td>
+                        <td style="color:#4f46e5; font-weight:600;">${l.carReg}</td>
+                        <td><span class="badge badge-cng">${l.fuelType || 'Petrol'}</span></td>
+                        <td>${l.startKm}</td>
+                        <td>${l.endKm}</td>
+                        <td style="font-weight:700; color:#059669;">${dist} Km</td>
+                        <td>${fuelText}</td>
+                        <td style="font-weight:700;">₹${(parseFloat(l.fuelCost) || 0).toLocaleString('en-IN')}</td>
+                        <td><span class="badge ${l.status === 'Active' ? 'badge-active' : 'badge-inactive'}">${l.status}</span></td>
+                    </tr>
+                `;
+            });
+
+            // Render 4: Fuel Breakdown
+            const bodyFuel = document.getElementById('body-fuel');
+            bodyFuel.innerHTML = '';
+            const fuelLogs = sortedLogs.filter(l => l.fuelCost > 0 || l.fuelQuantity > 0 || l.petrolCost > 0 || l.cngCost > 0);
+            fuelLogs.forEach(l => {
+                const pQty = l.petrolQty || (l.fuelType === 'Petrol' ? l.fuelQuantity : 0);
+                const pCost = l.petrolCost || (l.fuelType === 'Petrol' ? l.fuelCost : 0);
+                const cQty = l.cngQty || (l.fuelType === 'CNG' ? l.fuelQuantity : 0);
+                const cCost = l.cngCost || (l.fuelType === 'CNG' ? l.fuelCost : 0);
+                bodyFuel.innerHTML += `
+                    <tr>
+                        <td>${new Date(l.timestamp).toLocaleDateString('en-IN')}</td>
+                        <td style="font-weight:700; color:#4f46e5;">${l.carReg}</td>
+                        <td>${l.driverName}</td>
+                        <td><span class="badge badge-dual">${l.fuelType}</span></td>
+                        <td>${pQty ? pQty + ' L' : '-'}</td>
+                        <td>${pCost ? '₹' + pCost.toLocaleString('en-IN') : '-'}</td>
+                        <td>${cQty ? cQty + ' kg' : '-'}</td>
+                        <td>${cCost ? '₹' + cCost.toLocaleString('en-IN') : '-'}</td>
+                        <td style="font-weight:800; color:#dc2626;">₹${(parseFloat(l.fuelCost) || 0).toLocaleString('en-IN')}</td>
+                    </tr>
+                `;
+            });
+
+            // Render 5: Salary Records
+            const bodySalary = document.getElementById('body-salary');
+            bodySalary.innerHTML = '';
+            salaryRecs.forEach(s => {
+                bodySalary.innerHTML += `
+                    <tr>
+                        <td>${new Date(s.date).toLocaleDateString('en-IN')}</td>
+                        <td style="font-weight:700;">${s.driverName}</td>
+                        <td>${s.month}</td>
+                        <td>${s.type}</td>
+                        <td>₹${(parseFloat(s.baseSalary) || 0).toLocaleString('en-IN')}</td>
+                        <td style="color:#dc2626;">₹${(parseFloat(s.advanceDeduction) || 0).toLocaleString('en-IN')}</td>
+                        <td style="color:#16a34a;">₹${(parseFloat(s.bonus) || 0).toLocaleString('en-IN')}</td>
+                        <td style="font-weight:700; color:#6366f1;">₹${(parseFloat(s.netPayable) || 0).toLocaleString('en-IN')}</td>
+                        <td style="font-weight:800; color:#059669;">₹${(parseFloat(s.amountPaid) || 0).toLocaleString('en-IN')}</td>
+                        <td>${s.paymentMode}</td>
+                        <td><span class="badge badge-active">${s.status}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function changeReportView() {
+            const val = document.getElementById('report-view-selector').value;
+            const sections = ['overview', 'cars', 'drivers', 'trips', 'fuel', 'salary'];
+
+            sections.forEach(sec => {
+                const el = document.getElementById(`section-${sec}`);
+                if (!el) return;
+                if (val === 'all' || val === sec) {
+                    el.style.display = 'block';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        }
+
+        function filterReportTable() {
+            const q = document.getElementById('report-search-input').value.toUpperCase();
+            const tables = ['tbl-cars', 'tbl-drivers', 'tbl-trips', 'tbl-fuel', 'tbl-salary'];
+
+            tables.forEach(tblId => {
+                const tbl = document.getElementById(tblId);
+                if (!tbl) return;
+                const trs = tbl.getElementsByTagName('tr');
+                for (let i = 1; i < trs.length; i++) {
+                    const txt = trs[i].textContent || trs[i].innerText;
+                    trs[i].style.display = txt.toUpperCase().indexOf(q) > -1 ? '' : 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

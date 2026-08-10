@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Car & Driver Management</title>
+    <link rel="stylesheet" href="style.css?v=18">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #f1f5f9; }
+        .car-container { display: flex; gap: 24px; flex-direction: column; }
+        .flex-row { display: flex; gap: 20px; flex-wrap: wrap; }
+        .flex-1 { flex: 1; min-width: 300px; }
+        .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.8rem; font-weight: 600; color: #475569; }
+        .form-group input, .form-group select {
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            background: #fff;
+            color: #1e293b;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+        
+        .car-status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .status-active { background: #dcfce7; color: #15803d; }
+        .status-maintenance { background: #fef3c7; color: #d97706; }
+        .status-inactive { background: #fee2e2; color: #b91c1c; }
+
+        .btn-action-sm {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-action-sm.primary { background: var(--primary); color: #fff; }
+        .btn-action-sm.danger { background: #fee2e2; color: #b91c1c; }
+        
+        .tab-menu { display: flex; gap: 12px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; padding-bottom: 8px; }
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            padding: 6px 16px;
+            position: relative;
+        }
+        .tab-btn.active { color: var(--primary); }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 3px;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar-container"></aside>
+
+        <main class="main-content" style="flex: 1; overflow-y: auto; padding: 24px; background: #f1f5f9;">
+            <!-- Page Header -->
+            <header class="dashboard-header header-flex" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+                <div>
+                    <h1 style="font-size: 1.4rem; font-weight: 800; color: #1f2937; margin: 0;">Fleet Management</h1>
+                    <p style="font-size: 0.85rem; color: #6b7280; margin-top: 4px;">Register cars, assign drivers, and view operational feeds.</p>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <a href="driver-feed.html" class="quick-btn outline" style="display: flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; background: #fff; border: 1px solid #d1d5db; color: #374151; font-size: 0.85rem;">
+                        <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+                        Go to Driver Feed Page
+                    </a>
+                </div>
+            </header>
+
+            <!-- Navigation Tabs -->
+            <div class="tab-menu">
+                <button class="tab-btn active" onclick="switchTab('cars')">🚗 Cars Registry</button>
+                <button class="tab-btn" onclick="switchTab('drivers')">👨 Drivers Accounts</button>
+                <button class="tab-btn" onclick="switchTab('logs')">📋 Daily Feed Log</button>
+                <a href="driver-salary.html" class="tab-btn" style="text-decoration:none; display:flex; align-items:center; gap:6px;">💰 Driver Salary</a>
+                <a href="fleet-reports.html" class="tab-btn" style="text-decoration:none; display:flex; align-items:center; gap:6px;">📊 Fleet Master Reports</a>
+            </div>
+
+            <!-- Tab 1: Cars Registry -->
+            <div id="tab-cars" class="tab-content active">
+                <div class="flex-row">
+                    <!-- Register New Car -->
+                    <div class="kyc-form-card flex-1" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:0;">
+                        <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="plus-circle" style="color: var(--primary);"></i> Add New Vehicle
+                        </h2>
+                        <form id="car-form" onsubmit="saveCar(event)">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Registration Number *</label>
+                                    <input type="text" id="car-reg" required placeholder="e.g. KA-01-MJ-1234">
+                                </div>
+                                <div class="form-group">
+                                    <label>Vehicle Model *</label>
+                                    <input type="text" id="car-model" required placeholder="e.g. Maruti Suzuki Swift">
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Fuel Type *</label>
+                                    <select id="car-fuel" required>
+                                        <option value="Petrol">Petrol</option>
+                                        <option value="Diesel">Diesel</option>
+                                        <option value="CNG">CNG</option>
+                                        <option value="CNG + Petrol">CNG + Petrol</option>
+                                        <option value="Electric">Electric</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Current Status</label>
+                                    <select id="car-status">
+                                        <option value="Active">Active</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Inactive">Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions" style="margin-top: 16px;">
+                                <button type="submit" class="quick-btn primary" style="border:none; padding:10px 20px; border-radius:8px;">Register Vehicle</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Registered Cars Table -->
+                    <div class="kyc-form-card flex-1" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:0;">
+                        <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="car" style="color: #6366f1;"></i> Active Fleet
+                        </h2>
+                        <div class="dash-table-wrap">
+                            <table class="dash-table" style="width:100%; border-collapse:collapse;">
+                                <thead>
+                                    <tr>
+                                        <th>Reg No</th>
+                                        <th>Model</th>
+                                        <th>Fuel Type</th>
+                                        <th>Status</th>
+                                        <th style="text-align: center;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cars-list">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Drivers Accounts -->
+            <div id="tab-drivers" class="tab-content">
+                <div class="flex-row">
+                    <!-- Register New Driver -->
+                    <div class="kyc-form-card flex-1" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:0;">
+                        <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="user-plus" style="color: var(--primary);"></i> Register Driver & Credentials
+                        </h2>
+                        <form id="driver-form" onsubmit="saveDriver(event)">
+                            <!-- Credentials & Basic Info -->
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Driver Full Name *</label>
+                                    <input type="text" id="driver-name" required placeholder="e.g. Ramesh Kumar">
+                                </div>
+                                <div class="form-group">
+                                    <label>Mobile Number * (Used for Login ID)</label>
+                                    <input type="tel" id="driver-phone" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Password (Driver Login) *</label>
+                                    <input type="password" id="driver-pass" required placeholder="Min 4 characters">
+                                </div>
+                                <div class="form-group">
+                                    <label>License Number *</label>
+                                    <input type="text" id="driver-license" required placeholder="e.g. DL-1420110012345">
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Assign Vehicle *</label>
+                                    <select id="driver-car" required>
+                                        <option value="">-- Select Vehicle --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Status</label>
+                                    <select id="driver-status">
+                                        <option value="Active">Active</option>
+                                        <option value="Suspended">Suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Additional Information -->
+                            <h3 style="font-size: 0.9rem; font-weight: 700; color: #475569; margin: 20px 0 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">Personal & Verification Details</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>PAN Number</label>
+                                    <input type="text" id="driver-pan" placeholder="e.g. ABCDE1234F" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}" style="text-transform: uppercase;">
+                                </div>
+                                <div class="form-group">
+                                    <label>Join Date *</label>
+                                    <input type="date" id="driver-join-date" required>
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Residential Address</label>
+                                    <textarea id="driver-address" rows="2" placeholder="Enter complete address" style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none; background: #fff; color: #1e293b; resize: vertical;"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Driver Photo</label>
+                                    <input type="file" id="driver-photo-file" accept="image/*" style="font-size: 0.85rem; border: 1px solid #cbd5e1; padding: 6px; border-radius: 8px;">
+                                    <input type="hidden" id="driver-photo-base64">
+                                </div>
+                                <div class="form-group">
+                                    <label>Police Verification Certificate</label>
+                                    <input type="file" id="driver-police-file" accept="image/*" style="font-size: 0.85rem; border: 1px solid #cbd5e1; padding: 6px; border-radius: 8px;">
+                                    <input type="hidden" id="driver-police-base64">
+                                </div>
+                            </div>
+
+                            <!-- Relative Info -->
+                            <h3 style="font-size: 0.9rem; font-weight: 700; color: #475569; margin: 20px 0 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">Emergency / Relative Details</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Relative Name</label>
+                                    <input type="text" id="driver-relative-name" placeholder="Relative's name">
+                                </div>
+                                <div class="form-group">
+                                    <label>Relation</label>
+                                    <input type="text" id="driver-relative-relation" placeholder="e.g. Father, Spouse">
+                                </div>
+                                <div class="form-group">
+                                    <label>Relative Mobile</label>
+                                    <input type="tel" id="driver-relative-phone" placeholder="10-digit mobile" pattern="[0-9]{10}">
+                                </div>
+                            </div>
+
+                            <!-- Bank Details -->
+                            <h3 style="font-size: 0.9rem; font-weight: 700; color: #475569; margin: 20px 0 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">Bank Account Details</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Bank Name</label>
+                                    <input type="text" id="driver-bank-name" placeholder="e.g. State Bank of India">
+                                </div>
+                                <div class="form-group">
+                                    <label>Account Number</label>
+                                    <input type="text" id="driver-bank-acc" placeholder="Enter Account Number">
+                                </div>
+                                <div class="form-group">
+                                    <label>IFSC Code</label>
+                                    <input type="text" id="driver-bank-ifsc" placeholder="e.g. SBIN0001234" style="text-transform: uppercase;">
+                                </div>
+                            </div>
+
+                            <div class="form-actions" style="margin-top: 24px; display: flex; justify-content: flex-end;">
+                                <button type="submit" class="quick-btn primary" style="border:none; padding:12px 24px; border-radius:8px; font-weight: 600; font-size: 0.9rem;">Register Driver</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Registered Drivers Table -->
+                    <div class="kyc-form-card flex-1" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:0;">
+                        <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="users" style="color: #6366f1;"></i> Driver Accounts
+                        </h2>
+                        <div class="dash-table-wrap">
+                            <table class="dash-table" style="width:100%; border-collapse:collapse;">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Contact (Login ID)</th>
+                                        <th>Assigned Car</th>
+                                        <th>Status</th>
+                                        <th style="text-align: center;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="drivers-list">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Daily Feed Logs -->
+            <div id="tab-logs" class="tab-content">
+                <div class="kyc-form-card" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
+                    <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="list-collapse" style="color: var(--primary);"></i> Driver Operations Feed & Fuel Logs
+                    </h2>
+                    <div class="dash-table-wrap">
+                        <table class="dash-table" style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Driver</th>
+                                    <th>Vehicle Reg</th>
+                                    <th>Start Km</th>
+                                    <th>End Km</th>
+                                    <th>Driven Km</th>
+                                    <th>Fuel Filled (Ltr)</th>
+                                    <th>Fuel Cost (₹)</th>
+                                    <th>Mileage (Km/L)</th>
+                                    <th>Remarks / Notes</th>
+                                    <th style="text-align: center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-list">
+                                <!-- Dynamic logs -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Driver Modal -->
+    <div id="edit-driver-modal" class="modal-overlay">
+        <div class="premium-modal" style="max-width: 560px; width: 560px;">
+            <div class="premium-modal-header" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 16px 16px 0 0;">
+                <h2 style="color: white; display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem;">
+                    <i data-lucide="pencil"></i> Edit Driver Account
+                </h2>
+                <button type="button" onclick="closeEditDriverModal()" style="color: white; font-size: 24px; font-weight: bold; background: none; border: none; cursor: pointer;">&times;</button>
+            </div>
+            <div class="premium-modal-body" style="padding: 24px; background: #fff; border-radius: 0 0 16px 16px;">
+                <input type="hidden" id="edit-driver-phone">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label>Driver Full Name</label>
+                        <input type="text" id="edit-driver-name" placeholder="Full Name">
+                    </div>
+                    <div class="form-group">
+                        <label>License Number</label>
+                        <input type="text" id="edit-driver-license" placeholder="License No" style="text-transform:uppercase;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label>Assign Vehicle</label>
+                        <select id="edit-driver-car">
+                            <option value="">-- Unassigned --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Account Status</label>
+                        <select id="edit-driver-status">
+                            <option value="Active">Active</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label>New Password <span style="color:#94a3b8; font-weight:400;">(leave blank to keep)</span></label>
+                        <input type="password" id="edit-driver-pass" placeholder="New password">
+                    </div>
+                    <div class="form-group">
+                        <label>PAN Number</label>
+                        <input type="text" id="edit-driver-pan" placeholder="ABCDE1234F" style="text-transform:uppercase;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label>Join Date</label>
+                        <input type="date" id="edit-driver-join-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Monthly Salary (₹)</label>
+                        <input type="number" id="edit-driver-salary" placeholder="e.g. 18000" step="100">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Residential Address</label>
+                    <textarea id="edit-driver-address" rows="2" placeholder="Full address" style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none; resize: vertical;"></textarea>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" onclick="closeEditDriverModal()" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-weight: 600;">Cancel</button>
+                    <button type="button" onclick="saveEditDriver()" style="padding: 10px 20px; border-radius: 8px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; cursor: pointer; font-weight: 700; font-size: 0.95rem;">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Driver Details Modal -->
+    <div id="driver-modal" class="modal-overlay">
+        <div class="premium-modal" style="max-width: 600px; width: 600px;">
+            <div class="premium-modal-header" style="background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; border-radius: 16px 16px 0 0;">
+                <h2 id="modal-driver-title" style="color: white; display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.25rem;">
+                    <i data-lucide="user"></i> Driver Profile Details
+                </h2>
+                <button type="button" class="btn-close-modal" onclick="closeDriverModal()" style="color: white; font-size: 24px; font-weight: bold; background: none; border: none; cursor: pointer;">&times;</button>
+            </div>
+            <div class="premium-modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto; background: #fff;">
+                <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 24px;">
+                    <div id="modal-driver-photo-container" style="width: 120px; height: 120px; border-radius: 12px; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; background: #f8fafc; overflow: hidden; flex-shrink: 0;">
+                        <!-- Image or placeholder -->
+                    </div>
+                    <div style="flex: 1;">
+                        <h3 id="modal-driver-name" style="margin: 0 0 4px; font-size: 1.3rem; font-weight: 700; color: #1e293b;">Ramesh Kumar</h3>
+                        <p id="modal-driver-status-badge" style="margin: 0 0 12px;"><span class="car-status-badge status-active">Active</span></p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.85rem;">
+                            <div>
+                                <strong style="color: #64748b;">Mobile (Login ID):</strong>
+                                <div id="modal-driver-phone" style="font-weight: 600; color: #1e293b; margin-top: 2px;">9876543210</div>
+                            </div>
+                            <div>
+                                <strong style="color: #64748b;">Password:</strong>
+                                <div id="modal-driver-password" style="font-weight: 600; color: #1e293b; margin-top: 2px;">****</div>
+                            </div>
+                            <div>
+                                <strong style="color: #64748b;">License Number:</strong>
+                                <div id="modal-driver-license" style="font-weight: 600; color: #1e293b; margin-top: 2px;">DL-1420110012345</div>
+                            </div>
+                            <div>
+                                <strong style="color: #64748b;">Assigned Vehicle:</strong>
+                                <div id="modal-driver-car" style="font-weight: 600; color: #4f46e5; margin-top: 2px;">KA-01-MJ-1234</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detail Blocks -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                    <div>
+                        <strong style="color: #64748b; font-size: 0.8rem;">PAN Number:</strong>
+                        <div id="modal-driver-pan" style="font-size: 0.9rem; font-weight: 600; color: #1e293b; margin-top: 2px;">-</div>
+                    </div>
+                    <div>
+                        <strong style="color: #64748b; font-size: 0.8rem;">Join Date:</strong>
+                        <div id="modal-driver-join-date" style="font-size: 0.9rem; font-weight: 600; color: #1e293b; margin-top: 2px;">-</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                    <strong style="color: #64748b; font-size: 0.8rem;">Residential Address:</strong>
+                    <div id="modal-driver-address" style="font-size: 0.9rem; color: #1e293b; margin-top: 2px; white-space: pre-wrap;">-</div>
+                </div>
+
+                <!-- Emergency Contact -->
+                <div style="margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                    <h4 style="margin: 0 0 10px; font-size: 0.95rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="phone-call" style="width:16px; height:16px; color:#4f46e5;"></i> Emergency / Relative Contact
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 0.85rem;">
+                        <div>
+                            <strong style="color: #64748b;">Relative Name:</strong>
+                            <div id="modal-driver-relative-name" style="font-weight: 600; color: #1e293b; margin-top: 2px;">-</div>
+                        </div>
+                        <div>
+                            <strong style="color: #64748b;">Relation:</strong>
+                            <div id="modal-driver-relative-relation" style="font-weight: 600; color: #1e293b; margin-top: 2px;">-</div>
+                        </div>
+                        <div>
+                            <strong style="color: #64748b;">Mobile:</strong>
+                            <div id="modal-driver-relative-phone" style="font-weight: 600; color: #1e293b; margin-top: 2px;">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bank Details -->
+                <div style="margin-bottom: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                    <h4 style="margin: 0 0 10px; font-size: 0.95rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="credit-card" style="width:16px; height:16px; color:#4f46e5;"></i> Bank Account Details
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 0.85rem;">
+                        <div>
+                            <strong style="color: #64748b;">Bank Name:</strong>
+                            <div id="modal-driver-bank-name" style="font-weight: 600; color: #1e293b; margin-top: 2px;">-</div>
+                        </div>
+                        <div>
+                            <strong style="color: #64748b;">Account Number:</strong>
+                            <div id="modal-driver-bank-acc" style="font-weight: 600; color: #1e293b; margin-top: 2px;">-</div>
+                        </div>
+                        <div>
+                            <strong style="color: #64748b;">IFSC Code:</strong>
+                            <div id="modal-driver-bank-ifsc" style="font-weight: 600; color: #1e293b; margin-top: 2px;">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Police Verification -->
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                    <h4 style="margin: 0 0 10px; font-size: 0.95rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="shield-check" style="width:16px; height:16px; color:#10b981;"></i> Police Verification Certificate
+                    </h4>
+                    <div id="modal-driver-police-container" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc; text-align: center; max-height: 250px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <!-- Document Image -->
+                    </div>
+                </div>
+            </div>
+            <div class="premium-modal-footer">
+                <button type="button" class="quick-btn outline" onclick="closeDriverModal()" style="border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; background: none; cursor: pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=24"></script>
+    <script>
+        // Ensure sidebar loads properly
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) {
+                document.getElementById('sidebar-container').innerHTML = sidebar.innerHTML;
+            }
+            
+            // File input to Base64 converters
+            const photoInput = document.getElementById('driver-photo-file');
+            if (photoInput) {
+                photoInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            document.getElementById('driver-photo-base64').value = evt.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            const policeInput = document.getElementById('driver-police-file');
+            if (policeInput) {
+                policeInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            document.getElementById('driver-police-base64').value = evt.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            loadData();
+            if (window.lucide) lucide.createIcons();
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(cont => cont.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        // --- Core Car and Driver Registry Logic ---
+        function loadData() {
+            const cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
+            const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const logs = JSON.parse(localStorage.getItem('manti_car_logs') || '[]');
+
+            // 1. Render Cars
+            const carsBody = document.getElementById('cars-list');
+            carsBody.innerHTML = '';
+            const selectCar = document.getElementById('driver-car');
+            selectCar.innerHTML = '<option value="">-- Select Vehicle --</option>';
+
+            cars.forEach(car => {
+                const badge = car.status === 'Active' ? 'status-active' : (car.status === 'Maintenance' ? 'status-maintenance' : 'status-inactive');
+                carsBody.innerHTML += `
+                    <tr>
+                        <td style="font-weight: 700; color: #059669;">${car.reg}</td>
+                        <td>${car.model}</td>
+                        <td>${car.fuel}</td>
+                        <td><span class="car-status-badge ${badge}">${car.status}</span></td>
+                        <td style="text-align: center;">
+                            <button class="btn-action-sm danger" onclick="deleteCar('${car.reg}')" style="margin: 0 auto;"><i data-lucide="trash-2" style="width: 14px; height:14px;"></i> Delete</button>
+                        </td>
+                    </tr>
+                `;
+                selectCar.innerHTML += `<option value="${car.reg}">${car.reg} (${car.model})</option>`;
+            });
+
+            // 2. Render Drivers
+            const driversBody = document.getElementById('drivers-list');
+            driversBody.innerHTML = '';
+            drivers.forEach(driver => {
+                const badge = driver.status === 'Active' ? 'status-active' : 'status-inactive';
+                driversBody.innerHTML += `
+                    <tr>
+                        <td style="font-weight: 600;">${driver.name}</td>
+                        <td>${driver.phone}</td>
+                        <td style="font-weight: 600; color: #4f46e5;">${driver.car || '-'}</td>
+                        <td><span class="car-status-badge ${badge}">${driver.status}</span></td>
+                        <td style="text-align: center;">
+                            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                                <button class="btn-action-sm" onclick="editDriver('${driver.phone}')" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;"><i data-lucide="pencil" style="width: 14px; height:14px;"></i> Edit</button>
+                                <button class="btn-action-sm primary" onclick="viewDriverDetails('${driver.phone}')" style="background: var(--primary); color: #fff;"><i data-lucide="eye" style="width: 14px; height:14px;"></i> View</button>
+                                <button class="btn-action-sm danger" onclick="deleteDriver('${driver.phone}')"><i data-lucide="trash-2" style="width: 14px; height:14px;"></i> Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // 3. Render Logs
+            const logsBody = document.getElementById('logs-list');
+            logsBody.innerHTML = '';
+            
+            // Sort logs by date descending
+            const sortedLogs = logs.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            sortedLogs.forEach((log, index) => {
+                const driven = log.endKm - log.startKm;
+                const mileage = log.fuelQuantity > 0 ? (driven / log.fuelQuantity).toFixed(2) : '-';
+                const formattedDate = new Date(log.timestamp).toLocaleString();
+                logsBody.innerHTML += `
+                    <tr>
+                        <td>${formattedDate}</td>
+                        <td style="font-weight:600;">${log.driverName}</td>
+                        <td style="font-weight:700; color: #059669;">${log.carReg}</td>
+                        <td>${log.startKm} Km</td>
+                        <td>${log.endKm} Km</td>
+                        <td style="font-weight:700;">${driven} Km</td>
+                        <td>${log.fuelQuantity ? log.fuelQuantity + ' Ltr' : '-'}</td>
+                        <td>${log.fuelCost ? '₹ ' + parseFloat(log.fuelCost).toLocaleString() : '-'}</td>
+                        <td style="font-weight:700; color: #16a34a;">${mileage !== '-' ? mileage + ' Km/L' : '-'}</td>
+                        <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${log.remarks || '-'}</td>
+                        <td style="text-align: center;">
+                            <button class="btn-action-sm danger" onclick="deleteLog(${index})" style="margin: 0 auto;"><i data-lucide="trash-2" style="width: 14px; height:14px;"></i> Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function saveCar(e) {
+            e.preventDefault();
+            const reg = document.getElementById('car-reg').value.trim().toUpperCase();
+            const model = document.getElementById('car-model').value.trim();
+            const fuel = document.getElementById('car-fuel').value;
+            const status = document.getElementById('car-status').value;
+
+            if (!reg || !model) return;
+
+            let cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
+            if (cars.some(car => car.reg === reg)) {
+                alert("Car Registration Number already exists!");
+                return;
+            }
+
+            cars.push({ reg, model, fuel, status });
+            localStorage.setItem('manti_cars', JSON.stringify(cars));
+            document.getElementById('car-form').reset();
+            loadData();
+        }
+
+        function deleteCar(reg) {
+            if (!confirm(`Are you sure you want to delete vehicle ${reg}?`)) return;
+            let cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
+            cars = cars.filter(c => c.reg !== reg);
+            localStorage.setItem('manti_cars', JSON.stringify(cars));
+            loadData();
+        }
+
+        function saveDriver(e) {
+            e.preventDefault();
+            const name = document.getElementById('driver-name').value.trim();
+            const license = document.getElementById('driver-license').value.trim().toUpperCase();
+            const car = document.getElementById('driver-car').value;
+            const phone = document.getElementById('driver-phone').value.trim();
+            const password = document.getElementById('driver-pass').value;
+            const status = document.getElementById('driver-status').value;
+
+            // New fields
+            const pan = document.getElementById('driver-pan').value.trim().toUpperCase();
+            const joinDate = document.getElementById('driver-join-date').value;
+            const address = document.getElementById('driver-address').value.trim();
+            const relativeName = document.getElementById('driver-relative-name').value.trim();
+            const relativeRelation = document.getElementById('driver-relative-relation').value.trim();
+            const relativePhone = document.getElementById('driver-relative-phone').value.trim();
+            const bankName = document.getElementById('driver-bank-name').value.trim();
+            const bankAcc = document.getElementById('driver-bank-acc').value.trim();
+            const bankIfsc = document.getElementById('driver-bank-ifsc').value.trim().toUpperCase();
+
+            const photo = document.getElementById('driver-photo-base64').value;
+            const policeCert = document.getElementById('driver-police-base64').value;
+
+            if (!name || !license || !phone || !password) return;
+
+            let drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            if (drivers.some(d => d.phone === phone)) {
+                alert("Driver Mobile Number (Login ID) already registered!");
+                return;
+            }
+
+            drivers.push({ 
+                name, license, car, phone, password, status: 'Active',
+                pan, joinDate, address, relativeName, relativeRelation, relativePhone,
+                bankName, bankAcc, bankIfsc, photo, policeCert
+            });
+            localStorage.setItem('manti_drivers', JSON.stringify(drivers));
+            
+            // Reset form and file variables
+            document.getElementById('driver-form').reset();
+            document.getElementById('driver-photo-base64').value = '';
+            document.getElementById('driver-police-base64').value = '';
+            
+            loadData();
+        }
+
+        function deleteDriver(phone) {
+            if (!confirm(`Are you sure you want to delete this driver profile?`)) return;
+            let drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            drivers = drivers.filter(d => d.phone !== phone);
+            localStorage.setItem('manti_drivers', JSON.stringify(drivers));
+            loadData();
+        }
+
+        function viewDriverDetails(phone) {
+            const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const driver = drivers.find(d => d.phone === phone);
+            if (!driver) return;
+
+            document.getElementById('modal-driver-name').textContent = driver.name || '-';
+            document.getElementById('modal-driver-phone').textContent = driver.phone || '-';
+            document.getElementById('modal-driver-password').textContent = driver.password || '-';
+            document.getElementById('modal-driver-license').textContent = driver.license || '-';
+            document.getElementById('modal-driver-car').textContent = driver.car ? `${driver.car}` : 'Unassigned';
+            
+            // Status Badge
+            const badgeContainer = document.getElementById('modal-driver-status-badge');
+            const badgeClass = driver.status === 'Active' ? 'status-active' : 'status-inactive';
+            badgeContainer.innerHTML = `<span class="car-status-badge ${badgeClass}">${driver.status || 'Active'}</span>`;
+
+            // Extra Info
+            document.getElementById('modal-driver-pan').textContent = (driver.pan || '').toUpperCase() || '-';
+            document.getElementById('modal-driver-join-date').textContent = driver.joinDate || '-';
+            document.getElementById('modal-driver-address').textContent = driver.address || '-';
+
+            // Relative Info
+            document.getElementById('modal-driver-relative-name').textContent = driver.relativeName || '-';
+            document.getElementById('modal-driver-relative-relation').textContent = driver.relativeRelation || '-';
+            document.getElementById('modal-driver-relative-phone').textContent = driver.relativePhone || '-';
+
+            // Bank Details
+            document.getElementById('modal-driver-bank-name').textContent = driver.bankName || '-';
+            document.getElementById('modal-driver-bank-acc').textContent = driver.bankAcc || '-';
+            document.getElementById('modal-driver-bank-ifsc').textContent = (driver.bankIfsc || '').toUpperCase() || '-';
+
+            // Photo
+            const photoContainer = document.getElementById('modal-driver-photo-container');
+            if (driver.photo) {
+                photoContainer.innerHTML = `<img src="${driver.photo}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            } else {
+                photoContainer.innerHTML = `<i data-lucide="user" style="width: 48px; height: 48px; color: #cbd5e1;"></i>`;
+            }
+
+            // Police Verification Certificate
+            const policeContainer = document.getElementById('modal-driver-police-container');
+            if (driver.policeCert) {
+                policeContainer.innerHTML = `<img src="${driver.policeCert}" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px;">`;
+            } else {
+                policeContainer.innerHTML = `<span style="font-size: 0.85rem; color: #94a3b8;">No document uploaded</span>`;
+            }
+
+            // Open Modal
+            document.getElementById('driver-modal').classList.add('active');
+            
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeDriverModal() {
+            document.getElementById('driver-modal').classList.remove('active');
+        }
+
+        function deleteLog(index) {
+            if (!confirm("Are you sure you want to delete this daily log entry?")) return;
+            let logs = JSON.parse(localStorage.getItem('manti_car_logs') || '[]');
+            // Correct logic to align index with current sorted order
+            const sortedLogs = logs.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            sortedLogs.splice(index, 1);
+            localStorage.setItem('manti_car_logs', JSON.stringify(sortedLogs));
+            loadData();
+        }
+
+        function editDriver(phone) {
+            const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
+            const driver = drivers.find(d => d.phone === phone);
+            if (!driver) return;
+
+            // Fill hidden phone field
+            document.getElementById('edit-driver-phone').value = phone;
+
+            // Fill fields
+            document.getElementById('edit-driver-name').value = driver.name || '';
+            document.getElementById('edit-driver-license').value = driver.license || '';
+            document.getElementById('edit-driver-status').value = driver.status || 'Active';
+            document.getElementById('edit-driver-pan').value = driver.pan || '';
+            document.getElementById('edit-driver-join-date').value = driver.joinDate || '';
+            document.getElementById('edit-driver-salary').value = driver.monthlySalary || '';
+            document.getElementById('edit-driver-address').value = driver.address || '';
+            document.getElementById('edit-driver-pass').value = '';
+
+            // Populate vehicle dropdown fresh
+            const carSelect = document.getElementById('edit-driver-car');
+            carSelect.innerHTML = '<option value="">-- Unassigned --</option>';
+            cars.forEach(car => {
+                const opt = document.createElement('option');
+                opt.value = car.reg;
+                opt.textContent = `${car.reg} (${car.model}) — ${car.fuel}`;
+                if (car.reg === driver.car) opt.selected = true;
+                carSelect.appendChild(opt);
+            });
+
+            // Open modal
+            document.getElementById('edit-driver-modal').classList.add('active');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function saveEditDriver() {
+            const phone = document.getElementById('edit-driver-phone').value;
+            const name = document.getElementById('edit-driver-name').value.trim();
+            const license = document.getElementById('edit-driver-license').value.trim().toUpperCase();
+            const car = document.getElementById('edit-driver-car').value;
+            const status = document.getElementById('edit-driver-status').value;
+            const newPass = document.getElementById('edit-driver-pass').value;
+            const pan = document.getElementById('edit-driver-pan').value.trim().toUpperCase();
+            const joinDate = document.getElementById('edit-driver-join-date').value;
+            const monthlySalary = document.getElementById('edit-driver-salary').value;
+            const address = document.getElementById('edit-driver-address').value.trim();
+
+            if (!name) { alert('Driver name is required.'); return; }
+
+            let drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const idx = drivers.findIndex(d => d.phone === phone);
+            if (idx === -1) return;
+
+            // Apply edits
+            drivers[idx].name = name;
+            drivers[idx].license = license;
+            drivers[idx].car = car;
+            drivers[idx].status = status;
+            drivers[idx].pan = pan;
+            drivers[idx].joinDate = joinDate;
+            drivers[idx].monthlySalary = monthlySalary ? parseFloat(monthlySalary) : (drivers[idx].monthlySalary || 0);
+            drivers[idx].address = address;
+            if (newPass) drivers[idx].password = newPass;
+
+            localStorage.setItem('manti_drivers', JSON.stringify(drivers));
+
+            // Also update active session if this driver is logged in
+            const session = localStorage.getItem('manti_active_driver_session');
+            if (session) {
+                const sessionDriver = JSON.parse(session);
+                if (sessionDriver.phone === phone) {
+                    localStorage.setItem('manti_active_driver_session', JSON.stringify(drivers[idx]));
+                }
+            }
+
+            closeEditDriverModal();
+            loadData();
+
+            // Show quick toast
+            const toast = document.createElement('div');
+            toast.textContent = '✓ Driver account updated successfully!';
+            toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#10b981;color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;font-size:0.9rem;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function closeEditDriverModal() {
+            document.getElementById('edit-driver-modal').classList.remove('active');
+        }
+    </script>
+</body>
+</html>

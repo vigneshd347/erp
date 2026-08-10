@@ -1250,24 +1250,24 @@ function deductInvoiceStock() {
         const sel = r.querySelector('select[name="metal_type"]');
         const wtIn = r.querySelector('input[name="weight"]');
         if (sel && wtIn && sel.value !== 'none' && sel.value !== 'other') {
-            let oldMetal = sel.value; // e.g., 'gold_22k', 'pure_gold', 'silver_925'
+            let oldMetal = sel.value; // e.g., 'gold_22k', 'pure_gold_999', 'silver_925'
             let qty = parseFloat(wtIn.value) || 0;
             
             if (qty > 0) {
                 hasDeductions = true;
-                const invNo = document.getElementById('inv-no') ? document.getElementById('inv-no').value : 'Invoice';
+                const invNoEl = document.querySelector('input[name="inv_no"]');
+                const invNo = (invNoEl && invNoEl.value.trim()) ? invNoEl.value.trim() : 'Direct Sale';
                 
-                // Map old select values to new Inventory 'Gold' / 'Silver' families
-                let metalFamily = 'Unknown';
-                if (oldMetal.includes('gold')) metalFamily = 'Gold';
-                if (oldMetal.includes('silver')) metalFamily = 'Silver';
+                // Map select values to Inventory 'Gold' or 'Silver' families
+                let metalFamily = 'Gold';
+                if (oldMetal.toLowerCase().includes('silver')) metalFamily = 'Silver';
 
                 history.push({
                     date: new Date().toISOString().split('T')[0] + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     type: 'Invoice Sale',
-                    metal: metalFamily, // Will map to 'Gold' or 'Silver' -> 'Metal' in inventory.html
+                    metal: metalFamily,
                     weight: -qty,
-                    note: 'Auto deduacted for ' + invNo
+                    note: 'Auto deducted for Invoice #' + invNo
                 });
             }
         }
@@ -1275,6 +1275,7 @@ function deductInvoiceStock() {
 
     if (hasDeductions) {
         localStorage.setItem('manti_stock_history', JSON.stringify(history));
+        if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_stock_history', history);
         __stockDeducted = true;
     }
 }
@@ -1301,29 +1302,28 @@ if (draftInvoiceBtn) {
         const soSelect = document.getElementById('so-select');
         const soId = soSelect ? soSelect.value : null;
 
-        if (!soId) {
-            alert("Please select a Buyer's Order No (SO) before saving draft.");
-            return;
-        }
+        const invNoVal = document.querySelector('input[name="inv_no"]')?.value?.trim();
+        const invKey = soId || (invNoVal ? 'INV-' + invNoVal : 'DIRECT-' + Date.now());
 
         if (typeof syncWithTemplate === 'function') syncWithTemplate();
+        if (typeof deductInvoiceStock === 'function' && !window.location.pathname.includes('quotation')) deductInvoiceStock();
 
         // Serialize and save as Draft
         const serializedData = serializeInvoiceData('Draft');
         let savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
-        // Ensure we store an array of invoices per SO
-        if (!Array.isArray(savedInvoices[soId])) {
-            savedInvoices[soId] = [];
+        if (!Array.isArray(savedInvoices[invKey])) {
+            savedInvoices[invKey] = [];
         }
-        savedInvoices[soId].push(serializedData);
+        savedInvoices[invKey].push(serializedData);
         localStorage.setItem('manti_saved_invoices', JSON.stringify(savedInvoices));
+        if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_saved_invoices', savedInvoices);
 
-        // Update cumulative invoiced weight for this SO
-        const totalWeight = calculateTotalInvoiceWeight();
-        updateSOInvoicedWeight(soId, totalWeight);
+        if (soId) {
+            const totalWeight = calculateTotalInvoiceWeight();
+            updateSOInvoicedWeight(soId, totalWeight);
+        }
 
-        alert('Invoice Saved as Draft ✅');
-        // We don't reset the form for drafts, allowing continued editing
+        alert('Invoice Saved as Draft ✅ (Inventory Stock Deducted)');
     });
 }
 
@@ -1333,41 +1333,37 @@ if (completeBtn) {
         const soSelect = document.getElementById('so-select');
         const soId = soSelect ? soSelect.value : null;
 
-        if (!soId) {
-            alert("Please select a Buyer's Order No (SO) before completing.");
-            return;
-        }
+        const invNoVal = document.querySelector('input[name="inv_no"]')?.value?.trim();
+        const invKey = soId || (invNoVal ? 'INV-' + invNoVal : 'DIRECT-' + Date.now());
 
-        if (confirm('Are you sure you want to Complete this invoice? It will be removed from the list and saved to the Production Report.')) {
+        if (confirm('Are you sure you want to Complete this invoice? Inventory stock will be deducted.')) {
             if (typeof syncWithTemplate === 'function') syncWithTemplate();
             if (typeof deductInvoiceStock === 'function') deductInvoiceStock();
 
-            // Serialize and save to Production Report
+            // Serialize and save
             const serializedData = serializeInvoiceData('Completed');
             let savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
-            // Ensure we store an array of invoices per SO
-            if (!Array.isArray(savedInvoices[soId])) {
-                savedInvoices[soId] = [];
+            if (!Array.isArray(savedInvoices[invKey])) {
+                savedInvoices[invKey] = [];
             }
-            savedInvoices[soId].push(serializedData);
+            savedInvoices[invKey].push(serializedData);
             localStorage.setItem('manti_saved_invoices', JSON.stringify(savedInvoices));
+            if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_saved_invoices', savedInvoices);
 
-            // Update cumulative invoiced weight for this SO
-            const totalWeight = calculateTotalInvoiceWeight();
-            updateSOInvoicedWeight(soId, totalWeight);
+            if (soId) {
+                const totalWeight = calculateTotalInvoiceWeight();
+                updateSOInvoicedWeight(soId, totalWeight);
+                if (typeof markSOCompleted === 'function') markSOCompleted(soId);
+            }
 
-            // Mark completed and clean up
-            if (typeof markSOCompleted === 'function') markSOCompleted(soId);
-            if (window.__pendingDespatchSoId === soId) {
+            if (window.__pendingDespatchSoId) {
                 localStorage.removeItem('manti_pending_despatch');
                 window.__pendingDespatchSoId = null;
-            } else if (typeof markSOCompleted === 'function') {
-                markSOCompleted(soId);
             }
 
-            alert('Invoice Completed & Saved to Production Report ✅');
-            invoiceForm.reset();
-            populateSODropdown();
+            alert('Invoice Completed Successfully! ✅ (Inventory Stock Deducted)');
+            if (typeof invoiceForm !== 'undefined' && invoiceForm && invoiceForm.reset) invoiceForm.reset();
+            if (typeof populateSODropdown === 'function') populateSODropdown();
         }
     });
 }
@@ -1501,6 +1497,16 @@ function serializeInvoiceData(status = 'Completed') {
     data.grandTotal = document.getElementById('grand-total').textContent;
     data.totalWords = document.getElementById('total-words').textContent;
 
+    // Handle payment status and amount paid for the report
+    const paymentStatusVal = document.getElementById('payment-status')?.value;
+    if (paymentStatusVal === 'paid') {
+        data.paymentStatus = 'Paid';
+        data.amountPaid = parseFloat(data.grandTotal.replace(/[^0-9.]/g, '')) || 0;
+    } else {
+        data.paymentStatus = 'Unpaid';
+        data.amountPaid = 0;
+    }
+
     data.bank = JSON.parse(localStorage.getItem('manti_bank_details') || '{}');
     data.footer = localStorage.getItem('manti_invoice_defaults') ? JSON.parse(localStorage.getItem('manti_invoice_defaults')).footerText : 'THANK YOU WELCOME AGAIN';
 
@@ -1577,7 +1583,19 @@ async function shareInvoice(platform) {
 
 function handleSharedInvoice(base64Data) {
     try {
-        const jsonStr = decodeURIComponent(escape(atob(base64Data)));
+        let jsonStr = '';
+        if (typeof base64Data === 'string') {
+            // Fix spaces introduced by URL parameter decoding of '+'
+            const cleaned = base64Data.trim().replace(/ /g, '+');
+            try {
+                jsonStr = decodeURIComponent(escape(atob(cleaned)));
+            } catch(e1) {
+                // Fallback attempt: try URL decoding first then atob
+                jsonStr = decodeURIComponent(escape(atob(decodeURIComponent(cleaned))));
+            }
+        } else if (typeof base64Data === 'object') {
+            jsonStr = JSON.stringify(base64Data);
+        }
         const data = JSON.parse(jsonStr);
         const urlParams = new URLSearchParams(window.location.search);
         const isEditMode = urlParams.get('edit') === 'true';
@@ -1589,7 +1607,7 @@ function handleSharedInvoice(base64Data) {
         }
 
         // Hide main app for pure viewing/printing
-        const appContainer = document.querySelector('.app-container');
+        const appContainer = document.querySelector('.app-container') || document.querySelector('.dashboard-container');
         if (appContainer) appContainer.style.display = 'none';
 
         // Add a print header bar

@@ -143,7 +143,7 @@
                 <span>Manti ERP</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="index.html" class="nav-item ">
+                <a href="index.html" class="nav-item">
                     <div class="icon"><i data-lucide="layout-dashboard"></i></div>
                     <span class="label">Dashboard</span>
                 </a>
@@ -156,7 +156,7 @@
 
                 </a>
                 
-                <div class="nav-group ">
+                <div class=\"nav-group \">
                     <div class="nav-group-header" onclick="toggleNavGroup(this)">
                         <div class="icon"><i data-lucide="box"></i></div>
                         <span class="label">Items</span>
@@ -164,18 +164,24 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="melting.html" class="nav-item nested ">Melting</a>
                         <a href="jobwork.html" class="nav-item nested ">Job Work</a>
                         <a href="design-book.html" class="nav-item nested ">Design Book</a>
-                                            <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
-</div>
+                        <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
+                    </div>
                 </div>
+
+                <a href="stock-adjustment.html" class="nav-item">
+                    <div class="icon"><i data-lucide="sliders"></i></div>
+                    <span class="label">Stock Adjustment</span>
+                </a>
 
                 <a href="assets.html" class="nav-item">
                     <div class="icon"><i data-lucide="hard-drive"></i></div>
                     <span class="label">Asset Management</span>
                 </a>
 
-                <div class="nav-group ">
+                <div class=\"nav-group \">
                     <div class="nav-group-header" onclick="toggleNavGroup(this)">
                         <div class="icon"><i data-lucide="shopping-bag"></i></div>
                         <span class="label">Sales</span>
@@ -190,7 +196,7 @@
                     </div>
                 </div>
 
-                <div class="nav-group">
+                <div class="nav-group active">
                     <div class="nav-group-header" onclick="toggleNavGroup(this)">
                         <div class="icon"><i data-lucide="shopping-cart"></i></div>
                         <span class="label">Purchases</span>
@@ -198,12 +204,12 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="purchases.html" class="nav-item nested ">Purchase Orders</a>
-                        <a href="payment-made.html" class="nav-item nested">Payments</a>
+                        <a href="payment-made.html" class="nav-item nested  active">Payments</a>
                         <a href="expenses.html" class="nav-item nested ">Expenses</a>
                     </div>
                 </div>
 
-                <div class="nav-group ">
+                <div class=\"nav-group \">
                     <div class="nav-group-header" onclick="toggleNavGroup(this)">
                         <div class="icon"><i data-lucide="briefcase"></i></div>
                         <span class="label">Accountant</span>
@@ -218,6 +224,14 @@
                 <a href="staff.html" class="nav-item">
                     <div class="icon"><i data-lucide="users"></i></div>
                     <span class="label">Staff</span>
+                </a>
+                <a href="worker-data-sheet.html" class="nav-item">
+                    <div class="icon"><i data-lucide="user-check"></i></div>
+                    <span class="label">Worker Data Sheet</span>
+                </a>
+                <a href="car.html" class="nav-item">
+                    <div class="icon"><i data-lucide="car"></i></div>
+                    <span class="label">Fleet Management</span>
                 </a>
                 <a href="reports.html" class="nav-item ">
                     <div class="icon"><i data-lucide="bar-chart-3"></i></div>
@@ -307,6 +321,7 @@
                     <div style="display: flex; gap: 20px; border-bottom: 1px solid #e2e8f0; margin: 2rem 30px 1rem; padding-bottom: 0;">
                         <button type="button" id="tab-pending" class="payment-tab active" onclick="switchPaymentTab('pending')">Payment Pending</button>
                         <button type="button" id="tab-history" class="payment-tab" onclick="switchPaymentTab('history')">Recent Payments Made</button>
+                        <button type="button" id="tab-salary" class="payment-tab" onclick="switchPaymentTab('salary')" style="color:#7c3aed;">💼 Salary Payment</button>
                     </div>
 
                     <!-- Bills Section -->
@@ -396,6 +411,125 @@
                         </table>
                     </div>
                 </div>
+                </div>
+
+                <!-- ===== SALARY PAYMENT SECTION ===== -->
+                <div id="salary-section" style="margin-top:0; padding: 1.5rem 30px 2rem; display:none;">
+                    <!-- Header -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                        <div>
+                            <h3 style="margin:0; font-size:1.15rem; color:#1e293b; font-weight:700;">💼 Staff Salary Payment</h3>
+                            <p style="margin:4px 0 0; font-size:0.82rem; color:#64748b;">Select a staff member, confirm their salary, and record payment</p>
+                        </div>
+                        <span id="sal-pay-id-display" style="background:#f3e8ff; color:#7c3aed; font-weight:700; font-size:0.82rem; padding:6px 14px; border-radius:8px; border:1px solid #ddd6fe;">SAL-0001 (Auto)</span>
+                    </div>
+
+                    <!-- Status Banner -->
+                    <div id="sal-status-banner" style="display:none; margin-bottom:1.2rem; padding:12px 16px; border-radius:10px; font-size:0.88rem; font-weight:600; box-shadow: 0 2px 4px rgba(0,0,0,0.03);"></div>
+
+                    <!-- Form Card -->
+                    <div style="background:#faf5ff; border:1px solid #ddd6fe; border-radius:14px; padding:24px; margin-bottom:2rem;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.2rem; margin-bottom:1.2rem;">
+                            <!-- Staff select -->
+                            <div>
+                                <label style="font-size:0.83rem; font-weight:600; color:#5b21b6; display:block; margin-bottom:6px;">Staff Member <span style="color:#ef4444;">*</span></label>
+                                <select id="sal-staff" class="pay-input" onchange="onSalaryStaffChange()" style="border-color:#c4b5fd;">
+                                    <option value="">-- Select Staff --</option>
+                                </select>
+                            </div>
+                            <!-- Designation (read-only) -->
+                            <div>
+                                <label style="font-size:0.83rem; font-weight:600; color:#5b21b6; display:block; margin-bottom:6px;">Designation</label>
+                                <input type="text" id="sal-designation" class="pay-input" placeholder="Auto-filled" readonly style="background:#f5f3ff; border-color:#c4b5fd;">
+                            </div>
+                            <!-- Salary Month -->
+                            <div>
+                                <label style="font-size:0.83rem; font-weight:600; color:#5b21b6; display:block; margin-bottom:6px;">Salary Month <span style="color:#ef4444;">*</span></label>
+                                <input type="month" id="sal-month" class="pay-input" onchange="onSalaryStaffChange()" style="border-color:#c4b5fd;">
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.2rem; margin-bottom:1.2rem;">
+                            <!-- Amount -->
+                            <div>
+                                <label style="font-size:0.83rem; font-weight:600; color:#5b21b6; display:block; margin-bottom:6px;">Amount (₹) <span style="color:#ef4444;">*</span></label>
+                                <input type="number" id="sal-amount" class="pay-input" placeholder="0.00" style="font-size:1.2rem; font-weight:700; color:#16a34a; border-color:#c4b5fd;">
+                            </div>
+                            <!-- Payment Mode -->
+                            <div>
+                                <label style="font-size:0.83rem; font-weight:600; color:#5b21b6; display:block; margin-bottom:6px;">Payment Mode</label>
+                                <select id="sal-mode" class="pay-input" style="border-color:#c4b5fd;">
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                    <option value="UPI">UPI</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Cheque">Cheque</option>
+                                </select>
+                            </div>
+                            <!-- Paid Through -->
+                            <div>
+                                <label style="font-size:0.83rem; font-weight:600; color:#5b21b6; display:block; margin-bottom:6px;">Paid Through</label>
+                                <select id="sal-account" class="pay-input" style="border-color:#c4b5fd;">
+                                    <option value="Cash">Petty Cash</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.2rem;">
+                            <!-- Payment Date -->
+                            <div>
+                                <label style="font-size:0.83rem; font-weight:600; color:#5b21b6; display:block; margin-bottom:6px;">Payment Date</label>
+                                <input type="date" id="sal-date" class="pay-input" style="border-color:#c4b5fd;">
+                            </div>
+                            <!-- Reference -->
+                            <div>
+                                <label style="font-size:0.83rem; font-weight:600; color:#5b21b6; display:block; margin-bottom:6px;">Reference / Transaction ID</label>
+                                <input type="text" id="sal-ref" class="pay-input" placeholder="e.g. UTR / Cheque No." style="border-color:#c4b5fd;">
+                            </div>
+                        </div>
+                        <div style="margin-top:1.2rem;">
+                            <label style="font-size:0.83rem; font-weight:600; color:#5b21b6; display:block; margin-bottom:6px;">Notes</label>
+                            <textarea id="sal-notes" class="pay-input" rows="2" placeholder="Internal notes..." style="border-color:#c4b5fd;"></textarea>
+                        </div>
+
+                        <!-- Staff bank info preview -->
+                        <div id="sal-bank-info" style="display:none; margin-top:1rem; background:#ede9fe; border-radius:8px; padding:12px; font-size:0.83rem; color:#5b21b6;">
+                            <strong>Bank / UPI Info:</strong>
+                            <span id="sal-bank-info-text"></span>
+                        </div>
+
+                        <!-- Save button -->
+                        <div style="margin-top:1.5rem; display:flex; gap:12px; justify-content:flex-end;">
+                            <button type="button" onclick="resetSalaryForm()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:8px; padding:10px 22px; font-weight:600; cursor:pointer;">Reset</button>
+                            <button type="button" onclick="saveSalaryPayment()" style="background:linear-gradient(135deg,#7c3aed,#6d28d9); color:#fff; border:none; border-radius:8px; padding:10px 28px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(124,58,237,0.3);">💾 Record Salary Payment</button>
+                        </div>
+                    </div>
+
+                    <!-- Salary Payment History -->
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                            <h3 style="margin:0; font-size:1rem; color:#1e293b; font-weight:700;">Salary Payment History</h3>
+                            <input type="text" id="search-salary-history" placeholder="Search staff / month..." oninput="filterSalaryHistory()" style="padding:6px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:0.85rem; width:240px;">
+                        </div>
+                        <div style="background:white; border-radius:12px; border:1px solid #e2e8f0; overflow:hidden;">
+                            <table class="bills-table" id="salary-history-table" data-no-filter="true" style="width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Payment ID</th>
+                                        <th>Date</th>
+                                        <th>Staff Name</th>
+                                        <th>Designation</th>
+                                        <th>Month</th>
+                                        <th>Mode</th>
+                                        <th style="text-align:right;">Amount (₹)</th>
+                                        <th style="text-align:center;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salary-history-body">
+                                    <tr><td colspan="8" style="text-align:center;color:#64748b;padding:2rem;">No salary payments recorded yet.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -488,8 +622,21 @@
             const searchParam = urlParams.get('search');
             const poParam = urlParams.get('po');
             const vendorParam = urlParams.get('vendor');
+            const tabParam = urlParams.get('tab');
+            const staffParam = urlParams.get('staffId');
 
-            if (searchParam) {
+            if (tabParam === 'salary' || staffParam) {
+                switchPaymentTab('salary');
+                if (staffParam) {
+                    setTimeout(() => {
+                        const salStaffEl = document.getElementById('sal-staff');
+                        if (salStaffEl) {
+                            salStaffEl.value = staffParam;
+                            if (window.onSalaryStaffChange) window.onSalaryStaffChange();
+                        }
+                    }, 150);
+                }
+            } else if (searchParam) {
                 switchPaymentTab('history');
                 const searchInput = document.getElementById('search-history');
                 if (searchInput) {
@@ -532,21 +679,360 @@
             sessionStorage.setItem('last_payment_tab', tab);
             const pendingSec = document.getElementById('pending-section');
             const historySec = document.getElementById('history-section');
+            const salarySec  = document.getElementById('salary-section');
             const btnPending = document.getElementById('tab-pending');
             const btnHistory = document.getElementById('tab-history');
+            const btnSalary  = document.getElementById('tab-salary');
+
+            pendingSec.style.display = 'none';
+            historySec.style.display = 'none';
+            salarySec.style.display  = 'none';
+            btnPending.classList.remove('active');
+            btnHistory.classList.remove('active');
+            if (btnSalary) btnSalary.classList.remove('active');
 
             if (tab === 'pending') {
                 pendingSec.style.display = 'block';
-                historySec.style.display = 'none';
                 btnPending.classList.add('active');
-                btnHistory.classList.remove('active');
+            } else if (tab === 'salary') {
+                salarySec.style.display = 'block';
+                if (btnSalary) btnSalary.classList.add('active');
+                initSalaryTab();
             } else {
-                pendingSec.style.display = 'none';
                 historySec.style.display = 'block';
-                btnPending.classList.remove('active');
                 btnHistory.classList.add('active');
             }
         };
+
+        // =================== SALARY PAYMENT FUNCTIONS ===================
+
+        let salaryPayments = [];
+
+        function loadSalaryPayments() {
+            salaryPayments = JSON.parse(localStorage.getItem('manti_salary_payments') || '[]');
+        }
+
+        function saveSalaryPaymentsToStorage() {
+            localStorage.setItem('manti_salary_payments', JSON.stringify(salaryPayments));
+            if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_salary_payments', salaryPayments);
+        }
+
+        function updateSalaryPayId() {
+            loadSalaryPayments();
+            let nextId = 1;
+            salaryPayments.forEach(r => {
+                if (r.id && r.id.startsWith('SAL-')) {
+                    const n = parseInt(r.id.replace('SAL-', ''), 10);
+                    if (!isNaN(n) && n >= nextId) nextId = n + 1;
+                }
+            });
+            const el = document.getElementById('sal-pay-id-display');
+            if (el) el.textContent = 'SAL-' + String(nextId).padStart(4, '0') + ' (Auto)';
+        }
+
+        function initSalaryTab() {
+            loadSalaryPayments();
+            updateSalaryPayId();
+
+            // Set today as default date and current month
+            const dateEl = document.getElementById('sal-date');
+            if (dateEl && !dateEl.value) dateEl.valueAsDate = new Date();
+            const monthEl = document.getElementById('sal-month');
+            if (monthEl && !monthEl.value) {
+                const now = new Date();
+                monthEl.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
+
+            // Populate bank accounts dropdown
+            const bankAccounts = JSON.parse(localStorage.getItem('manti_bank_accounts') || '[]');
+            const salAccEl = document.getElementById('sal-account');
+            if (salAccEl) {
+                salAccEl.innerHTML = '';
+                if (bankAccounts.length === 0) {
+                    salAccEl.innerHTML = '<option value="Cash">Petty Cash</option><option value="Bank">Bank Account</option>';
+                } else {
+                    let cashGroup = document.createElement('optgroup'); cashGroup.label = 'Cash Accounts';
+                    let bankGroup = document.createElement('optgroup'); bankGroup.label = 'Bank & Cards';
+                    bankAccounts.forEach(acc => {
+                        const opt = document.createElement('option');
+                        opt.value = acc.name;
+                        opt.textContent = `${acc.name} (${acc.type || 'Bank'})`;
+                        if (acc.type === 'Cash') cashGroup.appendChild(opt);
+                        else bankGroup.appendChild(opt);
+                    });
+                    if (bankGroup.children.length > 0) salAccEl.appendChild(bankGroup);
+                    if (cashGroup.children.length > 0) salAccEl.appendChild(cashGroup);
+                }
+            }
+
+            // Populate staff dropdown from manti_staff_records
+            const staffRecords = JSON.parse(localStorage.getItem('manti_staff_records') || '[]');
+            const salStaffEl = document.getElementById('sal-staff');
+            if (salStaffEl) {
+                const currentVal = salStaffEl.value;
+                salStaffEl.innerHTML = '<option value="">-- Select Staff --</option>';
+                staffRecords.forEach(s => {
+                    if (!s.name) return;
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = `${s.name} (${s.id || s.type || 'Staff'})`;
+                    // Robustly parse salary: handle "25000", "25,000", "₹ 25,000" etc.
+                    const rawSalary = String(s.salary || s.monthlySalary || s.addaTotalSalary || '0').replace(/[^0-9.]/g, '');
+                    opt.dataset.salary      = rawSalary || '0';
+                    opt.dataset.designation = s.designation || '';
+                    opt.dataset.bankName    = s.bankName || '';
+                    opt.dataset.bankAcc     = s.bankAcc || '';
+                    opt.dataset.bankIfsc    = s.bankIfsc || '';
+                    opt.dataset.bankUpi     = s.bankUpi || '';
+                    opt.dataset.staffName   = s.name;
+                    salStaffEl.appendChild(opt);
+                });
+                if (currentVal) salStaffEl.value = currentVal;
+                // If staff was already selected, trigger auto-fill again
+                if (currentVal) window.onSalaryStaffChange();
+            }
+
+            renderSalaryHistory();
+        }
+
+        window.onSalaryStaffChange = function() {
+            const sel = document.getElementById('sal-staff');
+            const staffId = sel.value;
+            const month = document.getElementById('sal-month')?.value || '';
+
+            // Always re-read fresh from localStorage to get latest salary data
+            const staffRecords = JSON.parse(localStorage.getItem('manti_staff_records') || '[]');
+            const staff = staffRecords.find(s => s.id === staffId || s.name === staffId);
+
+            const statusBanner = document.getElementById('sal-status-banner');
+
+            if (!staffId || !staff) {
+                document.getElementById('sal-designation').value = '';
+                document.getElementById('sal-amount').value = '';
+                document.getElementById('sal-bank-info').style.display = 'none';
+                if (statusBanner) statusBanner.style.display = 'none';
+                return;
+            }
+
+            // Populate designation
+            document.getElementById('sal-designation').value = staff.designation || '';
+
+            // Check if salary for this staff & month has already been paid
+            loadSalaryPayments();
+            const existingPmt = salaryPayments.find(p => p.staffId === staffId && p.month === month);
+
+            // Robustly parse salary — handles "25000", "25,000", "₹25,000", or number
+            const rawSalary = String(staff.salary || staff.monthlySalary || staff.addaTotalSalary || '0').replace(/[^0-9.]/g, '');
+            const salary = parseFloat(rawSalary) || 0;
+
+            const [yr, mo] = (month || '').split('-');
+            const monthLabel = mo && yr ? new Date(yr, parseInt(mo) - 1, 1).toLocaleString('en-IN', {month: 'long', year: 'numeric'}) : month;
+
+            if (existingPmt) {
+                if (statusBanner) {
+                    statusBanner.style.display = 'block';
+                    statusBanner.style.background = '#f0fdf4';
+                    statusBanner.style.border = '1px solid #86efac';
+                    statusBanner.style.color = '#15803d';
+                    const formattedDate = existingPmt.date ? new Date(existingPmt.date).toLocaleDateString('en-GB') : '-';
+                    statusBanner.innerHTML = `✅ <strong>ALREADY PAID:</strong> Salary for <strong>${staff.name}</strong> for <strong>${monthLabel}</strong> was recorded on ${formattedDate} (${existingPmt.id} — ₹ ${parseFloat(existingPmt.amount).toLocaleString('en-IN')} via ${existingPmt.account || existingPmt.mode}).`;
+                }
+                document.getElementById('sal-amount').value = '';
+                document.getElementById('sal-amount').placeholder = `Already Paid (₹ ${parseFloat(existingPmt.amount).toLocaleString('en-IN')})`;
+            } else {
+                if (statusBanner) {
+                    statusBanner.style.display = 'block';
+                    statusBanner.style.background = '#fffbeef0';
+                    statusBanner.style.border = '1px solid #fde68a';
+                    statusBanner.style.color = '#b45309';
+                    statusBanner.innerHTML = `⏳ <strong>PAYMENT PENDING:</strong> Salary for <strong>${staff.name}</strong> for <strong>${monthLabel}</strong> is pending payment (Monthly Fixed: ₹ ${salary.toLocaleString('en-IN')}).`;
+                }
+                document.getElementById('sal-amount').value = salary > 0 ? salary : '';
+                document.getElementById('sal-amount').placeholder = '0.00';
+            }
+
+            // Highlight the amount field
+            const amtEl = document.getElementById('sal-amount');
+            amtEl.style.borderColor = salary > 0 ? '#16a34a' : '#c4b5fd';
+            amtEl.style.background  = salary > 0 ? '#f0fdf4' : '';
+
+            // Show bank / UPI info
+            const parts = [];
+            if (staff.bankName) parts.push(`🏦 ${staff.bankName}`);
+            if (staff.bankAcc)  parts.push(`A/C: ${staff.bankAcc}`);
+            if (staff.bankIfsc) parts.push(`IFSC: ${staff.bankIfsc}`);
+            if (staff.bankUpi)  parts.push(`📱 UPI: ${staff.bankUpi}`);
+            const infoEl = document.getElementById('sal-bank-info');
+            const textEl = document.getElementById('sal-bank-info-text');
+            if (parts.length > 0) {
+                textEl.textContent = ' ' + parts.join('  |  ');
+                infoEl.style.display = 'block';
+            } else {
+                infoEl.style.display = 'none';
+            }
+        };
+
+        window.saveSalaryPayment = function() {
+            loadSalaryPayments();
+            const sel = document.getElementById('sal-staff');
+            const chosen = sel.options[sel.selectedIndex];
+            const staffId   = document.getElementById('sal-staff').value.trim();
+            const staffName = chosen && chosen.dataset.staffName ? chosen.dataset.staffName : staffId;
+            const month     = document.getElementById('sal-month').value.trim();
+            const amount    = parseFloat(document.getElementById('sal-amount').value) || 0;
+            const mode      = document.getElementById('sal-mode').value;
+            const account   = document.getElementById('sal-account').value;
+            const date      = document.getElementById('sal-date').value;
+            const ref       = document.getElementById('sal-ref').value.trim();
+            const notes     = document.getElementById('sal-notes').value.trim();
+            const designation = document.getElementById('sal-designation').value.trim();
+
+            if (!staffId) { alert('Please select a staff member.'); return; }
+            if (!month)   { alert('Please select a salary month.'); return; }
+            if (amount <= 0) { alert('Please enter a valid salary payment amount.'); return; }
+            if (!date)    { alert('Please select a payment date.'); return; }
+
+            // Check for duplicate payment for same staff + month
+            const duplicate = salaryPayments.find(p => p.staffId === staffId && p.month === month);
+            if (duplicate) {
+                if (!confirm(`Salary for ${staffName} for ${month} has ALREADY been recorded (${duplicate.id} - ₹ ${parseFloat(duplicate.amount).toLocaleString('en-IN')}). Do you want to record an additional payment?`)) return;
+            }
+
+            // Generate next ID
+            let nextId = 1;
+            salaryPayments.forEach(r => {
+                if (r.id && r.id.startsWith('SAL-')) {
+                    const n = parseInt(r.id.replace('SAL-', ''), 10);
+                    if (!isNaN(n) && n >= nextId) nextId = n + 1;
+                }
+            });
+            const newId = 'SAL-' + String(nextId).padStart(4, '0');
+
+            const record = {
+                id: newId,
+                staffId, staffName, designation, month,
+                amount, mode, account, date, reference: ref, notes,
+                timestamp: new Date().toISOString()
+            };
+
+            salaryPayments.push(record);
+            saveSalaryPaymentsToStorage();
+
+            // ── GENERATE JOURNAL ENTRY FOR BANKING & LEDGER ──
+            const journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+            const jvLines = [
+                {
+                    account: account, // Cash or Bank Account selected (Credit decreases bank asset balance)
+                    desc: `Salary Payment to ${staffName} (${month}) via ${mode}`,
+                    contact: staffId,
+                    debit: 0,
+                    credit: amount
+                },
+                {
+                    account: 'Salaries & Wages', // Debit expense account
+                    desc: `Salary Expense for ${staffName} (${month})`,
+                    contact: staffId,
+                    debit: amount,
+                    credit: 0
+                }
+            ];
+
+            journals.push({
+                id: newId,
+                date: date,
+                reference: ref || newId,
+                notes: notes || `Salary Payment: ${staffName} (${month})`,
+                total: amount,
+                lines: jvLines,
+                timestamp: new Date().toISOString()
+            });
+
+            localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+            if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_journal_entries', journals);
+
+            alert(`✅ Salary payment ${newId} (₹ ${amount.toLocaleString('en-IN')}) recorded successfully for ${staffName} — ${month}!\nIt has also been reflected in Banking & Ledger.`);
+            resetSalaryForm();
+            updateSalaryPayId();
+            renderSalaryHistory();
+        };
+
+        window.resetSalaryForm = function() {
+            document.getElementById('sal-staff').value = '';
+            document.getElementById('sal-designation').value = '';
+            document.getElementById('sal-amount').value = '';
+            document.getElementById('sal-ref').value = '';
+            document.getElementById('sal-notes').value = '';
+            document.getElementById('sal-bank-info').style.display = 'none';
+            const statusBanner = document.getElementById('sal-status-banner');
+            if (statusBanner) statusBanner.style.display = 'none';
+            // Reset month to current
+            const now = new Date();
+            document.getElementById('sal-month').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('sal-date').valueAsDate = new Date();
+        };
+
+        window.deleteSalaryPayment = function(salId) {
+            if (!confirm(`Delete salary payment ${salId}? This cannot be undone.`)) return;
+            loadSalaryPayments();
+            salaryPayments = salaryPayments.filter(p => p.id !== salId);
+            saveSalaryPaymentsToStorage();
+
+            // Remove associated Journal Entry from Banking & Ledger
+            let journals = JSON.parse(localStorage.getItem('manti_journal_entries') || '[]');
+            const originalLength = journals.length;
+            journals = journals.filter(j => j.id !== salId);
+            if (journals.length !== originalLength) {
+                localStorage.setItem('manti_journal_entries', JSON.stringify(journals));
+                if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_journal_entries', journals);
+            }
+
+            updateSalaryPayId();
+            renderSalaryHistory();
+            if (window.onSalaryStaffChange) window.onSalaryStaffChange();
+            alert('Salary payment deleted and removed from Banking & Ledger.');
+        };
+
+        function renderSalaryHistory() {
+            loadSalaryPayments();
+            const tbody = document.getElementById('salary-history-body');
+            if (!tbody) return;
+            const sorted = [...salaryPayments].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (sorted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:2rem;">No salary payments recorded yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            sorted.forEach(p => {
+                const [yr, mo] = (p.month || '').split('-');
+                const monthLabel = mo && yr ? new Date(yr, parseInt(mo) - 1, 1).toLocaleString('en-IN', {month: 'long', year: 'numeric'}) : (p.month || '-');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:700;color:#7c3aed;">${p.id}</td>
+                    <td>${p.date ? new Date(p.date).toLocaleDateString('en-GB') : '-'}</td>
+                    <td style="font-weight:600;color:#1f2937;">${p.staffName || '-'}</td>
+                    <td style="color:#64748b;font-size:0.85rem;">${p.designation || '-'}</td>
+                    <td><span style="background:#ede9fe;color:#5b21b6;padding:3px 10px;border-radius:12px;font-size:0.78rem;font-weight:600;">${monthLabel}</span></td>
+                    <td style="font-size:0.85rem;">${p.mode || '-'}</td>
+                    <td style="text-align:right;font-weight:700;color:#059669;">₹ ${parseFloat(p.amount || 0).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                    <td style="text-align:center;">
+                        <button onclick="deleteSalaryPayment('${p.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;" title="Delete">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.filterSalaryHistory = function() {
+            const query = document.getElementById('search-salary-history').value.toLowerCase();
+            const rows = document.querySelectorAll('#salary-history-body tr');
+            rows.forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+            });
+        };
+
+
 
         function renderPaymentsHistory() {
             const tbody = document.getElementById('payments-history-body');

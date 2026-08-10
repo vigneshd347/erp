@@ -111,7 +111,7 @@
                 <span>Manti ERP</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="index.html" class="nav-item ">
+                <a href="index.html" class="nav-item">
                     <div class="icon"><i data-lucide="layout-dashboard"></i></div>
                     <span class="label">Dashboard</span>
                 </a>
@@ -133,12 +133,16 @@
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested ">Inventory</a>
                         <a href="melting.html" class="nav-item nested ">Melting</a>
-                        <a href="stock-adjustment.html" class="nav-item nested ">Stock Adjustment</a>
                         <a href="jobwork.html" class="nav-item nested ">Job Work</a>
                         <a href="design-book.html" class="nav-item nested ">Design Book</a>
                         <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
-</div>
+                    </div>
                 </div>
+
+                <a href="stock-adjustment.html" class="nav-item">
+                    <div class="icon"><i data-lucide="sliders"></i></div>
+                    <span class="label">Stock Adjustment</span>
+                </a>
 
                 <a href="assets.html" class="nav-item">
                     <div class="icon"><i data-lucide="hard-drive"></i></div>
@@ -193,7 +197,11 @@
                     <div class="icon"><i data-lucide="user-check"></i></div>
                     <span class="label">Worker Data Sheet</span>
                 </a>
-                <a href="reports.html" class="nav-item">
+                <a href="car.html" class="nav-item">
+                    <div class="icon"><i data-lucide="car"></i></div>
+                    <span class="label">Fleet Management</span>
+                </a>
+                <a href="reports.html" class="nav-item  active">
                     <div class="icon"><i data-lucide="bar-chart-3"></i></div>
                     <span class="label">Reports</span>
                 </a>
@@ -275,6 +283,7 @@
                         <ul class="report-list">
                             <li><a class="report-link" onclick="selectReport('sales-orders', this)">Sales Orders</a></li>
                             <li><a class="report-link" onclick="selectReport('purchase-orders', this)">Purchase Orders</a></li>
+                            <li><a class="report-link" onclick="selectReport('tax-invoices', this)" style="font-weight: 700; color: #059669;"><i data-lucide="receipt" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Sales (Invoice)</a></li>
                             <li><a class="report-link" onclick="selectReport('quotations', this)"><i data-lucide="file-text" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Quotations</a></li>
                             <li><a class="report-link" onclick="selectReport('customer-orders', this)"><i data-lucide="shopping-bag" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Customer Orders</a></li>
                             <li><a class="report-link" onclick="selectReport('vendor-supplier', this)"><i data-lucide="users" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Vendor &amp; Supplier</a></li>
@@ -313,6 +322,13 @@
                         </ul>
                     </div>
                     
+                    <div class="report-group">
+                        <div class="report-group-title">Fleet &amp; Drivers</div>
+                        <ul class="report-list">
+                            <li><a href="fleet-reports.html" class="report-link" style="font-weight: 700; color: #4f46e5;"><i data-lucide="car" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Fleet &amp; Driver Master Reports</a></li>
+                            <li><a href="driver-salary.html" class="report-link"><i data-lucide="indian-rupee" style="width: 14px; margin-right: 4px; display:inline-block; vertical-align:middle;"></i>Driver Salary Management</a></li>
+                        </ul>
+                    </div>
 
                 </div>
 
@@ -512,18 +528,168 @@
             window.manti_custom_reports = JSON.parse(localStorage.getItem('manti_custom_reports')) || {};
             let currentActiveView = null; // Stores { name, baseType, columns: [{name, visible}] }
 
+            // ── Invoice Helper ──────────────────────────────────────────────
+            // Returns ONE decoded invoice per soId (latest version) from manti_saved_invoices.
+            window.getAllSavedInvoices = function() {
+                const raw = JSON.parse(localStorage.getItem('manti_saved_invoices') || '{}');
+                const result = [];
+                const parseNum = (v) => {
+                    if (v === null || v === undefined) return 0;
+                    return parseFloat(String(v).replace(/[^0-9.-]+/g, '')) || 0;
+                };
+
+                Object.entries(raw).forEach(([soId, val]) => {
+                    // Always pick the LATEST entry for display (last in array, or singular)
+                    const entries = Array.isArray(val) ? val : [val];
+                    const entry = entries[entries.length - 1];
+                    if (!entry) return;
+                    try {
+                        let decoded;
+                        if (typeof entry === 'string') {
+                            decoded = JSON.parse(decodeURIComponent(escape(atob(entry.trim().replace(/ /g, '+')))));
+                        } else {
+                            decoded = entry;
+                        }
+
+                        // Normalize numeric fields — handle "₹ 1,234.56" format
+                        decoded._soId       = soId;
+                        decoded._grandTotal = parseNum(decoded.grandTotal  || decoded.totals?.grandTotal);
+                        decoded._subTotal   = parseNum(decoded.subTotal    || decoded.totals?.subtotal);
+                        decoded._cgstTotal  = parseNum(decoded.cgstTotal   || decoded.totals?.cgstTotal || 0);
+                        decoded._sgstTotal  = parseNum(decoded.sgstTotal   || decoded.totals?.sgstTotal || 0);
+                        decoded._taxTotal   = decoded._cgstTotal + decoded._sgstTotal;
+
+                        // Paid amount — if marked Paid but amountPaid is 0, auto-fill from grandTotal
+                        const rawStatus = decoded.paymentStatus || decoded.payment_status || decoded.status || '';
+                        const isPaidStatus = rawStatus === 'Paid' || rawStatus === 'paid';
+                        let rawPaid = parseNum(decoded.amountPaid);
+                        if (isPaidStatus && rawPaid === 0) rawPaid = decoded._grandTotal;
+                        decoded._amountPaid = rawPaid;
+
+                        decoded._date       = decoded.inv_date || decoded.date || decoded.invoiceData?.date || '';
+                        decoded._invoiceNum = decoded.inv_no   || decoded.invoiceData?.invoiceNum || decoded.invoiceNum || '';
+                        decoded._customer   = decoded.bill_name || decoded.customerData?.bill_name || '';
+                        decoded._status     = isPaidStatus ? 'Paid' : (decoded._amountPaid > 0 && decoded._amountPaid < decoded._grandTotal ? 'Partial' : 'Unpaid');
+
+                        result.push(decoded);
+                    } catch(e) { /* skip corrupt entry */ }
+                });
+
+                // Also include invoices saved in manti_order_records
+                const existingSoIds = new Set(result.map(r => r._soId));
+                const allOrders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+                allOrders.forEach(o => {
+                    if (!o || existingSoIds.has(o.id)) return;
+                    
+                    const oid = String(o.id || '').toUpperCase();
+                    const otype = String(o.type || '').toUpperCase();
+
+                    // Strictly EXCLUDE Purchase Orders (POs belong to Purchases, not Sales Invoices)
+                    if (otype === 'PURCHASE ORDER' || oid.startsWith('PO-')) return;
+
+                    const isInvoiceType = otype === 'TAX INVOICE' || otype === 'INVOICE' || otype === 'SALES ORDER' || oid.startsWith('SO-') || o.invoiceNo;
+                    if (!isInvoiceType) return;
+
+                    const gt = parseNum(o.amount || o.grandTotal);
+                    const paid = parseNum(o.paidAmount);
+                    const isPaid = o.status === 'Paid' || (paid >= gt && gt > 0);
+                    result.push({
+                        _soId: o.id,
+                        _grandTotal: gt,
+                        _subTotal: parseNum(o.subtotal || o.amount),
+                        _cgstTotal: parseNum(o.cgstTotal || 0),
+                        _sgstTotal: parseNum(o.sgstTotal || 0),
+                        _taxTotal: parseNum(o.taxTotal || (parseNum(o.cgstTotal) + parseNum(o.sgstTotal))),
+                        _amountPaid: isPaid ? gt : paid,
+                        _date: o.date || '',
+                        _invoiceNum: o.invoiceNo || o.soNo || o.id,
+                        _customer: o.customer || o.bill_name || 'Walk-in Customer',
+                        _status: isPaid ? 'Paid' : (paid > 0 ? 'Partial' : 'Unpaid')
+                    });
+                });
+
+                return result;
+            };
 
 
-            // Date Filter Helper
+            // ── Invoice Link Generator ─────────────────────────────────────
+            // Safely generates an encoded URL for viewing/editing an invoice.
+            window.getInvoiceLinkUrl = function(rawEntry, isEdit = false) {
+                if (!rawEntry) return '#';
+                let entry = Array.isArray(rawEntry) ? rawEntry[rawEntry.length - 1] : rawEntry;
+                if (!entry) return '#';
+                
+                let base64Str = '';
+                if (typeof entry === 'string') {
+                    base64Str = entry;
+                } else if (typeof entry === 'object') {
+                    try {
+                        base64Str = btoa(unescape(encodeURIComponent(JSON.stringify(entry))));
+                    } catch(e) { return '#'; }
+                }
+                
+                const editParam = isEdit ? '&edit=true' : '';
+                return `create-invoice.html?data=${encodeURIComponent(base64Str)}${editParam}`;
+            };
+
+            // ── Invoice Deleter ─────────────────────────────────────────────
+            window.deleteSavedInvoice = function(soId, invoiceNum) {
+                if (!confirm(`Are you sure you want to delete invoice "${invoiceNum || soId}"?`)) return;
+
+                let savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices') || '{}');
+
+                if (savedInvoices[soId]) {
+                    const val = savedInvoices[soId];
+                    if (Array.isArray(val)) {
+                        const updated = val.filter(entry => {
+                            try {
+                                let decoded = entry;
+                                if (typeof entry === 'string') {
+                                    decoded = JSON.parse(decodeURIComponent(escape(atob(entry.trim().replace(/ /g, '+')))));
+                                }
+                                const num = decoded.inv_no || decoded.invoiceData?.invoiceNum || decoded.invoiceNum;
+                                return num !== invoiceNum;
+                            } catch(e) {
+                                return false;
+                            }
+                        });
+                        if (updated.length > 0) {
+                            savedInvoices[soId] = updated;
+                        } else {
+                            delete savedInvoices[soId];
+                        }
+                    } else {
+                        delete savedInvoices[soId];
+                    }
+
+                    localStorage.setItem('manti_saved_invoices', JSON.stringify(savedInvoices));
+                    if (window.syncKeyToSupabase) {
+                        window.syncKeyToSupabase('manti_saved_invoices', savedInvoices);
+                    }
+
+                    const activeLink = document.querySelector('.report-link.active');
+                    if (window.selectReport) {
+                        window.selectReport('tax-invoices', activeLink);
+                    }
+                }
+            };
             function isWithinDateFilter(dateString) {
                 if (!dateString) return true;
-                const yearVal = document.getElementById('report-year-filter').value;
-                const monthVal = document.getElementById('report-month-filter').value;
+                const yearVal = document.getElementById('report-year-filter')?.value || 'all';
+                const monthVal = document.getElementById('report-month-filter')?.value || 'all';
                 
-                if (yearVal === 'all') return true;
-                
-                const d = new Date(dateString);
-                if (isNaN(d.getTime())) return true;
+                if (yearVal === 'all' && monthVal === 'all') return true;
+
+                let d = null;
+                const str = String(dateString).trim();
+                const ddmmyyyy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                if (ddmmyyyy) {
+                    d = new Date(parseInt(ddmmyyyy[3], 10), parseInt(ddmmyyyy[2], 10) - 1, parseInt(ddmmyyyy[1], 10));
+                } else {
+                    d = new Date(str);
+                }
+
+                if (!d || isNaN(d.getTime())) return true;
                 
                 const dYear = d.getFullYear();
                 const dMonth = d.getMonth();
@@ -531,7 +697,7 @@
                 
                 if (yearVal === 'this_year') {
                     if (dYear !== now.getFullYear()) return false;
-                } else if (!isNaN(parseInt(yearVal))) {
+                } else if (yearVal !== 'all' && !isNaN(parseInt(yearVal))) {
                     if (dYear !== parseInt(yearVal)) return false;
                 }
                 
@@ -572,7 +738,7 @@
                 table.removeAttribute('data-no-filter');
                 if (window.attachExcelFilters) attachExcelFilters(); // Refresh filters for new content
 
-                if (type === 'tax-invoices' || type === 'sales-orders') {
+                if (type === 'tax-invoices' || type === 'sales-orders' || type === 'profit-loss' || type === 'finance-summary' || type === 'overall-valuation') {
                     searchInput.style.display = 'none';
                     table.setAttribute('data-no-filter', 'true');
                     if (window.attachExcelFilters) attachExcelFilters(); // Remove existing filter row
@@ -591,6 +757,15 @@
                     const filterYear = document.getElementById('report-year-filter').value;
                     const filterMonth = document.getElementById('report-month-filter').value;
                     const isYearlyMode = !isNaN(parseInt(filterYear)) && filterMonth === 'all';
+
+                    // Build invoice lookup: soId -> latest invoice object
+                    const soInvoiceMap = {};
+                    window.getAllSavedInvoices().forEach(inv => {
+                        const sid = inv._soId;
+                        if (!soInvoiceMap[sid] || new Date(inv._date) > new Date(soInvoiceMap[sid]._date)) {
+                            soInvoiceMap[sid] = inv;
+                        }
+                    });
                     
                     const orders = allOrders.filter(o => o.type === filterType && o.status !== 'Draft' && isWithinDateFilter(o.date));
 
@@ -607,7 +782,7 @@
                         // Map orders to months
                         let monthlyData = {};
                         for (let i = 0; i < 12; i++) {
-                            monthlyData[i] = { orders: [], count: 0, totalQty: 0 };
+                            monthlyData[i] = { orders: [], count: 0, totalQty: 0, totalAmount: 0 };
                         }
                         
                         orders.forEach(o => {
@@ -617,6 +792,9 @@
                             monthlyData[m].orders.push(o);
                             monthlyData[m].count++;
                             monthlyData[m].totalQty += parseFloat(o.qty) || 0;
+                            // Use invoice amount if available, else order amount
+                            const inv = soInvoiceMap[o.id];
+                            monthlyData[m].totalAmount += inv ? inv._grandTotal : (parseFloat(o.amount) || 0);
                         });
                         
                         // 1. Render Monthly Summary Table at the Top
@@ -629,6 +807,7 @@
                                             <th style="padding: 8px;">Month</th>
                                             <th style="padding: 8px;">Total Orders</th>
                                             <th style="padding: 8px;">Total Qty (g)</th>
+                                            <th style="padding: 8px;">Invoice Value (₹)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -636,12 +815,10 @@
                         
                         let totalYearlyOrders = 0;
                         let totalYearlyQty = 0;
+                        let totalYearlyAmount = 0;
                         
                         for (let i = 0; i < 12; i++) {
                             const data = monthlyData[i];
-                            // Only show completed/active months (where current viewing date >= this month) OR months that have data
-                            // Actually, just show all months that have data, or if it's the current year, up to current month.
-                            // To be safe and clean, we'll just render it if it has data or is past.
                             const now = new Date();
                             const isPastOrCurrentMonth = (targetYear < now.getFullYear()) || (targetYear === now.getFullYear() && i <= now.getMonth());
                             
@@ -651,10 +828,12 @@
                                         <td style="padding: 8px; font-weight: 500;">${monthNames[i]}</td>
                                         <td style="padding: 8px;">${data.count}</td>
                                         <td style="padding: 8px; font-weight: 600; color: #3b82f6;">${data.totalQty.toFixed(2)}</td>
+                                        <td style="padding: 8px; font-weight: 600; color: #059669;">₹ ${data.totalAmount.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
                                     </tr>
                                 `;
                                 totalYearlyOrders += data.count;
                                 totalYearlyQty += data.totalQty;
+                                totalYearlyAmount += data.totalAmount;
                             }
                         }
                         
@@ -663,6 +842,7 @@
                                         <td style="padding: 8px;">YEAR TOTAL</td>
                                         <td style="padding: 8px;">${totalYearlyOrders}</td>
                                         <td style="padding: 8px; color: #1d4ed8;">${totalYearlyQty.toFixed(2)}</td>
+                                        <td style="padding: 8px; color: #059669;">₹ ${totalYearlyAmount.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
                                     </tr>
                                     </tbody>
                                 </table>
@@ -670,7 +850,7 @@
                             <h3 style="margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px;">${targetYear} Detailed Transactions</h3>
                         `;
                         
-                        reportHead.innerHTML = `<tr><td colspan="7" style="padding: 0;">${summaryHtml}</td></tr>`;
+                        reportHead.innerHTML = `<tr><td colspan="8" style="padding: 0;">${summaryHtml}</td></tr>`;
                         
                         // 2. Render Grouped Transactions Below
                         let bodyHtml = '';
@@ -681,7 +861,7 @@
                             // Month Header
                             bodyHtml += `
                                 <tr style="background: #f1f5f9;">
-                                    <td colspan="7" style="padding: 12px 10px; font-weight: bold; color: #0f172a; font-size: 1.05rem; border-left: 4px solid #3b82f6;">
+                                    <td colspan="8" style="padding: 12px 10px; font-weight: bold; color: #0f172a; font-size: 1.05rem; border-left: 4px solid #3b82f6;">
                                         ${monthNames[i]} ${targetYear}
                                     </td>
                                 </tr>
@@ -692,12 +872,18 @@
                                     <td>${isSales ? 'Customer' : 'Vendor'}</td>
                                     <td>Product</td>
                                     <td>Weight/Qty</td>
+                                    <td>Invoice Value (₹)</td>
                                     <td>Remark</td>
                                 </tr>
                             `;
                             
                             // Transactions
                             data.orders.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(o => {
+                                const inv = soInvoiceMap[o.id];
+                                const invAmt = inv ? inv._grandTotal : (parseFloat(o.amount) || 0);
+                                const invBadge = inv
+                                    ? `<span style="display:inline-block;padding:2px 6px;background:#d1fae5;color:#065f46;border-radius:4px;font-size:0.78rem;font-weight:700;">Invoiced</span>`
+                                    : `<span style="display:inline-block;padding:2px 6px;background:#fef9c3;color:#92400e;border-radius:4px;font-size:0.78rem;font-weight:600;">Est.</span>`;
                                 bodyHtml += `
                                     <tr>
                                         <td>${o.id}</td>
@@ -706,6 +892,7 @@
                                         <td>${o.vendor}</td>
                                         <td>${o.product}</td>
                                         <td>${o.qty} ${o.mainMetal || ''}</td>
+                                        <td style="text-align:right;font-weight:600;color:#059669;">₹ ${invAmt.toLocaleString('en-IN',{minimumFractionDigits:2})} ${invBadge}</td>
                                         <td>${o.remark || '-'}</td>
                                     </tr>
                                 `;
@@ -715,7 +902,9 @@
                             bodyHtml += `
                                 <tr style="background: #f8fafc; font-weight: bold;">
                                     <td colspan="5" style="text-align: right; color: #475569;">${monthNames[i]} Total:</td>
-                                    <td colspan="2" style="color: #3b82f6;">${data.totalQty.toFixed(2)}</td>
+                                    <td style="color: #3b82f6;">${data.totalQty.toFixed(2)}</td>
+                                    <td style="color: #059669;">₹ ${data.totalAmount.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                    <td></td>
                                 </tr>
                             `;
                         }
@@ -724,7 +913,28 @@
 
                     } else {
                         // --- STANDARD LIST MODE ---
+                        let totalAmt = 0;
+                        orders.forEach(o => {
+                            const inv = soInvoiceMap[o.id];
+                            totalAmt += inv ? inv._grandTotal : (parseFloat(o.amount) || 0);
+                        });
                         reportHead.innerHTML = `
+                            <tr><td colspan="8" style="padding:0;border:none;">
+                                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px 16px 12px;">
+                                    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;">
+                                        <div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Total Sales Orders</div>
+                                        <div style="font-size:1.6rem;font-weight:800;color:#1f2937;">${orders.length}</div>
+                                    </div>
+                                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;">
+                                        <div style="font-size:0.7rem;font-weight:700;color:#166534;text-transform:uppercase;margin-bottom:4px;">Total Invoice Value (₹)</div>
+                                        <div style="font-size:1.6rem;font-weight:800;color:#16a34a;">₹ ${totalAmt.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                                    </div>
+                                    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;">
+                                        <div style="font-size:0.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;margin-bottom:4px;">Invoiced Orders</div>
+                                        <div style="font-size:1.6rem;font-weight:800;color:#2563eb;">${orders.filter(o => !!soInvoiceMap[o.id]).length} / ${orders.length}</div>
+                                    </div>
+                                </div>
+                            </td></tr>
                             <tr>
                                 <th>Order No.</th>
                                 <th>Date</th>
@@ -732,12 +942,18 @@
                                 <th>${isSales ? 'Customer' : 'Vendor'}</th>
                                 <th>Product</th>
                                 <th>Weight/Qty</th>
+                                <th style="text-align:right;">Invoice Value (₹)</th>
                                 <th>Remark</th>
                             </tr>
                         `;
                         
                         let bodyHtml = '';
                         orders.forEach(o => {
+                            const inv = soInvoiceMap[o.id];
+                            const invAmt = inv ? inv._grandTotal : (parseFloat(o.amount) || 0);
+                            const invBadge = inv
+                                ? `<span style="display:inline-block;padding:2px 6px;background:#d1fae5;color:#065f46;border-radius:4px;font-size:0.78rem;font-weight:700;">Invoiced</span>`
+                                : `<span style="display:inline-block;padding:2px 6px;background:#fef9c3;color:#92400e;border-radius:4px;font-size:0.78rem;font-weight:600;">Est.</span>`;
                             bodyHtml += `
                                 <tr>
                                     <td>${o.id}</td>
@@ -746,6 +962,7 @@
                                     <td>${o.vendor}</td>
                                     <td>${o.product}</td>
                                     <td>${o.qty} ${o.mainMetal || ''}</td>
+                                    <td style="text-align:right;font-weight:600;color:#059669;">₹ ${invAmt.toLocaleString('en-IN',{minimumFractionDigits:2})} ${invBadge}</td>
                                     <td>${o.remark || '-'}</td>
                                 </tr>
                             `;
@@ -1169,15 +1386,34 @@
                     const allOrders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
                     const expenses = JSON.parse(localStorage.getItem('manti_expenses')) || [];
 
-                    let totalSales = 0;
+                    let totalSalesOrders = 0;
+                    let totalInvoiceRevenue = 0;
                     let totalPurchases = 0;
                     let totalExpenses = 0;
 
+                    // Invoice revenue: sum all invoice grandTotals within date filter
+                    const allInvoices = window.getAllSavedInvoices();
+                    allInvoices.forEach(inv => {
+                        if (isWithinDateFilter(inv._date)) {
+                            totalInvoiceRevenue += inv._grandTotal;
+                        }
+                    });
+
+                    // Track which SOs have invoices
+                    const invoicedSOIds = new Set(allInvoices.map(i => i._soId));
+
+                    // Sales Orders (only un-invoiced SOs contribute their order amount as estimated revenue)
                     allOrders.filter(o => isWithinDateFilter(o.date) && o.status !== 'Cancelled' && o.status !== 'Draft').forEach(o => {
                         const amt = parseFloat(o.amount) || 0;
-                        if (o.type === 'Sales Order') totalSales += amt;
-                        else if (o.type === 'Purchase Order') totalPurchases += amt;
+                        if (o.type === 'Sales Order') {
+                            if (!invoicedSOIds.has(o.id)) totalSalesOrders += amt; // only un-invoiced SOs
+                        } else if (o.type === 'Purchase Order') {
+                            totalPurchases += amt;
+                        }
                     });
+
+                    // Total Sales = invoice revenue + un-invoiced SO estimates
+                    const totalSales = totalInvoiceRevenue + totalSalesOrders;
 
                     expenses.filter(e => isWithinDateFilter(e.date)).forEach(e => {
                         totalExpenses += parseFloat(e.amount) || 0;
@@ -1206,11 +1442,22 @@
                         </tr>
                     `;
 
+                    const invoiceRow = totalInvoiceRevenue > 0
+                        ? `<tr style="background:#f0fdf4;">
+                            <td style="padding-left:40px;font-size:0.9rem;color:#166534;"><i data-lucide="file-check" style="color:#16a34a;width:14px;margin-right:6px;vertical-align:middle;"></i> Tax Invoice Revenue</td>
+                            <td style="text-align:right;color:#16a34a;font-weight:700;">₹ ${totalInvoiceRevenue.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                           </tr>
+                           <tr style="background:#f0fdf4;">
+                            <td style="padding-left:40px;font-size:0.9rem;color:#166534;"><i data-lucide="clock" style="color:#d97706;width:14px;margin-right:6px;vertical-align:middle;"></i> Un-invoiced SO Estimates</td>
+                            <td style="text-align:right;color:#d97706;font-weight:700;">₹ ${totalSalesOrders.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                           </tr>` : '';
+
                     reportBody.innerHTML = `
                         <tr>
-                            <td style="font-weight: 600; font-size: 1.05rem;"><i data-lucide="trending-up" style="color: #10b981; width: 18px; margin-right: 8px; vertical-align: middle;"></i> Gross Sales</td>
+                            <td style="font-weight: 600; font-size: 1.05rem;"><i data-lucide="trending-up" style="color: #10b981; width: 18px; margin-right: 8px; vertical-align: middle;"></i> Gross Sales (Invoices + Estimates)</td>
                             <td style="text-align: right; font-weight: 700; color: #10b981; font-size: 1.1rem;">₹ ${totalSales.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
+                        ${invoiceRow}
                         <tr>
                             <td style="font-weight: 600; font-size: 1.05rem;"><i data-lucide="shopping-cart" style="color: #f59e0b; width: 18px; margin-right: 8px; vertical-align: middle;"></i> Purchase Orders</td>
                             <td style="text-align: right; font-weight: 700; color: #f59e0b; font-size: 1.1rem;">- ₹ ${totalPurchases.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
@@ -2064,8 +2311,11 @@
                                 const purchaseDate = new Date(ast.date);
                                 const today = new Date();
                                 const years = (today - purchaseDate) / (1000 * 60 * 60 * 24 * 365.25);
-                                if (years > 0) {
-                                    const rate = parseFloat(ast.depreciation) / 100;
+                                if (years > 0 && !isNaN(years)) {
+                                    // Parse depreciation rate — stored as plain number OR display string like "Auto (20% SV, 5 Yrs)"
+                                    const deprStr = String(ast.depreciation);
+                                    const deprMatch = deprStr.match(/(\d+(?:\.\d+)?)/);
+                                    const rate = deprMatch ? parseFloat(deprMatch[1]) / 100 : 0.20;
                                     currentVal = val * Math.pow((1 - rate), years);
                                 }
                             }
@@ -2301,8 +2551,9 @@
                                 const weight = j.status === '1. Issue' ? j.issueWt : j.receiveWt;
                                 const statusColor = j.status === '2. Receive' ? '#10b981' : '#3b82f6';
                                 const savedInvoiceData = savedInvoices[j.jobnum];
-                                const invoiceAction = savedInvoiceData
-                                    ? `<a href="create-invoice.html?data=${savedInvoiceData}" target="_blank" class="btn-text" style="font-size: 0.85rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #bae6fd; display: inline-block;">View</a>`
+                                const invoiceUrl = window.getInvoiceLinkUrl(savedInvoiceData);
+                                const invoiceAction = invoiceUrl !== '#'
+                                    ? `<a href="${invoiceUrl}" target="_blank" class="btn-text" style="font-size: 0.85rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #bae6fd; display: inline-block; text-decoration: none;">View</a>`
                                     : '-';
 
                                 bodyHtml += `
@@ -2353,16 +2604,22 @@
                             let invoiceAction = '-';
                             if (savedInvoiceData) {
                                 try {
-                                    const decoded = JSON.parse(decodeURIComponent(escape(atob(savedInvoiceData))));
-                                    const isDraft = decoded.status === 'Draft';
+                                    const entry = Array.isArray(savedInvoiceData) ? savedInvoiceData[savedInvoiceData.length - 1] : savedInvoiceData;
+                                    let decoded = entry;
+                                    if (typeof entry === 'string') {
+                                        decoded = JSON.parse(decodeURIComponent(escape(atob(entry.trim().replace(/ /g, '+')))));
+                                    }
+                                    const isDraft = decoded.status === 'Draft' || decoded.status === 'Quotation_Draft';
                                     const label = isDraft ? 'Draft (Edit)' : 'View';
                                     const bgColor = isDraft ? '#fef9c3' : '#e0f2fe';
                                     const textColor = isDraft ? '#854d0e' : '#0284c7';
                                     const borderColor = isDraft ? '#fef08a' : '#bae6fd';
+                                    const url = window.getInvoiceLinkUrl(savedInvoiceData, isDraft);
                                     
-                                    invoiceAction = `<a href="create-invoice.html?data=${savedInvoiceData}&edit=true" target="_blank" class="btn-text" style="font-size: 0.85rem; background: ${bgColor}; color: ${textColor}; padding: 4px 8px; border-radius: 4px; border: 1px solid ${borderColor}; display: inline-block; font-weight: 600;">${label}</a>`;
+                                    invoiceAction = `<a href="${url}" target="_blank" class="btn-text" style="font-size: 0.85rem; background: ${bgColor}; color: ${textColor}; padding: 4px 8px; border-radius: 4px; border: 1px solid ${borderColor}; display: inline-block; font-weight: 600; text-decoration: none;">${label}</a>`;
                                 } catch(e) {
-                                    invoiceAction = `<a href="create-invoice.html?data=${savedInvoiceData}" target="_blank" class="btn-text" style="font-size: 0.85rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #bae6fd; display: inline-block;">View</a>`;
+                                    const url = window.getInvoiceLinkUrl(savedInvoiceData);
+                                    invoiceAction = `<a href="${url}" target="_blank" class="btn-text" style="font-size: 0.85rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #bae6fd; display: inline-block; text-decoration: none;">View</a>`;
                                 }
                             }
 
@@ -2396,17 +2653,34 @@
                     const assets = JSON.parse(localStorage.getItem('manti_assets')) || [];
 
                     let revenue = 0;
+                    let invoiceRevenue = 0;
                     let cogs = 0;
                     let opExpenses = 0;
                     let depreciation = 0;
                     let scrapRevenue = 0;
 
+                    // Use actual invoice amounts as primary revenue source
+                    const plInvoices = window.getAllSavedInvoices();
+                    const invoicedSOIds = new Set(plInvoices.map(i => i._soId));
+                    plInvoices.forEach(inv => {
+                        if (isWithinDateFilter(inv._date)) {
+                            invoiceRevenue += inv._grandTotal;
+                        }
+                    });
+
                     orders.forEach(o => {
                         if (o.status === 'Cancelled' || !isWithinDateFilter(o.date)) return;
                         const amt = parseFloat(o.amount) || 0;
-                        if (o.type === 'Sales Order') revenue += amt;
-                        else if (o.type === 'Purchase Order') cogs += amt;
+                        if (o.type === 'Sales Order') {
+                            // Only include un-invoiced SOs as estimated revenue
+                            if (!invoicedSOIds.has(o.id)) revenue += amt;
+                        } else if (o.type === 'Purchase Order') {
+                            cogs += amt;
+                        }
                     });
+
+                    // Total revenue = invoiced amount + un-invoiced SO estimates
+                    revenue += invoiceRevenue;
 
                     // Calculate Operating Expenses from Journals (Debit to Expense Accounts)
                     const expenseAccountNames = [
@@ -2451,8 +2725,11 @@
                             const purchaseDate = new Date(ast.date);
                             const today = new Date();
                             const years = (today - purchaseDate) / (1000 * 60 * 60 * 24 * 365.25);
-                            if (years > 0) {
-                                const rate = parseFloat(ast.depreciation) / 100;
+                            if (years > 0 && !isNaN(years)) {
+                                // Parse depreciation rate — stored as plain number OR display string like "Auto (20% SV, 5 Yrs)"
+                                const deprStr = String(ast.depreciation);
+                                const deprMatch = deprStr.match(/(\d+(?:\.\d+)?)/);
+                                const rate = deprMatch ? parseFloat(deprMatch[1]) / 100 : 0.20;
                                 const currentVal = val * Math.pow((1 - rate), years);
                                 depreciation += (val - currentVal); // Total depreciation since purchase
                             }
@@ -2474,14 +2751,25 @@
                         </tr>`;
                     }
 
+                    const invRevenueRow = invoiceRevenue > 0
+                        ? `<tr style="background:#f0fdf4;">
+                            <td style="padding-left:50px;font-size:0.88rem;color:#166534;">↳ Tax Invoice Revenue</td>
+                            <td style="text-align:right;color:#16a34a;font-weight:700;">${invoiceRevenue.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                           </tr>
+                           <tr style="background:#fefce8;">
+                            <td style="padding-left:50px;font-size:0.88rem;color:#92400e;">↳ Un-invoiced SO Estimates</td>
+                            <td style="text-align:right;color:#d97706;font-weight:700;">${(revenue - invoiceRevenue).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                           </tr>` : '';
+
                     reportBody.innerHTML = `
                         <tr style="background: #f8fafc; font-weight: 700;">
                             <td colspan="2">INCOME</td>
                         </tr>
                         <tr>
-                            <td style="padding-left: 30px;">Sales Revenue (Sales Orders)</td>
+                            <td style="padding-left: 30px;">Sales Revenue (Invoiced + Estimates)</td>
                             <td style="text-align: right;">${revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
                         </tr>
+                        ${invRevenueRow}
                         ${scrapHtml}
                         <tr style="border-top: 2px solid #e5e7eb; font-weight: 700; background: #f1f5f9;">
                             <td>Total Income (A)</td>
@@ -2577,7 +2865,13 @@
                             let val = parseFloat(ast.value) || 0;
                             if (ast.depreciation && ast.date) {
                                 const years = (new Date() - new Date(ast.date)) / (1000 * 60 * 60 * 24 * 365.25);
-                                if (years > 0) val = val * Math.pow((1 - parseFloat(ast.depreciation)/100), years);
+                                if (years > 0 && !isNaN(years)) {
+                                    // Parse depreciation rate — stored as plain number OR display string like "Auto (20% SV, 5 Yrs)"
+                                    const deprStr = String(ast.depreciation);
+                                    const deprMatch = deprStr.match(/(\d+(?:\.\d+)?)/);
+                                    const rate = deprMatch ? parseFloat(deprMatch[1]) / 100 : 0.20;
+                                    val = val * Math.pow((1 - rate), years);
+                                }
                             }
                             totalAssets += val;
                         }
@@ -2608,14 +2902,11 @@
                     if (pureGoldQty  > 0) totalInv += pureGoldQty   * pureGoldRate;
                     if (pureSilverQty> 0) totalInv += pureSilverQty * pureSilverRate;
 
-                    // 4. Accounts Receivable (Unpaid Invoices)
-                    const invoices = JSON.parse(localStorage.getItem('manti_saved_invoices')) || {};
+                    // 4. Accounts Receivable (Unpaid Invoices) - use getAllSavedInvoices helper for proper decoding
                     let totalReceivables = 0;
-                    Object.values(invoices).forEach(inv => {
-                        if (inv.paymentStatus !== 'Paid') {
-                            const total = parseFloat(inv.grandTotal) || 0;
-                            const paid = parseFloat(inv.amountPaid) || 0;
-                            totalReceivables += (total - paid);
+                    window.getAllSavedInvoices().forEach(inv => {
+                        if (inv._status !== 'Paid') {
+                            totalReceivables += Math.max(0, inv._grandTotal - inv._amountPaid);
                         }
                     });
 
@@ -2921,7 +3212,313 @@
                         reportBody.innerHTML = bodyHtml;
                     }
                 }
-                
+
+                else if (type === 'tax-invoices') {
+                    const filterYear = document.getElementById('report-year-filter').value;
+                    const filterMonth = document.getElementById('report-month-filter').value;
+                    const isYearlyMode = !isNaN(parseInt(filterYear)) && filterMonth === 'all';
+                    const targetYear = parseInt(filterYear);
+
+                    reportTitle.textContent = isYearlyMode
+                        ? `${targetYear} Yearly Sales (Invoice) Report`
+                        : `Sales (Invoice) Report`;
+                    document.getElementById('report-subtitle').textContent = new Date().toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
+
+                    searchInput.style.display = 'none';
+                    document.getElementById('report-table').setAttribute('data-no-filter', 'true');
+
+                    const allInv = window.getAllSavedInvoices().filter(inv => isWithinDateFilter(inv._date));
+                    allInv.sort((a, b) => new Date(b._date) - new Date(a._date));
+
+                    const totalCount      = allInv.length;
+                    const totalValue      = allInv.reduce((s, i) => s + i._grandTotal, 0);
+                    const totalTax        = allInv.reduce((s, i) => s + i._taxTotal, 0);
+                    const totalSubtotal   = allInv.reduce((s, i) => s + i._subTotal, 0);
+                    const totalCollected  = allInv.reduce((s, i) => s + i._amountPaid, 0);
+                    const totalOutstanding = allInv.reduce((s, i) => s + Math.max(0, i._grandTotal - i._amountPaid), 0);
+                    const paidCount       = allInv.filter(i => i._status === 'Paid').length;
+                    const unpaidCount     = totalCount - paidCount;
+                    const collectionRate  = totalValue > 0 ? ((totalCollected / totalValue) * 100).toFixed(1) : '0.0';
+
+                    // ── KPI Cards ──────────────────────────────────────────────────
+                    const kpiHtml = `
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;padding:18px 18px 6px;">
+                            <div style="background:linear-gradient(135deg,#f8fafc,#fff);border:1px solid #e5e7eb;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                                <div style="font-size:0.65rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Total Invoices</div>
+                                <div style="font-size:1.8rem;font-weight:800;color:#111827;">${totalCount}</div>
+                                <div style="font-size:0.72rem;color:#6b7280;margin-top:4px;">${paidCount} paid · ${unpaidCount} unpaid</div>
+                            </div>
+                            <div style="background:linear-gradient(135deg,#f0fdf4,#fff);border:1px solid #bbf7d0;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                                <div style="font-size:0.65rem;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Total Sales Value</div>
+                                <div style="font-size:1.45rem;font-weight:800;color:#16a34a;">₹ ${totalValue.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                                <div style="font-size:0.72rem;color:#166534;margin-top:4px;">Subtotal: ₹ ${totalSubtotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                            </div>
+                            <div style="background:linear-gradient(135deg,#fefce8,#fff);border:1px solid #fde68a;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                                <div style="font-size:0.65rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Tax Collected (GST)</div>
+                                <div style="font-size:1.45rem;font-weight:800;color:#d97706;">₹ ${totalTax.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                                <div style="font-size:0.72rem;color:#92400e;margin-top:4px;">CGST + SGST combined</div>
+                            </div>
+                            <div style="background:linear-gradient(135deg,#eff6ff,#fff);border:1px solid #bfdbfe;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                                <div style="font-size:0.65rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Amount Received</div>
+                                <div style="font-size:1.45rem;font-weight:800;color:#2563eb;">₹ ${totalCollected.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                                <div style="font-size:0.72rem;color:#1d4ed8;margin-top:4px;">Collection Rate: ${collectionRate}%</div>
+                            </div>
+                            <div style="background:linear-gradient(135deg,#fef2f2,#fff);border:1px solid #fecaca;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                                <div style="font-size:0.65rem;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Outstanding Due</div>
+                                <div style="font-size:1.45rem;font-weight:800;color:#dc2626;">₹ ${totalOutstanding.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+                                <div style="font-size:0.72rem;color:#991b1b;margin-top:4px;">${unpaidCount} invoices pending</div>
+                            </div>
+                        </div>
+                    `;
+
+                    // ── Customer-wise Summary ──────────────────────────────────────
+                    const custMap = {};
+                    allInv.forEach(inv => {
+                        const name = inv._customer || 'Walk-in / Unknown';
+                        if (!custMap[name]) custMap[name] = { name, count: 0, total: 0, tax: 0, paid: 0, due: 0 };
+                        custMap[name].count++;
+                        custMap[name].total += inv._grandTotal;
+                        custMap[name].tax   += inv._taxTotal;
+                        custMap[name].paid  += inv._amountPaid;
+                        custMap[name].due   += Math.max(0, inv._grandTotal - inv._amountPaid);
+                    });
+                    const custArr = Object.values(custMap).sort((a, b) => b.total - a.total);
+
+                    let custSummaryHtml = '';
+                    if (custArr.length > 0) {
+                        custSummaryHtml = `
+                            <div style="margin:0 18px 14px;background:#f8fafc;padding:16px;border-radius:10px;border:1px solid #e2e8f0;">
+                                <h3 style="margin:0 0 10px;color:#1e293b;font-size:1rem;font-weight:700;border-bottom:2px solid #cbd5e1;padding-bottom:6px;">
+                                    <span style="color:#059669;">▎</span> Customer-wise Sales Summary
+                                </h3>
+                                <table width="100%" data-no-filter="true" style="border-collapse:collapse;text-align:left;font-size:0.85rem;">
+                                    <thead><tr style="border-bottom:2px solid #cbd5e1;color:#475569;">
+                                        <th style="padding:8px;">Customer</th>
+                                        <th style="padding:8px;text-align:center;">Invoices</th>
+                                        <th style="padding:8px;text-align:right;">Total Value (₹)</th>
+                                        <th style="padding:8px;text-align:right;">Tax (₹)</th>
+                                        <th style="padding:8px;text-align:right;">Received (₹)</th>
+                                        <th style="padding:8px;text-align:right;">Balance Due (₹)</th>
+                                    </tr></thead>
+                                    <tbody>`;
+                        custArr.forEach(c => {
+                            const dueBg = c.due > 0 ? 'color:#dc2626;font-weight:700;' : 'color:#16a34a;font-weight:600;';
+                            custSummaryHtml += `<tr style="border-bottom:1px solid #e2e8f0;">
+                                <td style="padding:8px;font-weight:600;color:#1f2937;">${c.name}</td>
+                                <td style="padding:8px;text-align:center;">${c.count}</td>
+                                <td style="padding:8px;text-align:right;font-weight:600;color:#059669;">₹ ${c.total.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="padding:8px;text-align:right;color:#d97706;">₹ ${c.tax.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="padding:8px;text-align:right;color:#2563eb;font-weight:600;">₹ ${c.paid.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="padding:8px;text-align:right;${dueBg}">₹ ${c.due.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                            </tr>`;
+                        });
+                        custSummaryHtml += `<tr style="background:#e2e8f0;font-weight:bold;">
+                                <td style="padding:8px;">TOTAL (${custArr.length} customers)</td>
+                                <td style="padding:8px;text-align:center;">${totalCount}</td>
+                                <td style="padding:8px;text-align:right;color:#059669;">₹ ${totalValue.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="padding:8px;text-align:right;color:#d97706;">₹ ${totalTax.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="padding:8px;text-align:right;color:#2563eb;">₹ ${totalCollected.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="padding:8px;text-align:right;color:#dc2626;">₹ ${totalOutstanding.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                            </tr></tbody></table>
+                            </div>
+                        `;
+                    }
+
+                    if (allInv.length === 0) {
+                        reportHead.innerHTML = `<tr><td colspan="11" style="padding:0;border:none;">${kpiHtml}</td></tr>`;
+                        reportBody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:48px;color:#9ca3af;">No invoices found for this period. Create invoices from the Create Invoice page.</td></tr>`;
+                    } else if (isYearlyMode) {
+                        // ── Yearly Mode ──────────────────────────────────────────
+                        const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+                        let monthlyData = {};
+                        for (let i = 0; i < 12; i++) {
+                            monthlyData[i] = { invs: [], count: 0, total: 0, tax: 0, paid: 0 };
+                        }
+                        allInv.forEach(inv => {
+                            const d = new Date(inv._date);
+                            if (isNaN(d.getTime())) return;
+                            const m = d.getMonth();
+                            monthlyData[m].invs.push(inv);
+                            monthlyData[m].count++;
+                            monthlyData[m].total += inv._grandTotal;
+                            monthlyData[m].tax   += inv._taxTotal;
+                            monthlyData[m].paid  += inv._amountPaid;
+                        });
+
+                        let summaryHtml = `
+                            <div style="margin:0 18px 14px;background:#f8fafc;padding:16px;border-radius:10px;border:1px solid #e2e8f0;">
+                                <h3 style="margin:0 0 10px;color:#1e293b;font-size:1rem;font-weight:700;border-bottom:2px solid #cbd5e1;padding-bottom:6px;">
+                                    <span style="color:#3b82f6;">▎</span> ${targetYear} Monthly Sales Summary
+                                </h3>
+                                <table width="100%" data-no-filter="true" style="border-collapse:collapse;text-align:left;font-size:0.85rem;">
+                                    <thead><tr style="border-bottom:2px solid #cbd5e1;color:#475569;">
+                                        <th style="padding:8px;">Month</th>
+                                        <th style="padding:8px;text-align:center;">Invoices</th>
+                                        <th style="padding:8px;text-align:right;">Sales Value (₹)</th>
+                                        <th style="padding:8px;text-align:right;">Tax (₹)</th>
+                                        <th style="padding:8px;text-align:right;">Received (₹)</th>
+                                    </tr></thead>
+                                    <tbody>
+                        `;
+                        let tyCount = 0, tyTotal = 0, tyTax = 0, tyPaid = 0;
+                        const now = new Date();
+                        for (let i = 0; i < 12; i++) {
+                            const d = monthlyData[i];
+                            const past = (targetYear < now.getFullYear()) || (targetYear === now.getFullYear() && i <= now.getMonth());
+                            if (past || d.count > 0) {
+                                summaryHtml += `<tr style="border-bottom:1px solid #e2e8f0;">
+                                    <td style="padding:8px;font-weight:500;">${monthNames[i]}</td>
+                                    <td style="padding:8px;text-align:center;">${d.count}</td>
+                                    <td style="padding:8px;text-align:right;font-weight:600;color:#059669;">₹ ${d.total.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                    <td style="padding:8px;text-align:right;color:#d97706;">₹ ${d.tax.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                    <td style="padding:8px;text-align:right;color:#2563eb;">₹ ${d.paid.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                </tr>`;
+                                tyCount += d.count; tyTotal += d.total; tyTax += d.tax; tyPaid += d.paid;
+                            }
+                        }
+                        summaryHtml += `<tr style="background:#e2e8f0;font-weight:bold;">
+                            <td style="padding:8px;">YEAR TOTAL</td>
+                            <td style="padding:8px;text-align:center;">${tyCount}</td>
+                            <td style="padding:8px;text-align:right;color:#059669;">₹ ${tyTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                            <td style="padding:8px;text-align:right;color:#d97706;">₹ ${tyTax.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                            <td style="padding:8px;text-align:right;color:#2563eb;">₹ ${tyPaid.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                        </tr></tbody></table></div>
+                        `;
+
+                        reportHead.innerHTML = `<tr><td colspan="11" style="padding:0;border:none;">${kpiHtml}${custSummaryHtml}${summaryHtml}
+                            <div style="padding:0 18px 6px;"><h3 style="margin:0 0 10px;color:#1e293b;font-size:1rem;font-weight:700;border-bottom:2px solid #cbd5e1;padding-bottom:6px;">
+                                <span style="color:#8b5cf6;">▎</span> ${targetYear} Invoice-wise Details
+                            </h3></div></td></tr>
+                            <tr style="background:#f8fafc;font-size:0.82rem;color:#475569;font-weight:600;">
+                                <td style="padding:10px 8px;">Invoice No.</td><td style="padding:10px 8px;">Date</td><td style="padding:10px 8px;">Customer</td><td style="padding:10px 8px;">SO Ref</td>
+                                <td style="text-align:right;padding:10px 8px;">Subtotal (₹)</td>
+                                <td style="text-align:right;padding:10px 8px;">Tax GST (₹)</td>
+                                <td style="text-align:right;padding:10px 8px;">Grand Total (₹)</td>
+                                <td style="text-align:right;padding:10px 8px;">Received (₹)</td>
+                                <td style="text-align:right;padding:10px 8px;">Balance (₹)</td>
+                                <td style="text-align:center;padding:10px 8px;">Status</td>
+                                <td style="text-align:center;padding:10px 8px;">Action</td>
+                            </tr>`;
+
+                        const rawStore = JSON.parse(localStorage.getItem('manti_saved_invoices') || '{}');
+                        let bodyHtml = '';
+                        for (let i = 0; i < 12; i++) {
+                            const d = monthlyData[i];
+                            if (d.count === 0) continue;
+                            bodyHtml += `<tr style="background:#f1f5f9;"><td colspan="11" style="padding:10px 12px;font-weight:bold;color:#0f172a;font-size:0.95rem;border-left:4px solid #059669;">${monthNames[i]} ${targetYear} <span style="font-weight:400;color:#64748b;font-size:0.8rem;margin-left:8px;">(${d.count} invoices — ₹ ${d.total.toLocaleString('en-IN',{minimumFractionDigits:2})})</span></td></tr>`;
+                            d.invs.sort((a, b) => new Date(a._date) - new Date(b._date)).forEach(inv => {
+                                const isPaid = inv._status === 'Paid';
+                                const isPartial = inv._status === 'Partial';
+                                const balance = Math.max(0, inv._grandTotal - inv._amountPaid);
+                                const statusBadge = isPaid
+                                    ? `<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;">✓ Paid</span>`
+                                    : isPartial
+                                        ? `<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;">Partial</span>`
+                                        : `<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;">Unpaid</span>`;
+                                const rawEntries = rawStore[inv._soId];
+                                const url = window.getInvoiceLinkUrl(rawEntries);
+                                const viewBtn = url !== '#'
+                                    ? `<button type="button" onclick="event.stopPropagation(); window.openInvoiceModal('${url}')" style="font-size:0.78rem;background:#e0f2fe;color:#0284c7;padding:4px 10px;border-radius:6px;border:1px solid #bae6fd;font-weight:600;text-decoration:none;cursor:pointer;">View</button>`
+                                    : '-';
+                                const markPaidBtn = !isPaid 
+                                    ? `<button type="button" onclick="event.stopPropagation(); window.markInvoicePaid('${inv._soId}')" style="font-size:0.75rem;background:#d1fae5;color:#065f46;padding:4px 8px;border-radius:6px;border:1px solid #6ee7b7;font-weight:700;cursor:pointer;" title="Mark as Paid">Paid ✓</button>`
+                                    : '';
+                                const delBtn = `<button type="button" onclick="event.stopPropagation(); deleteSavedInvoice('${inv._soId}', '${inv._invoiceNum}')" style="font-size:0.75rem;background:#fee2e2;color:#dc2626;padding:4px 8px;border-radius:6px;border:1px solid #fca5a5;font-weight:700;cursor:pointer;" title="Delete Invoice">🗑️</button>`;
+                                bodyHtml += `<tr style="border-bottom:1px solid #f3f4f6;">
+                                    <td style="padding:10px 8px;font-weight:700;color:#059669;">${inv._invoiceNum || '-'}</td>
+                                    <td style="padding:10px 8px;color:#374151;">${inv._date || '-'}</td>
+                                    <td style="padding:10px 8px;font-weight:600;color:#1f2937;">${inv._customer || '-'}</td>
+                                    <td style="padding:10px 8px;color:#6b7280;font-size:0.83rem;">${inv._soId || '-'}</td>
+                                    <td style="text-align:right;padding:10px 8px;">₹ ${inv._subTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                    <td style="text-align:right;padding:10px 8px;color:#d97706;font-size:0.88rem;">₹ ${inv._taxTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                    <td style="text-align:right;padding:10px 8px;font-weight:700;color:#059669;">₹ ${inv._grandTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                    <td style="text-align:right;padding:10px 8px;font-weight:600;color:#2563eb;">₹ ${inv._amountPaid.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                    <td style="text-align:right;padding:10px 8px;font-weight:600;color:${balance > 0 ? '#dc2626' : '#16a34a'};">₹ ${balance.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                    <td style="text-align:center;padding:10px 8px;">${statusBadge}</td>
+                                    <td style="text-align:center;padding:10px 8px;"><div style="display:flex;gap:4px;justify-content:center;align-items:center;">${markPaidBtn}${viewBtn}${delBtn}</div></td>
+                                </tr>`;
+                            });
+                            bodyHtml += `<tr style="background:#f8fafc;font-weight:bold;border-top:1px solid #e5e7eb;">
+                                <td colspan="4" style="text-align:right;color:#475569;padding:10px 8px;">${monthNames[i]} Total:</td>
+                                <td style="text-align:right;padding:10px 8px;">&#8377; ${d.invs.reduce((s,inv)=>s+inv._subTotal,0).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="text-align:right;padding:10px 8px;color:#d97706;">&#8377; ${d.invs.reduce((s,inv)=>s+inv._taxTotal,0).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="text-align:right;padding:10px 8px;color:#059669;">&#8377; ${d.total.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="text-align:right;padding:10px 8px;color:#2563eb;">&#8377; ${d.paid.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="text-align:right;padding:10px 8px;color:#dc2626;">&#8377; ${d.invs.reduce((s,inv)=>s+Math.max(0,inv._grandTotal-inv._amountPaid),0).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td colspan="2"></td>
+                            </tr>`;
+                        }
+                        reportBody.innerHTML = bodyHtml;
+
+                    } else {
+                        // ── Standard List Mode ───────────────────────────────────
+                        reportHead.innerHTML = `
+                            <tr><td colspan="11" style="padding:0;border:none;">${kpiHtml}${custSummaryHtml}
+                                <div style="padding:0 18px 6px;"><h3 style="margin:0 0 10px;color:#1e293b;font-size:1rem;font-weight:700;border-bottom:2px solid #cbd5e1;padding-bottom:6px;">
+                                    <span style="color:#8b5cf6;">▎</span> Invoice Details
+                                </h3></div>
+                            </td></tr>
+                            <tr style="background:#f8fafc;font-size:0.82rem;color:#475569;font-weight:600;">
+                                <th style="padding:10px 8px;">Invoice No.</th><th style="padding:10px 8px;">Date</th><th style="padding:10px 8px;">Customer</th><th style="padding:10px 8px;">SO Ref</th>
+                                <th style="text-align:right;padding:10px 8px;">Subtotal (₹)</th>
+                                <th style="text-align:right;padding:10px 8px;">Tax GST (₹)</th>
+                                <th style="text-align:right;padding:10px 8px;">Grand Total (₹)</th>
+                                <th style="text-align:right;padding:10px 8px;">Received (₹)</th>
+                                <th style="text-align:right;padding:10px 8px;">Balance (₹)</th>
+                                <th style="text-align:center;padding:10px 8px;">Status</th>
+                                <th style="text-align:center;padding:10px 8px;">Action</th>
+                            </tr>`;
+
+                        const rawInvoiceStore = JSON.parse(localStorage.getItem('manti_saved_invoices') || '{}');
+                        let bodyHtml = '';
+                        allInv.forEach(inv => {
+                            const isPaid = inv._status === 'Paid';
+                            const isPartial = inv._status === 'Partial';
+                            const balance = Math.max(0, inv._grandTotal - inv._amountPaid);
+                            const statusBadge = isPaid
+                                ? `<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;">✓ Paid</span>`
+                                : isPartial
+                                    ? `<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;">Partial</span>`
+                                    : `<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;">Unpaid</span>`;
+                            const rawEntries = rawInvoiceStore[inv._soId];
+                            const url = window.getInvoiceLinkUrl(rawEntries);
+                            const viewBtn = url !== '#'
+                                ? `<button type="button" onclick="event.stopPropagation(); window.openInvoiceModal('${url}')" style="font-size:0.78rem;background:#e0f2fe;color:#0284c7;padding:4px 10px;border-radius:6px;border:1px solid #bae6fd;font-weight:600;text-decoration:none;cursor:pointer;">View</button>`
+                                : '-';
+                            const markPaidBtn = !isPaid 
+                                ? `<button type="button" onclick="event.stopPropagation(); window.markInvoicePaid('${inv._soId}')" style="font-size:0.75rem;background:#d1fae5;color:#065f46;padding:4px 8px;border-radius:6px;border:1px solid #6ee7b7;font-weight:700;cursor:pointer;" title="Mark as Paid">Paid ✓</button>`
+                                : '';
+                            const delBtn = `<button type="button" onclick="event.stopPropagation(); deleteSavedInvoice('${inv._soId}', '${inv._invoiceNum}')" style="font-size:0.75rem;background:#fee2e2;color:#dc2626;padding:4px 8px;border-radius:6px;border:1px solid #fca5a5;font-weight:700;cursor:pointer;" title="Delete Invoice">🗑️</button>`;
+                            bodyHtml += `<tr style="border-bottom:1px solid #f3f4f6;">
+                                <td style="padding:10px 8px;font-weight:700;color:#059669;">${inv._invoiceNum || '-'}</td>
+                                <td style="padding:10px 8px;color:#374151;">${inv._date || '-'}</td>
+                                <td style="padding:10px 8px;font-weight:600;color:#1f2937;">${inv._customer || '-'}</td>
+                                <td style="padding:10px 8px;color:#6b7280;font-size:0.83rem;">${inv._soId || '-'}</td>
+                                <td style="text-align:right;padding:10px 8px;">₹ ${inv._subTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="text-align:right;padding:10px 8px;color:#d97706;font-size:0.88rem;">₹ ${inv._taxTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="text-align:right;padding:10px 8px;font-weight:700;color:#059669;">₹ ${inv._grandTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="text-align:right;padding:10px 8px;font-weight:600;color:#2563eb;">₹ ${inv._amountPaid.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="text-align:right;padding:10px 8px;font-weight:600;color:${balance > 0 ? '#dc2626' : '#16a34a'};">₹ ${balance.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                                <td style="text-align:center;padding:10px 8px;">${statusBadge}</td>
+                                <td style="text-align:center;padding:10px 8px;"><div style="display:flex;gap:4px;justify-content:center;align-items:center;">${markPaidBtn}${viewBtn}${delBtn}</div></td>
+                            </tr>`;
+                        });
+
+                        // Grand total row
+                        bodyHtml += `<tr style="background:#f0fdf4;border-top:2px solid #059669;font-weight:bold;">
+                            <td colspan="4" style="text-align:right;color:#374151;padding:14px 8px;font-size:0.95rem;">Grand Total (${totalCount} invoices):</td>
+                            <td style="text-align:right;padding:14px 8px;">₹ ${totalSubtotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                            <td style="text-align:right;padding:14px 8px;color:#d97706;">₹ ${totalTax.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                            <td style="text-align:right;padding:14px 8px;color:#059669;font-size:1.05rem;">₹ ${totalValue.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                            <td style="text-align:right;padding:14px 8px;color:#2563eb;">₹ ${totalCollected.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                            <td style="text-align:right;padding:14px 8px;color:#dc2626;">₹ ${totalOutstanding.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                            <td colspan="2"></td>
+                        </tr>`;
+                        reportBody.innerHTML = bodyHtml;
+                    }
+                    if (window.lucide) window.lucide.createIcons();
+                }
+
                 let genericTitle = 'Report';
                 if(type === 'sales-orders') genericTitle = 'Sales Orders Report';
                 if(type === 'purchase-orders') genericTitle = 'Purchase Orders Report';
@@ -2938,6 +3535,7 @@
                 if(type === 'quotations') genericTitle = 'Quotations Report';
                 if(type === 'customer-orders') genericTitle = 'Customer Orders Report';
                 if(type === 'profit-loss') genericTitle = 'Profit & Loss Statement';
+                if(type === 'tax-invoices') genericTitle = 'Sales (Invoice) Report';
                 
                 if (currentActiveView && currentActiveView.name) {
                     genericTitle = currentActiveView.name + ' (' + genericTitle + ')';
@@ -3401,12 +3999,78 @@
     </div>
 </div>
 
+<!-- ===== Invoice PDF Preview Modal ===== -->
+<div id="invoice-pdf-modal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(15,23,42,0.88); backdrop-filter:blur(6px); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
+    <div style="width:100%; max-width:1100px; background:#fff; border-radius:16px; box-shadow:0 25px 60px rgba(0,0,0,0.4); overflow:hidden; display:flex; flex-direction:column; max-height:96vh;">
+        <!-- Header -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; background:linear-gradient(135deg,#059669,#10b981); color:#fff;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span id="invoice-pdf-modal-title" style="font-weight:700; font-size:1rem;">Invoice Preview</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="document.getElementById('invoice-pdf-iframe').contentWindow.print()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:8px; padding:6px 14px; font-size:0.82rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    Print
+                </button>
+                <button onclick="closeInvoicePdfModal()" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:8px; padding:6px 12px; font-size:1.1rem; font-weight:700; cursor:pointer; line-height:1;">✕</button>
+            </div>
+        </div>
+        <!-- Body -->
+        <div style="flex:1; overflow:hidden; background:#f8fafc; min-height:300px; display:flex;">
+            <iframe id="invoice-pdf-iframe" src="" style="width:100%; height:82vh; border:none;"></iframe>
+        </div>
+    </div>
+</div>
+
 <style>
 @keyframes cospin { 100% { transform:rotate(360deg); } }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
+    window.openInvoiceModal = function(url) {
+        const modal = document.getElementById('invoice-pdf-modal');
+        const iframe = document.getElementById('invoice-pdf-iframe');
+        iframe.src = url;
+        modal.style.display = 'flex';
+    };
+
+    window.closeInvoicePdfModal = function() {
+        const modal = document.getElementById('invoice-pdf-modal');
+        const iframe = document.getElementById('invoice-pdf-iframe');
+        modal.style.display = 'none';
+        iframe.src = '';
+    };
+
+    window.markInvoicePaid = function(soId) {
+        if (!confirm('Are you sure you want to mark this invoice as Paid?')) return;
+        let savedInvoices = JSON.parse(localStorage.getItem('manti_saved_invoices') || '{}');
+        if (savedInvoices[soId]) {
+            const entries = Array.isArray(savedInvoices[soId]) ? savedInvoices[soId] : [savedInvoices[soId]];
+            let lastEntry = entries[entries.length - 1];
+            let decoded;
+            if (typeof lastEntry === 'string') {
+                decoded = JSON.parse(decodeURIComponent(escape(atob(lastEntry))));
+            } else {
+                decoded = lastEntry;
+            }
+            
+            decoded.paymentStatus = 'Paid';
+            decoded.amountPaid = parseFloat(String(decoded.grandTotal || decoded.totals?.grandTotal || '0').replace(/[^0-9.]/g, '')) || 0;
+            
+            const newEntry = btoa(unescape(encodeURIComponent(JSON.stringify(decoded))));
+            entries.push(newEntry);
+            savedInvoices[soId] = entries;
+            localStorage.setItem('manti_saved_invoices', JSON.stringify(savedInvoices));
+            if (window.syncKeyToSupabase) window.syncKeyToSupabase('manti_saved_invoices', savedInvoices);
+            window.location.reload();
+        }
+    };
+
+    // Close invoice modal on backdrop click
+    document.getElementById('invoice-pdf-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeInvoicePdfModal();
+    });
+
     // Current order being previewed
     window._currentPreviewOrder = null;
 

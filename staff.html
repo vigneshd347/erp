@@ -26,7 +26,7 @@
                 <span>Manti ERP</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="index.html" class="nav-item ">
+                <a href="index.html" class="nav-item">
                     <div class="icon"><i data-lucide="layout-dashboard"></i></div>
                     <span class="label">Dashboard</span>
                 </a>
@@ -47,11 +47,17 @@
                     </div>
                     <div class="nav-group-content">
                         <a href="inventory.html" class="nav-item nested ">Inventory</a>
+                        <a href="melting.html" class="nav-item nested ">Melting</a>
                         <a href="jobwork.html" class="nav-item nested ">Job Work</a>
                         <a href="design-book.html" class="nav-item nested ">Design Book</a>
-                                            <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
-</div>
+                        <a href="tree-making.html" class="nav-item nested ">Tree Making</a>
+                    </div>
                 </div>
+
+                <a href="stock-adjustment.html" class="nav-item">
+                    <div class="icon"><i data-lucide="sliders"></i></div>
+                    <span class="label">Stock Adjustment</span>
+                </a>
 
                 <a href="assets.html" class="nav-item">
                     <div class="icon"><i data-lucide="hard-drive"></i></div>
@@ -98,13 +104,17 @@
                     </div>
                 </div>
                 
-                <a href="staff.html" class="nav-item">
+                <a href="staff.html" class="nav-item active">
                     <div class="icon"><i data-lucide="users"></i></div>
                     <span class="label">Staff</span>
                 </a>
                 <a href="worker-data-sheet.html" class="nav-item">
                     <div class="icon"><i data-lucide="user-check"></i></div>
                     <span class="label">Worker Data Sheet</span>
+                </a>
+                <a href="car.html" class="nav-item">
+                    <div class="icon"><i data-lucide="car"></i></div>
+                    <span class="label">Fleet Management</span>
                 </a>
                 <a href="reports.html" class="nav-item ">
                     <div class="icon"><i data-lucide="bar-chart-3"></i></div>
@@ -420,6 +430,7 @@
                             <th>Contact</th>
                             <th>Salary</th>
                             <th>Docs & Remarks</th>
+                            <th width="120">Salary Status</th>
                             <th width="80">Action</th>
                         </tr>
                     </thead>
@@ -747,9 +758,14 @@
             function renderTable() {
                 tbody.innerHTML = '';
                 if (records.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">No staff records found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">No staff records found.</td></tr>';
                     return;
                 }
+
+                const salaryPmts = JSON.parse(localStorage.getItem('manti_salary_payments') || '[]');
+                const now = new Date();
+                const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                const currentMonthName = now.toLocaleString('en-IN', { month: 'short', year: 'numeric' });
 
                 records.forEach((rec, index) => {
                     let color = 'var(--primary)'; // Staff
@@ -763,6 +779,21 @@
                     
                     let docsHtml = docsBadges.length > 0 ? docsBadges.join('') : '<span style="color: #9ca3af; font-size: 0.75rem;">No Docs</span>';
                     let remarksHtml = rec.remarks ? `<div style="font-size: 0.8rem; color: #6b7280; margin-top: 4px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${rec.remarks.replace(/"/g, '&quot;')}"><i data-lucide="file-text" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:2px;"></i>${rec.remarks}</div>` : '';
+
+                    // Calculate current month salary status
+                    const paidRecord = salaryPmts.find(p => (p.staffId === rec.id || p.staffName === rec.name) && p.month === currentMonth);
+                    let salStatusHtml = '';
+                    if (paidRecord) {
+                        salStatusHtml = `
+                            <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-block;">✅ Paid (${currentMonthName})</span>
+                            <div style="margin-top: 2px;"><a href="payment-made.html?tab=salary&staffId=${encodeURIComponent(rec.id)}" style="font-size: 0.72rem; color: #7c3aed; font-weight: 600; text-decoration: none;">View / Add</a></div>
+                        `;
+                    } else {
+                        salStatusHtml = `
+                            <span style="background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-block;">⏳ Pending</span>
+                            <div style="margin-top: 4px;"><a href="payment-made.html?tab=salary&staffId=${encodeURIComponent(rec.id)}" style="background: #7c3aed; color: #ffffff; padding: 3px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; text-decoration: none; display: inline-block; box-shadow: 0 2px 4px rgba(124,58,237,0.2);">Pay Salary</a></div>
+                        `;
+                    }
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -787,6 +818,9 @@
                         <td style="line-height: 1.4; text-align: left;">
                             <div>${docsHtml}</div>
                             ${remarksHtml}
+                        </td>
+                        <td>
+                            ${salStatusHtml}
                         </td>
                         <td style="display: flex; gap: 10px; align-items: center; justify-content: center; height: 100%;">
                             <button onclick="editRecord(${index})" class="btn-edit" title="Edit">

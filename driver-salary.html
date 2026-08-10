@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manti ERP - Driver Salary</title>
+    <link rel="stylesheet" href="style.css?v=18">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body{background:#f1f5f9;}
+        .salary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;}
+        .stat-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:14px;}
+        .stat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+        .stat-label{font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:4px;}
+        .stat-value{font-size:1.3rem;font-weight:800;color:#1e293b;}
+        .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
+        .form-group{display:flex;flex-direction:column;gap:5px;}
+        .form-group label{font-size:0.8rem;font-weight:600;color:#475569;}
+        .form-group input,.form-group select,.form-group textarea{padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.9rem;outline:none;background:#fff;color:#1e293b;font-family:Inter,sans-serif;transition:border-color 0.2s;}
+        .form-group input:focus,.form-group select:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.1);}
+        .pay-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;}
+        .pay-paid{background:#dcfce7;color:#15803d;} .pay-partial{background:#fef9c3;color:#92400e;}
+        .pay-pending{background:#fee2e2;color:#b91c1c;} .pay-advance{background:#e0f2fe;color:#0369a1;}
+        .btn-action-sm{padding:6px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
+        .btn-sm-primary{background:#6366f1;color:#fff;} .btn-sm-danger{background:#fee2e2;color:#b91c1c;}
+        .section-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:22px;margin-bottom:24px;}
+        .section-card h2{font-size:1rem;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:8px;margin:0 0 18px;}
+        .breakdown-box{background:linear-gradient(135deg,#f8fafc,#eef2ff);border:1px solid #c7d2fe;border-radius:12px;padding:16px 20px;margin-top:14px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;}
+        .breakdown-item{text-align:center;flex:1;min-width:100px;}
+        .bi-label{font-size:0.75rem;color:#64748b;font-weight:600;}
+        .bi-value{font-size:1.1rem;font-weight:800;margin-top:4px;}
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+        .modal-overlay.active{display:flex;}
+        .premium-modal{background:#fff;border-radius:16px;width:100%;max-width:520px;box-shadow:0 20px 60px -10px rgba(0,0,0,0.35);overflow:hidden;}
+        .premium-modal-header{padding:18px 24px;display:flex;justify-content:space-between;align-items:center;}
+        .premium-modal-body{padding:24px;max-height:70vh;overflow-y:auto;}
+        .car-status-badge{padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;}
+        .status-active{background:#dcfce7;color:#15803d;} .status-inactive{background:#fee2e2;color:#b91c1c;}
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <aside class="sidebar" id="sidebar-container"></aside>
+    <main class="main-content" style="flex:1;overflow-y:auto;padding:24px;background:#f1f5f9;">
+        <header class="dashboard-header header-flex" style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+            <div>
+                <h1 style="font-size:1.4rem;font-weight:800;color:#1f2937;margin:0;">Driver Salary Management</h1>
+                <p style="font-size:0.85rem;color:#6b7280;margin-top:4px;">Process monthly salary, advances, deductions, and bonuses.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <a href="fleet-reports.html" class="quick-btn outline" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:600;background:#fff;border:1px solid #d1d5db;color:#374151;font-size:0.85rem;">
+                    <i data-lucide="bar-chart-3" style="width:16px;height:16px;"></i> Fleet Reports
+                </a>
+                <a href="car.html" class="quick-btn outline" style="display:flex;align-items:center;gap:8px;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:600;background:#6366f1;color:#fff;font-size:0.85rem;">
+                    <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Fleet Management
+                </a>
+            </div>
+        </header>
+        <div class="salary-grid">
+            <div class="stat-card"><div class="stat-icon" style="background:#e0e7ff;">&#128104;</div><div><div class="stat-label">Total Drivers</div><div class="stat-value" id="stat-total-drivers">0</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:#dcfce7;">&#128176;</div><div><div class="stat-label">This Month Paid</div><div class="stat-value" id="stat-month-paid">&#8377;0</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:#fef9c3;">&#9203;</div><div><div class="stat-label">Pending Payments</div><div class="stat-value" id="stat-pending">0</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:#fee2e2;">&#127974;</div><div><div class="stat-label">Total Payroll/Month</div><div class="stat-value" id="stat-total-payroll">&#8377;0</div></div></div>
+        </div>
+        <div class="section-card">
+            <h2><i data-lucide="indian-rupee" style="color:#6366f1;width:20px;height:20px;"></i> Process Salary / Advance Payment</h2>
+            <form id="salary-form" onsubmit="processSalary(event)">
+                <div class="form-grid" style="margin-bottom:16px;">
+                    <div class="form-group"><label>Select Driver *</label><select id="sal-driver" required onchange="onDriverSelect()"><option value="">-- Select Driver --</option></select></div>
+                    <div class="form-group"><label>Month &amp; Year *</label><input type="month" id="sal-month" required></div>
+                    <div class="form-group"><label>Payment Type *</label><select id="sal-type" onchange="updateBreakdown()"><option value="Salary">Monthly Salary</option><option value="Advance">Advance Payment</option><option value="Bonus">Bonus / Incentive</option><option value="Partial">Partial Payment</option></select></div>
+                </div>
+                <div id="driver-info-box" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin-bottom:16px;">
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.85rem;color:#475569;">
+                        <span>Vehicle: <strong id="info-vehicle" style="color:#4f46e5;">-</strong></span>
+                        <span>Fuel: <strong id="info-fuel" style="color:#059669;">-</strong></span>
+                        <span>Join Date: <strong id="info-join">-</strong></span>
+                        <span>Base Salary: <strong id="info-base" style="color:#1e293b;">-</strong></span>
+                    </div>
+                </div>
+                <div class="form-grid" style="margin-bottom:16px;">
+                    <div class="form-group"><label>Base Monthly Salary (&#8377;)</label><input type="number" id="sal-base" placeholder="e.g. 18000" step="100" oninput="updateBreakdown()"></div>
+                    <div class="form-group"><label>Advance Deduction (&#8377;)</label><input type="number" id="sal-deduct" placeholder="e.g. 2000" step="100" value="0" oninput="updateBreakdown()"></div>
+                    <div class="form-group"><label>Bonus / Allowance (&#8377;)</label><input type="number" id="sal-bonus" placeholder="e.g. 500" step="100" value="0" oninput="updateBreakdown()"></div>
+                    <div class="form-group"><label>Amount Paid Now (&#8377;) *</label><input type="number" id="sal-amount" required placeholder="Actual payment" step="100" oninput="updateBreakdown()"></div>
+                </div>
+                <div class="breakdown-box">
+                    <div class="breakdown-item"><div class="bi-label">Base Salary</div><div class="bi-value" id="bd-base" style="color:#1e293b;">&#8377;0</div></div>
+                    <div style="font-size:1.2rem;color:#94a3b8;">&#8722;</div>
+                    <div class="breakdown-item"><div class="bi-label">Deduction</div><div class="bi-value" id="bd-deduct" style="color:#dc2626;">&#8377;0</div></div>
+                    <div style="font-size:1.2rem;color:#94a3b8;">+</div>
+                    <div class="breakdown-item"><div class="bi-label">Bonus</div><div class="bi-value" id="bd-bonus" style="color:#16a34a;">&#8377;0</div></div>
+                    <div style="font-size:1.5rem;color:#94a3b8;">=</div>
+                    <div class="breakdown-item"><div class="bi-label">Net Payable</div><div class="bi-value" id="bd-net" style="color:#6366f1;font-size:1.4rem;">&#8377;0</div></div>
+                    <div style="font-size:1.5rem;color:#94a3b8;">&#8594;</div>
+                    <div class="breakdown-item"><div class="bi-label">Paying Now</div><div class="bi-value" id="bd-paid" style="color:#059669;font-size:1.4rem;">&#8377;0</div></div>
+                </div>
+                <div class="form-grid" style="margin-top:16px;">
+                    <div class="form-group"><label>Payment Mode</label><select id="sal-mode"><option value="Cash">Cash</option><option value="Bank Transfer">Bank Transfer</option><option value="UPI">UPI</option><option value="Cheque">Cheque</option></select></div>
+                    <div class="form-group"><label>Reference / UTR No.</label><input type="text" id="sal-ref" placeholder="Bank UTR / Cheque no."></div>
+                    <div class="form-group" style="grid-column:span 2;"><label>Remarks / Notes</label><input type="text" id="sal-remarks" placeholder="Optional notes"></div>
+                </div>
+                <div style="margin-top:20px;display:flex;gap:12px;justify-content:flex-end;">
+                    <button type="button" onclick="resetForm()" style="padding:10px 20px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;font-weight:600;">Clear</button>
+                    <button type="submit" style="padding:10px 24px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;cursor:pointer;font-weight:700;font-size:0.95rem;display:flex;align-items:center;gap:8px;"><i data-lucide="check-circle" style="width:16px;height:16px;"></i> Record Payment</button>
+                </div>
+            </form>
+        </div>
+        <div class="section-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+                <h2 style="margin:0;"><i data-lucide="list" style="color:#6366f1;width:20px;height:20px;"></i> Salary Payment Records</h2>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <select id="filter-driver" onchange="renderRecords()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;outline:none;background:#fff;"><option value="">All Drivers</option></select>
+                    <input type="month" id="filter-month" onchange="renderRecords()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;outline:none;">
+                    <button onclick="clearFilters()" style="padding:8px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;background:#fff;cursor:pointer;color:#64748b;font-weight:600;">Clear</button>
+                </div>
+            </div>
+            <div class="dash-table-wrap">
+                <table class="dash-table" style="width:100%;border-collapse:collapse;">
+                    <thead><tr><th>Date</th><th>Driver</th><th>Vehicle</th><th>Month</th><th>Type</th><th>Base (&#8377;)</th><th>Deduction (&#8377;)</th><th>Bonus (&#8377;)</th><th>Net (&#8377;)</th><th>Paid (&#8377;)</th><th>Mode</th><th>Status</th><th style="text-align:center;">Action</th></tr></thead>
+                    <tbody id="salary-records"></tbody>
+                </table>
+            </div>
+            <div id="no-records" style="text-align:center;color:#94a3b8;padding:40px;display:none;"><p style="margin:0;font-size:0.9rem;">No salary records found.</p></div>
+        </div>
+        <div class="section-card">
+            <h2><i data-lucide="users" style="color:#6366f1;width:20px;height:20px;"></i> Driver-wise Salary Summary</h2>
+            <div id="driver-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
+            <div id="no-drivers" style="text-align:center;color:#94a3b8;padding:30px;display:none;"><p>No drivers registered yet. <a href="car.html" style="color:#6366f1;">Register a driver</a> first.</p></div>
+        </div>
+    </main>
+</div>
+<div id="record-modal" class="modal-overlay">
+    <div class="premium-modal">
+        <div class="premium-modal-header" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;">
+            <h2 style="color:#fff;margin:0;font-size:1.1rem;display:flex;align-items:center;gap:8px;"><i data-lucide="file-text"></i> Payment Detail</h2>
+            <button onclick="closeModal()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;">&times;</button>
+        </div>
+        <div class="premium-modal-body" id="modal-body"></div>
+    </div>
+</div>
+<script src="script.js?v=24"></script>
+<script>
+var allDrivers=[],allRecords=[];
+document.addEventListener("DOMContentLoaded",function(){
+    var sb=document.querySelector(".sidebar");
+    if(sb)document.getElementById("sidebar-container").innerHTML=sb.innerHTML;
+    var now=new Date();
+    document.getElementById("sal-month").value=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+    loadAll();
+    if(window.lucide)lucide.createIcons();
+});
+function loadAll(){
+    allDrivers=JSON.parse(localStorage.getItem("manti_drivers")||"[]");
+    allDrivers.forEach(function(d){ if(!d.status) d.status = "Active"; });
+    allRecords=JSON.parse(localStorage.getItem("manti_salary_records")||"[]");
+    var cars=JSON.parse(localStorage.getItem("manti_cars")||"[]");
+    var ds=document.getElementById("sal-driver"),fd=document.getElementById("filter-driver");
+    ds.innerHTML="<option value=''>-- Select Driver --</option>";
+    fd.innerHTML="<option value=''>All Drivers</option>";
+    allDrivers.filter(function(d){return d.status!=="Suspended";}).forEach(function(d){
+        ds.innerHTML+="<option value='" +d.phone+"'>" +d.name+" ("+d.phone+")</option>";
+    });
+    allDrivers.forEach(function(d){fd.innerHTML+="<option value='" +d.phone+"'>" +d.name+"</option>";});
+    updateStats();renderRecords();renderCards(cars);
+}
+function onDriverSelect(){
+    var ph=document.getElementById("sal-driver").value,box=document.getElementById("driver-info-box");
+    if(!ph){box.style.display="none";return;}
+    var d=allDrivers.find(function(x){return x.phone===ph;});
+    if(!d){box.style.display="none";return;}
+    box.style.display="block";
+    document.getElementById("info-vehicle").textContent=d.car||"Unassigned";
+    document.getElementById("info-join").textContent=d.joinDate||"-";
+    var cars=JSON.parse(localStorage.getItem("manti_cars")||"[]"),fl="-";
+    if(d.car){var c=cars.find(function(x){return x.reg===d.car;});if(c)fl=c.fuel||"-";}
+    document.getElementById("info-fuel").textContent=fl;
+    var base=d.monthlySalary||0;
+    document.getElementById("info-base").textContent=base?"₹"+parseFloat(base).toLocaleString("en-IN"):"Not set";
+    if(base){document.getElementById("sal-base").value=base;updateBreakdown();}
+}
+function updateBreakdown(){
+    var base=parseFloat(document.getElementById("sal-base").value)||0;
+    var deduct=parseFloat(document.getElementById("sal-deduct").value)||0;
+    var bonus=parseFloat(document.getElementById("sal-bonus").value)||0;
+    var paid=parseFloat(document.getElementById("sal-amount").value)||0;
+    var net=Math.max(0,base-deduct+bonus);
+    document.getElementById("bd-base").textContent="₹"+base.toLocaleString("en-IN");
+    document.getElementById("bd-deduct").textContent="₹"+deduct.toLocaleString("en-IN");
+    document.getElementById("bd-bonus").textContent="₹"+bonus.toLocaleString("en-IN");
+    document.getElementById("bd-net").textContent="₹"+net.toLocaleString("en-IN");
+    document.getElementById("bd-paid").textContent="₹"+paid.toLocaleString("en-IN");
+}
+function processSalary(e){
+    e.preventDefault();
+    var ph=document.getElementById("sal-driver").value;
+    var d=allDrivers.find(function(x){return x.phone===ph;});
+    if(!d)return;
+    var month=document.getElementById("sal-month").value;
+    var type=document.getElementById("sal-type").value;
+    var base=parseFloat(document.getElementById("sal-base").value)||0;
+    var deduct=parseFloat(document.getElementById("sal-deduct").value)||0;
+    var bonus=parseFloat(document.getElementById("sal-bonus").value)||0;
+    var amount=parseFloat(document.getElementById("sal-amount").value)||0;
+    var mode=document.getElementById("sal-mode").value;
+    var ref=document.getElementById("sal-ref").value.trim();
+    var remarks=document.getElementById("sal-remarks").value.trim();
+    if(!amount||amount<=0){alert("Please enter a valid payment amount.");return;}
+    var net=Math.max(0,base-deduct+bonus);
+    var status="Paid";
+    if(type==="Advance")status="Advance";
+    else if(amount<net&&net>0)status="Partial";
+    var rec={id:Date.now().toString(),date:new Date().toISOString(),driverPhone:ph,driverName:d.name,vehicleReg:d.car||"",month:month,type:type,baseSalary:base,advanceDeduction:deduct,bonus:bonus,netPayable:net,amountPaid:amount,paymentMode:mode,referenceNo:ref,remarks:remarks,status:status};
+    var recs=JSON.parse(localStorage.getItem("manti_salary_records")||"[]");
+    recs.unshift(rec);localStorage.setItem("manti_salary_records",JSON.stringify(recs));
+    toast("✓ Payment recorded!","#10b981");
+    document.getElementById("salary-form").reset();resetForm();loadAll();
+}
+function resetForm(){
+    document.getElementById("driver-info-box").style.display="none";
+    ["bd-base","bd-deduct","bd-bonus","bd-net","bd-paid"].forEach(function(id){document.getElementById(id).textContent="₹0";});
+    var now=new Date();
+    document.getElementById("sal-month").value=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+}
+function updateStats(){
+    var now=new Date();
+    var cur=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+    var mr=allRecords.filter(function(r){return r.month===cur&&r.type!=="Advance";});
+    var mp=mr.reduce(function(s,r){return s+(r.amountPaid||0);},0);
+    var active=allDrivers.filter(function(d){return d.status==="Active";});
+    var paid=new Set(mr.filter(function(r){return r.status==="Paid";}).map(function(r){return r.driverPhone;}));
+    var pending=active.filter(function(d){return !paid.has(d.phone);}).length;
+    var payroll=active.reduce(function(s,d){return s+(parseFloat(d.monthlySalary)||0);},0);
+    document.getElementById("stat-total-drivers").textContent=allDrivers.length;
+    document.getElementById("stat-month-paid").textContent="₹"+mp.toLocaleString("en-IN");
+    document.getElementById("stat-pending").textContent=pending;
+    document.getElementById("stat-total-payroll").textContent="₹"+payroll.toLocaleString("en-IN");
+}
+function renderRecords(){
+    var fp=document.getElementById("filter-driver").value;
+    var fm=document.getElementById("filter-month").value;
+    var recs=JSON.parse(localStorage.getItem("manti_salary_records")||"[]");
+    if(fp)recs=recs.filter(function(r){return r.driverPhone===fp;});
+    if(fm)recs=recs.filter(function(r){return r.month===fm;});
+    var tb=document.getElementById("salary-records"),nr=document.getElementById("no-records");
+    tb.innerHTML="";
+    if(recs.length===0){nr.style.display="block";return;}
+    nr.style.display="none";
+    recs.forEach(function(r){
+        var bg=r.status==="Paid"?"pay-paid":r.status==="Advance"?"pay-advance":r.status==="Partial"?"pay-partial":"pay-pending";
+        tb.innerHTML+="<tr><td>"+new Date(r.date).toLocaleDateString("en-IN")+"</td><td style='font-weight:700;'>" +r.driverName+"</td><td style='color:#4f46e5;font-weight:600;'>" +(r.vehicleReg||"-")+"</td><td>"+r.month+"</td><td><span class='pay-badge pay-advance' style='font-size:0.72rem;'>" +r.type+"</span></td><td>₹" +(r.baseSalary||0).toLocaleString("en-IN")+"</td><td style='color:#dc2626;'>₹" +(r.advanceDeduction||0).toLocaleString("en-IN")+"</td><td style='color:#16a34a;'>₹" +(r.bonus||0).toLocaleString("en-IN")+"</td><td style='font-weight:700;color:#6366f1;'>₹" +(r.netPayable||0).toLocaleString("en-IN")+"</td><td style='font-weight:800;color:#059669;'>₹" +(r.amountPaid||0).toLocaleString("en-IN")+"</td><td>"+r.paymentMode+"</td><td><span class='pay-badge "+bg+"'>" +r.status+"</span></td><td style='text-align:center;'><div style='display:flex;gap:6px;justify-content:center;'><button class='btn-action-sm btn-sm-primary' onclick='viewRecord(\"" +r.id+"\")'><i data-lucide='eye' style='width:13px;height:13px;'></i></button><button class='btn-action-sm btn-sm-danger' onclick='delRecord(\"" +r.id+"\")'><i data-lucide='trash-2' style='width:13px;height:13px;'></i></button></div></td></tr>";
+    });
+    if(window.lucide)lucide.createIcons();
+}
+function renderCards(cars){
+    var cont=document.getElementById("driver-cards"),nd=document.getElementById("no-drivers");
+    cont.innerHTML="";
+    if(allDrivers.length===0){nd.style.display="block";return;}
+    nd.style.display="none";
+    var now=new Date(),cur=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+    allDrivers.forEach(function(driver){
+        var dr=allRecords.filter(function(r){return r.driverPhone===driver.phone;});
+        var total=dr.reduce(function(s,r){return s+(r.amountPaid||0);},0);
+        var adv=dr.filter(function(r){return r.type==="Advance";}).reduce(function(s,r){return s+(r.amountPaid||0);},0);
+        var tm=dr.filter(function(r){return r.month===cur&&r.type!=="Advance";});
+        var tmp=tm.reduce(function(s,r){return s+(r.amountPaid||0);},0);
+        var base=parseFloat(driver.monthlySalary)||0;
+        var hasPaid=tm.some(function(r){return r.status==="Paid";});
+        var sc=driver.status==="Active"?"status-active":"status-inactive";
+        cont.innerHTML+="<div style='background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;position:relative;overflow:hidden;'><div style='position:absolute;top:0;left:0;right:0;height:4px;background:"+(driver.status==="Active"?"linear-gradient(90deg,#6366f1,#10b981)":"#94a3b8")+";'>" +"</div><div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;'><div><div style='font-weight:800;font-size:1rem;color:#1e293b;'>" +driver.name+"</div><div style='font-size:0.78rem;color:#64748b;margin-top:2px;'>" +driver.phone+" &bull; "+(driver.car||"No vehicle")+"</div></div><span class='car-status-badge "+sc+"' style='font-size:0.7rem;'>" +driver.status+"</span></div><div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.82rem;margin-bottom:14px;'><div><div style='color:#64748b;'>Base Salary</div><div style='font-weight:700;color:#1e293b;'>" +(base?"₹"+base.toLocaleString("en-IN"):"Not set")+"</div></div><div><div style='color:#64748b;'>This Month Paid</div><div style='font-weight:700;color:#059669;'>₹"+tmp.toLocaleString("en-IN")+"</div></div><div><div style='color:#64748b;'>Total Paid</div><div style='font-weight:700;color:#4f46e5;'>₹"+total.toLocaleString("en-IN")+"</div></div><div><div style='color:#64748b;'>Advances</div><div style='font-weight:700;color:#dc2626;'>₹"+adv.toLocaleString("en-IN")+"</div></div></div><div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap;'><span style='font-size:0.75rem;padding:3px 10px;border-radius:20px;font-weight:700;"+(hasPaid?"background:#dcfce7;color:#15803d;":"background:#fef9c3;color:#92400e;")+ "'>"+(hasPaid?"✓ Paid this month":"⏳ Pending")+"</span><button class='btn-action-sm btn-sm-primary' onclick='quickPay(\"" +driver.phone+"\")'  style='font-size:0.75rem;padding:4px 10px;'><i data-lucide='plus' style='width:12px;height:12px;'></i> Pay Now</button></div></div>";
+    });
+    if(window.lucide)lucide.createIcons();
+}
+function quickPay(ph){
+    document.getElementById("sal-driver").value=ph;
+    onDriverSelect();
+    document.getElementById("salary-form").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function viewRecord(id){
+    var recs=JSON.parse(localStorage.getItem("manti_salary_records")||"[]");
+    var r=recs.find(function(x){return x.id===id;});if(!r)return;
+    var bg=r.status==="Paid"?"pay-paid":r.status==="Advance"?"pay-advance":r.status==="Partial"?"pay-partial":"pay-pending";
+    document.getElementById("modal-body").innerHTML="<div style='margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e2e8f0;'><div style='font-size:1.1rem;font-weight:800;color:#1e293b;'>" +r.driverName+"</div><div style='font-size:0.82rem;color:#64748b;margin-top:4px;'>" +r.driverPhone+" &bull; "+( r.vehicleReg||"Unassigned")+"</div></div><div style='display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:0.85rem;margin-bottom:16px;'><div><strong style='color:#64748b;'>Date</strong><br>"+new Date(r.date).toLocaleString("en-IN")+"</div><div><strong style='color:#64748b;'>Month</strong><br>"+r.month+"</div><div><strong style='color:#64748b;'>Type</strong><br>"+r.type+"</div><div><strong style='color:#64748b;'>Status</strong><br><span class='pay-badge "+bg+"'>" +r.status+"</span></div><div><strong style='color:#64748b;'>Base Salary</strong><br>₹"+(r.baseSalary||0).toLocaleString("en-IN")+"</div><div><strong style='color:#64748b;'>Deduction</strong><br><span style='color:#dc2626;'>₹"+(r.advanceDeduction||0).toLocaleString("en-IN")+"</span></div><div><strong style='color:#64748b;'>Bonus</strong><br><span style='color:#16a34a;'>₹"+(r.bonus||0).toLocaleString("en-IN")+"</span></div><div><strong style='color:#64748b;'>Net Payable</strong><br><span style='font-weight:800;color:#6366f1;'>₹"+(r.netPayable||0).toLocaleString("en-IN")+"</span></div><div><strong style='color:#64748b;'>Amount Paid</strong><br><span style='font-weight:800;color:#059669;font-size:1.1rem;'>₹"+(r.amountPaid||0).toLocaleString("en-IN")+"</span></div><div><strong style='color:#64748b;'>Mode</strong><br>"+r.paymentMode+"</div></div>"+(r.referenceNo?"<div style='margin-bottom:10px;font-size:0.85rem;'><strong style='color:#64748b;'>Ref/UTR:</strong> "+r.referenceNo+"</div>":"")+( r.remarks?"<div style='margin-bottom:10px;font-size:0.85rem;'><strong style='color:#64748b;'>Remarks:</strong> "+r.remarks+"</div>":"")+"<div style='margin-top:16px;text-align:right;'><button onclick='closeModal()' style='padding:8px 20px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;font-weight:600;'>Close</button></div>";
+    document.getElementById("record-modal").classList.add("active");
+    if(window.lucide)lucide.createIcons();
+}
+function closeModal(){document.getElementById("record-modal").classList.remove("active");}
+function delRecord(id){
+    if(!confirm("Delete this salary record?"))return;
+    var recs=JSON.parse(localStorage.getItem("manti_salary_records")||"[]");
+    recs=recs.filter(function(r){return r.id!==id;});
+    localStorage.setItem("manti_salary_records",JSON.stringify(recs));
+    toast("Record deleted.","#ef4444");loadAll();
+}
+function clearFilters(){document.getElementById("filter-driver").value="";document.getElementById("filter-month").value="";renderRecords();}
+function toast(msg,color){
+    var t=document.createElement("div");t.textContent=msg;
+    t.style.cssText="position:fixed;bottom:24px;right:24px;background:"+color+";color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;font-size:0.9rem;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);";
+    document.body.appendChild(t);setTimeout(function(){t.remove();},3000);
+}
+</script>
+</body>
+</html>
