@@ -690,6 +690,17 @@
 
             cars.push({ reg, model, fuel, status });
             localStorage.setItem('manti_cars', JSON.stringify(cars));
+
+            if (window.supabase) {
+                window.supabase.from('settings').upsert({
+                    setting_key: 'manti_cars',
+                    setting_value: cars,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'setting_key' }).then(({ error }) => {
+                    if (error) console.error("Cloud car sync error:", error);
+                });
+            }
+
             document.getElementById('car-form').reset();
             loadData();
         }
@@ -699,6 +710,9 @@
             let cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
             cars = cars.filter(c => c.reg !== reg);
             localStorage.setItem('manti_cars', JSON.stringify(cars));
+            if (window.supabase) {
+                window.supabase.from('settings').upsert({ setting_key: 'manti_cars', setting_value: cars, updated_at: new Date().toISOString() }, { onConflict: 'setting_key' });
+            }
             loadData();
         }
 
@@ -739,6 +753,16 @@
                 bankName, bankAcc, bankIfsc, photo, policeCert
             });
             localStorage.setItem('manti_drivers', JSON.stringify(drivers));
+
+            if (window.supabase) {
+                window.supabase.from('settings').upsert({
+                    setting_key: 'manti_drivers',
+                    setting_value: drivers,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'setting_key' }).then(({ error }) => {
+                    if (error) console.error("Cloud driver sync error:", error);
+                });
+            }
             
             // Reset form and file variables
             document.getElementById('driver-form').reset();
@@ -753,6 +777,9 @@
             let drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
             drivers = drivers.filter(d => d.phone !== phone);
             localStorage.setItem('manti_drivers', JSON.stringify(drivers));
+            if (window.supabase) {
+                window.supabase.from('settings').upsert({ setting_key: 'manti_drivers', setting_value: drivers, updated_at: new Date().toISOString() }, { onConflict: 'setting_key' });
+            }
             loadData();
         }
 

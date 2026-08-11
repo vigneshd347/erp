@@ -376,8 +376,24 @@
                 if (id === 'end-km') updateDistance();
             }
         }
-        function getDrivers() {
-            return JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+        async function getDriversAsync() {
+            let drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            if (window.supabase) {
+                try {
+                    const { data } = await window.supabase.from('settings').select('*').eq('setting_key', 'manti_drivers');
+                    if (data && data.length > 0 && data[0].setting_value) {
+                        const cloudDrivers = data[0].setting_value;
+                        if (Array.isArray(cloudDrivers) && cloudDrivers.length > 0) {
+                            drivers = cloudDrivers;
+                            window.ERP_MEMORY.set('manti_drivers', JSON.stringify(cloudDrivers));
+                            try { localStorage.setItem('manti_drivers', JSON.stringify(cloudDrivers)); } catch (e) {}
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[DriverPortal] Direct cloud fetch fallback:', e);
+                }
+            }
+            return drivers;
         }
 
         // Always land on Sign In screen on initial load
@@ -421,14 +437,17 @@
             return digits;
         }
 
-        function toggleDebug() {
+        async function toggleDebug() {
             const panel = document.getElementById('debug-panel');
             const list = document.getElementById('debug-phone-list');
             if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
 
-            const drivers = getDrivers();
+            list.innerHTML = '<span style="color:#94a3b8;">Checking cloud database...</span>';
+            panel.style.display = 'block';
+
+            const drivers = await getDriversAsync();
             if (!drivers.length) {
-                list.innerHTML = '<span style="color:#f87171;">No drivers registered yet. Please add drivers in Fleet Management (car.html).</span>';
+                list.innerHTML = '<span style="color:#f87171;">No drivers registered yet in Cloud Database. Please add drivers in Fleet Management (car.html).</span>';
             } else {
                 list.innerHTML = drivers.map(d =>
                     `<div style="padding:8px 0; border-bottom:1px solid #1e293b;">
@@ -439,11 +458,14 @@
                     </div>`
                 ).join('');
             }
-            panel.style.display = 'block';
         }
 
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
+            const btn = document.querySelector('#login-form .btn-submit');
+            const oldBtnText = btn ? btn.textContent : 'Sign In';
+            if (btn) { btn.disabled = true; btn.textContent = 'Verifying Credentials...'; }
+
             // Clear previous error
             const errEl = document.getElementById('login-error');
             if (errEl) errEl.style.display = 'none';
@@ -454,16 +476,18 @@
 
             if (!phone) {
                 showLoginError('Please enter your mobile number.');
+                if (btn) { btn.disabled = false; btn.textContent = oldBtnText; }
                 return;
             }
             if (!pass) {
                 showLoginError('Please enter your password.');
+                if (btn) { btn.disabled = false; btn.textContent = oldBtnText; }
                 return;
             }
 
-            const drivers = getDrivers();
+            const drivers = await getDriversAsync();
 
-            console.log('[DriverLogin] Entered phone (normalized):', phone);
+            console.log('[DriverLogin] Live drivers count:', drivers.length);
 
             // Normalize stored phone numbers for comparison; flexible password match (exact or trimmed)
             const driver = drivers.find(d => {
@@ -474,14 +498,16 @@
                 return isPhoneMatch && isPassMatch;
             });
 
+            if (btn) { btn.disabled = false; btn.textContent = oldBtnText; }
+
             if (!driver) {
-                showLoginError('⚠️ Invalid mobile number or password. Tap \'Can\'t sign in?\' below to check driver credentials.');
+                showLoginError('⚠️ Invalid mobile number or password. Tap \'Can\'t sign in?\' below to check registered driver numbers.');
                 document.getElementById('login-phone').focus();
                 return;
             }
 
             if (driver.status !== 'Active') {
-                showLoginError('\ud83d\udeab Your account is suspended. Please contact your administrator.');
+                showLoginError('🚫 Your account is suspended. Please contact your administrator.');
                 return;
             }
 
