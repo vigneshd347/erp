@@ -340,6 +340,12 @@
                             </div>
                             <div class="form-grid">
                                 <div class="form-group">
+                                    <label>Assign Vehicle (Optional)</label>
+                                    <select id="driver-car">
+                                        <option value="">-- Unassigned / Select Vehicle --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
                                     <label>Status</label>
                                     <select id="driver-status">
                                         <option value="Active">Active</option>
@@ -757,7 +763,9 @@
             const carsBody = document.getElementById('cars-list');
             carsBody.innerHTML = '';
             const selectCar = document.getElementById('driver-car');
-            selectCar.innerHTML = '<option value="">-- Select Vehicle --</option>';
+            if (selectCar) {
+                selectCar.innerHTML = '<option value="">-- Unassigned / Select Vehicle --</option>';
+            }
 
             cars.forEach(car => {
                 const badge = car.status === 'Active' ? 'status-active' : (car.status === 'Maintenance' ? 'status-maintenance' : 'status-inactive');
@@ -785,7 +793,7 @@
                         </td>
                     </tr>
                 `;
-                selectCar.innerHTML += `<option value="${car.reg}">${car.reg} (${car.model})</option>`;
+                if (selectCar) selectCar.innerHTML += `<option value="${car.reg}">${car.reg} (${car.model})</option>`;
             });
 
             // Populate service car dropdown
@@ -1019,7 +1027,7 @@
             e.preventDefault();
             const name = document.getElementById('driver-name').value.trim();
             const license = document.getElementById('driver-license').value.trim().toUpperCase();
-            const car = '';
+            const car = document.getElementById('driver-car') ? document.getElementById('driver-car').value : '';
             const phone = document.getElementById('driver-phone').value.trim();
             const password = document.getElementById('driver-pass').value;
             const status = document.getElementById('driver-status').value;
