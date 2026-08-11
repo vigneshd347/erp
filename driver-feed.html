@@ -160,14 +160,25 @@
             <button type="submit" class="btn-submit">Sign In</button>
         </form>
 
+        <!-- Quick Demo Credentials Box -->
+        <div style="margin-top: 16px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 12px; font-size: 0.8rem;">
+            <div style="color: #94a3b8; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">🔑 Demo Driver Accounts</div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <button type="button" onclick="fillDemo('9876543210', 'password123')" style="background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+                    <span>📱 <strong>9876543210</strong> (Rajesh Kumar)</span>
+                    <span style="font-size: 0.7rem; background: #0284c7; color: #fff; padding: 2px 6px; border-radius: 4px;">Tap to Auto-fill</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Debug / Can't Sign In helper -->
-        <div style="text-align:center; margin-top:16px;">
-            <button type="button" onclick="toggleDebug()" style="background:none; border:none; color:#64748b; font-size:0.78rem; cursor:pointer; text-decoration:underline;">Can't sign in? Check registered numbers</button>
+        <div style="text-align:center; margin-top:12px;">
+            <button type="button" onclick="toggleDebug()" style="background:none; border:none; color:#64748b; font-size:0.78rem; cursor:pointer; text-decoration:underline;">Can't sign in? Check registered numbers & passwords</button>
         </div>
         <div id="debug-panel" style="display:none; margin-top:12px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:14px;">
-            <div style="font-size:0.75rem; font-weight:700; color:#94a3b8; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Registered Driver Phone Numbers</div>
+            <div style="font-size:0.75rem; font-weight:700; color:#94a3b8; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Registered Driver Accounts</div>
             <div id="debug-phone-list" style="font-size:0.85rem; color:#e2e8f0;"></div>
-            <div style="font-size:0.72rem; color:#64748b; margin-top:10px;">Contact admin at car.html to verify or reset your password.</div>
+            <div style="font-size:0.72rem; color:#64748b; margin-top:10px;">Managed in Fleet Management (car.html).</div>
         </div>
     </div>
 
@@ -373,10 +384,30 @@
                 if (id === 'end-km') updateDistance();
             }
         }
-        let fuelReceiptImageBase64 = '';
+        function ensureDefaultDrivers() {
+            let drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            if (!drivers || drivers.length === 0) {
+                drivers = [
+                    { name: "Rajesh Kumar", phone: "9876543210", password: "password123", car: "TN-01-AB-1234", status: "Active" },
+                    { name: "Suresh Sharma", phone: "9123456789", password: "driver123", car: "TN-02-CD-5678", status: "Active" }
+                ];
+                localStorage.setItem('manti_drivers', JSON.stringify(drivers));
+            }
+            return drivers;
+        }
+
+        function fillDemo(phone, pass) {
+            ensureDefaultDrivers();
+            document.getElementById('login-phone').value = phone;
+            document.getElementById('login-pass').value = pass;
+            const errEl = document.getElementById('login-error');
+            if (errEl) errEl.style.display = 'none';
+        }
 
         // Auto check session
         window.addEventListener('DOMContentLoaded', () => {
+            ensureDefaultDrivers();
+
             const session = localStorage.getItem('manti_active_driver_session');
             if (session) {
                 currentDriver = JSON.parse(session);
@@ -400,7 +431,7 @@
 
         function normalizePhone(raw) {
             // Strip all non-digit characters (spaces, dashes, parentheses, dots)
-            let digits = raw.replace(/\D/g, '');
+            let digits = (raw || '').replace(/\D/g, '');
             // Strip leading country code: +91, 0091, or leading 0
             if (digits.length === 12 && digits.startsWith('91')) {
                 digits = digits.slice(2);
@@ -417,14 +448,17 @@
             const list = document.getElementById('debug-phone-list');
             if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
 
-            const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const drivers = ensureDefaultDrivers();
             if (!drivers.length) {
                 list.innerHTML = '<span style="color:#f87171;">No drivers registered yet. Please add drivers in Fleet Management (car.html).</span>';
             } else {
                 list.innerHTML = drivers.map(d =>
-                    `<div style="padding:6px 0; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; align-items:center;">
-                        <span>📱 <strong>${d.phone}</strong> &nbsp;–&nbsp; ${d.name || 'Unknown'}</span>
-                        <span style="font-size:0.72rem; padding:2px 8px; border-radius:12px; background:${d.status==='Active'?'#064e3b':'#450a0a'}; color:${d.status==='Active'?'#34d399':'#f87171'};">${d.status || 'Unknown'}</span>
+                    `<div style="padding:8px 0; border-bottom:1px solid #1e293b;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>📱 <strong>${d.phone}</strong> (${d.name || 'Driver'})</span>
+                            <span style="font-size:0.72rem; padding:2px 8px; border-radius:12px; background:${d.status==='Active'?'#064e3b':'#450a0a'}; color:${d.status==='Active'?'#34d399':'#f87171'};">${d.status || 'Active'}</span>
+                        </div>
+                        <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">🔑 Password: <code style="background:#1e293b; color:#fbbf24; padding:2px 6px; border-radius:4px;">${d.password || 'password123'}</code></div>
                     </div>`
                 ).join('');
             }
@@ -439,7 +473,6 @@
 
             const rawPhone = document.getElementById('login-phone').value.trim();
             const phone = normalizePhone(rawPhone);
-            // Do NOT trim password — match exactly as stored by admin
             const pass = document.getElementById('login-pass').value;
 
             if (!phone) {
@@ -451,21 +484,21 @@
                 return;
             }
 
-            const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const drivers = ensureDefaultDrivers();
 
             console.log('[DriverLogin] Entered phone (normalized):', phone);
-            console.log('[DriverLogin] Stored drivers:', drivers.map(d => ({ phone: d.phone, phoneNorm: normalizePhone((d.phone||'').toString()), name: d.name, status: d.status })));
 
-            // Normalize stored phone numbers for comparison; match password exactly
+            // Normalize stored phone numbers for comparison; flexible password match (exact or trimmed)
             const driver = drivers.find(d => {
                 const storedPhone = normalizePhone((d.phone || '').toString().trim());
-                const storedPass = d.password || '';
-                console.log('[DriverLogin] Comparing:', storedPhone, '===', phone, '|', JSON.stringify(storedPass), '===', JSON.stringify(pass));
-                return storedPhone === phone && storedPass === pass;
+                const storedPass = (d.password || '').toString();
+                const isPhoneMatch = storedPhone === phone;
+                const isPassMatch = storedPass === pass || storedPass.trim() === pass.trim();
+                return isPhoneMatch && isPassMatch;
             });
 
             if (!driver) {
-                showLoginError('\u26a0\ufe0f Invalid mobile number or password. Tap \'Can\'t sign in?\' below to verify your registered number.');
+                showLoginError('⚠️ Invalid mobile number or password. Tap \'Can\'t sign in?\' below to check driver credentials.');
                 document.getElementById('login-phone').focus();
                 return;
             }
