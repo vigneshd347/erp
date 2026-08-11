@@ -129,6 +129,14 @@
             touch-action: manipulation;
         }
         .km-quick-btn:active { background: #0284c7; color: #fff; }
+
+        @keyframes loginShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
     </style>
 </head>
 <body>
@@ -140,13 +148,14 @@
             <p>Enter your registered mobile number and password to feed daily car status.</p>
         </div>
         <form id="login-form" onsubmit="handleLogin(event)">
+            <div id="login-error" style="display:none; background:#7f1d1d; color:#fca5a5; border:1px solid #ef4444; border-radius:8px; padding:12px 14px; font-size:0.88rem; font-weight:600; margin-bottom:14px; text-align:center;"></div>
             <div class="form-group">
                 <label>Mobile Number (Registered Login ID)</label>
-                <input type="tel" id="login-phone" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+                <input type="text" inputmode="numeric" id="login-phone" required placeholder="e.g. 9876543210" autocomplete="tel" maxlength="15">
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="login-pass" required placeholder="••••••••">
+                <input type="password" id="login-pass" required placeholder="••••••••" autocomplete="current-password">
             </div>
             <button type="submit" class="btn-submit">Sign In</button>
         </form>
@@ -368,21 +377,67 @@
             setupImageHandlers();
         });
 
+        function showLoginError(msg) {
+            const errEl = document.getElementById('login-error');
+            if (!errEl) { alert(msg); return; }
+            errEl.textContent = msg;
+            errEl.style.display = 'block';
+            // Shake animation
+            errEl.style.animation = 'none';
+            errEl.offsetHeight; // reflow
+            errEl.style.animation = 'loginShake 0.35s ease';
+        }
+
+        function normalizePhone(raw) {
+            // Strip all non-digit characters (spaces, dashes, parentheses, dots)
+            let digits = raw.replace(/\D/g, '');
+            // Strip leading country code: +91, 0091, or leading 0
+            if (digits.length === 12 && digits.startsWith('91')) {
+                digits = digits.slice(2);
+            } else if (digits.length === 13 && digits.startsWith('091')) {
+                digits = digits.slice(3);
+            } else if (digits.startsWith('0') && digits.length === 11) {
+                digits = digits.slice(1);
+            }
+            return digits;
+        }
+
         function handleLogin(e) {
             e.preventDefault();
-            const phone = document.getElementById('login-phone').value.trim();
-            const pass = document.getElementById('login-pass').value;
+            // Clear previous error
+            const errEl = document.getElementById('login-error');
+            if (errEl) errEl.style.display = 'none';
+
+            const rawPhone = document.getElementById('login-phone').value.trim();
+            const phone = normalizePhone(rawPhone);
+            const pass = document.getElementById('login-pass').value.trim();
+
+            if (!phone) {
+                showLoginError('Please enter your mobile number.');
+                return;
+            }
+            if (!pass) {
+                showLoginError('Please enter your password.');
+                return;
+            }
 
             const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
-            const driver = drivers.find(d => d.phone === phone && d.password === pass);
+
+            // Normalize stored phone numbers too for comparison
+            const driver = drivers.find(d => {
+                const storedPhone = normalizePhone((d.phone || '').toString().trim());
+                const storedPass = (d.password || '').trim();
+                return storedPhone === phone && storedPass === pass;
+            });
 
             if (!driver) {
-                alert("Invalid mobile number or password!");
+                showLoginError('\u26a0\ufe0f Invalid mobile number or password. Please check and try again.');
+                document.getElementById('login-phone').focus();
                 return;
             }
 
             if (driver.status !== 'Active') {
-                alert("Your account is currently suspended. Please contact administrator.");
+                showLoginError('\ud83d\udeab Your account is suspended. Please contact your administrator.');
                 return;
             }
 
@@ -391,6 +446,7 @@
             localStorage.setItem('manti_active_driver_session', JSON.stringify(driver));
             showFeedScreen();
             document.getElementById('login-form').reset();
+            if (errEl) errEl.style.display = 'none';
         }
 
         function showFeedScreen() {

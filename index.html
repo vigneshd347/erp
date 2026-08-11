@@ -172,10 +172,6 @@
                     <div class="icon"><i data-lucide="user-check"></i></div>
                     <span class="label">Worker Data Sheet</span>
                 </a>
-                <a href="car.html" class="nav-item">
-                    <div class="icon"><i data-lucide="car"></i></div>
-                    <span class="label">Fleet Management</span>
-                </a>
                 <a href="reports.html" class="nav-item ">
                     <div class="icon"><i data-lucide="bar-chart-3"></i></div>
                     <span class="label">Reports</span>
@@ -211,6 +207,76 @@
                     </a>
                 </div>
             </header>
+
+            <!-- AI Search Section -->
+            <div class="ai-search-container" style="margin-bottom: 24px; position: relative;">
+                <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #2563eb 100%); border-radius: 16px; padding: 20px 24px; color: white; box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.35); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: -30px; right: -30px; width: 140px; height: 140px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: none;"></div>
+                    <div style="position: absolute; bottom: -40px; left: 20%; width: 180px; height: 180px; background: rgba(255,255,255,0.06); border-radius: 50%; pointer-events: none;"></div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 5px;">
+                                <i data-lucide="sparkles" style="width:14px;height:14px; color:#fde047;"></i> AI Search
+                            </span>
+                            <span style="font-size: 0.85rem; opacity: 0.9; font-weight: 500;">Search or ask anything across your ERP...</span>
+                        </div>
+                        <div style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 4px;">
+                            <span>Press</span> <kbd style="background: rgba(255,255,255,0.25); color: #fff; padding: 1px 5px; border-radius: 4px; font-family: inherit; font-size: 0.7rem; font-weight: 700;">⌘ K</kbd> <span>or</span> <kbd style="background: rgba(255,255,255,0.25); color: #fff; padding: 1px 5px; border-radius: 4px; font-family: inherit; font-size: 0.7rem; font-weight: 700;">Ctrl+K</kbd>
+                        </div>
+                    </div>
+
+                    <!-- Search Input Wrapper -->
+                    <div style="position: relative;">
+                        <input type="text" id="ai-search-input" placeholder="Type to ask AI (e.g. 'unpaid orders', 'stock status', 'bank balance', 'staff list', 'create invoice')..." 
+                            style="width: 100%; padding: 14px 48px 14px 48px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255, 255, 255, 0.95); color: #1e293b; font-size: 0.95rem; font-weight: 500; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s;"
+                            autocomplete="off">
+                        <i data-lucide="sparkles" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: #6366f1;"></i>
+                        <button id="ai-search-clear" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #64748b; display: none; padding: 4px;">
+                            <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                        </button>
+                    </div>
+
+                    <!-- Quick Prompt Chips -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center;">
+                        <span style="font-size: 0.75rem; opacity: 0.85; font-weight: 600;">Suggestions:</span>
+                        <button class="ai-chip-btn" data-query="unpaid orders" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">⚡ Unpaid Orders</button>
+                        <button class="ai-chip-btn" data-query="inventory stock" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">📦 Check Stock</button>
+                        <button class="ai-chip-btn" data-query="bank balance" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">💰 Bank Balance</button>
+                        <button class="ai-chip-btn" data-query="recent expenses" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">🧾 Expenses</button>
+                        <button class="ai-chip-btn" data-query="staff directory" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">👥 Staff</button>
+                        <button class="ai-chip-btn" data-query="create new invoice" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">➕ New Invoice</button>
+                    </div>
+                </div>
+
+                <!-- AI Search Results Dropdown Panel -->
+                <div id="ai-search-results" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2); z-index: 100; max-height: 480px; overflow-y: auto; padding: 18px;">
+                    <!-- AI Summary Card -->
+                    <div id="ai-summary-card" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; margin-bottom: 16px; display: flex; gap: 12px; align-items: flex-start;">
+                        <div style="background: #22c55e; color: #fff; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                            <i data-lucide="bot" style="width: 16px; height: 16px;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; font-weight: 700; color: #15803d; text-transform: uppercase; letter-spacing: 0.05em;">AI Smart Insights</div>
+                            <div id="ai-summary-text" style="font-size: 0.88rem; color: #166534; margin-top: 4px; line-height: 1.45; font-weight: 500;">
+                                Analyzing query...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Navigation Matching -->
+                    <div id="ai-nav-section" style="margin-bottom: 16px;">
+                        <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Quick Navigation</div>
+                        <div id="ai-nav-items" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                    </div>
+
+                    <!-- Records Match List -->
+                    <div id="ai-records-section">
+                        <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Matching Data Records</div>
+                        <div id="ai-records-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    </div>
+                </div>
+            </div>
 
             <!-- KPI Cards -->
             <div class="kpi-grid">
@@ -253,11 +319,8 @@
                 <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Quick Actions</div>
                 <div style="display: flex; gap: 12px; background: var(--bg-card); padding: 16px; border-radius: 12px; border: 1px solid var(--border); overflow-x: auto;">
                     <a href="create-invoice.html" class="quick-btn" style="background: var(--accent-light); color: var(--accent); border:none; padding:10px 16px;"><i data-lucide="file-plus" style="width:16px;height:16px;"></i> Create Invoice</a>
-                    <a href="car.html" class="quick-btn" style="background: #e0e7ff; color: #4f46e5; border:none; padding:10px 16px; font-weight:700;"><i data-lucide="car" style="width:16px;height:16px;"></i> Fleet Management</a>
-                    <a href="driver-feed.html" class="quick-btn" style="background: #fef3c7; color: #b45309; border:none; padding:10px 16px; font-weight:700;"><i data-lucide="navigation" style="width:16px;height:16px;"></i> Driver Portal</a>
                     <a href="purchases.html" class="quick-btn" style="background: var(--accent-light); color: var(--accent); border:none; padding:10px 16px;"><i data-lucide="shopping-cart" style="width:16px;height:16px;"></i> New PO</a>
                     <a href="sales-orders.html" class="quick-btn" style="background: var(--accent-light); color: var(--accent); border:none; padding:10px 16px;"><i data-lucide="shopping-bag" style="width:16px;height:16px;"></i> New SO</a>
-                    <a href="driver-salary.html" class="quick-btn" style="background: #dcfce7; color: #15803d; border:none; padding:10px 16px; font-weight:700;"><i data-lucide="indian-rupee" style="width:16px;height:16px;"></i> Driver Salary</a>
                     <a href="payment-made.html" class="quick-btn" style="background: var(--accent-light); color: var(--accent); border:none; padding:10px 16px;"><i data-lucide="credit-card" style="width:16px;height:16px;"></i> Record Payment</a>
                     <a href="expenses.html" class="quick-btn" style="background: var(--accent-light); color: var(--accent); border:none; padding:10px 16px;"><i data-lucide="receipt" style="width:16px;height:16px;"></i> Add Expense</a>
                 </div>
@@ -319,18 +382,6 @@
                             <h3>Navigate To</h3>
                         </div>
                         <div class="quick-link-grid">
-                            <a href="car.html" class="quick-link-card" style="border: 1px solid #c7d2fe; background: #f5f7ff;">
-                                <div class="ql-icon" style="background:#e0e7ff; color:#4f46e5;"><i data-lucide="car" style="width:18px;height:18px;"></i></div>
-                                <span style="font-weight: 700; color: #4f46e5;">Fleet Mgr</span>
-                            </a>
-                            <a href="driver-feed.html" class="quick-link-card" style="border: 1px solid #fef3c7; background: #fffdf5;">
-                                <div class="ql-icon" style="background:#fef3c7; color:#b45309;"><i data-lucide="navigation" style="width:18px;height:18px;"></i></div>
-                                <span style="font-weight: 700; color: #b45309;">Driver Portal</span>
-                            </a>
-                            <a href="fleet-reports.html" class="quick-link-card" style="border: 1px solid #cbd5e1; background: #f8fafc;">
-                                <div class="ql-icon" style="background:#e2e8f0; color:#0f172a;"><i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i></div>
-                                <span style="font-weight: 700; color: #0f172a;">Fleet Reports</span>
-                            </a>
                             <a href="create-invoice.html" class="quick-link-card">
                                 <div class="ql-icon" style="background:#eef2ff; color:#5454d4;"><i data-lucide="file-text" style="width:18px;height:18px;"></i></div>
                                 <span>Invoices</span>
@@ -622,6 +673,289 @@
 
             lucide.createIcons();
         });
+
+        // ─── AI SEARCH ENGINE ─────────────────────────────────────────────────────
+        (function() {
+            // Navigation map: keywords → page
+            const navMap = [
+                { keywords: ['invoice', 'invoices', 'billing', 'bill', 'create invoice'], label: '🧾 Create Invoice', url: 'create-invoice.html', icon: 'file-text' },
+                { keywords: ['sales order', 'sales orders', 'so', 'new so'], label: '🛍️ Sales Orders', url: 'sales-orders.html', icon: 'shopping-bag' },
+                { keywords: ['purchase', 'purchases', 'po', 'new po', 'vendor', 'buy'], label: '🛒 Purchases', url: 'purchases.html', icon: 'shopping-cart' },
+                { keywords: ['inventory', 'stock', 'items', 'products', 'goods'], label: '📦 Inventory', url: 'inventory.html', icon: 'package' },
+                { keywords: ['expense', 'expenses', 'expenditure', 'spend'], label: '🧾 Expenses', url: 'expenses.html', icon: 'receipt' },
+                { keywords: ['payment', 'payments', 'record payment', 'paid'], label: '💳 Payments Made', url: 'payment-made.html', icon: 'credit-card' },
+                { keywords: ['bank', 'banking', 'cash', 'balance', 'bank balance'], label: '🏦 Banking', url: 'banking.html', icon: 'landmark' },
+                { keywords: ['staff', 'employees', 'team', 'hr', 'human resource'], label: '👥 Staff', url: 'staff.html', icon: 'users' },
+                { keywords: ['worker', 'workers', 'worker data', 'labour', 'labor'], label: '🔧 Worker Data Sheet', url: 'worker-data-sheet.html', icon: 'user-check' },
+                { keywords: ['job work', 'jobwork', 'job', 'work order'], label: '🔨 Job Work', url: 'jobwork.html', icon: 'hammer' },
+                { keywords: ['delivery', 'challan', 'challans', 'dc'], label: '🚚 Delivery Challans', url: 'delivery-challans.html', icon: 'truck' },
+                { keywords: ['asset', 'assets', 'fixed asset'], label: '📋 Assets', url: 'assets.html', icon: 'package' },
+                { keywords: ['report', 'reports', 'analytics', 'analysis'], label: '📊 Reports', url: 'reports.html', icon: 'bar-chart-3' },
+                { keywords: ['journal', 'manual journal', 'journal entry', 'ledger'], label: '📒 Journal Entry', url: 'journal-entry.html', icon: 'book-open' },
+                { keywords: ['quotation', 'quote', 'estimate'], label: '📝 Quotation', url: 'quotation.html', icon: 'file-text' },
+                { keywords: ['setting', 'settings', 'admin', 'configuration', 'config'], label: '⚙️ Settings', url: 'admin.html', icon: 'settings' },
+                { keywords: ['melting', 'gold', 'silver', 'metal', 'refine'], label: '🔥 Melting', url: 'melting.html', icon: 'flame' },
+                { keywords: ['tree', 'tree making', 'design'], label: '🌳 Tree Making', url: 'tree-making.html', icon: 'git-branch' },
+                { keywords: ['customer', 'customers', 'client', 'clients', 'kyc'], label: '🙍 Customers / KYC', url: 'admin.html', icon: 'users' },
+                { keywords: ['unpaid', 'pending', 'due', 'overdue', 'outstanding'], label: '⚠️ Unpaid Orders', url: 'purchases.html', icon: 'alert-circle' },
+                { keywords: ['customer order', 'customer orders'], label: '📦 Customer Orders', url: 'customer-order.html', icon: 'package' },
+            ];
+
+            // Data fetcher: reads localStorage and searches records
+            function searchLocalData(query) {
+                const q = query.toLowerCase();
+                const results = [];
+
+                // Orders (Sales + Purchase)
+                try {
+                    const orders = JSON.parse(localStorage.getItem('mantiOrders') || '[]');
+                    orders.forEach(o => {
+                        if (!o.orderNo && !o.vendor && !o.amount) return;
+                        const searchable = `${o.orderNo||''} ${o.vendor||''} ${o.type||''} ${o.status||''} ${o.amount||''}`.toLowerCase();
+                        if (searchable.includes(q)) {
+                            results.push({
+                                type: o.type || 'Order',
+                                title: `${o.orderNo || 'Order'} — ${o.vendor || ''}`,
+                                subtitle: `₹${parseFloat(o.amount||0).toLocaleString('en-IN')} · ${o.status || ''} · ${o.date || ''}`,
+                                badge: o.status,
+                                badgeColor: o.status === 'Paid' ? '#dcfce7' : o.status === 'Cancelled' ? '#fee2e2' : '#fef9c3',
+                                badgeText: o.status === 'Paid' ? '#15803d' : o.status === 'Cancelled' ? '#dc2626' : '#92400e',
+                                url: o.type === 'Sales Order' ? 'sales-orders.html' : 'purchases.html'
+                            });
+                        }
+                    });
+                } catch(e) {}
+
+                // Inventory
+                try {
+                    const inventory = JSON.parse(localStorage.getItem('manti_inventory') || '[]');
+                    inventory.forEach(item => {
+                        const searchable = `${item.name||''} ${item.category||''} ${item.sku||''}`.toLowerCase();
+                        if (searchable.includes(q)) {
+                            results.push({
+                                type: 'Inventory',
+                                title: item.name || 'Item',
+                                subtitle: `Qty: ${item.quantity || 0} ${item.unit||''} · ₹${parseFloat(item.rate||0).toLocaleString('en-IN')} per unit`,
+                                badge: 'Stock',
+                                badgeColor: '#dbeafe',
+                                badgeText: '#1d4ed8',
+                                url: 'inventory.html'
+                            });
+                        }
+                    });
+                } catch(e) {}
+
+                // Expenses
+                try {
+                    const expenses = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+                    expenses.forEach(exp => {
+                        const searchable = `${exp.description||''} ${exp.category||''} ${exp.vendor||''}`.toLowerCase();
+                        if (searchable.includes(q)) {
+                            results.push({
+                                type: 'Expense',
+                                title: exp.description || 'Expense',
+                                subtitle: `₹${parseFloat(exp.total||exp.amount||0).toLocaleString('en-IN')} · ${exp.date || ''}`,
+                                badge: exp.category || 'Expense',
+                                badgeColor: '#fae8ff',
+                                badgeText: '#7e22ce',
+                                url: 'expenses.html'
+                            });
+                        }
+                    });
+                } catch(e) {}
+
+                // Staff
+                try {
+                    const staff = JSON.parse(localStorage.getItem('manti_staff') || '[]');
+                    staff.forEach(s => {
+                        const searchable = `${s.name||''} ${s.role||''} ${s.department||''}`.toLowerCase();
+                        if (searchable.includes(q)) {
+                            results.push({
+                                type: 'Staff',
+                                title: s.name || 'Employee',
+                                subtitle: `${s.role || ''} · ${s.department || ''} · ${s.phone || ''}`,
+                                badge: 'Staff',
+                                badgeColor: '#dcfce7',
+                                badgeText: '#15803d',
+                                url: 'staff.html'
+                            });
+                        }
+                    });
+                } catch(e) {}
+
+                return results.slice(0, 8);
+            }
+
+            // Generate AI summary
+            function generateAISummary(query, navMatches, dataResults) {
+                const q = query.toLowerCase();
+                const fmtINR = n => '₹' + parseFloat(n||0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                // Special smart summaries for known queries
+                if (q.includes('bank') || q.includes('balance') || q.includes('cash')) {
+                    try {
+                        const banks = JSON.parse(localStorage.getItem('manti_banks') || '[]');
+                        const total = banks.reduce((s, b) => s + parseFloat(b.balance || 0), 0);
+                        if (banks.length) return `You have <strong>${banks.length} bank account(s)</strong> with a combined balance of <strong>${fmtINR(total)}</strong>. Click Banking to view details.`;
+                    } catch(e) {}
+                    return 'Navigate to <strong>Banking</strong> to view your current bank & cash balances.';
+                }
+                if (q.includes('unpaid') || q.includes('pending') || q.includes('due') || q.includes('outstanding')) {
+                    try {
+                        const orders = JSON.parse(localStorage.getItem('mantiOrders') || '[]');
+                        const unpaid = orders.filter(o => o.status && !['Paid', 'Cancelled'].includes(o.status));
+                        const totalDue = unpaid.reduce((s, o) => s + parseFloat(o.amount||0), 0);
+                        return `Found <strong>${unpaid.length} unpaid/pending order(s)</strong> totalling <strong>${fmtINR(totalDue)}</strong>. Review them in Purchases or Sales Orders.`;
+                    } catch(e) {}
+                }
+                if (q.includes('stock') || q.includes('inventory')) {
+                    try {
+                        const inv = JSON.parse(localStorage.getItem('manti_inventory') || '[]');
+                        return `Your inventory has <strong>${inv.length} item(s)</strong> tracked. ${dataResults.length > 0 ? `Found <strong>${dataResults.length}</strong> matching records.` : 'Refine your search to find specific items.'}`;
+                    } catch(e) {}
+                }
+                if (q.includes('expense') || q.includes('spend')) {
+                    try {
+                        const exps = JSON.parse(localStorage.getItem('manti_expenses') || '[]');
+                        const total = exps.reduce((s, e) => s + parseFloat(e.total||e.amount||0), 0);
+                        return `Total recorded expenses: <strong>${fmtINR(total)}</strong> across <strong>${exps.length}</strong> entries.`;
+                    } catch(e) {}
+                }
+                if (q.includes('staff') || q.includes('employee') || q.includes('team')) {
+                    try {
+                        const staff = JSON.parse(localStorage.getItem('manti_staff') || '[]');
+                        return `You have <strong>${staff.length} staff member(s)</strong> on record. ${dataResults.length > 0 ? `Found <strong>${dataResults.length}</strong> matching.` : ''}`;
+                    } catch(e) {}
+                }
+                if (q.includes('invoice') || q.includes('bill')) {
+                    return 'You can <strong>create a new invoice</strong> quickly using the link below. Head to Sales → Create Invoice.';
+                }
+                if (navMatches.length > 0) {
+                    return `Found <strong>${navMatches.length} page(s)</strong> matching "<em>${query}</em>". Click any result below to navigate instantly.`;
+                }
+                if (dataResults.length > 0) {
+                    return `Found <strong>${dataResults.length} data record(s)</strong> matching "<em>${query}</em>" in your ERP data.`;
+                }
+                return `No exact matches found for "<em>${query}</em>". Try broader keywords like <em>invoice, orders, stock, staff, bank</em>.`;
+            }
+
+            // Match nav pages
+            function matchNav(query) {
+                const q = query.toLowerCase().trim();
+                return navMap.filter(n => n.keywords.some(k => q.includes(k) || k.includes(q)));
+            }
+
+            // Render results panel
+            function renderResults(query) {
+                if (!query.trim()) { closeResults(); return; }
+
+                const panel = document.getElementById('ai-search-results');
+                const navItems = document.getElementById('ai-nav-items');
+                const recordsList = document.getElementById('ai-records-list');
+                const summaryText = document.getElementById('ai-summary-text');
+                const navSection = document.getElementById('ai-nav-section');
+                const recordsSection = document.getElementById('ai-records-section');
+
+                const navMatches = matchNav(query);
+                const dataResults = searchLocalData(query);
+
+                // Nav items
+                navItems.innerHTML = '';
+                navMatches.forEach(n => {
+                    const a = document.createElement('a');
+                    a.href = n.url;
+                    a.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:#eef2ff;color:#4338ca;font-size:0.82rem;font-weight:700;text-decoration:none;border:1px solid #c7d2fe;transition:all 0.15s;';
+                    a.innerHTML = n.label;
+                    a.addEventListener('mouseenter', () => { a.style.background='#4338ca'; a.style.color='#fff'; });
+                    a.addEventListener('mouseleave', () => { a.style.background='#eef2ff'; a.style.color='#4338ca'; });
+                    navItems.appendChild(a);
+                });
+                navSection.style.display = navMatches.length ? 'block' : 'none';
+
+                // Data records
+                recordsList.innerHTML = '';
+                if (dataResults.length > 0) {
+                    dataResults.forEach(r => {
+                        const div = document.createElement('a');
+                        div.href = r.url;
+                        div.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;padding:10px 14px;border-radius:8px;border:1px solid #f1f5f9;background:#f8fafc;text-decoration:none;gap:12px;transition:background 0.15s;';
+                        div.addEventListener('mouseenter', () => div.style.background='#f0f9ff');
+                        div.addEventListener('mouseleave', () => div.style.background='#f8fafc');
+                        div.innerHTML = `
+                            <div>
+                                <div style="font-size:0.85rem;font-weight:700;color:#0f172a;">${r.title}</div>
+                                <div style="font-size:0.78rem;color:#64748b;margin-top:2px;">${r.subtitle}</div>
+                            </div>
+                            <span style="flex-shrink:0;padding:2px 9px;border-radius:12px;font-size:0.72rem;font-weight:700;background:${r.badgeColor};color:${r.badgeText};">${r.badge || r.type}</span>`;
+                        recordsList.appendChild(div);
+                    });
+                    recordsSection.style.display = 'block';
+                } else {
+                    recordsSection.style.display = 'none';
+                }
+
+                // AI Summary
+                summaryText.innerHTML = generateAISummary(query, navMatches, dataResults);
+
+                panel.style.display = 'block';
+                lucide.createIcons();
+            }
+
+            function closeResults() {
+                const panel = document.getElementById('ai-search-results');
+                if (panel) panel.style.display = 'none';
+            }
+
+            // Event listeners
+            const input = document.getElementById('ai-search-input');
+            const clearBtn = document.getElementById('ai-search-clear');
+
+            let debounceTimer;
+            input.addEventListener('input', function() {
+                clearBtn.style.display = this.value ? 'block' : 'none';
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => renderResults(this.value), 220);
+            });
+
+            clearBtn.addEventListener('click', function() {
+                input.value = '';
+                clearBtn.style.display = 'none';
+                closeResults();
+                input.focus();
+            });
+
+            // Chip buttons
+            document.querySelectorAll('.ai-chip-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const q = this.getAttribute('data-query');
+                    input.value = q;
+                    clearBtn.style.display = 'block';
+                    renderResults(q);
+                    input.focus();
+                });
+            });
+
+            // Keyboard shortcut: Cmd/Ctrl + K
+            document.addEventListener('keydown', function(e) {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    input.focus();
+                    input.select();
+                }
+                if (e.key === 'Escape') {
+                    closeResults();
+                    input.blur();
+                }
+            });
+
+            // Close on outside click
+            document.addEventListener('click', function(e) {
+                const container = document.querySelector('.ai-search-container');
+                if (container && !container.contains(e.target)) {
+                    closeResults();
+                }
+            });
+        })();
     </script>
 </body>
 
