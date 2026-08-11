@@ -95,21 +95,32 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Mobile Compact & User-Friendly Numpad Styling */
-        @media (max-width: 520px) {
-            body { padding: 8px !important; align-items: flex-start !important; }
-            .portal-card { padding: 18px 14px !important; border-radius: 14px !important; margin-top: 10px; }
-            .portal-header img { height: 80px !important; width: 80px !important; margin-bottom: 10px !important; }
-            .portal-header h1 { font-size: 1.25rem !important; }
-            .portal-header p { font-size: 0.78rem !important; }
-            .form-group label { font-size: 0.78rem !important; font-weight: 700; color: #a5b4fc; }
+        /* Mobile App View Compatibility Styling */
+        @media (max-width: 600px) {
+            body { padding: 0 !important; margin: 0 !important; align-items: flex-start !important; background: #0f172a !important; }
+            .portal-card {
+                padding: 16px 14px 90px 14px !important;
+                border-radius: 0 !important;
+                border: none !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                min-height: 100vh !important;
+                box-shadow: none !important;
+                box-sizing: border-box !important;
+            }
+            .portal-header img { height: 75px !important; width: 75px !important; margin-bottom: 10px !important; }
+            .portal-header h1 { font-size: 1.3rem !important; }
+            .portal-header p { font-size: 0.8rem !important; }
+            .form-group label { font-size: 0.82rem !important; font-weight: 700; color: #a5b4fc; }
             .form-group input, .form-group select, .form-group textarea {
                 padding: 14px 12px !important;
-                font-size: 1.15rem !important;
+                font-size: 1.1rem !important;
                 font-weight: 700 !important;
                 border-radius: 10px !important;
+                min-height: 48px;
+                box-sizing: border-box;
             }
-            .btn-submit { padding: 16px !important; font-size: 1.05rem !important; border-radius: 10px !important; }
+            .btn-submit { padding: 16px !important; font-size: 1.05rem !important; border-radius: 10px !important; min-height: 52px; }
         }
         .km-numpad-helper {
             display: flex;
