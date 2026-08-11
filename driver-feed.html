@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manti ERP - Driver Portal & Daily Feed</title>
+    <title>RouteX - Driver Portal</title>
     <link rel="stylesheet" href="style.css?v=18">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -713,25 +713,59 @@
 
         function checkServiceDue() {
             if (!currentDriver || !currentDriver.car) return;
+            const cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
             const serviceRecords = JSON.parse(localStorage.getItem('manti_service_records') || '[]');
             const logs = JSON.parse(localStorage.getItem('manti_car_logs') || '[]');
-            const vehicleSvcs = serviceRecords.filter(s => s.carReg === currentDriver.car && s.nextKm > 0);
-            if (vehicleSvcs.length === 0) return;
-            vehicleSvcs.sort((a,b) => b.serviceKm - a.serviceKm);
-            const latest = vehicleSvcs[0];
-            const vehicleLogs = logs.filter(l => l.carReg === currentDriver.car && l.endKm);
-            if (vehicleLogs.length === 0) return;
-            vehicleLogs.sort((a,b) => b.endKm - a.endKm);
-            const currentKm = vehicleLogs[0].endKm;
             const alertEl = document.getElementById('service-due-alert');
             const msgEl = document.getElementById('service-due-msg');
-            const remaining = latest.nextKm - currentKm;
-            if (remaining <= 0) {
+
+            const vehicle = cars.find(c => c.reg === currentDriver.car);
+            const alerts = [];
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const soon = new Date();
+            soon.setDate(today.getDate() + 30);
+
+            // Check document expiries
+            if (vehicle) {
+                if (vehicle.insuranceExpiry) {
+                    const ins = new Date(vehicle.insuranceExpiry);
+                    if (ins < today) alerts.push(`⚠️ Insurance EXPIRED on ${vehicle.insuranceExpiry}!`);
+                    else if (ins <= soon) alerts.push(`⚠️ Insurance expiring soon on ${vehicle.insuranceExpiry}!`);
+                }
+                if (vehicle.fitnessExpiry) {
+                    const fit = new Date(vehicle.fitnessExpiry);
+                    if (fit < today) alerts.push(`⚠️ Fitness Certificate EXPIRED on ${vehicle.fitnessExpiry}!`);
+                    else if (fit <= soon) alerts.push(`⚠️ Fitness Certificate expiring soon on ${vehicle.fitnessExpiry}!`);
+                }
+                if (vehicle.permitExpiry) {
+                    const prm = new Date(vehicle.permitExpiry);
+                    if (prm < today) alerts.push(`⚠️ Permit EXPIRED on ${vehicle.permitExpiry}!`);
+                    else if (prm <= soon) alerts.push(`⚠️ Permit expiring soon on ${vehicle.permitExpiry}!`);
+                }
+            }
+
+            // Check service status
+            const vehicleSvcs = serviceRecords.filter(s => s.carReg === currentDriver.car && s.nextKm > 0);
+            if (vehicleSvcs.length > 0) {
+                vehicleSvcs.sort((a,b) => b.serviceKm - a.serviceKm);
+                const latest = vehicleSvcs[0];
+                const vehicleLogs = logs.filter(l => l.carReg === currentDriver.car && l.endKm);
+                if (vehicleLogs.length > 0) {
+                    vehicleLogs.sort((a,b) => b.endKm - a.endKm);
+                    const currentKm = vehicleLogs[0].endKm;
+                    const remaining = latest.nextKm - currentKm;
+                    if (remaining <= 0) {
+                        alerts.push(`🚨 Service OVERDUE! Next service was at ${latest.nextKm.toLocaleString()} Km (Current: ${currentKm.toLocaleString()} Km).`);
+                    } else if (remaining <= 500) {
+                        alerts.push(`🔧 Service due soon! Only ${remaining} Km left (Service at ${latest.nextKm.toLocaleString()} Km).`);
+                    }
+                }
+            }
+
+            if (alerts.length > 0) {
                 alertEl.style.display = 'block';
-                msgEl.textContent = `Vehicle ${currentDriver.car} is OVERDUE for service! Next service was at ${latest.nextKm.toLocaleString()} Km. Current: ${currentKm.toLocaleString()} Km. Please service immediately!`;
-            } else if (remaining <= 500) {
-                alertEl.style.display = 'block';
-                msgEl.textContent = `Service due soon for ${currentDriver.car}! Only ${remaining} Km left before service at ${latest.nextKm.toLocaleString()} Km. Book at: ${latest.point || 'nearest service center'}.`;
+                msgEl.innerHTML = `<strong>Vehicle Alerts (${currentDriver.car}):</strong><br>` + alerts.join('<br>');
             } else {
                 alertEl.style.display = 'none';
             }

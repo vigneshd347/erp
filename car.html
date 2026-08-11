@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manti ERP - Car & Driver Management</title>
+    <title>RouteX - Fleet Management</title>
     <link rel="stylesheet" href="style.css?v=18">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -90,8 +90,8 @@
             <!-- Page Header -->
             <header class="dashboard-header header-flex" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
                 <div>
-                    <h1 style="font-size: 1.4rem; font-weight: 800; color: #1f2937; margin: 0;">Fleet Management</h1>
-                    <p style="font-size: 0.85rem; color: #6b7280; margin-top: 4px;">Register cars, assign drivers, and view operational feeds.</p>
+                    <h1 style="font-size: 1.4rem; font-weight: 800; color: #1f2937; margin: 0;">RouteX Fleet Management</h1>
+                    <p style="font-size: 0.85rem; color: #6b7280; margin-top: 4px;">Register vehicles, manage RC & service records, assign drivers and view operational feeds.</p>
                 </div>
                 <div style="display: flex; gap: 12px;">
                     <a href="driver-feed.html" class="quick-btn outline" style="display: flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; background: #fff; border: 1px solid #d1d5db; color: #374151; font-size: 0.85rem;">
@@ -160,11 +160,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Owner Name (as per RC)</label>
-                                    <input type="text" id="car-rc-owner" placeholder="e.g. Manti Enterprises">
-                                </div>
-                                <div class="form-group">
-                                    <label>RC Expiry Date</label>
-                                    <input type="date" id="car-rc-expiry">
+                                    <input type="text" id="car-rc-owner" placeholder="e.g. RouteX Tours & Travels">
                                 </div>
                                 <div class="form-group">
                                     <label>Insurance Number</label>
@@ -208,8 +204,9 @@
                                         <th>Model</th>
                                         <th>Fuel</th>
                                         <th>Status</th>
-                                        <th>RC Expiry</th>
-                                        <th>Insurance</th>
+                                        <th>Insurance Expiry</th>
+                                        <th>Fitness Expiry</th>
+                                        <th>Permit Expiry</th>
                                         <th>RC Doc</th>
                                         <th style="text-align: center;">Action</th>
                                     </tr>
@@ -342,12 +339,6 @@
                                 </div>
                             </div>
                             <div class="form-grid">
-                                <div class="form-group">
-                                    <label>Assign Vehicle *</label>
-                                    <select id="driver-car" required>
-                                        <option value="">-- Select Vehicle --</option>
-                                    </select>
-                                </div>
                                 <div class="form-group">
                                     <label>Status</label>
                                     <select id="driver-status">
@@ -785,8 +776,9 @@
                         <td>${car.model}</td>
                         <td>${car.fuel}</td>
                         <td><span class="car-status-badge ${badge}">${car.status}</span></td>
-                        <td>${expiryBadge(car.rcExpiry)}</td>
                         <td>${expiryBadge(car.insuranceExpiry)}</td>
+                        <td>${expiryBadge(car.fitnessExpiry)}</td>
+                        <td>${expiryBadge(car.permitExpiry)}</td>
                         <td style="text-align:center;">${car.rcDoc ? `<a href="${car.rcDoc}" target="_blank" style="color:#4f46e5;font-weight:600;font-size:0.8rem;">View</a>` : '-'}</td>
                         <td style="text-align: center;">
                             <button class="btn-action-sm danger" onclick="deleteCar('${car.reg}')" style="margin: 0 auto;"><i data-lucide="trash-2" style="width: 14px; height:14px;"></i> Delete</button>
@@ -901,7 +893,6 @@
             const status = document.getElementById('car-status').value;
             const rcNumber = document.getElementById('car-rc-number').value.trim();
             const rcOwner = document.getElementById('car-rc-owner').value.trim();
-            const rcExpiry = document.getElementById('car-rc-expiry').value;
             const insuranceNo = document.getElementById('car-insurance-no').value.trim();
             const insuranceExpiry = document.getElementById('car-insurance-expiry').value;
             const fitnessExpiry = document.getElementById('car-fitness-expiry').value;
@@ -916,7 +907,7 @@
                 return;
             }
 
-            cars.push({ reg, model, fuel, status, rcNumber, rcOwner, rcExpiry, insuranceNo, insuranceExpiry, fitnessExpiry, permitExpiry, rcDoc });
+            cars.push({ reg, model, fuel, status, rcNumber, rcOwner, insuranceNo, insuranceExpiry, fitnessExpiry, permitExpiry, rcDoc });
             localStorage.setItem('manti_cars', JSON.stringify(cars));
 
             if (window.supabase) {
@@ -1028,7 +1019,7 @@
             e.preventDefault();
             const name = document.getElementById('driver-name').value.trim();
             const license = document.getElementById('driver-license').value.trim().toUpperCase();
-            const car = document.getElementById('driver-car').value;
+            const car = '';
             const phone = document.getElementById('driver-phone').value.trim();
             const password = document.getElementById('driver-pass').value;
             const status = document.getElementById('driver-status').value;
