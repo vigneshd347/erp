@@ -407,15 +407,14 @@
             if (errEl) errEl.style.display = 'none';
         }
 
-        // Auto check session
+        // Always land on Sign In screen on initial load
         window.addEventListener('DOMContentLoaded', () => {
             ensureDefaultDrivers();
-
-            const session = localStorage.getItem('manti_active_driver_session');
-            if (session) {
-                currentDriver = JSON.parse(session);
-                showFeedScreen();
-            }
+            // Clear previous active session so page always asks for Sign In
+            localStorage.removeItem('manti_active_driver_session');
+            currentDriver = null;
+            document.getElementById('feed-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
 
             // Bind file uploads for base64 conversions and OCR scanning
             setupImageHandlers();
@@ -423,11 +422,6 @@
 
         document.addEventListener('CloudDataLoaded', () => {
             ensureDefaultDrivers();
-            const session = localStorage.getItem('manti_active_driver_session');
-            if (session) {
-                currentDriver = JSON.parse(session);
-                showFeedScreen();
-            }
         });
 
         function showLoginError(msg) {
