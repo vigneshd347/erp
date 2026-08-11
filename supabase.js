@@ -131,7 +131,11 @@ window.addEventListener('beforeunload', (e) => {
 
 Storage.prototype.getItem = function (key) {
     if (key.startsWith('manti_')) {
-        return window.ERP_MEMORY.get(key) || null;
+        const memoryVal = window.ERP_MEMORY.get(key);
+        if (memoryVal !== undefined && memoryVal !== null) {
+            return memoryVal;
+        }
+        return originalGetItem.call(this, key);
     }
     return originalGetItem.call(this, key);
 };
@@ -141,8 +145,9 @@ Storage.prototype.setItem = function (key, value) {
         return originalSetItem.call(this, key, value);
     }
     if (key.startsWith('manti_')) {
-        // Save to RAM only
+        // Save to RAM and physical disk
         window.ERP_MEMORY.set(key, value);
+        try { originalSetItem.call(this, key, value); } catch (e) { }
 
         // SYNC LOCK: Ensure only one sync happens at a time for this key
         // If a sync is already running, we wait for it to finish then trigger a NEW sync with latest data
@@ -1263,4 +1268,31 @@ window.fetchEverythingFromCloud = async function () {
 // Start the fetch process immediately when DOM is minimally parsed
 document.addEventListener('DOMContentLoaded', () => {
     window.fetchEverythingFromCloud();
+
+    // Periodic Background Poller (5s) for Live Multi-Device Synchronization
+    setInterval(async () => {
+        if (!window.supabase || (window.mantiSyncPromises && window.mantiSyncPromises.length > 0)) return;
+        try {
+            const { data: settings } = await window.supabase.from('settings').select('*');
+            if (settings && settings.length > 0) {
+                let hasChanges = false;
+                settings.forEach(s => {
+                    if (!s.setting_key) return;
+                    const cloudStr = JSON.stringify(s.setting_value);
+                    const currentRAM = window.ERP_MEMORY.get(s.setting_key);
+                    if (cloudStr !== currentRAM) {
+                        window.ERP_MEMORY.set(s.setting_key, cloudStr);
+                        try { originalSetItem.call(localStorage, s.setting_key, cloudStr); } catch (e) {}
+                        hasChanges = true;
+                    }
+                });
+                if (hasChanges) {
+                    console.log("[Supabase Sync] Received real-time cloud data from another device!");
+                    document.dispatchEvent(new Event('CloudDataLoaded'));
+                }
+            }
+        } catch (e) {
+            // Quietly handle network blips
+        }
+    }, 5000);
 });
