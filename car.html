@@ -176,14 +176,15 @@
                 <div class="fleet-grid">
                     <!-- Register New Car -->
                     <div class="kyc-form-card flex-1" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:0;">
-                        <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        <h2 id="car-form-title" style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
                             <i data-lucide="plus-circle" style="color: var(--primary);"></i> Add New Vehicle
                         </h2>
                         <form id="car-form" onsubmit="saveCar(event)">
+                            <input type="hidden" id="editing-car-reg">
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>Registration Number *</label>
-                                    <input type="text" id="car-reg" required placeholder="e.g. KA-01-MJ-1234">
+                                    <input type="text" id="car-reg" required placeholder="e.g. KA-01-MJ-1234" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
                                 </div>
                                 <div class="form-group">
                                     <label>Vehicle Model *</label>
@@ -216,7 +217,7 @@
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>RC Number</label>
-                                    <input type="text" id="car-rc-number" placeholder="e.g. KA01MH12345">
+                                    <input type="text" id="car-rc-number" placeholder="e.g. KA01MH12345" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
                                 </div>
                                 <div class="form-group">
                                     <label>Owner Name (as per RC)</label>
@@ -245,8 +246,8 @@
                                 </div>
                             </div>
 
-                            <div class="form-actions" style="margin-top: 16px;">
-                                <button type="submit" class="quick-btn primary" style="border:none; padding:10px 20px; border-radius:8px;">Register Vehicle</button>
+                            <div class="form-actions" style="margin-top: 16px; display: flex; align-items: center; gap: 8px;">
+                                <button type="submit" id="car-submit-btn" class="quick-btn primary" style="border:none; padding:10px 20px; border-radius:8px;">Register Vehicle</button>
                             </div>
                         </form>
                     </div>
@@ -849,7 +850,10 @@
                         <td>${expiryBadge(car.permitExpiry)}</td>
                         <td style="text-align:center;">${car.rcDoc ? `<a href="${car.rcDoc}" target="_blank" style="color:#4f46e5;font-weight:600;font-size:0.8rem;">View</a>` : '-'}</td>
                         <td style="text-align: center;">
-                            <button class="btn-action-sm danger" onclick="deleteCar('${car.reg}')" style="margin: 0 auto;"><i data-lucide="trash-2" style="width: 14px; height:14px;"></i> Delete</button>
+                            <div style="display: flex; gap: 6px; justify-content: center;">
+                                <button class="btn-action-sm" onclick="editCar('${car.reg}')" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;"><i data-lucide="pencil" style="width: 14px; height:14px;"></i> Edit</button>
+                                <button class="btn-action-sm danger" onclick="deleteCar('${car.reg}')"><i data-lucide="trash-2" style="width: 14px; height:14px;"></i> Delete</button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -953,13 +957,68 @@
             if (window.lucide) lucide.createIcons();
         }
 
+        function editCar(reg) {
+            let cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
+            const car = cars.find(c => c.reg === reg);
+            if (!car) return;
+
+            document.getElementById('editing-car-reg').value = car.reg;
+            document.getElementById('car-reg').value = car.reg;
+            document.getElementById('car-model').value = car.model || '';
+            document.getElementById('car-fuel').value = car.fuel || 'Petrol';
+            document.getElementById('car-status').value = car.status || 'Active';
+            document.getElementById('car-rc-number').value = car.rcNumber || '';
+            document.getElementById('car-rc-owner').value = car.rcOwner || '';
+            document.getElementById('car-insurance-no').value = car.insuranceNo || '';
+            document.getElementById('car-insurance-expiry').value = car.insuranceExpiry || '';
+            document.getElementById('car-fitness-expiry').value = car.fitnessExpiry || '';
+            document.getElementById('car-permit-expiry').value = car.permitExpiry || '';
+            document.getElementById('car-rc-base64').value = car.rcDoc || '';
+
+            const formTitle = document.getElementById('car-form-title');
+            if (formTitle) formTitle.innerHTML = `<i data-lucide="pencil" style="color: var(--primary);"></i> Edit Vehicle (${car.reg})`;
+            const submitBtn = document.getElementById('car-submit-btn');
+            if (submitBtn) submitBtn.textContent = 'Update Vehicle Info';
+
+            let cancelBtn = document.getElementById('car-cancel-btn');
+            if (!cancelBtn) {
+                cancelBtn = document.createElement('button');
+                cancelBtn.id = 'car-cancel-btn';
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'quick-btn outline';
+                cancelBtn.style.cssText = 'border:1px solid #cbd5e1; background:#fff; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:600; font-size:0.85rem; color:#475569;';
+                cancelBtn.textContent = 'Cancel Edit';
+                cancelBtn.onclick = resetCarForm;
+                submitBtn.parentNode.appendChild(cancelBtn);
+            } else {
+                cancelBtn.style.display = 'inline-block';
+            }
+
+            if (window.lucide) lucide.createIcons();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetCarForm() {
+            document.getElementById('editing-car-reg').value = '';
+            document.getElementById('car-form').reset();
+            document.getElementById('car-rc-base64').value = '';
+            const formTitle = document.getElementById('car-form-title');
+            if (formTitle) formTitle.innerHTML = `<i data-lucide="plus-circle" style="color: var(--primary);"></i> Add New Vehicle`;
+            const submitBtn = document.getElementById('car-submit-btn');
+            if (submitBtn) submitBtn.textContent = 'Register Vehicle';
+            const cancelBtn = document.getElementById('car-cancel-btn');
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            if (window.lucide) lucide.createIcons();
+        }
+
         function saveCar(e) {
             e.preventDefault();
+            const editingReg = document.getElementById('editing-car-reg').value;
             const reg = document.getElementById('car-reg').value.trim().toUpperCase();
             const model = document.getElementById('car-model').value.trim();
             const fuel = document.getElementById('car-fuel').value;
             const status = document.getElementById('car-status').value;
-            const rcNumber = document.getElementById('car-rc-number').value.trim();
+            const rcNumber = document.getElementById('car-rc-number').value.trim().toUpperCase();
             const rcOwner = document.getElementById('car-rc-owner').value.trim();
             const insuranceNo = document.getElementById('car-insurance-no').value.trim();
             const insuranceExpiry = document.getElementById('car-insurance-expiry').value;
@@ -970,12 +1029,37 @@
             if (!reg || !model) return;
 
             let cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
-            if (cars.some(car => car.reg === reg)) {
-                alert("Car Registration Number already exists!");
-                return;
+            
+            if (editingReg) {
+                const idx = cars.findIndex(c => c.reg === editingReg);
+                if (idx !== -1) {
+                    if (editingReg !== reg && cars.some(c => c.reg === reg)) {
+                        alert(`Vehicle registration number ${reg} already exists!`);
+                        return;
+                    }
+                    const finalRcDoc = rcDoc || cars[idx].rcDoc || '';
+                    cars[idx] = { reg, model, fuel, status, rcNumber, rcOwner, insuranceNo, insuranceExpiry, fitnessExpiry, permitExpiry, rcDoc: finalRcDoc };
+                    
+                    // Update assigned drivers if reg changed
+                    if (editingReg !== reg) {
+                        let drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+                        drivers.forEach(d => {
+                            if (d.car === editingReg) d.car = reg;
+                        });
+                        localStorage.setItem('manti_drivers', JSON.stringify(drivers));
+                        if (window.supabase) {
+                            window.supabase.from('settings').upsert({ setting_key: 'manti_drivers', setting_value: drivers, updated_at: new Date().toISOString() }, { onConflict: 'setting_key' });
+                        }
+                    }
+                }
+            } else {
+                if (cars.some(car => car.reg === reg)) {
+                    alert("Car Registration Number already exists!");
+                    return;
+                }
+                cars.push({ reg, model, fuel, status, rcNumber, rcOwner, insuranceNo, insuranceExpiry, fitnessExpiry, permitExpiry, rcDoc });
             }
 
-            cars.push({ reg, model, fuel, status, rcNumber, rcOwner, insuranceNo, insuranceExpiry, fitnessExpiry, permitExpiry, rcDoc });
             localStorage.setItem('manti_cars', JSON.stringify(cars));
 
             if (window.supabase) {
@@ -988,9 +1072,9 @@
                 });
             }
 
-            document.getElementById('car-form').reset();
-            document.getElementById('car-rc-base64').value = '';
+            resetCarForm();
             loadData();
+            alert(editingReg ? '✅ Vehicle details updated successfully!' : '✅ New vehicle registered successfully!');
         }
 
         function deleteCar(reg) {
