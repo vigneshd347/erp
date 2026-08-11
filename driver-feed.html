@@ -159,6 +159,16 @@
             </div>
             <button type="submit" class="btn-submit">Sign In</button>
         </form>
+
+        <!-- Debug / Can't Sign In helper -->
+        <div style="text-align:center; margin-top:16px;">
+            <button type="button" onclick="toggleDebug()" style="background:none; border:none; color:#64748b; font-size:0.78rem; cursor:pointer; text-decoration:underline;">Can't sign in? Check registered numbers</button>
+        </div>
+        <div id="debug-panel" style="display:none; margin-top:12px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:14px;">
+            <div style="font-size:0.75rem; font-weight:700; color:#94a3b8; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Registered Driver Phone Numbers</div>
+            <div id="debug-phone-list" style="font-size:0.85rem; color:#e2e8f0;"></div>
+            <div style="font-size:0.72rem; color:#64748b; margin-top:10px;">Contact admin at car.html to verify or reset your password.</div>
+        </div>
     </div>
 
     <!-- Feed Log Screen -->
@@ -402,6 +412,25 @@
             return digits;
         }
 
+        function toggleDebug() {
+            const panel = document.getElementById('debug-panel');
+            const list = document.getElementById('debug-phone-list');
+            if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+
+            const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            if (!drivers.length) {
+                list.innerHTML = '<span style="color:#f87171;">No drivers registered yet. Please add drivers in Fleet Management (car.html).</span>';
+            } else {
+                list.innerHTML = drivers.map(d =>
+                    `<div style="padding:6px 0; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; align-items:center;">
+                        <span>📱 <strong>${d.phone}</strong> &nbsp;–&nbsp; ${d.name || 'Unknown'}</span>
+                        <span style="font-size:0.72rem; padding:2px 8px; border-radius:12px; background:${d.status==='Active'?'#064e3b':'#450a0a'}; color:${d.status==='Active'?'#34d399':'#f87171'};">${d.status || 'Unknown'}</span>
+                    </div>`
+                ).join('');
+            }
+            panel.style.display = 'block';
+        }
+
         function handleLogin(e) {
             e.preventDefault();
             // Clear previous error
@@ -410,7 +439,8 @@
 
             const rawPhone = document.getElementById('login-phone').value.trim();
             const phone = normalizePhone(rawPhone);
-            const pass = document.getElementById('login-pass').value.trim();
+            // Do NOT trim password — match exactly as stored by admin
+            const pass = document.getElementById('login-pass').value;
 
             if (!phone) {
                 showLoginError('Please enter your mobile number.');
@@ -423,15 +453,19 @@
 
             const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
 
-            // Normalize stored phone numbers too for comparison
+            console.log('[DriverLogin] Entered phone (normalized):', phone);
+            console.log('[DriverLogin] Stored drivers:', drivers.map(d => ({ phone: d.phone, phoneNorm: normalizePhone((d.phone||'').toString()), name: d.name, status: d.status })));
+
+            // Normalize stored phone numbers for comparison; match password exactly
             const driver = drivers.find(d => {
                 const storedPhone = normalizePhone((d.phone || '').toString().trim());
-                const storedPass = (d.password || '').trim();
+                const storedPass = d.password || '';
+                console.log('[DriverLogin] Comparing:', storedPhone, '===', phone, '|', JSON.stringify(storedPass), '===', JSON.stringify(pass));
                 return storedPhone === phone && storedPass === pass;
             });
 
             if (!driver) {
-                showLoginError('\u26a0\ufe0f Invalid mobile number or password. Please check and try again.');
+                showLoginError('\u26a0\ufe0f Invalid mobile number or password. Tap \'Can\'t sign in?\' below to verify your registered number.');
                 document.getElementById('login-phone').focus();
                 return;
             }
