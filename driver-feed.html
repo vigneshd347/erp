@@ -698,8 +698,9 @@
 
         function refreshTripState() {
             const hasVehicle = currentDriver && currentDriver.car && currentDriver.car.trim() !== '' && currentDriver.car !== 'Unassigned' && currentDriver.car !== 'None';
+            const phoneKey = normalizePhone(currentDriver.phone) || currentDriver.phone;
             const activeTrips = JSON.parse(localStorage.getItem('manti_active_trips') || '{}');
-            activeTrip = activeTrips[currentDriver.phone] || null;
+            activeTrip = activeTrips[phoneKey] || activeTrips[currentDriver.phone] || null;
 
             if (activeTrip) {
                 // Trip in progress -> Show End Trip form
@@ -838,8 +839,18 @@
             if (!currentDriver) return;
             const logs = JSON.parse(localStorage.getItem('manti_car_logs') || '[]');
             const salaryRecs = JSON.parse(localStorage.getItem('manti_salary_records') || '[]');
-            const myLogs = logs.filter(l => l.driverPhone === currentDriver.phone)
-                               .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            const myPhoneNorm = normalizePhone(currentDriver.phone);
+            const myNameNorm = (currentDriver.name || '').trim().toLowerCase();
+
+            // Strict filter: only logs belonging to this logged-in driver
+            const myLogs = logs.filter(l => {
+                const logPhoneNorm = normalizePhone(l.driverPhone);
+                const logNameNorm = (l.driverName || '').trim().toLowerCase();
+                return (myPhoneNorm && logPhoneNorm && logPhoneNorm === myPhoneNorm) || 
+                       (myNameNorm && logNameNorm && logNameNorm === myNameNorm);
+            }).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+
             const totalTrips = myLogs.length;
             const totalKm = myLogs.reduce((s,l) => s + Math.max(0,(l.endKm||0)-(l.startKm||0)), 0);
             const joinDate = currentDriver.joinDate ? new Date(currentDriver.joinDate) : null;
@@ -848,17 +859,28 @@
             const now = new Date();
             const monthKm = myLogs.filter(l => { const d=new Date(l.timestamp); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); })
                                   .reduce((s,l) => s+Math.max(0,(l.endKm||0)-(l.startKm||0)),0);
+
             document.getElementById('hist-total-trips').textContent = totalTrips;
             document.getElementById('hist-total-km').textContent = totalKm.toLocaleString('en-IN')+' Km';
             document.getElementById('hist-avg-km').textContent = avgKm !== '-' ? avgKm+' Km' : '-';
             document.getElementById('hist-month-km').textContent = monthKm.toLocaleString('en-IN')+' Km';
             document.getElementById('hist-join-date').textContent = currentDriver.joinDate || '-';
             document.getElementById('hist-salary-monthly').textContent = currentDriver.monthlySalary ? '₹'+parseFloat(currentDriver.monthlySalary).toLocaleString('en-IN') : '-';
-            const mySalary = salaryRecs.filter(s => s.driverPhone===currentDriver.phone||s.driverName===currentDriver.name)
-                                       .sort((a,b) => new Date(b.date)-new Date(a.date));
+
+            // Strict filter: only salary records belonging to this logged-in driver
+            const mySalary = salaryRecs.filter(s => {
+                const sPhoneNorm = normalizePhone(s.driverPhone);
+                const sNameNorm = (s.driverName || '').trim().toLowerCase();
+                return (myPhoneNorm && sPhoneNorm && sPhoneNorm === myPhoneNorm) ||
+                       (myNameNorm && sNameNorm && sNameNorm === myNameNorm);
+            }).sort((a,b) => new Date(b.date)-new Date(a.date));
+
             if (mySalary.length > 0) {
                 document.getElementById('hist-salary-last-paid').textContent = new Date(mySalary[0].date).toLocaleDateString('en-IN');
                 document.getElementById('hist-salary-last-amount').textContent = '₹'+parseFloat(mySalary[0].amountPaid||0).toLocaleString('en-IN');
+            } else {
+                document.getElementById('hist-salary-last-paid').textContent = '-';
+                document.getElementById('hist-salary-last-amount').textContent = '-';
             }
             const rows = document.getElementById('hist-trip-rows');
             rows.innerHTML = '';
@@ -1186,11 +1208,13 @@
             }
 
             const activeTrips = JSON.parse(localStorage.getItem('manti_active_trips') || '{}');
-            activeTrips[currentDriver.phone] = {
+            const phoneKey = normalizePhone(currentDriver.phone) || currentDriver.phone;
+            activeTrips[phoneKey] = {
                 startKm,
                 startTimestamp: new Date().toISOString(),
                 startKmImage: startKmImageBase64
             };
+            activeTrips[currentDriver.phone] = activeTrips[phoneKey];
             
             localStorage.setItem('manti_active_trips', JSON.stringify(activeTrips));
             
@@ -1292,8 +1316,10 @@
                 }
             }
 
-            // Clear Active Trip
+            // Clear active trip for this driver
             const activeTrips = JSON.parse(localStorage.getItem('manti_active_trips') || '{}');
+            const phoneKey = normalizePhone(currentDriver.phone) || currentDriver.phone;
+            delete activeTrips[phoneKey];
             delete activeTrips[currentDriver.phone];
             localStorage.setItem('manti_active_trips', JSON.stringify(activeTrips));
 
