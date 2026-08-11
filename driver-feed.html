@@ -163,17 +163,6 @@
             <button type="submit" class="btn-submit">Sign In</button>
         </form>
 
-        <!-- Quick Demo Credentials Box -->
-        <div style="margin-top: 16px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 12px; font-size: 0.8rem;">
-            <div style="color: #94a3b8; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">🔑 Demo Driver Accounts</div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <button type="button" onclick="fillDemo('9876543210', 'password123')" style="background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; text-align: left; display: flex; justify-content: space-between; align-items: center;">
-                    <span>📱 <strong>9876543210</strong> (Rajesh Kumar)</span>
-                    <span style="font-size: 0.7rem; background: #0284c7; color: #fff; padding: 2px 6px; border-radius: 4px;">Tap to Auto-fill</span>
-                </button>
-            </div>
-        </div>
-
         <!-- Debug / Can't Sign In helper -->
         <div style="text-align:center; margin-top:12px;">
             <button type="button" onclick="toggleDebug()" style="background:none; border:none; color:#64748b; font-size:0.78rem; cursor:pointer; text-decoration:underline;">Can't sign in? Check registered numbers & passwords</button>
@@ -387,29 +376,12 @@
                 if (id === 'end-km') updateDistance();
             }
         }
-        function ensureDefaultDrivers() {
-            let drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
-            if (!drivers || drivers.length === 0) {
-                drivers = [
-                    { name: "Rajesh Kumar", phone: "9876543210", password: "password123", car: "TN-01-AB-1234", status: "Active" },
-                    { name: "Suresh Sharma", phone: "9123456789", password: "driver123", car: "TN-02-CD-5678", status: "Active" }
-                ];
-                localStorage.setItem('manti_drivers', JSON.stringify(drivers));
-            }
-            return drivers;
-        }
-
-        function fillDemo(phone, pass) {
-            ensureDefaultDrivers();
-            document.getElementById('login-phone').value = phone;
-            document.getElementById('login-pass').value = pass;
-            const errEl = document.getElementById('login-error');
-            if (errEl) errEl.style.display = 'none';
+        function getDrivers() {
+            return JSON.parse(localStorage.getItem('manti_drivers') || '[]');
         }
 
         // Always land on Sign In screen on initial load
         window.addEventListener('DOMContentLoaded', () => {
-            ensureDefaultDrivers();
             // Clear previous active session so page always asks for Sign In
             localStorage.removeItem('manti_active_driver_session');
             currentDriver = null;
@@ -421,7 +393,7 @@
         });
 
         document.addEventListener('CloudDataLoaded', () => {
-            ensureDefaultDrivers();
+            // Updated cloud drivers automatically synced
         });
 
         function showLoginError(msg) {
@@ -454,7 +426,7 @@
             const list = document.getElementById('debug-phone-list');
             if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
 
-            const drivers = ensureDefaultDrivers();
+            const drivers = getDrivers();
             if (!drivers.length) {
                 list.innerHTML = '<span style="color:#f87171;">No drivers registered yet. Please add drivers in Fleet Management (car.html).</span>';
             } else {
@@ -464,7 +436,6 @@
                             <span>📱 <strong>${d.phone}</strong> (${d.name || 'Driver'})</span>
                             <span style="font-size:0.72rem; padding:2px 8px; border-radius:12px; background:${d.status==='Active'?'#064e3b':'#450a0a'}; color:${d.status==='Active'?'#34d399':'#f87171'};">${d.status || 'Active'}</span>
                         </div>
-                        <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">🔑 Password: <code style="background:#1e293b; color:#fbbf24; padding:2px 6px; border-radius:4px;">${d.password || 'password123'}</code></div>
                     </div>`
                 ).join('');
             }
@@ -490,7 +461,7 @@
                 return;
             }
 
-            const drivers = ensureDefaultDrivers();
+            const drivers = getDrivers();
 
             console.log('[DriverLogin] Entered phone (normalized):', phone);
 
