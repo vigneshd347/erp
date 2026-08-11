@@ -104,6 +104,7 @@
             <!-- Navigation Tabs -->
             <div class="tab-menu">
                 <button class="tab-btn active" onclick="switchTab('cars')">🚗 Cars Registry</button>
+                <button class="tab-btn" onclick="switchTab('service')">🔧 Car Service</button>
                 <button class="tab-btn" onclick="switchTab('drivers')">👨 Drivers Accounts</button>
                 <button class="tab-btn" onclick="switchTab('logs')">📋 Daily Feed Log</button>
                 <a href="driver-salary.html" class="tab-btn" style="text-decoration:none; display:flex; align-items:center; gap:6px;">💰 Driver Salary</a>
@@ -149,6 +150,45 @@
                                     </select>
                                 </div>
                             </div>
+
+                            <!-- RC & Documents Section -->
+                            <h3 style="font-size:0.85rem; font-weight:700; color:#475569; margin:20px 0 10px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">📄 RC & Compliance Documents</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>RC Number</label>
+                                    <input type="text" id="car-rc-number" placeholder="e.g. KA01MH12345">
+                                </div>
+                                <div class="form-group">
+                                    <label>Owner Name (as per RC)</label>
+                                    <input type="text" id="car-rc-owner" placeholder="e.g. Manti Enterprises">
+                                </div>
+                                <div class="form-group">
+                                    <label>RC Expiry Date</label>
+                                    <input type="date" id="car-rc-expiry">
+                                </div>
+                                <div class="form-group">
+                                    <label>Insurance Number</label>
+                                    <input type="text" id="car-insurance-no" placeholder="Policy number">
+                                </div>
+                                <div class="form-group">
+                                    <label>Insurance Expiry Date</label>
+                                    <input type="date" id="car-insurance-expiry">
+                                </div>
+                                <div class="form-group">
+                                    <label>Fitness Certificate Expiry</label>
+                                    <input type="date" id="car-fitness-expiry">
+                                </div>
+                                <div class="form-group">
+                                    <label>Permit Expiry Date</label>
+                                    <input type="date" id="car-permit-expiry">
+                                </div>
+                                <div class="form-group">
+                                    <label>RC Document Upload (Image/PDF)</label>
+                                    <input type="file" id="car-rc-file" accept="image/*,application/pdf" style="font-size:0.85rem; border:1px solid #cbd5e1; padding:6px; border-radius:8px;">
+                                    <input type="hidden" id="car-rc-base64">
+                                </div>
+                            </div>
+
                             <div class="form-actions" style="margin-top: 16px;">
                                 <button type="submit" class="quick-btn primary" style="border:none; padding:10px 20px; border-radius:8px;">Register Vehicle</button>
                             </div>
@@ -166,14 +206,105 @@
                                     <tr>
                                         <th>Reg No</th>
                                         <th>Model</th>
-                                        <th>Fuel Type</th>
+                                        <th>Fuel</th>
                                         <th>Status</th>
+                                        <th>RC Expiry</th>
+                                        <th>Insurance</th>
+                                        <th>RC Doc</th>
                                         <th style="text-align: center;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="cars-list">
                                     <!-- Dynamic content -->
                                 </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Service: Car Service -->
+            <div id="tab-service" class="tab-content">
+                <div class="flex-row">
+                    <!-- Add Service Record -->
+                    <div class="kyc-form-card flex-1" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:0; min-width:320px; max-width:440px;">
+                        <h2 style="font-size:1.1rem; font-weight:700; color:#1e293b; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                            <i data-lucide="wrench" style="color:#f59e0b;"></i> Add Service Record
+                        </h2>
+                        <form id="service-form" onsubmit="saveService(event)">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Vehicle *</label>
+                                    <select id="svc-car" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Service Date *</label>
+                                    <input type="date" id="svc-date" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Service Type *</label>
+                                    <select id="svc-type" required>
+                                        <option value="Regular">Regular Maintenance</option>
+                                        <option value="Oil Change">Oil Change</option>
+                                        <option value="Tyre">Tyre Service</option>
+                                        <option value="Brake">Brake Service</option>
+                                        <option value="AC">AC Service</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Service Point Name</label>
+                                    <input type="text" id="svc-point" placeholder="e.g. Mani Auto Works">
+                                </div>
+                                <div class="form-group">
+                                    <label>Service KM (Odometer at Service) *</label>
+                                    <input type="number" id="svc-km" required placeholder="e.g. 45000" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Next Service KM</label>
+                                    <input type="number" id="svc-next-km" placeholder="e.g. 50000" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Service Cost (₹)</label>
+                                    <input type="number" id="svc-cost" placeholder="0.00" step="0.01" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Service Bill Upload</label>
+                                    <input type="file" id="svc-bill-file" accept="image/*,application/pdf" style="font-size:0.85rem; border:1px solid #cbd5e1; padding:6px; border-radius:8px;">
+                                    <input type="hidden" id="svc-bill-base64">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <textarea id="svc-notes" rows="2" placeholder="e.g. Changed engine oil and filter, rotated tyres" style="padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; outline:none; background:#fff; color:#1e293b; resize:vertical;"></textarea>
+                            </div>
+                            <div class="form-actions" style="margin-top:16px;">
+                                <button type="submit" class="quick-btn primary" style="border:none; padding:10px 20px; border-radius:8px;">Save Service Record</button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Service History Table -->
+                    <div class="kyc-form-card flex-1" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:0;">
+                        <h2 style="font-size:1.1rem; font-weight:700; color:#1e293b; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                            <i data-lucide="clipboard-list" style="color:#059669;"></i> Service History
+                        </h2>
+                        <div class="dash-table-wrap">
+                            <table class="dash-table" style="width:100%; border-collapse:collapse;">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Vehicle</th>
+                                        <th>Type</th>
+                                        <th>Service Point</th>
+                                        <th>Service KM</th>
+                                        <th>Next KM</th>
+                                        <th>Cost (₹)</th>
+                                        <th>Bill</th>
+                                        <th>Notes</th>
+                                        <th style="text-align:center;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="service-list"></tbody>
                             </table>
                         </div>
                     </div>
@@ -580,6 +711,35 @@
                 });
             }
 
+            // RC document file listener
+            const rcFileInput = document.getElementById('car-rc-file');
+            if (rcFileInput) {
+                rcFileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            document.getElementById('car-rc-base64').value = evt.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+            // Service bill file listener
+            const svcBillInput = document.getElementById('svc-bill-file');
+            if (svcBillInput) {
+                svcBillInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            document.getElementById('svc-bill-base64').value = evt.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
             loadData();
             if (window.lucide) lucide.createIcons();
         });
@@ -610,12 +770,24 @@
 
             cars.forEach(car => {
                 const badge = car.status === 'Active' ? 'status-active' : (car.status === 'Maintenance' ? 'status-maintenance' : 'status-inactive');
+                const today = new Date(); today.setHours(0,0,0,0);
+                const soon = new Date(today); soon.setDate(soon.getDate() + 30);
+                function expiryBadge(dateStr) {
+                    if (!dateStr) return '<span style="color:#94a3b8;font-size:0.78rem;">-</span>';
+                    const d = new Date(dateStr);
+                    if (d < today) return `<span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:10px;font-size:0.75rem;font-weight:700;">Expired</span>`;
+                    if (d <= soon) return `<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-size:0.75rem;font-weight:700;">${dateStr}</span>`;
+                    return `<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:10px;font-size:0.75rem;font-weight:700;">${dateStr}</span>`;
+                }
                 carsBody.innerHTML += `
                     <tr>
                         <td style="font-weight: 700; color: #059669;">${car.reg}</td>
                         <td>${car.model}</td>
                         <td>${car.fuel}</td>
                         <td><span class="car-status-badge ${badge}">${car.status}</span></td>
+                        <td>${expiryBadge(car.rcExpiry)}</td>
+                        <td>${expiryBadge(car.insuranceExpiry)}</td>
+                        <td style="text-align:center;">${car.rcDoc ? `<a href="${car.rcDoc}" target="_blank" style="color:#4f46e5;font-weight:600;font-size:0.8rem;">View</a>` : '-'}</td>
                         <td style="text-align: center;">
                             <button class="btn-action-sm danger" onclick="deleteCar('${car.reg}')" style="margin: 0 auto;"><i data-lucide="trash-2" style="width: 14px; height:14px;"></i> Delete</button>
                         </td>
@@ -624,11 +796,21 @@
                 selectCar.innerHTML += `<option value="${car.reg}">${car.reg} (${car.model})</option>`;
             });
 
+            // Populate service car dropdown
+            const svcCarSel = document.getElementById('svc-car');
+            if (svcCarSel) {
+                svcCarSel.innerHTML = '<option value="">-- Select Vehicle --</option>';
+                cars.forEach(car => {
+                    svcCarSel.innerHTML += `<option value="${car.reg}">${car.reg} (${car.model})</option>`;
+                });
+            }
+
             // 2. Render Drivers
             const driversBody = document.getElementById('drivers-list');
             driversBody.innerHTML = '';
             drivers.forEach(driver => {
                 const badge = driver.status === 'Active' ? 'status-active' : 'status-inactive';
+                const hasVehicle = driver.car && driver.car !== '';
                 driversBody.innerHTML += `
                     <tr>
                         <td style="font-weight: 600;">${driver.name}</td>
@@ -636,7 +818,11 @@
                         <td style="font-weight: 600; color: #4f46e5;">${driver.car || '-'}</td>
                         <td><span class="car-status-badge ${badge}">${driver.status}</span></td>
                         <td style="text-align: center;">
-                            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                                ${hasVehicle
+                                    ? `<button class="btn-action-sm" onclick="unassignVehicle('${driver.phone}')" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-size:0.75rem;">🚗 Unassign</button>`
+                                    : `<button class="btn-action-sm" onclick="openAssignVehicle('${driver.phone}')" style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;font-size:0.75rem;">🚗 Assign</button>`
+                                }
                                 <button class="btn-action-sm" onclick="editDriver('${driver.phone}')" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;"><i data-lucide="pencil" style="width: 14px; height:14px;"></i> Edit</button>
                                 <button class="btn-action-sm primary" onclick="viewDriverDetails('${driver.phone}')" style="background: var(--primary); color: #fff;"><i data-lucide="eye" style="width: 14px; height:14px;"></i> View</button>
                                 <button class="btn-action-sm danger" onclick="deleteDriver('${driver.phone}')"><i data-lucide="trash-2" style="width: 14px; height:14px;"></i> Delete</button>
@@ -680,6 +866,30 @@
                 `;
             });
 
+            // 4. Render Service Records
+            const serviceRecords = JSON.parse(localStorage.getItem('manti_service_records') || '[]');
+            const serviceBody = document.getElementById('service-list');
+            if (serviceBody) {
+                serviceBody.innerHTML = '';
+                const sortedSvc = [...serviceRecords].sort((a,b) => new Date(b.date) - new Date(a.date));
+                sortedSvc.forEach((svc, idx) => {
+                    serviceBody.innerHTML += `
+                        <tr>
+                            <td>${svc.date}</td>
+                            <td style="font-weight:700;color:#059669;">${svc.carReg}</td>
+                            <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:10px;font-size:0.78rem;font-weight:700;">${svc.type}</span></td>
+                            <td>${svc.point || '-'}</td>
+                            <td style="font-weight:600;">${svc.serviceKm ? svc.serviceKm + ' Km' : '-'}</td>
+                            <td style="font-weight:700;color:#f59e0b;">${svc.nextKm ? svc.nextKm + ' Km' : '-'}</td>
+                            <td>${svc.cost ? '₹' + parseFloat(svc.cost).toLocaleString('en-IN') : '-'}</td>
+                            <td style="text-align:center;">${svc.bill ? `<a href="${svc.bill}" target="_blank" style="color:#4f46e5;font-weight:600;font-size:0.8rem;">View</a>` : '-'}</td>
+                            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${svc.notes || '-'}</td>
+                            <td style="text-align:center;"><button class="btn-action-sm danger" onclick="deleteService(${idx})" style="margin:0 auto;"><i data-lucide="trash-2" style="width:14px;height:14px;"></i> Del</button></td>
+                        </tr>
+                    `;
+                });
+            }
+
             if (window.lucide) lucide.createIcons();
         }
 
@@ -689,6 +899,14 @@
             const model = document.getElementById('car-model').value.trim();
             const fuel = document.getElementById('car-fuel').value;
             const status = document.getElementById('car-status').value;
+            const rcNumber = document.getElementById('car-rc-number').value.trim();
+            const rcOwner = document.getElementById('car-rc-owner').value.trim();
+            const rcExpiry = document.getElementById('car-rc-expiry').value;
+            const insuranceNo = document.getElementById('car-insurance-no').value.trim();
+            const insuranceExpiry = document.getElementById('car-insurance-expiry').value;
+            const fitnessExpiry = document.getElementById('car-fitness-expiry').value;
+            const permitExpiry = document.getElementById('car-permit-expiry').value;
+            const rcDoc = document.getElementById('car-rc-base64').value;
 
             if (!reg || !model) return;
 
@@ -698,7 +916,7 @@
                 return;
             }
 
-            cars.push({ reg, model, fuel, status });
+            cars.push({ reg, model, fuel, status, rcNumber, rcOwner, rcExpiry, insuranceNo, insuranceExpiry, fitnessExpiry, permitExpiry, rcDoc });
             localStorage.setItem('manti_cars', JSON.stringify(cars));
 
             if (window.supabase) {
@@ -712,6 +930,7 @@
             }
 
             document.getElementById('car-form').reset();
+            document.getElementById('car-rc-base64').value = '';
             loadData();
         }
 
@@ -722,6 +941,85 @@
             localStorage.setItem('manti_cars', JSON.stringify(cars));
             if (window.supabase) {
                 window.supabase.from('settings').upsert({ setting_key: 'manti_cars', setting_value: cars, updated_at: new Date().toISOString() }, { onConflict: 'setting_key' });
+            }
+            loadData();
+        }
+
+        function saveService(e) {
+            e.preventDefault();
+            const carReg = document.getElementById('svc-car').value;
+            const date = document.getElementById('svc-date').value;
+            const type = document.getElementById('svc-type').value;
+            const point = document.getElementById('svc-point').value.trim();
+            const serviceKm = parseFloat(document.getElementById('svc-km').value) || 0;
+            const nextKm = parseFloat(document.getElementById('svc-next-km').value) || 0;
+            const cost = parseFloat(document.getElementById('svc-cost').value) || 0;
+            const notes = document.getElementById('svc-notes').value.trim();
+            const bill = document.getElementById('svc-bill-base64').value;
+
+            if (!carReg || !date || !serviceKm) { alert('Please fill Vehicle, Date and Service KM.'); return; }
+
+            let records = JSON.parse(localStorage.getItem('manti_service_records') || '[]');
+            records.push({ carReg, date, type, point, serviceKm, nextKm, cost, notes, bill, savedAt: new Date().toISOString() });
+            localStorage.setItem('manti_service_records', JSON.stringify(records));
+            if (window.supabase) {
+                window.supabase.from('settings').upsert({ setting_key: 'manti_service_records', setting_value: records, updated_at: new Date().toISOString() }, { onConflict: 'setting_key' });
+            }
+            document.getElementById('service-form').reset();
+            document.getElementById('svc-bill-base64').value = '';
+            loadData();
+            alert('✅ Service record saved!');
+        }
+
+        function deleteService(idx) {
+            if (!confirm('Delete this service record?')) return;
+            let records = JSON.parse(localStorage.getItem('manti_service_records') || '[]');
+            records.splice(idx, 1);
+            localStorage.setItem('manti_service_records', JSON.stringify(records));
+            if (window.supabase) {
+                window.supabase.from('settings').upsert({ setting_key: 'manti_service_records', setting_value: records, updated_at: new Date().toISOString() }, { onConflict: 'setting_key' });
+            }
+            loadData();
+        }
+
+        // Assign vehicle to driver individually
+        function openAssignVehicle(phone) {
+            const cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
+            const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const assignedCarRegs = drivers.filter(d => d.phone !== phone && d.car).map(d => d.car);
+            const available = cars.filter(c => !assignedCarRegs.includes(c.reg));
+            if (available.length === 0) {
+                alert('All vehicles are currently assigned to other drivers. Please unassign first.');
+                return;
+            }
+            let opts = available.map(c => `${c.reg} (${c.model})`).join('\n');
+            const chosen = prompt(`Assign a vehicle to this driver.\n\nAvailable vehicles:\n${opts}\n\nType the Registration Number exactly:`);
+            if (!chosen) return;
+            const match = cars.find(c => c.reg === chosen.trim().toUpperCase());
+            if (!match) { alert('Vehicle not found. Please type the registration number exactly.'); return; }
+            if (assignedCarRegs.includes(match.reg)) { alert(`${match.reg} is already assigned to another driver!`); return; }
+
+            const dIdx = drivers.findIndex(d => d.phone === phone);
+            if (dIdx === -1) return;
+            drivers[dIdx].car = match.reg;
+            drivers[dIdx].fuelType = match.fuel;
+            localStorage.setItem('manti_drivers', JSON.stringify(drivers));
+            if (window.supabase) {
+                window.supabase.from('settings').upsert({ setting_key: 'manti_drivers', setting_value: drivers, updated_at: new Date().toISOString() }, { onConflict: 'setting_key' });
+            }
+            loadData();
+            alert(`✅ ${match.reg} assigned to driver.`);
+        }
+
+        function unassignVehicle(phone) {
+            if (!confirm('Remove vehicle assignment from this driver?')) return;
+            let drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
+            const dIdx = drivers.findIndex(d => d.phone === phone);
+            if (dIdx === -1) return;
+            drivers[dIdx].car = '';
+            localStorage.setItem('manti_drivers', JSON.stringify(drivers));
+            if (window.supabase) {
+                window.supabase.from('settings').upsert({ setting_key: 'manti_drivers', setting_value: drivers, updated_at: new Date().toISOString() }, { onConflict: 'setting_key' });
             }
             loadData();
         }
@@ -753,8 +1051,16 @@
 
             let drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
             if (drivers.some(d => d.phone === phone)) {
-                alert("Driver Mobile Number (Login ID) already registered!");
+                alert("Driver Mobile Number (Login ID) already registered! Each driver must have a unique mobile number.");
                 return;
+            }
+            // Prevent assigning a vehicle that's already assigned to another driver
+            if (car) {
+                const alreadyAssigned = drivers.find(d => d.car === car);
+                if (alreadyAssigned) {
+                    alert(`Vehicle ${car} is already assigned to ${alreadyAssigned.name}. Please unassign it first, or use a different vehicle.`);
+                    return;
+                }
             }
 
             drivers.push({ 
