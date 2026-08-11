@@ -203,18 +203,7 @@
             <div id="service-due-msg" style="color:#fde8d8;"></div>
         </div>
 
-        <!-- No Vehicle Assigned Warning Banner -->
-        <div id="no-vehicle-section" style="display:none; background:linear-gradient(135deg, #450a0a, #7f1d1d); border:1px solid #ef4444; border-radius:12px; padding:24px 16px; text-align:center; margin-bottom:20px;">
-            <div style="font-size:2.8rem; margin-bottom:8px;">🚗🚫</div>
-            <h3 style="margin:0 0 8px 0; color:#fca5a5; font-size:1.15rem; font-weight:800;">No Vehicle Assigned</h3>
-            <p style="margin:0 0 14px 0; color:#fecaca; font-size:0.85rem; line-height:1.4;">
-                You currently do not have any vehicle assigned to your driver account.<br>
-                Please contact your <strong>Fleet Administrator</strong> to assign a vehicle before you can log trips.
-            </p>
-            <div style="font-size:0.78rem; color:#94a3b8; background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:8px; display:inline-block;">
-                Status: <strong>Unassigned Driver Account</strong>
-            </div>
-        </div>
+
 
         <!-- Bottom Nav Tabs -->
         <div style="display:flex; gap:6px; margin-bottom:20px; border-bottom:1px solid #334155; padding-bottom:12px;">
@@ -224,6 +213,13 @@
 
         <!-- Section 1: Start Trip -->
         <div id="start-trip-section" style="display: none;">
+            <!-- Start KM Lock Banner (Shown when no vehicle is assigned) -->
+            <div id="start-km-lock-banner" style="display:none; background:linear-gradient(135deg, #450a0a, #7f1d1d); border:1px solid #ef4444; border-radius:10px; padding:14px 16px; margin-bottom:16px; font-size:0.88rem; text-align:center;">
+                <div style="font-size:1.4rem; margin-bottom:4px;">🔒🚗</div>
+                <div style="font-weight:800; color:#fca5a5; font-size:0.95rem; margin-bottom:4px;">Start KM Locked: No Vehicle Assigned</div>
+                <div style="color:#fecaca; font-size:0.82rem;">Please contact your Fleet Administrator to assign a vehicle to your driver account.</div>
+            </div>
+
             <h3 style="font-size: 1.1rem; color: #6366f1; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
                 <i data-lucide="play-circle"></i> Start Your Shift / Trip
             </h3>
@@ -655,32 +651,45 @@
             const drivers = JSON.parse(localStorage.getItem('manti_drivers') || '[]');
             const freshDriver = drivers.find(d => d.phone === currentDriver.phone);
             if (freshDriver) {
-                // Merge fresh data but keep session phone as key
                 currentDriver = freshDriver;
+            }
+
+            // Lockout if driver account is suspended
+            if (currentDriver.status && currentDriver.status !== 'Active') {
+                alert("🚫 Your account is currently suspended. Please contact your Fleet Administrator.");
+                handleLogout();
+                return;
             }
 
             document.getElementById('welcome-name').textContent = `Hello, ${currentDriver.name}`;
             
-            // Always look up the assigned vehicle's fuel type live from cars registry
+            // Always look up the assigned vehicle's fuel type & model live from cars registry
             let fuelType = '';
+            let carModel = '';
             let assignedCar = currentDriver.car || '';
-            if (assignedCar && assignedCar !== 'Unassigned') {
+            if (assignedCar && assignedCar !== 'Unassigned' && assignedCar !== 'None') {
                 const cars = JSON.parse(localStorage.getItem('manti_cars') || '[]');
                 const car = cars.find(c => c.reg === assignedCar);
-                if (car && car.fuel) {
-                    fuelType = car.fuel;
+                if (car) {
+                    if (car.fuel) fuelType = car.fuel;
+                    if (car.model) carModel = car.model;
                 }
             }
             currentDriver.fuelType = fuelType;
 
-            // Update header info bar
+            // Update header info bar with Vehicle Reg No and Model
+            const modelStr = carModel ? ` (${carModel})` : '';
             const fuelBadge = fuelType ? ` | ⛽ ${fuelType}` : '';
-            document.getElementById('assigned-vehicle').textContent = `Vehicle: ${assignedCar || 'None'}${fuelBadge}`;
+            if (assignedCar && assignedCar !== 'Unassigned' && assignedCar !== 'None') {
+                document.getElementById('assigned-vehicle').innerHTML = `<span style="color:#34d399;font-weight:700;">🚘 Vehicle: ${assignedCar}${modelStr}</span>${fuelBadge}`;
+            } else {
+                document.getElementById('assigned-vehicle').innerHTML = `<span style="color:#f87171;font-weight:700;">⚠️ Vehicle: Not Assigned</span>`;
+            }
 
             // Update fuel section labels dynamically
             updateFuelLabels(fuelType);
 
-            // Save updated session with fresh fuelType
+            // Save updated session
             localStorage.setItem('manti_active_driver_session', JSON.stringify(currentDriver));
 
             // Check active trips
@@ -689,19 +698,6 @@
 
         function refreshTripState() {
             const hasVehicle = currentDriver && currentDriver.car && currentDriver.car.trim() !== '' && currentDriver.car !== 'Unassigned' && currentDriver.car !== 'None';
-            const noVehicleEl = document.getElementById('no-vehicle-section');
-
-            if (!hasVehicle) {
-                document.getElementById('start-trip-section').style.display = 'none';
-                document.getElementById('end-trip-section').style.display = 'none';
-                if (noVehicleEl) noVehicleEl.style.display = 'block';
-                if (window.lucide) lucide.createIcons();
-                checkServiceDue();
-                return;
-            }
-
-            if (noVehicleEl) noVehicleEl.style.display = 'none';
-
             const activeTrips = JSON.parse(localStorage.getItem('manti_active_trips') || '{}');
             activeTrip = activeTrips[currentDriver.phone] || null;
 
@@ -720,6 +716,35 @@
                 document.getElementById('start-trip-section').style.display = 'block';
                 document.getElementById('end-trip-section').style.display = 'none';
                 
+                // Lock or unlock Start KM based on vehicle assignment
+                const lockBanner = document.getElementById('start-km-lock-banner');
+                const startForm = document.getElementById('start-trip-form');
+                const startKmFile = document.getElementById('start-km-file');
+                const startKmInput = document.getElementById('start-km');
+                const startSubmitBtn = startForm ? startForm.querySelector('button[type="submit"]') : null;
+
+                if (!hasVehicle) {
+                    if (lockBanner) lockBanner.style.display = 'block';
+                    if (startKmFile) startKmFile.disabled = true;
+                    if (startKmInput) startKmInput.disabled = true;
+                    if (startSubmitBtn) {
+                        startSubmitBtn.disabled = true;
+                        startSubmitBtn.style.opacity = '0.5';
+                        startSubmitBtn.style.cursor = 'not-allowed';
+                        startSubmitBtn.textContent = '🔒 Start KM Locked (No Vehicle Assigned)';
+                    }
+                } else {
+                    if (lockBanner) lockBanner.style.display = 'none';
+                    if (startKmFile) startKmFile.disabled = false;
+                    if (startKmInput) startKmInput.disabled = false;
+                    if (startSubmitBtn) {
+                        startSubmitBtn.disabled = false;
+                        startSubmitBtn.style.opacity = '1';
+                        startSubmitBtn.style.cursor = 'pointer';
+                        startSubmitBtn.textContent = 'Start Trip & Save Odometer';
+                    }
+                }
+
                 // Reset file fields
                 startKmImageBase64 = '';
                 endKmImageBase64 = '';
