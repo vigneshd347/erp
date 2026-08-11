@@ -698,12 +698,29 @@
 
         function refreshTripState() {
             const hasVehicle = currentDriver && currentDriver.car && currentDriver.car.trim() !== '' && currentDriver.car !== 'Unassigned' && currentDriver.car !== 'None';
-            const phoneKey = normalizePhone(currentDriver.phone) || currentDriver.phone;
-            const activeTrips = JSON.parse(localStorage.getItem('manti_active_trips') || '{}');
-            activeTrip = activeTrips[phoneKey] || activeTrips[currentDriver.phone] || null;
+            
+            let activeTrips = {};
+            try {
+                const stored = localStorage.getItem('manti_active_trips');
+                if (stored) activeTrips = JSON.parse(stored);
+            } catch(e) {}
+
+            const phoneKey = normalizePhone(currentDriver.phone);
+            const rawPhone = (currentDriver.phone || '').trim();
+
+            let foundTrip = null;
+            if (activeTrips && typeof activeTrips === 'object') {
+                const t = (phoneKey ? activeTrips[phoneKey] : null) || (rawPhone ? activeTrips[rawPhone] : null);
+                if (t && typeof t === 'object' && t.startKm !== undefined && t.startKm !== null) {
+                    if (!t.driverPhone || normalizePhone(t.driverPhone) === phoneKey || t.driverPhone === rawPhone) {
+                        foundTrip = t;
+                    }
+                }
+            }
+            activeTrip = foundTrip;
 
             if (activeTrip) {
-                // Trip in progress -> Show End Trip form
+                // Trip in progress -> Show End Trip form for THIS driver
                 document.getElementById('start-trip-section').style.display = 'none';
                 document.getElementById('end-trip-section').style.display = 'block';
                 
@@ -1207,14 +1224,29 @@
                 return;
             }
 
-            const activeTrips = JSON.parse(localStorage.getItem('manti_active_trips') || '{}');
-            const phoneKey = normalizePhone(currentDriver.phone) || currentDriver.phone;
-            activeTrips[phoneKey] = {
+            let activeTrips = {};
+            try {
+                const stored = localStorage.getItem('manti_active_trips');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (parsed && typeof parsed === 'object' && !parsed.startKm) {
+                        activeTrips = parsed;
+                    }
+                }
+            } catch(e) {}
+
+            const phoneKey = normalizePhone(currentDriver.phone);
+            const newTrip = {
+                driverPhone: currentDriver.phone,
+                driverName: currentDriver.name,
+                carReg: currentDriver.car || '',
                 startKm,
                 startTimestamp: new Date().toISOString(),
                 startKmImage: startKmImageBase64
             };
-            activeTrips[currentDriver.phone] = activeTrips[phoneKey];
+
+            if (phoneKey) activeTrips[phoneKey] = newTrip;
+            if (currentDriver.phone) activeTrips[currentDriver.phone] = newTrip;
             
             localStorage.setItem('manti_active_trips', JSON.stringify(activeTrips));
             
@@ -1316,12 +1348,25 @@
                 }
             }
 
-            // Clear active trip for this driver
-            const activeTrips = JSON.parse(localStorage.getItem('manti_active_trips') || '{}');
-            const phoneKey = normalizePhone(currentDriver.phone) || currentDriver.phone;
-            delete activeTrips[phoneKey];
-            delete activeTrips[currentDriver.phone];
+            // Clear active trip strictly for this driver
+            let activeTrips = {};
+            try {
+                const stored = localStorage.getItem('manti_active_trips');
+                if (stored) activeTrips = JSON.parse(stored);
+            } catch(e) {}
+
+            const phoneKey = normalizePhone(currentDriver.phone);
+            const rawPhone = (currentDriver.phone || '').trim();
+
+            if (phoneKey) delete activeTrips[phoneKey];
+            if (rawPhone) delete activeTrips[rawPhone];
+            delete activeTrips.startKm;
+            delete activeTrips.startTimestamp;
+            delete activeTrips.startKmImage;
+            delete activeTrips.driverPhone;
+
             localStorage.setItem('manti_active_trips', JSON.stringify(activeTrips));
+            activeTrip = null;
 
             // Show Success Banner
             showBanner("Trip logged and completed successfully!");
