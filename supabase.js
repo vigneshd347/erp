@@ -1191,8 +1191,10 @@ window.fetchEverythingFromCloud = async function () {
                 'manti_expenses', 'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history'
             ];
             settingsRes.data.forEach(s => {
-                if (!ignoredKeys.includes(s.setting_key)) {
-                    window.ERP_MEMORY.set(s.setting_key, JSON.stringify(s.setting_value));
+                if (s.setting_key && !ignoredKeys.includes(s.setting_key)) {
+                    const strVal = typeof s.setting_value === 'string' ? s.setting_value : JSON.stringify(s.setting_value);
+                    window.ERP_MEMORY.set(s.setting_key, strVal);
+                    try { originalSetItem.call(localStorage, s.setting_key, strVal); } catch(e){}
                 }
             });
         }
