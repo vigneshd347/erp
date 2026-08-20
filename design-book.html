@@ -265,25 +265,12 @@
         </aside>
 
         <main class="main-content" style="flex: 1; overflow-y: auto; padding: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div>
                     <h1 style="font-size: 1.4rem; font-weight: 800; color: #1f2937; margin: 0;">Design Book</h1>
                     <p style="font-size: 0.85rem; color: #6b7280; margin-top: 4px;">Manage your jewelry master designs and templates</p>
                 </div>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <div style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:8px; padding:8px 14px; width: 260px;">
-                        <i data-lucide="search" style="width:16px;height:16px;color:var(--text-muted);"></i>
-                        <input type="text" id="search-designs" placeholder="Search designs..." oninput="renderGrid()" style="border:none; background:transparent; outline:none; font-size:0.85rem; width:100%;">
-                    </div>
-                    <select id="filter-category" onchange="renderGrid()" style="padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.85rem; font-weight: 500; cursor: pointer; background: #fff;">
-                        <option value="All">All Categories</option>
-                        <option value="Ladies ring">Ladies ring</option>
-                        <option value="Gents ring">Gents ring</option>
-                        <option value="Bangle">Bangles</option>
-                        <option value="Earring">Earrings</option>
-                        <option value="Necklace">Necklaces</option>
-                        <option value="Mix">Mix</option>
-                    </select>
+                <div>
                     <button class="btn-animated-add" onclick="openDesignModal()">
                       <span class="add-text">Add Design</span>
                       <span class="add-icon-wrap">
@@ -293,6 +280,80 @@
                         </svg>
                       </span>
                     </button>
+                </div>
+            </div>
+
+            <!-- Comprehensive Filter Bar -->
+            <div style="background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                    <!-- Search Input -->
+                    <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:7px 12px; flex: 1; min-width: 200px;">
+                        <i data-lucide="search" style="width:15px;height:15px;color:var(--text-muted);"></i>
+                        <input type="text" id="search-designs" placeholder="Search ID, Designer, PO, Size..." oninput="renderGrid()" style="border:none; background:transparent; outline:none; font-size:0.83rem; width:100%;">
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div style="min-width: 135px;">
+                        <select id="filter-category" onchange="renderGrid()" style="width: 100%; padding: 7.5px 10px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.82rem; font-weight: 600; cursor: pointer; background: #f8fafc; color: #334155;">
+                            <option value="All">All Categories</option>
+                            <option value="Ladies ring">Ladies ring</option>
+                            <option value="Gents ring">Gents ring</option>
+                            <option value="Bangle">Bangle</option>
+                            <option value="Earring">Earring</option>
+                            <option value="Necklace">Necklace</option>
+                            <option value="Mix">Mix</option>
+                        </select>
+                    </div>
+
+                    <!-- Designer Filter -->
+                    <div style="min-width: 140px;">
+                        <select id="filter-designer" onchange="renderGrid()" style="width: 100%; padding: 7.5px 10px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.82rem; font-weight: 600; cursor: pointer; background: #f8fafc; color: #334155;">
+                            <option value="All">All Designers</option>
+                        </select>
+                    </div>
+
+                    <!-- Type Filter -->
+                    <div style="min-width: 120px;">
+                        <select id="filter-type" onchange="renderGrid()" style="width: 100%; padding: 7.5px 10px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.82rem; font-weight: 600; cursor: pointer; background: #f8fafc; color: #334155;">
+                            <option value="All">All Types</option>
+                            <option value="Mold">Mold</option>
+                            <option value="3DM">3DM</option>
+                            <option value="STL">STL</option>
+                            <option value="Mold & 3DM">Mold & 3DM</option>
+                        </select>
+                    </div>
+
+                    <!-- Size Filter -->
+                    <div style="min-width: 110px;">
+                        <select id="filter-size" onchange="renderGrid()" style="width: 100%; padding: 7.5px 10px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.82rem; font-weight: 600; cursor: pointer; background: #f8fafc; color: #334155;">
+                            <option value="All">All Sizes</option>
+                        </select>
+                    </div>
+
+                    <!-- Source PO Filter -->
+                    <div style="min-width: 120px;">
+                        <select id="filter-po" onchange="renderGrid()" style="width: 100%; padding: 7.5px 10px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 0.82rem; font-weight: 600; cursor: pointer; background: #f8fafc; color: #334155;">
+                            <option value="All">All POs</option>
+                        </select>
+                    </div>
+
+                    <!-- Weight Range (Min & Max) -->
+                    <div style="display: flex; align-items: center; gap: 5px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px;">
+                        <span style="font-size: 0.78rem; font-weight: 600; color: #64748b;"><i data-lucide="scale" style="width: 13px; height: 13px; display: inline; vertical-align: middle;"></i> Wt:</span>
+                        <input type="number" id="filter-min-weight" step="0.1" min="0" placeholder="Min" oninput="renderGrid()" style="width: 58px; border: 1px solid #cbd5e1; border-radius: 5px; padding: 3px 5px; font-size: 0.8rem; background: #fff; outline: none;">
+                        <span style="font-size: 0.75rem; color: #94a3b8;">to</span>
+                        <input type="number" id="filter-max-weight" step="0.1" min="0" placeholder="Max" oninput="renderGrid()" style="width: 58px; border: 1px solid #cbd5e1; border-radius: 5px; padding: 3px 5px; font-size: 0.8rem; background: #fff; outline: none;">
+                    </div>
+
+                    <!-- Reset Button -->
+                    <button type="button" onclick="resetFilters()" style="padding: 6.5px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-size: 0.8rem; font-weight: 600; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Reset all filters">
+                        <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i> Reset
+                    </button>
+                </div>
+
+                <!-- Status line -->
+                <div style="margin-top: 8px; font-size: 0.76rem; color: #64748b; display: flex; justify-content: space-between; align-items: center;">
+                    <span id="results-count-text">Showing all designs</span>
                 </div>
             </div>
 
@@ -868,21 +929,100 @@
             }
         };
 
+        function populateFilterOptions() {
+            // 1. Designer Filter
+            const designerSelect = document.getElementById('filter-designer');
+            if (designerSelect) {
+                const currentVal = designerSelect.value;
+                const designers = Array.from(new Set(designs.map(d => (d.designerName || '').trim()).filter(Boolean))).sort();
+                designerSelect.innerHTML = '<option value="All">All Designers</option>' + 
+                    designers.map(name => `<option value="${name}" ${name === currentVal ? 'selected' : ''}>${name}</option>`).join('');
+            }
+
+            // 2. Size Filter
+            const sizeSelect = document.getElementById('filter-size');
+            if (sizeSelect) {
+                const currentVal = sizeSelect.value;
+                const sizes = Array.from(new Set(designs.map(d => (d.size || '').trim()).filter(Boolean))).sort();
+                sizeSelect.innerHTML = '<option value="All">All Sizes</option>' + 
+                    sizes.map(s => `<option value="${s}" ${s === currentVal ? 'selected' : ''}>${s}</option>`).join('');
+            }
+
+            // 3. Source PO Filter
+            const poSelect = document.getElementById('filter-po');
+            if (poSelect) {
+                const currentVal = poSelect.value;
+                const pos = Array.from(new Set(designs.map(d => (d._sourcePO || '').trim()).filter(Boolean))).sort();
+                poSelect.innerHTML = '<option value="All">All POs</option>' + 
+                    pos.map(po => `<option value="${po}" ${po === currentVal ? 'selected' : ''}>${po}</option>`).join('');
+            }
+        }
+
+        window.resetFilters = function() {
+            if (document.getElementById('search-designs')) document.getElementById('search-designs').value = '';
+            if (document.getElementById('filter-category')) document.getElementById('filter-category').value = 'All';
+            if (document.getElementById('filter-designer')) document.getElementById('filter-designer').value = 'All';
+            if (document.getElementById('filter-type')) document.getElementById('filter-type').value = 'All';
+            if (document.getElementById('filter-size')) document.getElementById('filter-size').value = 'All';
+            if (document.getElementById('filter-po')) document.getElementById('filter-po').value = 'All';
+            if (document.getElementById('filter-min-weight')) document.getElementById('filter-min-weight').value = '';
+            if (document.getElementById('filter-max-weight')) document.getElementById('filter-max-weight').value = '';
+            renderGrid();
+        };
+
         function renderGrid() {
+            populateFilterOptions();
+
             const grid = document.getElementById('design-grid');
             const emptyState = document.getElementById('empty-state');
-            const searchTerm = (document.getElementById('search-designs').value || '').toLowerCase();
-            const catFilter = document.getElementById('filter-category').value;
+            const searchTerm = (document.getElementById('search-designs') ? document.getElementById('search-designs').value : '').trim().toLowerCase();
+            const catFilter = document.getElementById('filter-category') ? document.getElementById('filter-category').value : 'All';
+            const designerFilter = document.getElementById('filter-designer') ? document.getElementById('filter-designer').value : 'All';
+            const typeFilter = document.getElementById('filter-type') ? document.getElementById('filter-type').value : 'All';
+            const sizeFilter = document.getElementById('filter-size') ? document.getElementById('filter-size').value : 'All';
+            const poFilter = document.getElementById('filter-po') ? document.getElementById('filter-po').value : 'All';
+            const minWeight = parseFloat(document.getElementById('filter-min-weight') ? document.getElementById('filter-min-weight').value : NaN);
+            const maxWeight = parseFloat(document.getElementById('filter-max-weight') ? document.getElementById('filter-max-weight').value : NaN);
 
             const filtered = designs.filter(d => {
-                const effectiveCat = (d.category === 'Ring') ? (d.subCategory || 'Ladies ring') : d.category;
+                // 1. Category Filter
+                const effectiveCat = (d.category === 'Ring') ? (d.subCategory || 'Ladies ring') : (d.category || '');
                 if (catFilter !== 'All' && effectiveCat !== catFilter && d.category !== catFilter) return false;
+
+                // 2. Designer Filter
+                if (designerFilter !== 'All' && (d.designerName || '') !== designerFilter) return false;
+
+                // 3. Type Filter
+                if (typeFilter !== 'All' && (d.designType || '') !== typeFilter) return false;
+
+                // 4. Size Filter
+                if (sizeFilter !== 'All' && (d.size || '') !== sizeFilter) return false;
+
+                // 5. Source PO Filter
+                if (poFilter !== 'All' && (d._sourcePO || '') !== poFilter) return false;
+
+                // 6. Weight Range Filter
+                const wt = parseFloat(d.weight) || 0;
+                if (!isNaN(minWeight) && wt < minWeight) return false;
+                if (!isNaN(maxWeight) && wt > maxWeight) return false;
+
+                // 7. Search keyword
                 if (searchTerm) {
-                    const str = `${d.id} ${effectiveCat} ${d.category} ${d.subCategory || ''} ${d.size || ''}`.toLowerCase();
+                    const str = `${d.id} ${effectiveCat} ${d.category} ${d.subCategory || ''} ${d.size || ''} ${d.designerName || ''} ${d.designType || ''} ${d._sourcePO || ''}`.toLowerCase();
                     if (!str.includes(searchTerm)) return false;
                 }
                 return true;
             });
+
+            // Update status indicator
+            const statusEl = document.getElementById('results-count-text');
+            if (statusEl) {
+                if (filtered.length === designs.length) {
+                    statusEl.innerHTML = `Showing all <strong>${designs.length}</strong> designs`;
+                } else {
+                    statusEl.innerHTML = `Showing <strong>${filtered.length}</strong> of <strong>${designs.length}</strong> filtered designs`;
+                }
+            }
 
             if (filtered.length === 0) {
                 grid.style.display = 'none';
