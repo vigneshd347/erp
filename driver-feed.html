@@ -13,10 +13,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=3"></script>
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+        body { background-color: #0a0e1a; color: #f8fafc; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
         .portal-card {
-            background: #1e293b;
-            border: 1px solid #334155;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(251, 191, 36, 0.15);
             border-radius: 16px;
             width: 100%;
             max-width: 480px;
@@ -32,18 +32,18 @@
         .form-group label { font-size: 0.8rem; font-weight: 600; color: #94a3b8; }
         .form-group input, .form-group textarea, .form-group select {
             padding: 12px;
-            background: #0f172a;
-            border: 1px solid #334155;
+            background: #0a0e1a;
+            border: 1px solid rgba(251, 191, 36, 0.15);
             border-radius: 8px;
             color: #fff;
             font-size: 0.95rem;
             outline: none;
             transition: border-color 0.2s;
         }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #6366f1; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #f59e0b; }
         
         .btn-submit {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
             color: #fff;
             border: none;
             border-radius: 8px;
@@ -86,7 +86,7 @@
             height: 12px;
             border: 2px solid rgba(255,255,255,0.3);
             border-radius: 50%;
-            border-top-color: #6366f1;
+            border-top-color: #f59e0b;
             animation: ocr-spin 1s ease-in-out infinite;
             margin-right: 6px;
             vertical-align: middle;
@@ -97,7 +97,7 @@
 
         /* Mobile App View Compatibility Styling */
         @media (max-width: 600px) {
-            body { padding: 0 !important; margin: 0 !important; align-items: flex-start !important; background: #0f172a !important; }
+            body { padding: 0 !important; margin: 0 !important; align-items: flex-start !important; background: #0a0e1a !important; }
             .portal-card {
                 padding: 16px 14px 90px 14px !important;
                 border-radius: 0 !important;
@@ -111,7 +111,7 @@
             .portal-header img { height: 75px !important; width: 75px !important; margin-bottom: 10px !important; }
             .portal-header h1 { font-size: 1.3rem !important; }
             .portal-header p { font-size: 0.8rem !important; }
-            .form-group label { font-size: 0.82rem !important; font-weight: 700; color: #a5b4fc; }
+            .form-group label { font-size: 0.82rem !important; font-weight: 700; color: #fbbf24; }
             .form-group input, .form-group select, .form-group textarea {
                 padding: 14px 12px !important;
                 font-size: 1.1rem !important;
@@ -129,7 +129,7 @@
             flex-wrap: wrap;
         }
         .km-quick-btn {
-            background: #334155;
+            background: rgba(251, 191, 36, 0.15);
             color: #38bdf8;
             border: 1px solid #475569;
             border-radius: 6px;
@@ -178,7 +178,7 @@
         <div style="text-align:center; margin-top:12px;">
             <button type="button" onclick="toggleDebug()" style="background:none; border:none; color:#64748b; font-size:0.78rem; cursor:pointer; text-decoration:underline;">Can't sign in? Check registered numbers & passwords</button>
         </div>
-        <div id="debug-panel" style="display:none; margin-top:12px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:14px;">
+        <div id="debug-panel" style="display:none; margin-top:12px; background:#0a0e1a; border:1px solid rgba(251, 191, 36, 0.15); border-radius:10px; padding:14px;">
             <div style="font-size:0.75rem; font-weight:700; color:#94a3b8; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Registered Driver Accounts</div>
             <div id="debug-phone-list" style="font-size:0.85rem; color:#e2e8f0;"></div>
             <div style="font-size:0.72rem; color:#64748b; margin-top:10px;">Managed in Fleet Management (car.html).</div>
@@ -187,7 +187,7 @@
 
     <!-- Feed Log Screen -->
     <div id="feed-container" class="portal-card" style="display:none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(251, 191, 36, 0.15); padding-bottom: 16px;">
             <div>
                 <h2 id="welcome-name" style="margin: 0; font-size: 1.2rem; color: #fff;">Hello, Driver</h2>
                 <p id="assigned-vehicle" style="margin: 4px 0 0; font-size: 0.8rem; color: #94a3b8;">Vehicle Assigned: -</p>
@@ -206,9 +206,9 @@
 
 
         <!-- Bottom Nav Tabs -->
-        <div style="display:flex; gap:6px; margin-bottom:20px; border-bottom:1px solid #334155; padding-bottom:12px;">
-            <button onclick="switchPortalTab('trip')" id="ptab-trip" style="flex:1; padding:8px; border-radius:8px; border:1px solid #4f46e5; background:#4f46e5; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer;">🚗 Trip Feed</button>
-            <button onclick="switchPortalTab('history')" id="ptab-history" style="flex:1; padding:8px; border-radius:8px; border:1px solid #334155; background:transparent; color:#94a3b8; font-weight:700; font-size:0.85rem; cursor:pointer;">📊 My History</button>
+        <div style="display:flex; gap:6px; margin-bottom:20px; border-bottom:1px solid rgba(251, 191, 36, 0.15); padding-bottom:12px;">
+            <button onclick="switchPortalTab('trip')" id="ptab-trip" style="flex:1; padding:8px; border-radius:8px; border:1px solid #d97706; background:#d97706; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer;">🚗 Trip Feed</button>
+            <button onclick="switchPortalTab('history')" id="ptab-history" style="flex:1; padding:8px; border-radius:8px; border:1px solid rgba(251, 191, 36, 0.15); background:transparent; color:#94a3b8; font-weight:700; font-size:0.85rem; cursor:pointer;">📊 My History</button>
         </div>
 
         <!-- Section 1: Start Trip -->
@@ -220,13 +220,13 @@
                 <div style="color:#fecaca; font-size:0.82rem;">Please contact your Fleet Administrator to assign a vehicle to your driver account.</div>
             </div>
 
-            <h3 style="font-size: 1.1rem; color: #6366f1; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+            <h3 style="font-size: 1.1rem; color: #f59e0b; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
                 <i data-lucide="play-circle"></i> Start Your Shift / Trip
             </h3>
             <form id="start-trip-form" onsubmit="handleStartTrip(event)">
                 <div class="form-group">
                     <label>Upload Odometer Image (Start) *</label>
-                    <input type="file" id="start-km-file" accept="image/*" required style="font-size: 0.85rem; border: 1px solid #334155; padding: 10px; border-radius: 8px; background: #0f172a; width: 100%; box-sizing: border-box;">
+                    <input type="file" id="start-km-file" accept="image/*" required style="font-size: 0.85rem; border: 1px solid rgba(251, 191, 36, 0.15); padding: 10px; border-radius: 8px; background: #0a0e1a; width: 100%; box-sizing: border-box;">
                     <div id="start-ocr-status" style="font-size: 0.8rem; margin-top: 4px; display: none;"></div>
                 </div>
                 
@@ -251,8 +251,8 @@
 
         <!-- Section 2: End Trip -->
         <div id="end-trip-section" style="display: none;">
-            <div style="background: #1e293b; border: 1px dashed #6366f1; padding: 14px; border-radius: 10px; margin-bottom: 20px; font-size: 0.85rem;">
-                <h4 style="margin: 0 0 6px 0; color: #a5b4fc; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+            <div style="background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px dashed #f59e0b; padding: 14px; border-radius: 10px; margin-bottom: 20px; font-size: 0.85rem;">
+                <h4 style="margin: 0 0 6px 0; color: #fbbf24; font-weight: 700; display: flex; align-items: center; gap: 6px;">
                     <i data-lucide="clock" style="width:16px; height:16px;"></i> Active Trip In Progress
                 </h4>
                 <div style="color: #94a3b8; display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
@@ -268,7 +268,7 @@
             <form id="end-trip-form" onsubmit="handleEndTrip(event)">
                 <div class="form-group">
                     <label>Upload Odometer Image (End) *</label>
-                    <input type="file" id="end-km-file" accept="image/*" required style="font-size: 0.85rem; border: 1px solid #334155; padding: 10px; border-radius: 8px; background: #0f172a; width: 100%; box-sizing: border-box;">
+                    <input type="file" id="end-km-file" accept="image/*" required style="font-size: 0.85rem; border: 1px solid rgba(251, 191, 36, 0.15); padding: 10px; border-radius: 8px; background: #0a0e1a; width: 100%; box-sizing: border-box;">
                     <div id="end-ocr-status" style="font-size: 0.8rem; margin-top: 4px; display: none;"></div>
                 </div>
 
@@ -287,19 +287,19 @@
                     </div>
                 </div>
 
-                <div style="font-size: 0.8rem; font-weight: bold; color: #6366f1; margin: 8px 0 16px;">
+                <div style="font-size: 0.8rem; font-weight: bold; color: #f59e0b; margin: 8px 0 16px;">
                     Total Distance Driven: <span id="dist-calc">0</span> Km
                 </div>
 
                 <!-- Fuel Details -->
-                <h4 id="fuel-section-heading" style="font-size: 0.9rem; color: #94a3b8; margin: 20px 0 12px; border-bottom: 1px solid #334155; padding-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                <h4 id="fuel-section-heading" style="font-size: 0.9rem; color: #94a3b8; margin: 20px 0 12px; border-bottom: 1px solid rgba(251, 191, 36, 0.15); padding-bottom: 6px; display: flex; align-items: center; gap: 8px;">
                     <span id="fuel-type-badge" style="font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #1e3a5f; color: #60a5fa; display: none;"></span>
                     Fuel / CNG Refueling Log (If Any)
                 </h4>
                 
                 <div class="form-group">
                     <label>Upload Fuel Receipt Image</label>
-                    <input type="file" id="fuel-file" accept="image/*" style="font-size: 0.85rem; border: 1px solid #334155; padding: 10px; border-radius: 8px; background: #0f172a; width: 100%; box-sizing: border-box;">
+                    <input type="file" id="fuel-file" accept="image/*" style="font-size: 0.85rem; border: 1px solid rgba(251, 191, 36, 0.15); padding: 10px; border-radius: 8px; background: #0a0e1a; width: 100%; box-sizing: border-box;">
                     <div id="fuel-ocr-status" style="font-size: 0.8rem; margin-top: 4px; display: none;"></div>
                 </div>
 
@@ -328,7 +328,7 @@
                 </div>
 
                 <!-- Dual Fuel Box (CNG + Petrol) -->
-                <div id="dual-fuel-box" style="display: none; background: #1e293b; border: 1px solid #3b82f6; padding: 14px; border-radius: 10px; margin-bottom: 16px;">
+                <div id="dual-fuel-box" style="display: none; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid #3b82f6; padding: 14px; border-radius: 10px; margin-bottom: 16px;">
                     <div style="font-size: 0.85rem; font-weight: 700; color: #60a5fa; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
                         <span>⛽ CNG + Petrol Individual Fuel Inputs</span>
                     </div>
@@ -367,7 +367,7 @@
                 </div>
 
                 <!-- Trip Expenses Section -->
-                <h4 style="font-size: 0.9rem; color: #94a3b8; margin: 20px 0 12px; border-bottom: 1px solid #334155; padding-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                <h4 style="font-size: 0.9rem; color: #94a3b8; margin: 20px 0 12px; border-bottom: 1px solid rgba(251, 191, 36, 0.15); padding-bottom: 6px; display: flex; align-items: center; gap: 8px;">
                     💳 Trip Expenses
                 </h4>
 
@@ -403,13 +403,13 @@
                     <input type="text" id="exp-other-note" placeholder="e.g. Toll, Wash, Repair..." style="width:100%; box-sizing:border-box;">
                 </div>
 
-                <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; font-size:0.85rem; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="background:#0a0e1a; border:1px solid rgba(251, 191, 36, 0.15); border-radius:8px; padding:10px 14px; font-size:0.85rem; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
                     <span style="color:#94a3b8; font-weight:600;">Total Trip Expenses:</span>
                     <span id="total-expenses-display" style="color:#f59e0b; font-weight:800; font-size:1rem;">₹ 0.00</span>
                 </div>
 
                 <!-- Operational status & remarks -->
-                <h4 style="font-size: 0.9rem; color: #94a3b8; margin: 20px 0 12px; border-bottom: 1px solid #334155; padding-bottom: 6px;">Operational Remarks</h4>
+                <h4 style="font-size: 0.9rem; color: #94a3b8; margin: 20px 0 12px; border-bottom: 1px solid rgba(251, 191, 36, 0.15); padding-bottom: 6px;">Operational Remarks</h4>
 
                 <div class="form-group">
                     <label>Vehicle Operational Status</label>
@@ -432,19 +432,19 @@
         <div id="portal-history" style="display:none;">
             <!-- Summary Cards -->
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
-                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; text-align:center;">
+                <div style="background:#0a0e1a; border:1px solid rgba(251, 191, 36, 0.15); border-radius:10px; padding:12px; text-align:center;">
                     <div style="font-size:0.7rem; color:#94a3b8; font-weight:700; text-transform:uppercase;">Total Trips</div>
-                    <div id="hist-total-trips" style="font-size:1.4rem; font-weight:800; color:#a5b4fc; margin-top:4px;">0</div>
+                    <div id="hist-total-trips" style="font-size:1.4rem; font-weight:800; color:#fbbf24; margin-top:4px;">0</div>
                 </div>
-                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; text-align:center;">
+                <div style="background:#0a0e1a; border:1px solid rgba(251, 191, 36, 0.15); border-radius:10px; padding:12px; text-align:center;">
                     <div style="font-size:0.7rem; color:#94a3b8; font-weight:700; text-transform:uppercase;">Total KM Driven</div>
                     <div id="hist-total-km" style="font-size:1.4rem; font-weight:800; color:#34d399; margin-top:4px;">0</div>
                 </div>
-                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; text-align:center;">
+                <div style="background:#0a0e1a; border:1px solid rgba(251, 191, 36, 0.15); border-radius:10px; padding:12px; text-align:center;">
                     <div style="font-size:0.7rem; color:#94a3b8; font-weight:700; text-transform:uppercase;">Avg KM / Day</div>
                     <div id="hist-avg-km" style="font-size:1.4rem; font-weight:800; color:#fbbf24; margin-top:4px;">-</div>
                 </div>
-                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; text-align:center;">
+                <div style="background:#0a0e1a; border:1px solid rgba(251, 191, 36, 0.15); border-radius:10px; padding:12px; text-align:center;">
                     <div style="font-size:0.7rem; color:#94a3b8; font-weight:700; text-transform:uppercase;">This Month KM</div>
                     <div id="hist-month-km" style="font-size:1.4rem; font-weight:800; color:#f472b6; margin-top:4px;">0</div>
                 </div>
@@ -464,7 +464,7 @@
             <div style="overflow-x:auto;">
                 <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
                     <thead>
-                        <tr style="background:#0f172a;">
+                        <tr style="background:#0a0e1a;">
                             <th style="padding:8px 6px; color:#64748b; text-align:left; font-size:0.7rem; text-transform:uppercase;">Date</th>
                             <th style="padding:8px 6px; color:#64748b; text-align:left; font-size:0.7rem; text-transform:uppercase;">Start KM</th>
                             <th style="padding:8px 6px; color:#64748b; text-align:left; font-size:0.7rem; text-transform:uppercase;">End KM</th>
@@ -786,8 +786,8 @@
             }
             const tripBtn = document.getElementById('ptab-trip');
             const histBtn = document.getElementById('ptab-history');
-            const activeStyle = 'flex:1;padding:8px;border-radius:8px;border:1px solid #4f46e5;background:#4f46e5;color:#fff;font-weight:700;font-size:0.85rem;cursor:pointer;';
-            const inactiveStyle = 'flex:1;padding:8px;border-radius:8px;border:1px solid #334155;background:transparent;color:#94a3b8;font-weight:700;font-size:0.85rem;cursor:pointer;';
+            const activeStyle = 'flex:1;padding:8px;border-radius:8px;border:1px solid #d97706;background:#d97706;color:#fff;font-weight:700;font-size:0.85rem;cursor:pointer;';
+            const inactiveStyle = 'flex:1;padding:8px;border-radius:8px;border:1px solid rgba(251, 191, 36, 0.15);background:transparent;color:#94a3b8;font-weight:700;font-size:0.85rem;cursor:pointer;';
             tripBtn.style.cssText = isTrip ? activeStyle : inactiveStyle;
             histBtn.style.cssText = isTrip ? inactiveStyle : activeStyle;
         }

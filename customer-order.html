@@ -456,7 +456,8 @@
                                 <label for="prod-type">Product Type *</label>
                                 <select id="prod-type" required>
                                     <option value="" disabled selected>Select Product</option>
-                                    <option value="Ring">Ring</option>
+                                    <option value="Ladies ring">Ladies ring</option>
+                                    <option value="Gents ring">Gents ring</option>
                                     <option value="Bangle">Bangle</option>
                                     <option value="Necklace">Necklace</option>
                                     <option value="Earring">Earring</option>
@@ -623,7 +624,7 @@
 
         // Product selection size toggler
         prodSelect.addEventListener('change', () => {
-            if (prodSelect.value === 'Ring' || prodSelect.value === 'Bangle') {
+            if (prodSelect.value === 'Ring' || prodSelect.value === 'Ladies ring' || prodSelect.value === 'Gents ring' || prodSelect.value === 'Bangle') {
                 sizeContainer.style.display = 'block';
                 sizeInput.required = true;
             } else {
@@ -888,7 +889,7 @@
             doc.setFont('Helvetica', 'normal');
             doc.setTextColor(71, 85, 105);
             doc.text(`Product Type: ${prodType}`, 14, 140);
-            if (prodType === 'Ring' || prodType === 'Bangle') {
+            if (prodType === 'Ring' || prodType === 'Ladies ring' || prodType === 'Gents ring' || prodType === 'Bangle') {
                 doc.text(`Size: ${prodSize}`, 14, 147);
             }
             const metalLine = metalType ? `Metal: ${metalType}${metalPurity ? ' (' + metalPurity.toUpperCase() + ')' : ''}` : '';

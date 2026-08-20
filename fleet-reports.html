@@ -12,26 +12,34 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=3"></script>
     <style>
-        body { background: #f1f5f9; font-family: 'Inter', sans-serif; }
-        .report-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px; margin-bottom: 24px; }
+        body { background: var(--bg-main); font-family: 'Inter', sans-serif; }
+        .report-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 24px; transition: transform 0.2s ease, box-shadow 0.3s ease; }
+        .report-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05); }
         .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px; }
-        .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; text-align: center; }
-        .stat-box .num { font-size: 1.4rem; font-weight: 800; color: #1e293b; margin-top: 4px; }
-        .stat-box .lbl { font-size: 0.75rem; font-weight: 600; color: #64748b; }
+        .stat-box { background: var(--bg-main); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; transition: transform 0.2s ease, box-shadow 0.3s ease; }
+        .stat-box .num { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin-top: 4px; }
+        .stat-box .lbl { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
         .dash-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        .dash-table th { background: #f8fafc; text-align: left; padding: 12px 14px; font-size: 0.78rem; font-weight: 700; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; }
-        .dash-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; color: #1e293b; }
-        .dash-table tr:hover td { background: #f8fafc; }
+        .dash-table tr { transition: background 0.2s ease; }
+        .dash-table th { background: var(--bg-main); text-align: left; padding: 12px 14px; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); border-bottom: 2px solid var(--border); text-transform: uppercase; }
+        .dash-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--text-main); }
+        .dash-table tr:hover td { background: var(--bg-main); }
         .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
-        .badge-active { background: #dcfce7; color: #15803d; }
-        .badge-inactive { background: #fee2e2; color: #b91c1c; }
-        .badge-cng { background: #e0f2fe; color: #0369a1; }
-        .badge-petrol { background: #fef3c7; color: #b45309; }
-        .badge-dual { background: linear-gradient(135deg,#e0f2fe,#fef3c7); color: #1e1b4b; border:1px solid #cbd5e1; }
+        .badge-active { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .badge-inactive { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+        .badge-cng { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+        .badge-petrol { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+        .badge-dual { background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(251, 191, 36, 0.15)); color: var(--text-main); border:1px solid var(--border); }
+        .quick-btn.outline { border: 1px solid var(--border); background: var(--bg-card); color: var(--text-muted); }
+        .quick-btn.primary:hover, .btn-submit:hover { box-shadow: 0 4px 20px rgba(37, 99, 235, 0.2); }
         @media print {
             .sidebar, .quick-btn, .no-print { display: none !important; }
-            main { padding: 0 !important; }
-            .report-card { border: none; padding: 0; }
+            main { padding: 0 !important; background: white !important; }
+            .report-card { border: none; padding: 0; background: white !important; backdrop-filter: none; }
+            .dash-table th, .dash-table td, h1, h2, .stat-box .num { color: black !important; }
+            .stat-box .lbl { color: #666 !important; }
+            .dash-table th { background: #f8fafc !important; border-bottom: 2px solid #e2e8f0 !important; }
+            .dash-table td { border-bottom: 1px solid #f1f5f9 !important; }
         }
     </style>
 </head>
@@ -39,33 +47,33 @@
     <div class="dashboard-container">
         <aside class="sidebar" id="sidebar-container"></aside>
 
-        <main class="main-content" style="flex:1; overflow-y:auto; padding:24px; background:#f1f5f9;">
+        <main class="main-content" style="flex:1; overflow-y:auto; padding:24px; background:#0a0e1a;">
             <!-- Header -->
             <header class="dashboard-header header-flex" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
                 <div>
-                    <h1 style="font-size:1.4rem; font-weight:800; color:#1f2937; margin:0;">Fleet &amp; Driver Master Reports</h1>
-                    <p style="font-size:0.85rem; color:#6b7280; margin-top:4px;">Comprehensive single-page report portal for vehicle registries, driver KYC, daily trip logs, fuel consumption, and salary disbursements.</p>
+                    <h1 style="font-size:1.4rem; font-weight:800; color:#f1f5f9; margin:0;">Fleet &amp; Driver Master Reports</h1>
+                    <p style="font-size:0.85rem; color:#94a3b8; margin-top:4px;">Comprehensive single-page report portal for vehicle registries, driver KYC, daily trip logs, fuel consumption, and salary disbursements.</p>
                 </div>
                 <div style="display:flex; gap:12px;" class="no-print">
-                    <button onclick="window.print()" style="padding:10px 16px; border-radius:8px; background:#fff; border:1px solid #cbd5e1; font-weight:600; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    <button onclick="window.print()" style="padding:10px 16px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(148, 163, 184, 0.3); font-weight:600; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:6px; color:#f1f5f9; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
                         <i data-lucide="printer" style="width:15px;height:15px;"></i> Print Report
                     </button>
-                    <a href="car.html" class="quick-btn outline" style="display:flex; align-items:center; gap:8px; text-decoration:none; padding:10px 16px; border-radius:8px; font-weight:600; background:#6366f1; color:#fff; font-size:0.85rem;">
+                    <a href="car.html" class="quick-btn primary" style="display:flex; align-items:center; gap:8px; text-decoration:none; padding:10px 16px; border-radius:8px; font-weight:600; background:linear-gradient(135deg, #d97706, #f59e0b); color:#fff; font-size:0.85rem;">
                         <i data-lucide="arrow-left" style="width:16px; height:16px;"></i> Fleet Management
                     </a>
                 </div>
             </header>
 
             <!-- Report Selector Section (Dropdown) -->
-            <div class="report-card no-print" style="background: linear-gradient(135deg, #ffffff, #f8fafc); border: 1px solid #cbd5e1;">
+            <div class="report-card no-print" style="background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(251, 191, 36, 0.15);">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div style="width:40px; height:40px; border-radius:10px; background:#e0e7ff; color:#4f46e5; display:flex; align-items:center; justify-content:center;">
+                        <div style="width:40px; height:40px; border-radius:10px; background:rgba(251, 191, 36, 0.1); color:#f59e0b; display:flex; align-items:center; justify-content:center;">
                             <i data-lucide="bar-chart-3" style="width:22px; height:22px;"></i>
                         </div>
                         <div>
-                            <label style="font-size:0.78rem; font-weight:700; color:#64748b; text-transform:uppercase; display:block;">Select Report View</label>
-                            <select id="report-view-selector" onchange="changeReportView()" style="font-size:1.05rem; font-weight:800; color:#1e293b; padding:6px 12px; border:1px solid #6366f1; border-radius:8px; outline:none; background:#fff; cursor:pointer;">
+                            <label style="font-size:0.78rem; font-weight:700; color:#94a3b8; text-transform:uppercase; display:block;">Select Report View</label>
+                            <select id="report-view-selector" onchange="changeReportView()" style="font-size:1.05rem; font-weight:800; color:#f1f5f9; padding:6px 12px; border:1px solid rgba(148, 163, 184, 0.2); border-radius:8px; outline:none; background:rgba(15, 23, 42, 0.6); cursor:pointer;">
                                 <option value="all">📊 All Fleet Master Overview (Single Combined View)</option>
                                 <option value="cars">🚗 Vehicle Registry &amp; Status Report</option>
                                 <option value="drivers">👨‍✈️ Driver Accounts &amp; KYC Profile Report</option>
@@ -77,14 +85,14 @@
                     </div>
                     <div style="display:flex; gap:10px; align-items:center;">
                         <div>
-                            <label style="font-size:0.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:4px;">Filter by Driver</label>
-                            <select id="filter-driver" onchange="loadReportData()" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; outline:none;">
+                            <label style="font-size:0.75rem;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Filter by Driver</label>
+                            <select id="filter-driver" onchange="loadReportData()" style="padding:8px 12px; border:1px solid rgba(148, 163, 184, 0.2); border-radius:8px; font-size:0.85rem; outline:none; background:rgba(15, 23, 42, 0.6); color:#f1f5f9;">
                                 <option value="">All Drivers</option>
                             </select>
                         </div>
                         <div>
-                            <label style="font-size:0.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:4px;">Search</label>
-                            <input type="text" id="report-search-input" placeholder="Filter records..." onkeyup="filterReportTable()" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; outline:none; width:200px;">
+                            <label style="font-size:0.75rem;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Search</label>
+                            <input type="text" id="report-search-input" placeholder="Filter records..." onkeyup="filterReportTable()" style="padding:8px 12px; border:1px solid rgba(148, 163, 184, 0.2); border-radius:8px; font-size:0.85rem; outline:none; width:200px; background:rgba(15, 23, 42, 0.6); color:#f1f5f9;">
                         </div>
                     </div>
                 </div>
@@ -92,23 +100,23 @@
 
             <!-- Overview Section -->
             <div id="section-overview" class="report-card">
-                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
-                    <i data-lucide="layout-dashboard" style="color:#6366f1; width:20px; height:20px;"></i> Master Fleet Executive Summary
+                <h2 style="font-size:1.1rem; font-weight:800; color:#f1f5f9; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="layout-dashboard" style="color:#f59e0b; width:20px; height:20px;"></i> Master Fleet Executive Summary
                 </h2>
                 <div class="grid-stats">
                     <div class="stat-box"><div class="lbl">Total Fleet Vehicles</div><div class="num" id="cnt-cars">0</div></div>
                     <div class="stat-box"><div class="lbl">Registered Drivers</div><div class="num" id="cnt-drivers">0</div></div>
                     <div class="stat-box"><div class="lbl">Total Shift Logs</div><div class="num" id="cnt-trips">0</div></div>
                     <div class="stat-box"><div class="lbl">Total Distance Driven</div><div class="num" id="cnt-dist">0 Km</div></div>
-                    <div class="stat-box"><div class="lbl">Total Fuel Expense</div><div class="num" id="cnt-fuel-cost" style="color:#dc2626;">₹0</div></div>
-                    <div class="stat-box"><div class="lbl">Total Salary Paid</div><div class="num" id="cnt-salary-paid" style="color:#059669;">₹0</div></div>
+                    <div class="stat-box"><div class="lbl">Total Fuel Expense</div><div class="num" id="cnt-fuel-cost" style="color:#f87171;">₹0</div></div>
+                    <div class="stat-box"><div class="lbl">Total Salary Paid</div><div class="num" id="cnt-salary-paid" style="color:#34d399;">₹0</div></div>
                 </div>
             </div>
 
             <!-- Section: Vehicle Registry Report -->
             <div id="section-cars" class="report-card">
-                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
-                    <i data-lucide="car" style="color:#4f46e5; width:20px; height:20px;"></i> 1. Vehicle Registry & Performance Report
+                <h2 style="font-size:1.1rem; font-weight:800; color:#f1f5f9; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="car" style="color:#f59e0b; width:20px; height:20px;"></i> 1. Vehicle Registry & Performance Report
                 </h2>
                 <div style="overflow-x:auto;">
                     <table class="dash-table" id="tbl-cars">
@@ -133,8 +141,8 @@
 
             <!-- Drivers Section -->
             <div id="section-drivers" class="report-card">
-                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
-                    <i data-lucide="users" style="color:#059669; width:20px; height:20px;"></i> 2. Driver Profiles &amp; KYC Credentials Report
+                <h2 style="font-size:1.1rem; font-weight:800; color:#f1f5f9; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="users" style="color:#34d399; width:20px; height:20px;"></i> 2. Driver Profiles &amp; KYC Credentials Report
                 </h2>
                 <div style="overflow-x:auto;">
                     <table class="dash-table" id="tbl-drivers">
@@ -157,8 +165,8 @@
 
             <!-- Daily Trip Logs Section -->
             <div id="section-trips" class="report-card">
-                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
-                    <i data-lucide="file-text" style="color:#0284c7; width:20px; height:20px;"></i> 3. Daily Shift &amp; Odometer Trip Logs Report
+                <h2 style="font-size:1.1rem; font-weight:800; color:#f1f5f9; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="file-text" style="color:#38bdf8; width:20px; height:20px;"></i> 3. Daily Shift &amp; Odometer Trip Logs Report
                 </h2>
                 <div style="overflow-x:auto;">
                     <table class="dash-table" id="tbl-trips">
@@ -183,8 +191,8 @@
 
             <!-- Fuel Breakdown Section -->
             <div id="section-fuel" class="report-card">
-                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
-                    <i data-lucide="zap" style="color:#d97706; width:20px; height:20px;"></i> 4. Fuel &amp; Energy Expense Breakdown (CNG &amp; Petrol)
+                <h2 style="font-size:1.1rem; font-weight:800; color:#f1f5f9; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="zap" style="color:#f59e0b; width:20px; height:20px;"></i> 4. Fuel &amp; Energy Expense Breakdown (CNG &amp; Petrol)
                 </h2>
                 <div style="overflow-x:auto;">
                     <table class="dash-table" id="tbl-fuel">
@@ -208,8 +216,8 @@
 
             <!-- Salary Disbursements Section -->
             <div id="section-salary" class="report-card">
-                <h2 style="font-size:1.1rem; font-weight:800; color:#1e293b; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
-                    <i data-lucide="indian-rupee" style="color:#16a34a; width:20px; height:20px;"></i> 5. Driver Salary Disbursement Records
+                <h2 style="font-size:1.1rem; font-weight:800; color:#f1f5f9; margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="indian-rupee" style="color:#34d399; width:20px; height:20px;"></i> 5. Driver Salary Disbursement Records
                 </h2>
                 <div style="overflow-x:auto;">
                     <table class="dash-table" id="tbl-salary">
@@ -300,7 +308,7 @@
                 if (lastSvc && lastSvc.nextKm > 0) {
                     const rem = lastSvc.nextKm - currentKm;
                     if (rem <= 0) svcStatus = '<span class="badge badge-inactive">⚠️ Overdue</span>';
-                    else if (rem <= 500) svcStatus = `<span class="badge" style="background:#fef3c7;color:#b45309;">Due Soon (${rem} Km)</span>`;
+                    else if (rem <= 500) svcStatus = `<span class="badge" style="background:rgba(251, 191, 36, 0.15);color:#fbbf24;">Due Soon (${rem} Km)</span>`;
                     else svcStatus = `<span class="badge badge-active">✓ OK (${rem} Km left)</span>`;
                 }
                 bodyCars.innerHTML += `
@@ -309,9 +317,9 @@
                         <td>${c.model}</td>
                         <td><span class="badge ${badgeClass}">${c.fuel||'Petrol'}</span></td>
                         <td><span class="badge ${c.status==='Active'?'badge-active':'badge-inactive'}">${c.status||'Active'}</span></td>
-                        <td style="font-weight:600;color:#4f46e5;">${assignedDrv ? assignedDrv.name+' ('+assignedDrv.phone+')' : 'Unassigned'}</td>
+                        <td style="font-weight:600;color:#fbbf24;">${assignedDrv ? assignedDrv.name+' ('+assignedDrv.phone+')' : 'Unassigned'}</td>
                         <td style="text-align:center;font-weight:700;">${totalCarTrips}</td>
-                        <td style="font-weight:700;color:#059669;">${totalCarKm.toLocaleString('en-IN')} Km</td>
+                        <td style="font-weight:700;color:#34d399;">${totalCarKm.toLocaleString('en-IN')} Km</td>
                         <td>${lastSvc ? lastSvc.serviceKm.toLocaleString('en-IN')+' Km ('+lastSvc.date+')' : '-'}</td>
                         <td style="font-weight:700;color:#f59e0b;">${lastSvc&&lastSvc.nextKm ? lastSvc.nextKm.toLocaleString('en-IN')+' Km' : '-'}</td>
                         <td>${svcStatus}</td>
@@ -328,7 +336,7 @@
                         <td style="font-weight:700;">${d.name}</td>
                         <td>${d.phone}</td>
                         <td>${d.license || '-'}</td>
-                        <td style="color:#4f46e5; font-weight:600;">${d.car || 'Unassigned'}</td>
+                        <td style="color:#fbbf24; font-weight:600;">${d.car || 'Unassigned'}</td>
                         <td>${d.pan || '-'}</td>
                         <td>${d.joinDate || '-'}</td>
                         <td>₹${(parseFloat(d.monthlySalary) || 0).toLocaleString('en-IN')}</td>
@@ -353,11 +361,11 @@
                     <tr>
                         <td>${new Date(l.timestamp).toLocaleString('en-IN')}</td>
                         <td style="font-weight:700;">${l.driverName || l.driverPhone}</td>
-                        <td style="color:#4f46e5; font-weight:600;">${l.carReg}</td>
+                        <td style="color:#fbbf24; font-weight:600;">${l.carReg}</td>
                         <td><span class="badge badge-cng">${l.fuelType || 'Petrol'}</span></td>
                         <td>${l.startKm}</td>
                         <td>${l.endKm}</td>
-                        <td style="font-weight:700; color:#059669;">${dist} Km</td>
+                        <td style="font-weight:700; color:#34d399;">${dist} Km</td>
                         <td>${fuelText}</td>
                         <td style="font-weight:700;">₹${(parseFloat(l.fuelCost) || 0).toLocaleString('en-IN')}</td>
                         <td><span class="badge ${l.status === 'Active' ? 'badge-active' : 'badge-inactive'}">${l.status}</span></td>
@@ -377,14 +385,14 @@
                 bodyFuel.innerHTML += `
                     <tr>
                         <td>${new Date(l.timestamp).toLocaleDateString('en-IN')}</td>
-                        <td style="font-weight:700; color:#4f46e5;">${l.carReg}</td>
+                        <td style="font-weight:700; color:#fbbf24;">${l.carReg}</td>
                         <td>${l.driverName}</td>
                         <td><span class="badge badge-dual">${l.fuelType}</span></td>
                         <td>${pQty ? pQty + ' L' : '-'}</td>
                         <td>${pCost ? '₹' + pCost.toLocaleString('en-IN') : '-'}</td>
                         <td>${cQty ? cQty + ' kg' : '-'}</td>
                         <td>${cCost ? '₹' + cCost.toLocaleString('en-IN') : '-'}</td>
-                        <td style="font-weight:800; color:#dc2626;">₹${(parseFloat(l.fuelCost) || 0).toLocaleString('en-IN')}</td>
+                        <td style="font-weight:800; color:#f87171;">₹${(parseFloat(l.fuelCost) || 0).toLocaleString('en-IN')}</td>
                     </tr>
                 `;
             });
@@ -400,10 +408,10 @@
                         <td>${s.month}</td>
                         <td>${s.type}</td>
                         <td>₹${(parseFloat(s.baseSalary) || 0).toLocaleString('en-IN')}</td>
-                        <td style="color:#dc2626;">₹${(parseFloat(s.advanceDeduction) || 0).toLocaleString('en-IN')}</td>
-                        <td style="color:#16a34a;">₹${(parseFloat(s.bonus) || 0).toLocaleString('en-IN')}</td>
-                        <td style="font-weight:700; color:#6366f1;">₹${(parseFloat(s.netPayable) || 0).toLocaleString('en-IN')}</td>
-                        <td style="font-weight:800; color:#059669;">₹${(parseFloat(s.amountPaid) || 0).toLocaleString('en-IN')}</td>
+                        <td style="color:#f87171;">₹${(parseFloat(s.advanceDeduction) || 0).toLocaleString('en-IN')}</td>
+                        <td style="color:#34d399;">₹${(parseFloat(s.bonus) || 0).toLocaleString('en-IN')}</td>
+                        <td style="font-weight:700; color:#fbbf24;">₹${(parseFloat(s.netPayable) || 0).toLocaleString('en-IN')}</td>
+                        <td style="font-weight:800; color:#34d399;">₹${(parseFloat(s.amountPaid) || 0).toLocaleString('en-IN')}</td>
                         <td>${s.paymentMode}</td>
                         <td><span class="badge badge-active">${s.status}</span></td>
                     </tr>

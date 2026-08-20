@@ -37,17 +37,24 @@ window.migrateDataToSupabase = async function () {
     // 1. Migrate Orders
     const orders = JSON.parse(localStorage.getItem('manti_order_records')) || [];
     if (orders.length > 0) {
-        // Map local format to DB format
-        const dbOrders = orders.map(o => ({
-            order_number: o.id,
-            type: o.type,
-            date: o.date,
-            customer_name: o.customer,
-            product_name: o.product,
-            total_weight: parseFloat(o.weight),
-            weight_unit: o.unit || 'g',
-            remark: o.remark || '-'
-        }));
+        // Map local format to DB format with deduplication
+        const seenMigrationOrders = new Set();
+        const dbOrders = [];
+        orders.forEach(o => {
+            const num = (o.id || '').trim();
+            if (!num || seenMigrationOrders.has(num)) return;
+            seenMigrationOrders.add(num);
+            dbOrders.push({
+                order_number: num,
+                type: o.type,
+                date: o.date,
+                customer_name: o.customer,
+                product_name: o.product,
+                total_weight: parseFloat(o.weight),
+                weight_unit: o.unit || 'g',
+                remark: o.remark || '-'
+            });
+        });
         const { error } = await window.supabase.from('orders').upsert(dbOrders, { onConflict: 'order_number' });
         if (error) console.error("Error migrating orders:", error);
         else successCount++;
@@ -229,7 +236,12 @@ window._performSupabaseSync = async function(key, data) {
     }
     try {
         if (key === 'manti_order_records') {
-            const dbOrders = data.map(o => {
+            const seenOrders = new Set();
+            const dbOrders = [];
+            data.forEach(o => {
+                const orderNum = (o.id || '').trim();
+                if (!orderNum || seenOrders.has(orderNum)) return;
+                seenOrders.add(orderNum);
                 const extendedData = {
                     items: o.items || [],
                     category: o.category || '',
@@ -248,13 +260,13 @@ window._performSupabaseSync = async function(key, data) {
                     isFixed: o.isFixed || false,
                     sourceId: o.sourceId || ''
                 };
-                return {
-                    order_number: o.id, type: o.type, date: o.date, due_date: o.dueDate || null,
+                dbOrders.push({
+                    order_number: orderNum, type: o.type, date: o.date, due_date: o.dueDate || null,
                     customer_name: o.customer || '', vendor_id: o.vendor || '', product_name: o.product || '',
                     total_weight: parseFloat(o.qty || o.weight) || 0, weight_unit: 'g', remark: JSON.stringify(extendedData),
                     total_amount: parseFloat(o.amount) || 0, paid_amount: parseFloat(o.paidAmount) || 0,
                     status: o.status || 'Draft'
-                };
+                });
             });
             if (dbOrders.length > 0) {
                 // Safely delete stale records using chunked deletes (exclude Customer Orders)
@@ -275,7 +287,12 @@ window._performSupabaseSync = async function(key, data) {
                 await window.supabase.from('orders').delete().not('type', 'eq', 'Customer Order');
             }
         } else if (key === 'manti_customer_orders') {
-            const dbOrders = data.map(o => {
+            const seenCustOrders = new Set();
+            const dbOrders = [];
+            data.forEach(o => {
+                const orderNum = (o.id || '').trim();
+                if (!orderNum || seenCustOrders.has(orderNum)) return;
+                seenCustOrders.add(orderNum);
                 const remarkData = {
                     customerDetails: o.customerDetails || {},
                     product: o.product || '',
@@ -292,8 +309,8 @@ window._performSupabaseSync = async function(key, data) {
                     pdfUrl: o.pdfUrl || '',
                     remark: o.remark || '-'
                 };
-                return {
-                    order_number: o.id,
+                dbOrders.push({
+                    order_number: orderNum,
                     type: 'Customer Order',
                     date: o.date,
                     due_date: o.deliveryDate || null,
@@ -306,7 +323,7 @@ window._performSupabaseSync = async function(key, data) {
                     total_amount: parseFloat(o.estimatedValue) || 0,
                     paid_amount: 0,
                     status: o.status || 'Open'
-                };
+                });
             });
             if (dbOrders.length > 0) {
                 // Safely delete stale customer orders from the cloud database
