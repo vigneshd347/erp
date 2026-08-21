@@ -954,7 +954,7 @@ window.fetchEverythingFromCloud = async function () {
         );
 
         // 1. Orders
-        if (ordersRes.data) {
+        if (ordersRes.data && ordersRes.data.length > 0) {
             const standardOrders = [];
             const customerOrders = [];
             
@@ -1029,26 +1029,15 @@ window.fetchEverythingFromCloud = async function () {
             window.ERP_MEMORY.set('manti_customer_orders', JSON.stringify(customerOrders));
             try { originalSetItem.call(localStorage, 'manti_customer_orders', JSON.stringify(customerOrders)); } catch(e) {}
         } else {
-            const localOrders = originalGetItem.call(localStorage, 'manti_order_records');
-            if (localOrders) {
-                window.ERP_MEMORY.set('manti_order_records', localOrders);
-            } else {
-                window.ERP_MEMORY.set('manti_order_records', '[]');
-            }
-            const localCustOrders = originalGetItem.call(localStorage, 'manti_customer_orders');
-            if (localCustOrders) {
-                window.ERP_MEMORY.set('manti_customer_orders', localCustOrders);
-            } else {
-                window.ERP_MEMORY.set('manti_customer_orders', '[]');
-            }
+            ensureSeedData('manti_order_records');
+            ensureSeedData('manti_customer_orders');
         }
 
         // 2. Job Works
-        if (jobsRes.data) {
+        if (jobsRes.data && jobsRes.data.length > 0) {
             const mappedJobs = jobsRes.data.map(j => {
                 const ext = j.data || {};
                 return {
-                    // Primary field names used by jobwork.html, reports.html, etc.
                     jobnum: j.job_no,
                     date: j.date,
                     worker: j.worker_name,
@@ -1061,7 +1050,6 @@ window.fetchEverythingFromCloud = async function () {
                     receiveLines: ext.receiveLines || [],
                     issueType: ext.issueType || '',
                     returnType: ext.returnType || '',
-                    // Legacy aliases kept for backward compat
                     jobNo: j.job_no,
                     workerId: j.worker_id,
                     workerName: j.worker_name,
@@ -1070,11 +1058,11 @@ window.fetchEverythingFromCloud = async function () {
             });
             window.ERP_MEMORY.set('manti_jobwork_records', JSON.stringify(mappedJobs));
         } else {
-            window.ERP_MEMORY.set('manti_jobwork_records', '[]');
+            ensureSeedData('manti_jobwork_records');
         }
 
         // 3. Invoices & Quotations
-        if (invoicesRes.data) {
+        if (invoicesRes.data && invoicesRes.data.length > 0) {
             const invoiceMap = {};
             const quotationMap = {};
             invoicesRes.data.forEach(inv => {
@@ -1097,8 +1085,8 @@ window.fetchEverythingFromCloud = async function () {
             window.ERP_MEMORY.set('manti_saved_invoices', JSON.stringify(invoiceMap));
             window.ERP_MEMORY.set('manti_saved_quotations', JSON.stringify(quotationMap));
         } else {
-            window.ERP_MEMORY.set('manti_saved_invoices', '{}');
-            window.ERP_MEMORY.set('manti_saved_quotations', '{}');
+            ensureSeedData('manti_saved_invoices');
+            ensureSeedData('manti_saved_quotations');
         }
 
         // 4. Vendor KYC
@@ -1109,6 +1097,8 @@ window.fetchEverythingFromCloud = async function () {
                 bankName: v.bank_name, bankBranch: v.bank_branch, bankAcc: v.bank_acc, bankIfsc: v.bank_ifsc, bankUpi: v.bank_upi
             }));
             window.ERP_MEMORY.set('manti_vendor_kyc_records', JSON.stringify(mappedVendors));
+        } else {
+            ensureSeedData('manti_vendor_kyc_records');
         }
 
         // 5. Supplier KYC
@@ -1119,16 +1109,22 @@ window.fetchEverythingFromCloud = async function () {
                 bankName: v.bank_name, bankBranch: v.bank_branch, bankAcc: v.bank_acc, bankIfsc: v.bank_ifsc, bankUpi: v.bank_upi
             }));
             window.ERP_MEMORY.set('manti_supplier_kyc_records', JSON.stringify(mappedSuppliers));
+        } else {
+            ensureSeedData('manti_supplier_kyc_records');
         }
 
         // 6. Staff Records
         if (staffRes.data && staffRes.data.length > 0) {
             window.ERP_MEMORY.set('manti_staff_records', JSON.stringify(staffRes.data.map(s => s.data)));
+        } else {
+            ensureSeedData('manti_staff_records');
         }
 
         // 7. Assets
         if (assetsRes.data && assetsRes.data.length > 0) {
             window.ERP_MEMORY.set('manti_assets', JSON.stringify(assetsRes.data.map(a => a.data)));
+        } else {
+            ensureSeedData('manti_assets');
         }
 
         // 8. Delivery Challans
@@ -1138,6 +1134,8 @@ window.fetchEverythingFromCloud = async function () {
                 total: c.total_amount, items: c.items
             }));
             window.ERP_MEMORY.set('manti_delivery_challan_records', JSON.stringify(mappedChallans));
+        } else {
+            ensureSeedData('manti_delivery_challan_records');
         }
 
         // 9. Payments Made
@@ -1148,6 +1146,8 @@ window.fetchEverythingFromCloud = async function () {
                 reference: p.reference, applications: p.applications
             }));
             window.ERP_MEMORY.set('manti_payments_made', JSON.stringify(mappedPayments));
+        } else {
+            ensureSeedData('manti_payments_made');
         }
 
         // 10. Expenses
@@ -1185,8 +1185,8 @@ window.fetchEverythingFromCloud = async function () {
                 };
             });
             window.ERP_MEMORY.set('manti_expenses', JSON.stringify(mappedExpenses));
-        } else if (expensesRes.error) {
-            console.warn("Supabase expenses table missing or error. Skipping...", expensesRes.error);
+        } else {
+            ensureSeedData('manti_expenses');
         }
 
         // 11. Journal Entries
@@ -1195,6 +1195,8 @@ window.fetchEverythingFromCloud = async function () {
                 id: j.id, no: j.id, date: j.date, amount: j.amount, notes: j.description, description: j.description, lines: j.lines
             }));
             window.ERP_MEMORY.set('manti_journal_entries', JSON.stringify(mappedJournals));
+        } else {
+            ensureSeedData('manti_journal_entries');
         }
 
         // 12. Bank Accounts
@@ -1204,6 +1206,8 @@ window.fetchEverythingFromCloud = async function () {
                 loanNumber: a.loan_number, emiAmount: a.emi_amount, openingBalance: a.opening_balance, openingDate: a.opening_date
             }));
             window.ERP_MEMORY.set('manti_bank_accounts', JSON.stringify(mappedAccounts));
+        } else {
+            ensureSeedData('manti_bank_accounts');
         }
 
         // 13. Stock History
@@ -1219,7 +1223,6 @@ window.fetchEverythingFromCloud = async function () {
                     } catch(e) {}
                 }
 
-                // Format local date
                 let formattedDate = s.date;
                 if (s.date) {
                     const pd = new Date(s.date);
@@ -1242,6 +1245,8 @@ window.fetchEverythingFromCloud = async function () {
 
             window.ERP_MEMORY.set('manti_stock_history', JSON.stringify(cleanStock));
             try { originalSetItem.call(localStorage, 'manti_stock_history', JSON.stringify(cleanStock)); } catch(e){}
+        } else {
+            ensureSeedData('manti_stock_history');
         }
 
         // 15. Settings
@@ -1292,12 +1297,7 @@ window.fetchEverythingFromCloud = async function () {
             window.ERP_MEMORY.set('manti_designs', JSON.stringify(finalDesigns));
             try { originalSetItem.call(localStorage, 'manti_designs', JSON.stringify(finalDesigns)); } catch(e) {}
         } else {
-            const localDesigns = originalGetItem.call(localStorage, 'manti_designs');
-            if (localDesigns && JSON.parse(localDesigns).length > 0) {
-                window.ERP_MEMORY.set('manti_designs', localDesigns);
-            } else {
-                window.ERP_MEMORY.set('manti_designs', '[]');
-            }
+            ensureSeedData('manti_designs');
         }
 
         // 17. Trees (with self-healing migration)
@@ -1313,7 +1313,6 @@ window.fetchEverythingFromCloud = async function () {
             if (legacy && legacy.setting_value) {
                 console.log("Found legacy trees in settings. Migrating...");
                 finalTrees = legacy.setting_value;
-                // Silently push to the new table
                 await window.supabase.from('trees').upsert(finalTrees.map(t => ({
                     id: t.id, tree_no: t.treeNo, date: t.date,
                     total_weight: parseFloat(t.totalWeight) || 0,
@@ -1322,7 +1321,12 @@ window.fetchEverythingFromCloud = async function () {
                 })), { onConflict: 'id' });
             }
         }
-        window.ERP_MEMORY.set('manti_trees', JSON.stringify(finalTrees));
+        if (finalTrees.length > 0) {
+            window.ERP_MEMORY.set('manti_trees', JSON.stringify(finalTrees));
+            try { originalSetItem.call(localStorage, 'manti_trees', JSON.stringify(finalTrees)); } catch(e) {}
+        } else {
+            ensureSeedData('manti_trees');
+        }
         function ensureSeedData(k) {
             let val = originalGetItem.call(localStorage, k);
             if (!val || val === '[]' || val === '{}') {
