@@ -96,6 +96,10 @@ window.ERP_MEMORY = new Map();
 window.mantiSyncPromises = [];
 const syncLocks = new Map(); // Prevent overlapping syncs for the same key
 
+// Must be declared FIRST before any code that calls them
+const originalGetItem = Storage.prototype.getItem;
+const originalSetItem = Storage.prototype.setItem;
+
 // Synchronously bootstrap RAM & Disk immediately on script load so page scripts NEVER see empty state
 if (window.MANTI_SEED_DATA) {
     Object.keys(window.MANTI_SEED_DATA).forEach(k => {
@@ -109,9 +113,6 @@ if (window.MANTI_SEED_DATA) {
         }
     });
 }
-
-const originalGetItem = Storage.prototype.getItem;
-const originalSetItem = Storage.prototype.setItem;
 
 function updateSyncIndicator() {
     let indicator = document.getElementById('manti-sync-indicator');
