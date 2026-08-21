@@ -1441,4 +1441,3 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
             // Quietly handle network blips
         }
     }, 5000);
-});

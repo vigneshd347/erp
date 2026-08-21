@@ -897,7 +897,7 @@
             const designerSelect = document.getElementById('filter-designer');
             if (designerSelect) {
                 const currentVal = designerSelect.value;
-                const designers = Array.from(new Set(designs.map(d => (d.designerName || '').trim()).filter(Boolean))).sort();
+                const designers = Array.from(new Set(designs.map(d => String(d.designerName || '').trim()).filter(Boolean))).sort();
                 designerSelect.innerHTML = '<option value="All">All Designers</option>' + 
                     designers.map(name => `<option value="${name}" ${name === currentVal ? 'selected' : ''}>${name}</option>`).join('');
             }
@@ -906,7 +906,7 @@
             const sizeSelect = document.getElementById('filter-size');
             if (sizeSelect) {
                 const currentVal = sizeSelect.value;
-                const sizes = Array.from(new Set(designs.map(d => (d.size || '').trim()).filter(Boolean))).sort();
+                const sizes = Array.from(new Set(designs.map(d => String(d.size || '').trim()).filter(Boolean))).sort();
                 sizeSelect.innerHTML = '<option value="All">All Sizes</option>' + 
                     sizes.map(s => `<option value="${s}" ${s === currentVal ? 'selected' : ''}>${s}</option>`).join('');
             }
@@ -915,7 +915,7 @@
             const poSelect = document.getElementById('filter-po');
             if (poSelect) {
                 const currentVal = poSelect.value;
-                const pos = Array.from(new Set(designs.map(d => (d._sourcePO || '').trim()).filter(Boolean))).sort();
+                const pos = Array.from(new Set(designs.map(d => String(d._sourcePO || '').trim()).filter(Boolean))).sort();
                 poSelect.innerHTML = '<option value="All">All POs</option>' + 
                     pos.map(po => `<option value="${po}" ${po === currentVal ? 'selected' : ''}>${po}</option>`).join('');
             }
