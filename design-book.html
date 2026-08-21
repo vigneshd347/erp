@@ -500,8 +500,61 @@
 
         function loadLocalData() {
             let rawDesigns = JSON.parse(localStorage.getItem('manti_designs') || '[]');
-            
-            // Deduplicate strictly by ID, and deduplicate duplicate design entries from the same PO
+            const orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+            const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+            let backfilledAny = false;
+
+            // 1. Auto-reconstruct designs from all Design POs in manti_order_records if missing
+            orders.forEach(po => {
+                const isDesignPO = po.category === 'Design' || (po.items && po.items.some(it => it.category === 'Design' || it.designSubCat || it.designType));
+                if (isDesignPO && po.items && po.items.length > 0) {
+                    let effectiveDesigner = po.designerName || '';
+                    if (!effectiveDesigner && po.vendor) {
+                        const vendorObj = suppliers.find(v => v.id === po.vendor || v.name === po.vendor);
+                        effectiveDesigner = vendorObj ? (vendorObj.name || vendorObj.id) : po.vendor;
+                    }
+
+                    po.items.forEach(it => {
+                        if (po.category === 'Design' || it.category === 'Design' || it.designSubCat || it.designType) {
+                            const exists = rawDesigns.some(d => 
+                                d._sourcePO === po.id || 
+                                (parseFloat(d.weight || 0) === parseFloat(it.designWt || 0) && (!d.size || d.size === it.designSize) && (d.category === (it.designSubCat || 'Ladies ring')))
+                            );
+
+                            if (!exists) {
+                                let effectiveSubCat = it.designSubCat || 'Ladies ring';
+                                let prefix = 'DSG';
+                                if (effectiveSubCat === 'Bangle' || effectiveSubCat === 'Bracelet') prefix = 'BG';
+                                else if (effectiveSubCat === 'Ring' || effectiveSubCat === 'Ladies ring' || effectiveSubCat === 'Gents ring') prefix = 'RG';
+                                else if (effectiveSubCat === 'Earring') prefix = 'ER';
+                                else if (effectiveSubCat === 'Necklace') prefix = 'NK';
+                                else if (effectiveSubCat === 'Mix') prefix = 'MX';
+
+                                const wt = parseFloat(it.designWt) || 0;
+                                const size = it.designSize || '';
+                                const qty = parseFloat(it.qty) || 1;
+                                const itemTotal = (parseFloat(it.total) || 0) / qty;
+
+                                rawDesigns.push({
+                                    id: `${prefix}001${wt > 0 ? `-${wt}` : ''}${size ? `-${size}` : ''}`,
+                                    category: effectiveSubCat === 'Bracelet' ? 'Bangle' : (effectiveSubCat === 'Ring' ? 'Ladies ring' : effectiveSubCat),
+                                    subCategory: (effectiveSubCat === 'Ladies ring' || effectiveSubCat === 'Gents ring') ? effectiveSubCat : null,
+                                    weight: wt,
+                                    size: size,
+                                    designType: it.designType || 'Mold',
+                                    designerName: effectiveDesigner,
+                                    purchaseValue: itemTotal,
+                                    imageUrl: it.detailImageUrl || it.designImageUrl || '',
+                                    _sourcePO: po.id
+                                });
+                                backfilledAny = true;
+                            }
+                        }
+                    });
+                }
+            });
+
+            // 2. Deduplicate strictly by ID, and deduplicate duplicate design entries from the same PO
             let uniqueById = new Map();
             let seenPoItems = new Set();
             rawDesigns.forEach(d => {
@@ -522,11 +575,7 @@
             
             designs = Array.from(uniqueById.values());
             
-            // Enrich designs from source PO if any field is missing
-            const orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
-            const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
-            let backfilledAny = false;
-
+            // 3. Enrich designs from source PO if any field is missing
             designs.forEach(d => {
                 let po = null;
                 if (d._sourcePO) {
@@ -545,7 +594,7 @@
                 }
 
                 if (po) {
-                    // 1. Designer Name
+                    // Designer Name
                     let effectiveDesigner = po.designerName || '';
                     if (!effectiveDesigner && po.vendor) {
                         const vendorObj = suppliers.find(v => v.id === po.vendor || v.name === po.vendor);
@@ -556,7 +605,7 @@
                         backfilledAny = true;
                     }
 
-                    // 2. Matching PO Item for Design Type, Image, Purchase Value
+                    // Matching PO Item for Design Type, Image, Purchase Value
                     if (po.items && po.items.length > 0) {
                         const matchedItem = po.items.find(it => 
                             (parseFloat(it.designWt) === parseFloat(d.weight) && (!d.size || it.designSize === d.size)) ||
@@ -588,7 +637,7 @@
                 }
             });
 
-            // Renumber all designs to start sequentially with 001 for each prefix (e.g. RG001, BG001, ER001)
+            // 4. Renumber all designs to start sequentially with 001 for each prefix (e.g. RG001, BG001, ER001)
             let prefixCounters = {};
             let idMap = {};
             designs.forEach(d => {
@@ -616,7 +665,7 @@
                 }
             });
 
-            // Update any tree records referencing old IDs
+            // 5. Update any tree records referencing old IDs
             if (Object.keys(idMap).length > 0) {
                 let treeData = JSON.parse(localStorage.getItem('manti_trees') || '[]');
                 let treesUpdated = false;
@@ -638,7 +687,7 @@
                 }
             }
             
-            // Clean up localStorage if duplicates were found or backfilled
+            // 6. Clean up localStorage and sync to Supabase
             if (rawDesigns.length !== designs.length || backfilledAny) {
                 localStorage.setItem('manti_designs', JSON.stringify(designs));
                 if (window.syncKeyToSupabase) {

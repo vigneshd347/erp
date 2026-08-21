@@ -846,9 +846,15 @@ window._performSupabaseSync = async function(key, data) {
                     }
                 }
                 const { error } = await window.supabase.from('designs').upsert(dbDesigns, { onConflict: 'id' });
-                if (error) { console.error("Designs Sync Error:", error); alert("Failed to save Designs to Cloud."); }
+                if (error) { console.error("Designs Sync Error:", error); }
+                try {
+                    await window.supabase.from('app_settings').upsert({ setting_key: 'manti_designs', setting_value: data }, { onConflict: 'setting_key' });
+                } catch(e) {}
             } else {
                 await window.supabase.from('designs').delete().neq('id', 'NON_EXISTENT');
+                try {
+                    await window.supabase.from('app_settings').upsert({ setting_key: 'manti_designs', setting_value: [] }, { onConflict: 'setting_key' });
+                } catch(e) {}
             }
         } else if (key === 'manti_trees') {
             const dbTrees = data.map(t => ({
@@ -1218,24 +1224,31 @@ window.fetchEverythingFromCloud = async function () {
 
         // 16. Designs (with self-healing migration)
         let finalDesigns = [];
+        const legacyDesignsObj = (settingsRes.data || []).find(s => s.setting_key === 'manti_designs');
+        const legacyDesigns = (legacyDesignsObj && legacyDesignsObj.setting_value) ? legacyDesignsObj.setting_value : [];
+
         if (designsRes && designsRes.data && designsRes.data.length > 0) {
-            finalDesigns = designsRes.data.map(d => ({
-                id: d.id, category: d.category, subCategory: d.sub_category,
-                weight: d.weight, size: d.size, imageUrl: d.image_url, timestamp: d.created_at
-            }));
-        } else {
-            // Check if it exists in settings (legacy)
-            const legacy = (settingsRes.data || []).find(s => s.setting_key === 'manti_designs');
-            if (legacy && legacy.setting_value) {
-                console.log("Found legacy designs in settings. Migrating...");
-                finalDesigns = legacy.setting_value;
-                // Silently push to the new table
-                await window.supabase.from('designs').upsert(finalDesigns.map(d => ({
-                    id: d.id, category: d.category, sub_category: d.subCategory || null,
-                    weight: parseFloat(d.weight) || 0, size: d.size || null,
-                    image_url: d.imageUrl || null
-                })), { onConflict: 'id' });
-            }
+            finalDesigns = designsRes.data.map(d => {
+                const leg = legacyDesigns.find(l => l.id === d.id) || {};
+                return {
+                    id: d.id, category: d.category, subCategory: d.sub_category || leg.subCategory,
+                    weight: d.weight, size: d.size, imageUrl: d.image_url || leg.imageUrl, timestamp: d.created_at,
+                    designerName: leg.designerName || '',
+                    designType: leg.designType || 'Mold',
+                    purchaseValue: leg.purchaseValue || null,
+                    depreciation: leg.depreciation || null,
+                    _sourcePO: leg._sourcePO || ''
+                };
+            });
+        } else if (legacyDesigns.length > 0) {
+            console.log("Restoring designs from settings...");
+            finalDesigns = legacyDesigns;
+            // Silently push to the designs table
+            await window.supabase.from('designs').upsert(finalDesigns.map(d => ({
+                id: d.id, category: d.category, sub_category: d.subCategory || null,
+                weight: parseFloat(d.weight) || 0, size: d.size || null,
+                image_url: d.imageUrl || null
+            })), { onConflict: 'id' });
         }
         window.ERP_MEMORY.set('manti_designs', JSON.stringify(finalDesigns));
 
