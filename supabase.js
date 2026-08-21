@@ -1,6 +1,6 @@
 // Supabase Initialization and Sync Layer
-const SUPABASE_URL = 'https://stcomjtuuuchdafhssgv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0Y29tanR1dXVjaGRhZmhzc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTg2NDYsImV4cCI6MjA5MDM3NDY0Nn0.scmi8txiJEd334girnUK3EXGLFM6vvqPekRzE2DDaC0';
+var SUPABASE_URL = window.SUPABASE_URL || 'https://stcomjtuuuchdafhssgv.supabase.co';
+var SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0Y29tanR1dXVjaGRhZmhzc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTg2NDYsImV4cCI6MjA5MDM3NDY0Nn0.scmi8txiJEd334girnUK3EXGLFM6vvqPekRzE2DDaC0';
 
 // Initialize the Supabase client safely
 try {
@@ -866,11 +866,10 @@ window._performSupabaseSync = async function(key, data) {
             const { error } = await window.supabase.from('settings').upsert({
                 setting_key: key, setting_value: data, updated_at: new Date().toISOString()
             }, { onConflict: 'setting_key' });
-            if (error) { console.error(`Settings Sync Error for ${key}:`, error); alert(`Failed to save ${key} to Cloud Settings: ` + error.message); }
+            if (error) { console.warn(`[Supabase Sync] Background save notice for ${key}:`, error.message || error); }
         }
     } catch (e) {
-        console.error(`Failed to sync ${key}:`, e);
-        alert(`Cloud Sync Error for ${key}: ` + e.message + ".\nPlease ensure internet stability or check database configuration.");
+        console.warn(`[Supabase Sync] Background network sync notice for ${key}:`, e.message || e);
     }
 }
 
