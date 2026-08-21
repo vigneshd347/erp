@@ -999,7 +999,11 @@ window.fetchEverythingFromCloud = async function () {
                 }
             });
             window.ERP_MEMORY.set('manti_order_records', JSON.stringify(standardOrders));
+            try { originalSetItem.call(localStorage, 'manti_order_records', JSON.stringify(standardOrders)); } catch(e) {}
+            window.syncKeyToSupabase('manti_order_records', standardOrders);
             window.ERP_MEMORY.set('manti_customer_orders', JSON.stringify(customerOrders));
+            try { originalSetItem.call(localStorage, 'manti_customer_orders', JSON.stringify(customerOrders)); } catch(e) {}
+            window.syncKeyToSupabase('manti_customer_orders', customerOrders);
         } else {
             window.ERP_MEMORY.set('manti_order_records', '[]');
             window.ERP_MEMORY.set('manti_customer_orders', '[]');
@@ -1251,6 +1255,8 @@ window.fetchEverythingFromCloud = async function () {
             })), { onConflict: 'id' });
         }
         window.ERP_MEMORY.set('manti_designs', JSON.stringify(finalDesigns));
+            try { originalSetItem.call(localStorage, 'manti_designs', JSON.stringify(finalDesigns)); } catch(e) {}
+            if (window.syncKeyToSupabase) { window.syncKeyToSupabase('manti_designs', finalDesigns); }
 
         // 17. Trees (with self-healing migration)
         let finalTrees = [];

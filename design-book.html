@@ -498,14 +498,78 @@
         let designs = [];
         let isUploading = false;
 
-        function loadLocalData() {
+        async function loadLocalData() {
             let rawDesigns = JSON.parse(localStorage.getItem('manti_designs') || '[]');
-            const orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
-            const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
-            const trees = JSON.parse(localStorage.getItem('manti_trees') || '[]');
+            // Read orders, trees, suppliers from ERP_MEMORY / localStorage
+            let orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+            let trees = JSON.parse(localStorage.getItem('manti_trees') || '[]');
+            let suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+
+            // Ensure orders are present; fetch from Supabase if empty
+            if (!orders || orders.length === 0) {
+                const { data: supOrders, error: ordersErr } = await window.supabase.from('orders').select('*').range(0, 9999);
+                if (!ordersErr && supOrders && supOrders.length > 0) {
+                    orders = supOrders.map(o => {
+                        let extended = {};
+                        if (o.remark && o.remark.startsWith('{')) {
+                            try { extended = JSON.parse(o.remark); } catch(e) {}
+                        }
+                        return {
+                            id: o.order_number, type: o.type, date: o.date,
+                            customer: o.customer_name, vendor: o.vendor_id,
+                            product: o.product_name, qty: o.total_weight, weight: o.total_weight,
+                            amount: o.total_amount, paidAmount: o.paid_amount, status: o.status,
+                            items: extended.items || [], category: extended.category || '',
+                            designerName: extended.designerName || ''
+                        };
+                    });
+                    localStorage.setItem('manti_order_records', JSON.stringify(orders));
+                }
+            }
+            // Ensure trees are present; fetch from Supabase if empty
+            if (!trees || trees.length === 0) {
+                const { data: supTrees, error: treesErr } = await window.supabase.from('trees').select('*');
+                if (!treesErr && supTrees && supTrees.length > 0) {
+                    trees = supTrees.map(t => ({
+                        id: t.id,
+                        treeNo: t.tree_no,
+                        date: t.date,
+                        totalWeight: t.total_weight,
+                        designs: t.designs,
+                        notes: t.notes,
+                        _sourcePO: ''
+                    }));
+                    localStorage.setItem('manti_trees', JSON.stringify(trees));
+                }
+            }
             let backfilledAny = false;
 
-            // 1. Auto-reconstruct all designs from all items in Design POs in manti_order_records
+            // Ensure we have all designs: fetch from Supabase and merge with any local cache
+            const { data: supDesigns, error: supErr } = await window.supabase.from('designs').select('*');
+            let fetchedDesigns = [];
+            if (!supErr && supDesigns && supDesigns.length > 0) {
+                fetchedDesigns = supDesigns.map(d => ({
+                    id: d.id,
+                    category: d.category,
+                    subCategory: d.sub_category,
+                    weight: d.weight,
+                    size: d.size,
+                    designType: d.design_type || 'Mold',
+                    designerName: d.designer_name || '',
+                    purchaseValue: d.purchase_value || null,
+                    imageUrl: d.image_url || '',
+                    _sourcePO: ''
+                }));
+            }
+            // Merge local cache (rawDesigns) with fetched designs, de‑duplicate by id
+            const mergedMap = new Map();
+            rawDesigns.forEach(d => mergedMap.set(d.id, d));
+            fetchedDesigns.forEach(d => mergedMap.set(d.id, d));
+            rawDesigns = Array.from(mergedMap.values());
+            // Persist the merged list for future loads
+            localStorage.setItem('manti_designs', JSON.stringify(rawDesigns));
+            if (window.syncKeyToSupabase) { window.syncKeyToSupabase('manti_designs', rawDesigns); }
+            // Continue with reconstruction logic as before
             orders.forEach(po => {
                 const isDesignPO = po.category === 'Design' || (po.items && po.items.some(it => it.category === 'Design' || it.designSubCat || it.designType));
                 if (isDesignPO && po.items && po.items.length > 0) {
