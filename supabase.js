@@ -1301,9 +1301,51 @@ window.fetchEverythingFromCloud = async function () {
             }
         }
         window.ERP_MEMORY.set('manti_trees', JSON.stringify(finalTrees));
+        function ensureSeedData(k) {
+            let val = originalGetItem.call(localStorage, k);
+            if (!val || val === '[]' || val === '{}') {
+                if (window.MANTI_SEED_DATA && window.MANTI_SEED_DATA[k]) {
+                    val = JSON.stringify(window.MANTI_SEED_DATA[k]);
+                    try { originalSetItem.call(localStorage, k, val); } catch(e) {}
+                }
+            }
+            if (val) {
+                window.ERP_MEMORY.set(k, val);
+            }
+            return val;
+        }
+
+        const localKeys = [
+            'manti_order_records', 'manti_customer_orders', 'manti_jobwork_records',
+            'manti_saved_invoices', 'manti_saved_quotations', 'manti_vendor_kyc_records',
+            'manti_supplier_kyc_records', 'manti_staff_records', 'manti_assets',
+            'manti_delivery_challan_records', 'manti_payments_made', 'manti_expenses',
+            'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history',
+            'manti_designs', 'manti_trees'
+        ];
+
+        localKeys.forEach(k => {
+            if (!window.ERP_MEMORY.has(k) || window.ERP_MEMORY.get(k) === '[]') {
+                ensureSeedData(k);
+            }
+        });
     } catch (e) {
         console.error("%c[ERP DEBUG] Cloud Fetch CRASHED or Timed Out!", "color: #f87171; font-weight: bold;", e);
-        // Fallback: Populate ERP_MEMORY from localStorage so offline data is active
+        
+        function ensureSeedData(k) {
+            let val = originalGetItem.call(localStorage, k);
+            if (!val || val === '[]' || val === '{}') {
+                if (window.MANTI_SEED_DATA && window.MANTI_SEED_DATA[k]) {
+                    val = JSON.stringify(window.MANTI_SEED_DATA[k]);
+                    try { originalSetItem.call(localStorage, k, val); } catch(e) {}
+                }
+            }
+            if (val) {
+                window.ERP_MEMORY.set(k, val);
+            }
+            return val;
+        }
+
         const localKeys = [
             'manti_order_records', 'manti_customer_orders', 'manti_jobwork_records',
             'manti_saved_invoices', 'manti_saved_quotations', 'manti_vendor_kyc_records',
@@ -1313,10 +1355,7 @@ window.fetchEverythingFromCloud = async function () {
             'manti_designs', 'manti_trees'
         ];
         localKeys.forEach(k => {
-            const val = originalGetItem.call(localStorage, k);
-            if (val && !window.ERP_MEMORY.has(k)) {
-                window.ERP_MEMORY.set(k, val);
-            }
+            ensureSeedData(k);
         });
     }
 
