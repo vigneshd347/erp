@@ -502,9 +502,10 @@
             let rawDesigns = JSON.parse(localStorage.getItem('manti_designs') || '[]');
             const orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
             const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+            const trees = JSON.parse(localStorage.getItem('manti_trees') || '[]');
             let backfilledAny = false;
 
-            // 1. Auto-reconstruct designs from all Design POs in manti_order_records if missing
+            // 1. Auto-reconstruct all designs from all items in Design POs in manti_order_records
             orders.forEach(po => {
                 const isDesignPO = po.category === 'Design' || (po.items && po.items.some(it => it.category === 'Design' || it.designSubCat || it.designType));
                 if (isDesignPO && po.items && po.items.length > 0) {
@@ -514,15 +515,19 @@
                         effectiveDesigner = vendorObj ? (vendorObj.name || vendorObj.id) : po.vendor;
                     }
 
-                    po.items.forEach(it => {
+                    po.items.forEach((it, idx) => {
                         if (po.category === 'Design' || it.category === 'Design' || it.designSubCat || it.designType) {
+                            const wt = parseFloat(it.designWt) || 0;
+                            const size = it.designSize || '';
+                            const effectiveSubCat = it.designSubCat || 'Ladies ring';
+                            
+                            // Check if this specific item is already present
                             const exists = rawDesigns.some(d => 
-                                d._sourcePO === po.id || 
-                                (parseFloat(d.weight || 0) === parseFloat(it.designWt || 0) && (!d.size || d.size === it.designSize) && (d.category === (it.designSubCat || 'Ladies ring')))
+                                (d._sourcePO === po.id && parseFloat(d.weight || 0) === wt && (!size || d.size === size)) ||
+                                (d.id && d.id.includes(po.id))
                             );
 
                             if (!exists) {
-                                let effectiveSubCat = it.designSubCat || 'Ladies ring';
                                 let prefix = 'DSG';
                                 if (effectiveSubCat === 'Bangle' || effectiveSubCat === 'Bracelet') prefix = 'BG';
                                 else if (effectiveSubCat === 'Ring' || effectiveSubCat === 'Ladies ring' || effectiveSubCat === 'Gents ring') prefix = 'RG';
@@ -530,13 +535,11 @@
                                 else if (effectiveSubCat === 'Necklace') prefix = 'NK';
                                 else if (effectiveSubCat === 'Mix') prefix = 'MX';
 
-                                const wt = parseFloat(it.designWt) || 0;
-                                const size = it.designSize || '';
                                 const qty = parseFloat(it.qty) || 1;
                                 const itemTotal = (parseFloat(it.total) || 0) / qty;
 
                                 rawDesigns.push({
-                                    id: `${prefix}001${wt > 0 ? `-${wt}` : ''}${size ? `-${size}` : ''}`,
+                                    id: `${prefix}${String(rawDesigns.length + 1).padStart(3, '0')}${wt > 0 ? `-${wt}` : ''}${size ? `-${size}` : ''}`,
                                     category: effectiveSubCat === 'Bracelet' ? 'Bangle' : (effectiveSubCat === 'Ring' ? 'Ladies ring' : effectiveSubCat),
                                     subCategory: (effectiveSubCat === 'Ladies ring' || effectiveSubCat === 'Gents ring') ? effectiveSubCat : null,
                                     weight: wt,
@@ -554,9 +557,40 @@
                 }
             });
 
-            // 2. Deduplicate strictly by ID, and deduplicate duplicate design entries from the same PO
+            // 2. Also recover any designs recorded in Production Trees
+            trees.forEach(t => {
+                if (t.designs && Array.isArray(t.designs)) {
+                    t.designs.forEach(dd => {
+                        const dId = dd.design_id || dd.id;
+                        if (dId && !rawDesigns.some(d => d.id === dId)) {
+                            let prefix = String(dId).substring(0, 2).toUpperCase();
+                            let cat = 'Ladies ring';
+                            if (prefix === 'BG') cat = 'Bangle';
+                            else if (prefix === 'ER') cat = 'Earring';
+                            else if (prefix === 'NK') cat = 'Necklace';
+                            else if (prefix === 'MX') cat = 'Mix';
+                            else if (prefix === 'RG') cat = 'Ladies ring';
+
+                            rawDesigns.push({
+                                id: dId,
+                                category: cat,
+                                subCategory: cat === 'Ladies ring' ? 'Ladies ring' : null,
+                                weight: parseFloat(dd.unit_weight || dd.weight || 0),
+                                size: dd.size || '',
+                                designType: 'Mold',
+                                designerName: '',
+                                purchaseValue: null,
+                                imageUrl: dd.imageUrl || '',
+                                _sourcePO: ''
+                            });
+                            backfilledAny = true;
+                        }
+                    });
+                }
+            });
+
+            // 3. Deduplicate strictly by ID
             let uniqueById = new Map();
-            let seenPoItems = new Set();
             rawDesigns.forEach(d => {
                 if (!d.id) return;
                 // Normalize legacy 'Ring' category to 'Ladies ring' or 'Gents ring'
@@ -564,18 +598,14 @@
                     d.category = d.subCategory || 'Ladies ring';
                 }
 
-                // If a design is linked to a PO, deduplicate identical duplicates generated for the same PO
-                const poKey = d._sourcePO ? `${d._sourcePO}|${d.category}|${d.subCategory||''}|${parseFloat(d.weight||0)}|${d.size||''}` : null;
-                if (uniqueById.has(d.id)) return;
-                if (poKey && seenPoItems.has(poKey)) return;
-
-                uniqueById.set(d.id, d);
-                if (poKey) seenPoItems.add(poKey);
+                if (!uniqueById.has(d.id)) {
+                    uniqueById.set(d.id, d);
+                }
             });
             
             designs = Array.from(uniqueById.values());
             
-            // 3. Enrich designs from source PO if any field is missing
+            // 4. Enrich designs from source PO if any field is missing
             designs.forEach(d => {
                 let po = null;
                 if (d._sourcePO) {

@@ -834,7 +834,7 @@ window._performSupabaseSync = async function(key, data) {
             }));
             if (dbDesigns.length > 0) {
                 // Safely delete stale records using chunked deletes
-                const { data: cloudIds } = await window.supabase.from('designs').select('id');
+                const { data: cloudIds } = await window.supabase.from('designs').select('id').range(0, 9999);
                 if (cloudIds) {
                     const localIds = new Set(dbDesigns.map(d => d.id));
                     const toDelete = cloudIds.filter(c => !localIds.has(c.id)).map(c => c.id);
@@ -898,23 +898,23 @@ window.fetchEverythingFromCloud = async function () {
             paymentsRes, expensesRes, journalsRes, accountsRes,
             stockRes, settingsRes, designsRes, treesRes
         ] = await Promise.all([
-            window.supabase.from('orders').select('*'),
-            window.supabase.from('job_works').select('*'),
-            window.supabase.from('invoices').select('*'),
-            window.supabase.from('vendor_kyc').select('*'),
-            window.supabase.from('supplier_kyc').select('*'),
-            window.supabase.from('staff_records').select('*'),
-            window.supabase.from('assets').select('*'),
-            window.supabase.from('delivery_challans').select('*'),
-            window.supabase.from('payments_made').select('*'),
-            window.supabase.from('expenses').select('*'),
-            window.supabase.from('journal_entries').select('*'),
-            window.supabase.from('bank_accounts').select('*'),
-            window.supabase.from('stock_history').select('id,date,type,details,qty,weight,metal_type'),
+            window.supabase.from('orders').select('*').range(0, 9999),
+            window.supabase.from('job_works').select('*').range(0, 9999),
+            window.supabase.from('invoices').select('*').range(0, 9999),
+            window.supabase.from('vendor_kyc').select('*').range(0, 9999),
+            window.supabase.from('supplier_kyc').select('*').range(0, 9999),
+            window.supabase.from('staff_records').select('*').range(0, 9999),
+            window.supabase.from('assets').select('*').range(0, 9999),
+            window.supabase.from('delivery_challans').select('*').range(0, 9999),
+            window.supabase.from('payments_made').select('*').range(0, 9999),
+            window.supabase.from('expenses').select('*').range(0, 9999),
+            window.supabase.from('journal_entries').select('*').range(0, 9999),
+            window.supabase.from('bank_accounts').select('*').range(0, 9999),
+            window.supabase.from('stock_history').select('id,date,type,details,qty,weight,metal_type').range(0, 9999),
 
-            window.supabase.from('settings').select('*'),
-            window.supabase.from('designs').select('*'),
-            window.supabase.from('trees').select('*')
+            window.supabase.from('settings').select('*').range(0, 9999),
+            window.supabase.from('designs').select('*').range(0, 9999),
+            window.supabase.from('trees').select('*').range(0, 9999)
         ]);
 
         console.log("%c[ERP DEBUG] All 16 queries completed.", "color: #4ade80;",
