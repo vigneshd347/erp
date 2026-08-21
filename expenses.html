@@ -432,7 +432,7 @@
     <script src="liquid-button.js"></script>
     <script src="script.js?v=25"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
     <script>
         let expenses = [];
@@ -584,7 +584,7 @@
                 <td style="padding: 12px; vertical-align: top; text-align: center;"><button type="button" class="btn-remove-sm" onclick="removeExpenseItemRow(this)" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.2rem; font-weight: bold;">&times;</button></td>
             `;
             tbody.appendChild(tr);
-            lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             calculateExpenseTotals();
         }
 
@@ -739,7 +739,7 @@
                 `;
                 tbody.appendChild(tr);
             });
-            lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         async function saveExpense(status = 'Payment Pending') {
@@ -1030,7 +1030,7 @@
             
             calculateExpenseTotals();
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         };
 
         window.filterExpenses = function() {
@@ -1132,7 +1132,7 @@
     <!-- Lucide icons: guaranteed init after full DOM parse -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
 </body>
 </html>

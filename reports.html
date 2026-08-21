@@ -352,7 +352,7 @@
                         document.getElementById('empty-state-greeting').style.display = 'none';
 
                         if (window.lucide) {
-                            window.lucide.createIcons();
+                            window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
                         }
 
                         if (typeof window.loadReport === 'function') window.loadReport(type);
@@ -518,7 +518,7 @@
     <script>
         document.addEventListener('CloudDataLoaded', () => {
             // Initialize Lucide icons immediately on page load (fixes sidebar icons)
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             
             const reportSelector = document.getElementById('report-type');
             const reportHead = document.getElementById('report-head');
@@ -1477,7 +1477,7 @@
                         </tr>
                     `;
                     
-                    if (window.lucide) window.lucide.createIcons();
+                    if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
                 }
                 else if (type === 'expenses') {
                     const filterYear = document.getElementById('report-year-filter').value;
@@ -2424,7 +2424,7 @@
                         });
                         
                         reportBody.innerHTML = bodyHtml;
-                        if (window.lucide) window.lucide.createIcons();
+                        if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
                     }
                 }
                 else if (type === 'production') {
@@ -3517,7 +3517,7 @@
                         </tr>`;
                         reportBody.innerHTML = bodyHtml;
                     }
-                    if (window.lucide) window.lucide.createIcons();
+                    if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
                 }
 
                 let genericTitle = 'Report';
@@ -3966,7 +3966,7 @@
     <!-- Lucide icons: guaranteed init after full DOM parse -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
     <script src="letterhead-data.js"></script>
 <!-- ===== Customer Order PDF Preview Modal ===== -->

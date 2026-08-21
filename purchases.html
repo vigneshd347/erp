@@ -1425,7 +1425,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                     `;
                     tbody.appendChild(tr);
                 });
-                lucide.createIcons();
+                if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             }
 
             let editIndex = -1;
@@ -2630,7 +2630,7 @@ filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
     <script src="liquid-button.js"></script>
 </body>

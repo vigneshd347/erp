@@ -474,7 +474,7 @@
     <script src="script.js?v=25"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
         document.addEventListener('CloudDataLoaded', () => {
             console.log('%c[DASHBOARD] CloudDataLoaded event received!', 'color: #38bdf8; font-weight: bold;');
@@ -679,7 +679,7 @@
                 ctxCust.parentElement.innerHTML = '<div style="color:#9ca3af;font-size:0.85rem;text-align:center;">Not enough sales data</div>';
             }
 
-            lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         });
 
         // ─── AI SEARCH ENGINE ─────────────────────────────────────────────────────
@@ -906,7 +906,7 @@
                 summaryText.innerHTML = generateAISummary(query, navMatches, dataResults);
 
                 panel.style.display = 'block';
-                lucide.createIcons();
+                if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             }
 
             function closeResults() {

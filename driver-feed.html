@@ -770,7 +770,7 @@
                 fuelReceiptImageBase64 = '';
             }
             
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             checkServiceDue();
         }
 

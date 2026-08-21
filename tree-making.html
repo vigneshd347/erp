@@ -521,7 +521,7 @@
     <script src="liquid-button.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/lucide.min.js"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
         let trees = [];
         let allDesigns = [];
@@ -689,13 +689,13 @@
                         thumb.innerHTML = `<img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;">`;
                     } else {
                         thumb.innerHTML = `<i data-lucide="image" style="color: #cbd5e1; width: 18px; height: 18px;"></i>`;
-                        if (window.lucide) window.lucide.createIcons();
+                        if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
                     }
                 }
             });
             document.getElementById('tree-calc-weight').textContent = totalWt.toFixed(3) + ' g';
             document.getElementById('tree-calc-count').textContent = totalPcs;
-            lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function generateUniqueTreeId() {
@@ -874,7 +874,7 @@
                 `;
                 grid.appendChild(card);
             });
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             
             // update selection count
             const selectedCount = Object.keys(window.gallerySelections).filter(k => window.gallerySelections[k] > 0).length;
@@ -922,7 +922,7 @@
             } else {
                 imgCont.innerHTML = `<i data-lucide="image" style="width: 48px; height: 48px; color: #334155;"></i>`;
             }
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             
             document.getElementById('max-design-count').value = 1;
             
@@ -963,11 +963,11 @@
                 const originalText = btnAdd.innerHTML;
                 btnAdd.innerHTML = `<i data-lucide="check" style="width: 20px; height: 20px;"></i> Added ${count} pcs!`;
                 btnAdd.style.background = '#10b981';
-                if (window.lucide) window.lucide.createIcons();
+                if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
                 setTimeout(() => {
                     btnAdd.innerHTML = originalText;
                     btnAdd.style.background = '';
-                    if (window.lucide) window.lucide.createIcons();
+                    if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
                 }, 1500);
             };
             
@@ -1010,7 +1010,7 @@
                 if (img) img.style.objectFit = 'contain';
                 if (btnZoom) btnZoom.innerHTML = `<i data-lucide="zoom-in" style="width: 18px; height: 18px;"></i>`;
             }
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function closeTreeModal() {
@@ -1185,7 +1185,7 @@
             </div>`;
             cont.innerHTML = html;
             document.getElementById('view-modal-overlay').classList.add('active');
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         let currentPreviewTreeIdx = -1;
@@ -1311,7 +1311,7 @@
 
             document.getElementById('print-paper-sheet').innerHTML = sheetHtml;
             document.getElementById('print-preview-modal-overlay').classList.add('active');
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function closePrintPreview() {
@@ -1428,7 +1428,7 @@
                 console.error("Camera access failed:", err);
                 alert("Could not access camera. Please upload an image or check browser permissions.");
             }
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function stopCamera() {
@@ -1445,7 +1445,7 @@
             if (fallback) fallback.style.display = 'flex';
             if (btn) btn.innerHTML = `<i data-lucide="video" style="width: 14px; height: 14px;"></i> Start Camera`;
             if (captureBtn) captureBtn.disabled = true;
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function capturePhoto() {
@@ -1578,7 +1578,7 @@
                 `;
                 grid.appendChild(card);
             });
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function filterAiResults() {
@@ -1676,7 +1676,7 @@
     <!-- Lucide icons: guaranteed init after full DOM parse -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
 </body>
 </html>

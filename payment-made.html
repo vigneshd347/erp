@@ -538,7 +538,7 @@
     <script src="liquid-button.js"></script>
     <script src="script.js?v=24"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
     <script>
         // Data sources
@@ -616,7 +616,7 @@
             const lastTab = sessionStorage.getItem('last_payment_tab') || 'pending';
             switchPaymentTab(lastTab);
             
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
             // Handle URL Search Parameters
             const urlParams = new URLSearchParams(window.location.search);
@@ -1075,7 +1075,7 @@
                 `;
                 tbody.appendChild(tr);
             });
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function filterPaymentHistory() {
@@ -1527,7 +1527,7 @@
     <!-- Lucide icons: guaranteed init after full DOM parse -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
 </body>
 </html>

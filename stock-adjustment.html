@@ -385,7 +385,7 @@
 
     <script src="liquid-button.js"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
     <script src="script.js?v=24"></script>
     <script>
@@ -446,7 +446,7 @@ function loadLocalData() {
             if (document.getElementById('bal-silver-equiv')) document.getElementById('bal-silver-equiv').textContent = (balances.silver_9999_equiv || 0).toFixed(3) + ' g';
 
             // Refresh icons if any were added dynamically
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
             // Render History Table
             tbody.innerHTML = '';
@@ -505,7 +505,7 @@ function loadLocalData() {
                 tbody.appendChild(tr);
             }
 
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         // Delegated event listener for better reliability
@@ -772,7 +772,7 @@ window.deleteAdjustment = async function (recId, fallbackIndex) {
             } finally {
                 submitBtn.innerHTML = originalBtnText;
                 submitBtn.disabled = false;
-                if (window.lucide) window.lucide.createIcons();
+                if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             }
         });
 
@@ -791,7 +791,7 @@ window.deleteAdjustment = async function (recId, fallbackIndex) {
     <!-- Lucide icons: guaranteed init after full DOM parse -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
 </body>
 

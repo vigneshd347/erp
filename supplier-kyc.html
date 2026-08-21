@@ -243,7 +243,7 @@
                     records.splice(index, 1);
                     localStorage.setItem('manti_supplier_kyc_records', JSON.stringify(records));
                     renderTable();
-                    lucide.createIcons();
+                    if (window.lucide && window.lucide.createIcons) lucide.createIcons();
                 }
             };
 
@@ -290,7 +290,7 @@
                 localStorage.setItem('manti_supplier_kyc_records', JSON.stringify(records));
                 form.style.display = 'none';
                 renderTable();
-                lucide.createIcons();
+                if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             });
 
             // GST -> PAN Auto Extraction & Business Info Fetch
@@ -319,7 +319,7 @@
             });
 
             renderTable();
-            lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         });
     </script>
 </body>

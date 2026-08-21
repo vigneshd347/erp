@@ -278,7 +278,7 @@
 
     <script src="liquid-button.js"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
     <script src="script.js?v=25"></script>
     <script>
@@ -442,7 +442,7 @@
                 }
             }
             jBody.appendChild(row);
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function removeJournalRow(btn) {
@@ -576,7 +576,7 @@
     <!-- Lucide icons: guaranteed init after full DOM parse -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
 </body>
 </html>

@@ -693,7 +693,7 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
     <script src="liquid-button.js"></script>
     <script src="script.js?v=24"></script>
@@ -783,7 +783,7 @@
         // Simulate API call (Replace with real GSP API fetch when credentials are ready)
         btn.disabled = true;
         btn.innerHTML = '<i data-lucide="loader" style="width:16px;height:16px;"></i> Pushing...';
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
         // Simulate network delay representing the IRP response
         setTimeout(() => {
@@ -806,7 +806,7 @@
             btn.disabled = false;
             btn.innerHTML = '<i data-lucide="check-circle" style="width:16px;height:16px;"></i> e-Invoice ✓';
             btn.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
-            lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }, 2500);
     }
 
@@ -824,7 +824,7 @@
         // Populate banner
         document.getElementById('display-irn').textContent = irn.substring(0, 20) + '...';
         document.getElementById('einv-banner').style.display = 'block';
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
         // Populate modal
         document.getElementById('modal-irn').textContent = irn;
@@ -984,7 +984,7 @@
     <!-- Lucide icons: guaranteed init after full DOM parse -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
 </body>
 

@@ -250,7 +250,7 @@
             const sidebar = document.querySelector('.sidebar');
             if (sidebar) document.getElementById('sidebar-container').innerHTML = sidebar.innerHTML;
             loadReportData();
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         });
 
         function loadReportData() {

@@ -523,7 +523,7 @@ let records = [];
                     `;
                     tbody.appendChild(tr);
                 });
-                lucide.createIcons();
+                if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             }
 
             let editIndex = -1;

@@ -569,7 +569,7 @@
 
     <script>
         // Init Lucide
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
         // Check active sidebar state
         const toggleNavGroup = (el) => {

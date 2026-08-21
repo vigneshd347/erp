@@ -809,7 +809,7 @@
             }
 
             loadData();
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         });
 
         document.addEventListener('CloudDataLoaded', () => {
@@ -964,7 +964,7 @@
                 });
             }
 
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function editCar(reg) {
@@ -1004,7 +1004,7 @@
                 cancelBtn.style.display = 'inline-block';
             }
 
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -1018,7 +1018,7 @@
             if (submitBtn) submitBtn.textContent = 'Register Vehicle';
             const cancelBtn = document.getElementById('car-cancel-btn');
             if (cancelBtn) cancelBtn.style.display = 'none';
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function saveCar(e) {
@@ -1302,7 +1302,7 @@
             // Open Modal
             document.getElementById('driver-modal').classList.add('active');
             
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function closeDriverModal() {
@@ -1351,7 +1351,7 @@
 
             // Open modal
             document.getElementById('edit-driver-modal').classList.add('active');
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function saveEditDriver() {

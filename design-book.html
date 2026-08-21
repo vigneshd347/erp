@@ -494,7 +494,7 @@
     <script src="liquid-button.js"></script>
     <script src="script.js?v=25"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
         let designs = [];
         let isUploading = false;
@@ -1120,7 +1120,7 @@
                 `;
                 grid.appendChild(card);
             });
-            lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
     </script>
 </body>

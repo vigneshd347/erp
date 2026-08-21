@@ -399,7 +399,7 @@
 
     <script src="script.js?v=25"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
         function calculateAlloy() {
             const pure = parseFloat(document.getElementById('alloy-pure-wt').value) || 0;
@@ -611,7 +611,7 @@
             if (history.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #94a3b8;">No melting records found.</td></tr>';
             }
-            lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         async function deleteMeltingRecord(index) {
@@ -713,7 +713,7 @@
     <!-- Lucide icons: guaranteed init after full DOM parse -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
 </body>
 

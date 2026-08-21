@@ -377,7 +377,7 @@
         let jobWorksList = [];
 
         // DOM is already parsed (script is at end of body) — init icons immediately
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
         // Load from localStorage immediately so the page isn't blank on first paint
         loadData();
@@ -399,7 +399,7 @@
             }
 
             jobWorksList = JSON.parse(localStorage.getItem('manti_jobwork_records')) || [];
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function setFilter(type, btnEl) {
@@ -550,7 +550,7 @@
             document.getElementById('kpi-total-wip').textContent = `${totWip.toFixed(3)} g`;
             document.getElementById('kpi-total-wastage').textContent = `${totWastage.toFixed(3)} g`;
 
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         function openHoursModal(workerId) {
@@ -658,7 +658,7 @@
     <!-- Re-init Lucide icons after full DOM parse (matches purchases.html/staff.html pattern) -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
 </body>
 

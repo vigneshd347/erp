@@ -287,7 +287,7 @@
     <script src="liquid-button.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/lucide.min.js"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
     <script src="script.js?v=24"></script>
 </body>
@@ -810,7 +810,7 @@ window.processSelect = processSelect;
                     `;
                     tbody.appendChild(tr);
                 });
-                lucide.createIcons();
+                if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             }
 
             // Expose functions to global scope
@@ -1156,7 +1156,7 @@ window.toggleSections = toggleSections;
     <!-- Lucide icons: guaranteed init after full DOM parse -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
     </script>
 </body>
 

@@ -671,7 +671,7 @@
     <script src="script.js?v=25"></script>
     <script src="manti_repair.js"></script>
     <script>
-        lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
         let selectedAccountId = null;
 
@@ -818,7 +818,7 @@
                 }
             }
 
-            if(window.lucide) window.lucide.createIcons();
+            if(window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
         }
 
         // ---- Select Account & Show Transactions ----
@@ -958,7 +958,7 @@
                     document.getElementById('txn-total-deposits').textContent = totalDeposits > 0 ? '₹ ' + totalDeposits.toLocaleString('en-IN', {minimumFractionDigits:2}) : '—';
                 }
 
-                if (window.lucide) window.lucide.createIcons();
+                if (window.lucide) window.if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             }
 
             const finalBalance = computeBalance(acc.name, acc.openingBalance);
@@ -1338,7 +1338,7 @@
         // ---- Init ----
         document.addEventListener('CloudDataLoaded', () => {
             renderAccountsList();
-            lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) lucide.createIcons();
             
             // Restore from sessionStorage
             const savedAcc = sessionStorage.getItem('last_banking_account_id');

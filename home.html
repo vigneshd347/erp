@@ -510,7 +510,7 @@
 
     <script>
         // Init Lucide Icons
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) lucide.createIcons();
 
         // Live Clock Widget
         function updateClock() {
