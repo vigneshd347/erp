@@ -101,16 +101,19 @@ const originalGetItem = Storage.prototype.getItem;
 const originalSetItem = Storage.prototype.setItem;
 
 // Synchronously bootstrap RAM & Disk immediately on script load so page scripts NEVER see empty state
+// NOTE: At this point Storage.prototype.getItem is still the NATIVE function, so localStorage.getItem() is safe to call directly
 if (window.MANTI_SEED_DATA) {
-    Object.keys(window.MANTI_SEED_DATA).forEach(k => {
-        let existing = originalGetItem.call(localStorage, k);
-        if (!existing || existing === '[]' || existing === '{}') {
-            existing = JSON.stringify(window.MANTI_SEED_DATA[k]);
-            try { originalSetItem.call(localStorage, k, existing); } catch(e){}
-        }
-        if (existing) {
-            window.ERP_MEMORY.set(k, existing);
-        }
+    Object.keys(window.MANTI_SEED_DATA).forEach(function(k) {
+        try {
+            var existing = localStorage.getItem(k);
+            if (!existing || existing === '[]' || existing === '{}') {
+                existing = JSON.stringify(window.MANTI_SEED_DATA[k]);
+                localStorage.setItem(k, existing);
+            }
+            if (existing) {
+                window.ERP_MEMORY.set(k, existing);
+            }
+        } catch(e) {}
     });
 }
 
