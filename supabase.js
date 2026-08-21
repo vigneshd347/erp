@@ -2,31 +2,22 @@
 const SUPABASE_URL = 'https://stcomjtuuuchdafhssgv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0Y29tanR1dXVjaGRhZmhzc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTg2NDYsImV4cCI6MjA5MDM3NDY0Nn0.scmi8txiJEd334girnUK3EXGLFM6vvqPekRzE2DDaC0';
 
-// Initialize the Supabase client
-// Store in a dedicated variable to avoid conflicts with the CDN library's global 'supabase' object
-window._supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-window.supabase = window._supabaseClient;
-
-window.onerror = function(msg, url, lineNo, columnNo, error) {
-    const string = msg.toLowerCase();
-    const substring = "script error";
-    if (string.indexOf(substring) > -1) {
-        console.warn('Script Error: See Browser Console for Detail');
+// Initialize the Supabase client safely
+try {
+    if (typeof supabase !== 'undefined' && supabase && typeof supabase.createClient === 'function') {
+        window._supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase = window._supabaseClient;
+        console.log("Supabase Client Initialized Successfully!");
     } else {
-        const message = [
-            'Message: ' + msg,
-            'URL: ' + url,
-            'Line: ' + lineNo,
-            'Column: ' + columnNo,
-            'Error object: ' + JSON.stringify(error)
-        ].join(' - ');
-        console.error("ERP CRITICAL ERROR: " + message);
+        console.warn("Supabase CDN library not available. Running in local/offline mode.");
+        window._supabaseClient = null;
+        window.supabase = null;
     }
-    // Return true to allow default handling (shows error in console)
-    return true;
-};
-
-console.log("Supabase Client Initialized Successfully!");
+} catch (e) {
+    console.warn("Supabase initialization error:", e);
+    window._supabaseClient = null;
+    window.supabase = null;
+}
 
 // --- DATA MIGRATION UTILITY ---
 // Used once to migrate existing localStorage data to Supabase
@@ -886,7 +877,38 @@ window._performSupabaseSync = async function(key, data) {
 // Global Cloud Fetcher
 window.fetchEverythingFromCloud = async function () {
     console.log("%c[ERP DEBUG] fetchEverythingFromCloud STARTED", "color: #38bdf8; font-weight: bold;");
-    // Safety: ensure window.supabase always points to the client, not the CDN library
+
+    function ensureSeedData(k) {
+        let val = originalGetItem.call(localStorage, k);
+        if (!val || val === '[]' || val === '{}') {
+            if (window.MANTI_SEED_DATA && window.MANTI_SEED_DATA[k]) {
+                val = JSON.stringify(window.MANTI_SEED_DATA[k]);
+                try { originalSetItem.call(localStorage, k, val); } catch(e) {}
+            }
+        }
+        if (val) {
+            window.ERP_MEMORY.set(k, val);
+        }
+        return val;
+    }
+
+    const localKeys = [
+        'manti_order_records', 'manti_customer_orders', 'manti_jobwork_records',
+        'manti_saved_invoices', 'manti_saved_quotations', 'manti_vendor_kyc_records',
+        'manti_supplier_kyc_records', 'manti_staff_records', 'manti_assets',
+        'manti_delivery_challan_records', 'manti_payments_made', 'manti_expenses',
+        'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history',
+        'manti_designs', 'manti_trees'
+    ];
+
+    if (!window.supabase || !window.supabase.from) {
+        console.warn("[ERP DEBUG] Supabase client is not available. Loading local/seed data immediately...");
+        localKeys.forEach(k => ensureSeedData(k));
+        window.isCloudDataLoaded = true;
+        document.dispatchEvent(new Event('CloudDataLoaded'));
+        return;
+    }
+
     if (window._supabaseClient) {
         window.supabase = window._supabaseClient;
     }
@@ -1376,9 +1398,18 @@ window.fetchEverythingFromCloud = async function () {
     document.dispatchEvent(new Event('CloudDataLoaded'));
 };
 
-// Start the fetch process immediately when DOM is minimally parsed
-document.addEventListener('DOMContentLoaded', () => {
-    window.fetchEverythingFromCloud();
+// Start the fetch process immediately when DOM is ready or minimally parsed
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(() => {
+        if (!window.isCloudDataLoaded) {
+            window.fetchEverythingFromCloud();
+        }
+    }, 1);
+} else {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.fetchEverythingFromCloud();
+    });
+}
 
     // Periodic Background Poller (5s) for Live Multi-Device Synchronization
     setInterval(async () => {
