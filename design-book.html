@@ -499,50 +499,18 @@
         let designs = [];
         let isUploading = false;
 
-        async function loadLocalData() {
-            let fetchedDesigns = [];
-            try {
-                if (window.supabase) {
-                    const { data: supDesigns, error: supErr } = await window.supabase
-                        .from('designs').select('*').range(0, 9999);
-
-                    if (!supErr && supDesigns && supDesigns.length > 0) {
-                        fetchedDesigns = supDesigns.map(d => ({
-                            id: d.id,
-                            category: d.category || 'Ladies ring',
-                            subCategory: d.sub_category || null,
-                            weight: d.weight || 0,
-                            size: d.size || '',
-                            designType: d.design_type || 'Mold',
-                            designerName: d.designer_name || '',
-                            purchaseValue: d.purchase_value || null,
-                            depreciation: d.depreciation || null,
-                            imageUrl: d.image_url || '',
-                            _sourcePO: d.source_po || ''
-                        }));
-                    }
+        function loadLocalData() {
+            let cachedStr = localStorage.getItem('manti_designs');
+            if (!cachedStr || cachedStr === '[]') {
+                if (window.MANTI_SEED_DATA && window.MANTI_SEED_DATA.manti_designs) {
+                    cachedStr = JSON.stringify(window.MANTI_SEED_DATA.manti_designs);
+                    try { localStorage.setItem('manti_designs', cachedStr); } catch(e) {}
                 }
-            } catch(e) {
-                console.warn('[Design Book] Direct Supabase fetch error:', e);
             }
 
-            // Merge with local cache
-            const cached = JSON.parse(localStorage.getItem('manti_designs') || '[]');
+            const cached = JSON.parse(cachedStr || '[]');
             const designMap = new Map();
-            fetchedDesigns.forEach(d => { if (d.id) designMap.set(d.id, d); });
-            cached.forEach(d => {
-                if (!d.id) return;
-                if (!designMap.has(d.id)) {
-                    designMap.set(d.id, d);
-                } else {
-                    const existing = designMap.get(d.id);
-                    if (!existing.designerName && d.designerName) existing.designerName = d.designerName;
-                    if (!existing.imageUrl && d.imageUrl) existing.imageUrl = d.imageUrl;
-                    if (!existing.purchaseValue && d.purchaseValue) existing.purchaseValue = d.purchaseValue;
-                    if (!existing.designType || existing.designType === 'Mold') existing.designType = d.designType || 'Mold';
-                    if (!existing._sourcePO && d._sourcePO) existing._sourcePO = d._sourcePO;
-                }
-            });
+            cached.forEach(d => { if (d.id) designMap.set(d.id, d); });
 
             // Reconstruct from PO items & Trees to ensure no design is lost
             const orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
