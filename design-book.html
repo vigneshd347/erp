@@ -499,74 +499,146 @@
         let isUploading = false;
 
         async function loadLocalData() {
+            let fetchedDesigns = [];
             try {
-                // PRIMARY: Always fetch designs directly from Supabase (authoritative source)
-                const { data: supDesigns, error: supErr } = await window.supabase
-                    .from('designs').select('*').range(0, 9999);
+                if (window.supabase) {
+                    const { data: supDesigns, error: supErr } = await window.supabase
+                        .from('designs').select('*').range(0, 9999);
 
-                if (!supErr && supDesigns && supDesigns.length > 0) {
-                    // Map Supabase columns to our local format
-                    const freshDesigns = supDesigns.map(d => ({
-                        id: d.id,
-                        category: d.category || 'Ladies ring',
-                        subCategory: d.sub_category || null,
-                        weight: d.weight || 0,
-                        size: d.size || '',
-                        designType: d.design_type || 'Mold',
-                        designerName: d.designer_name || '',
-                        purchaseValue: d.purchase_value || null,
-                        depreciation: d.depreciation || null,
-                        imageUrl: d.image_url || '',
-                        _sourcePO: d.source_po || ''
-                    }));
-
-                    // Also check app_settings for richer data (designer names, purchase values, etc.)
-                    const { data: settingsData } = await window.supabase
-                        .from('app_settings').select('setting_value')
-                        .eq('setting_key', 'manti_designs').single();
-
-                    if (settingsData && settingsData.setting_value && Array.isArray(settingsData.setting_value)) {
-                        const legacyMap = new Map();
-                        settingsData.setting_value.forEach(d => {
-                            if (d.id) legacyMap.set(d.id, d);
-                        });
-                        // Enrich freshDesigns with legacy fields
-                        freshDesigns.forEach(d => {
-                            const leg = legacyMap.get(d.id);
-                            if (leg) {
-                                if (!d.designerName && leg.designerName) d.designerName = leg.designerName;
-                                if (!d.designType || d.designType === 'Mold') d.designType = leg.designType || 'Mold';
-                                if (!d.purchaseValue && leg.purchaseValue) d.purchaseValue = leg.purchaseValue;
-                                if (!d.depreciation && leg.depreciation) d.depreciation = leg.depreciation;
-                                if (!d.imageUrl && leg.imageUrl) d.imageUrl = leg.imageUrl;
-                                if (!d._sourcePO && leg._sourcePO) d._sourcePO = leg._sourcePO;
-                                if (!d.subCategory && leg.subCategory) d.subCategory = leg.subCategory;
-                            }
-                        });
+                    if (!supErr && supDesigns && supDesigns.length > 0) {
+                        fetchedDesigns = supDesigns.map(d => ({
+                            id: d.id,
+                            category: d.category || 'Ladies ring',
+                            subCategory: d.sub_category || null,
+                            weight: d.weight || 0,
+                            size: d.size || '',
+                            designType: d.design_type || 'Mold',
+                            designerName: d.designer_name || '',
+                            purchaseValue: d.purchase_value || null,
+                            depreciation: d.depreciation || null,
+                            imageUrl: d.image_url || '',
+                            _sourcePO: d.source_po || ''
+                        }));
                     }
-
-                    designs = freshDesigns;
-                    // Cache locally for offline fallback
-                    try { localStorage.setItem('manti_designs', JSON.stringify(designs)); } catch(e) {}
-
-                } else {
-                    // FALLBACK: Use locally cached data if Supabase fails
-                    console.warn('[Design Book] Supabase fetch failed or empty, using localStorage fallback. Error:', supErr);
-                    const cached = JSON.parse(localStorage.getItem('manti_designs') || '[]');
-                    designs = cached;
                 }
-
             } catch(e) {
-                console.error('[Design Book] loadLocalData error:', e);
-                // Last resort: use whatever is in localStorage
-                designs = JSON.parse(localStorage.getItem('manti_designs') || '[]');
+                console.warn('[Design Book] Direct Supabase fetch error:', e);
             }
 
-            // Normalize categories
-            designs.forEach(d => {
+            // Merge with local cache
+            const cached = JSON.parse(localStorage.getItem('manti_designs') || '[]');
+            const designMap = new Map();
+            fetchedDesigns.forEach(d => { if (d.id) designMap.set(d.id, d); });
+            cached.forEach(d => {
+                if (!d.id) return;
+                if (!designMap.has(d.id)) {
+                    designMap.set(d.id, d);
+                } else {
+                    const existing = designMap.get(d.id);
+                    if (!existing.designerName && d.designerName) existing.designerName = d.designerName;
+                    if (!existing.imageUrl && d.imageUrl) existing.imageUrl = d.imageUrl;
+                    if (!existing.purchaseValue && d.purchaseValue) existing.purchaseValue = d.purchaseValue;
+                    if (!existing.designType || existing.designType === 'Mold') existing.designType = d.designType || 'Mold';
+                    if (!existing._sourcePO && d._sourcePO) existing._sourcePO = d._sourcePO;
+                }
+            });
+
+            // Reconstruct from PO items & Trees to ensure no design is lost
+            const orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
+            const trees = JSON.parse(localStorage.getItem('manti_trees') || '[]');
+            const suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+
+            let rawList = Array.from(designMap.values());
+
+            orders.forEach(po => {
+                const isDesignPO = po.category === 'Design' || (po.items && po.items.some(it => it.category === 'Design' || it.designSubCat || it.designType));
+                if (isDesignPO && po.items && po.items.length > 0) {
+                    let effectiveDesigner = po.designerName || '';
+                    if (!effectiveDesigner && po.vendor) {
+                        const vendorObj = suppliers.find(v => v.id === po.vendor || v.name === po.vendor);
+                        effectiveDesigner = vendorObj ? (vendorObj.name || vendorObj.id) : po.vendor;
+                    }
+
+                    po.items.forEach(it => {
+                        if (po.category === 'Design' || it.category === 'Design' || it.designSubCat || it.designType) {
+                            const wt = parseFloat(it.designWt) || 0;
+                            const size = it.designSize || '';
+                            const effectiveSubCat = it.designSubCat || 'Ladies ring';
+
+                            const exists = rawList.some(d => 
+                                (d._sourcePO === po.id && parseFloat(d.weight || 0) === wt && (!size || d.size === size)) ||
+                                (d.id && d.id.includes(po.id))
+                            );
+
+                            if (!exists) {
+                                let prefix = 'DSG';
+                                if (effectiveSubCat === 'Bangle' || effectiveSubCat === 'Bracelet') prefix = 'BG';
+                                else if (effectiveSubCat === 'Ring' || effectiveSubCat === 'Ladies ring' || effectiveSubCat === 'Gents ring') prefix = 'RG';
+                                else if (effectiveSubCat === 'Earring') prefix = 'ER';
+                                else if (effectiveSubCat === 'Necklace') prefix = 'NK';
+                                else if (effectiveSubCat === 'Mix') prefix = 'MX';
+
+                                const qty = parseFloat(it.qty) || 1;
+                                const itemTotal = (parseFloat(it.total) || 0) / qty;
+
+                                rawList.push({
+                                    id: `${prefix}${String(rawList.length + 1).padStart(3, '0')}${wt > 0 ? `-${wt}` : ''}${size ? `-${size}` : ''}`,
+                                    category: effectiveSubCat === 'Bracelet' ? 'Bangle' : (effectiveSubCat === 'Ring' ? 'Ladies ring' : effectiveSubCat),
+                                    subCategory: (effectiveSubCat === 'Ladies ring' || effectiveSubCat === 'Gents ring') ? effectiveSubCat : null,
+                                    weight: wt,
+                                    size: size,
+                                    designType: it.designType || 'Mold',
+                                    designerName: effectiveDesigner,
+                                    purchaseValue: itemTotal,
+                                    imageUrl: it.detailImageUrl || it.designImageUrl || '',
+                                    _sourcePO: po.id
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+            trees.forEach(t => {
+                if (t.designs && Array.isArray(t.designs)) {
+                    t.designs.forEach(dd => {
+                        const dId = dd.design_id || dd.id;
+                        if (dId && !rawList.some(d => d.id === dId)) {
+                            let prefix = String(dId).substring(0, 2).toUpperCase();
+                            let cat = 'Ladies ring';
+                            if (prefix === 'BG') cat = 'Bangle';
+                            else if (prefix === 'ER') cat = 'Earring';
+                            else if (prefix === 'NK') cat = 'Necklace';
+                            else if (prefix === 'MX') cat = 'Mix';
+                            else if (prefix === 'RG') cat = 'Ladies ring';
+
+                            rawList.push({
+                                id: dId,
+                                category: cat,
+                                subCategory: cat === 'Ladies ring' ? 'Ladies ring' : null,
+                                weight: parseFloat(dd.unit_weight || dd.weight || 0),
+                                size: dd.size || '',
+                                designType: 'Mold',
+                                designerName: '',
+                                purchaseValue: null,
+                                imageUrl: dd.imageUrl || '',
+                                _sourcePO: ''
+                            });
+                        }
+                    });
+                }
+            });
+
+            const finalMap = new Map();
+            rawList.forEach(d => {
+                if (!d.id) return;
                 if (d.category === 'Ring') d.category = d.subCategory || 'Ladies ring';
                 if (!d.designType) d.designType = 'Mold';
+                if (!finalMap.has(d.id)) finalMap.set(d.id, d);
             });
+
+            designs = Array.from(finalMap.values());
+            try { localStorage.setItem('manti_designs', JSON.stringify(designs)); } catch(e) {}
 
             renderGrid();
         }

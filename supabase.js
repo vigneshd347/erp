@@ -892,12 +892,7 @@ window.fetchEverythingFromCloud = async function () {
     }
 
     try {
-        const [
-            ordersRes, jobsRes, invoicesRes, vendorRes,
-            supplierRes, staffRes, assetsRes, challansRes,
-            paymentsRes, expensesRes, journalsRes, accountsRes,
-            stockRes, settingsRes, designsRes, treesRes
-        ] = await Promise.all([
+        const fetchAllPromise = Promise.all([
             window.supabase.from('orders').select('*').range(0, 9999),
             window.supabase.from('job_works').select('*').range(0, 9999),
             window.supabase.from('invoices').select('*').range(0, 9999),
@@ -916,6 +911,15 @@ window.fetchEverythingFromCloud = async function () {
             window.supabase.from('designs').select('*').range(0, 9999),
             window.supabase.from('trees').select('*').range(0, 9999)
         ]);
+
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Supabase cloud fetch timeout (4s)")), 4000));
+
+        const [
+            ordersRes, jobsRes, invoicesRes, vendorRes,
+            supplierRes, staffRes, assetsRes, challansRes,
+            paymentsRes, expensesRes, journalsRes, accountsRes,
+            stockRes, settingsRes, designsRes, treesRes
+        ] = await Promise.race([fetchAllPromise, timeoutPromise]);
 
         console.log("%c[ERP DEBUG] All 16 queries completed.", "color: #4ade80;",
             "\n  orders:", ordersRes.data?.length ?? 'ERR:' + JSON.stringify(ordersRes.error),
@@ -1000,13 +1004,21 @@ window.fetchEverythingFromCloud = async function () {
             });
             window.ERP_MEMORY.set('manti_order_records', JSON.stringify(standardOrders));
             try { originalSetItem.call(localStorage, 'manti_order_records', JSON.stringify(standardOrders)); } catch(e) {}
-            window.syncKeyToSupabase('manti_order_records', standardOrders);
             window.ERP_MEMORY.set('manti_customer_orders', JSON.stringify(customerOrders));
             try { originalSetItem.call(localStorage, 'manti_customer_orders', JSON.stringify(customerOrders)); } catch(e) {}
-            window.syncKeyToSupabase('manti_customer_orders', customerOrders);
         } else {
-            window.ERP_MEMORY.set('manti_order_records', '[]');
-            window.ERP_MEMORY.set('manti_customer_orders', '[]');
+            const localOrders = originalGetItem.call(localStorage, 'manti_order_records');
+            if (localOrders) {
+                window.ERP_MEMORY.set('manti_order_records', localOrders);
+            } else {
+                window.ERP_MEMORY.set('manti_order_records', '[]');
+            }
+            const localCustOrders = originalGetItem.call(localStorage, 'manti_customer_orders');
+            if (localCustOrders) {
+                window.ERP_MEMORY.set('manti_customer_orders', localCustOrders);
+            } else {
+                window.ERP_MEMORY.set('manti_customer_orders', '[]');
+            }
         }
 
         // 2. Job Works
@@ -1254,9 +1266,17 @@ window.fetchEverythingFromCloud = async function () {
                 image_url: d.imageUrl || null
             })), { onConflict: 'id' });
         }
-        window.ERP_MEMORY.set('manti_designs', JSON.stringify(finalDesigns));
+        if (finalDesigns.length > 0) {
+            window.ERP_MEMORY.set('manti_designs', JSON.stringify(finalDesigns));
             try { originalSetItem.call(localStorage, 'manti_designs', JSON.stringify(finalDesigns)); } catch(e) {}
-            if (window.syncKeyToSupabase) { window.syncKeyToSupabase('manti_designs', finalDesigns); }
+        } else {
+            const localDesigns = originalGetItem.call(localStorage, 'manti_designs');
+            if (localDesigns && JSON.parse(localDesigns).length > 0) {
+                window.ERP_MEMORY.set('manti_designs', localDesigns);
+            } else {
+                window.ERP_MEMORY.set('manti_designs', '[]');
+            }
+        }
 
         // 17. Trees (with self-healing migration)
         let finalTrees = [];
@@ -1282,8 +1302,22 @@ window.fetchEverythingFromCloud = async function () {
         }
         window.ERP_MEMORY.set('manti_trees', JSON.stringify(finalTrees));
     } catch (e) {
-        console.error("%c[ERP DEBUG] Cloud Fetch CRASHED!", "color: #f87171; font-weight: bold;", e);
-        // Continue booting the app anyway with locally cached/empty data
+        console.error("%c[ERP DEBUG] Cloud Fetch CRASHED or Timed Out!", "color: #f87171; font-weight: bold;", e);
+        // Fallback: Populate ERP_MEMORY from localStorage so offline data is active
+        const localKeys = [
+            'manti_order_records', 'manti_customer_orders', 'manti_jobwork_records',
+            'manti_saved_invoices', 'manti_saved_quotations', 'manti_vendor_kyc_records',
+            'manti_supplier_kyc_records', 'manti_staff_records', 'manti_assets',
+            'manti_delivery_challan_records', 'manti_payments_made', 'manti_expenses',
+            'manti_journal_entries', 'manti_bank_accounts', 'manti_stock_history',
+            'manti_designs', 'manti_trees'
+        ];
+        localKeys.forEach(k => {
+            const val = originalGetItem.call(localStorage, k);
+            if (val && !window.ERP_MEMORY.has(k)) {
+                window.ERP_MEMORY.set(k, val);
+            }
+        });
     }
 
     // Debug: Log final ERP_MEMORY state
