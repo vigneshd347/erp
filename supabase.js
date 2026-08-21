@@ -96,6 +96,20 @@ window.ERP_MEMORY = new Map();
 window.mantiSyncPromises = [];
 const syncLocks = new Map(); // Prevent overlapping syncs for the same key
 
+// Synchronously bootstrap RAM & Disk immediately on script load so page scripts NEVER see empty state
+if (window.MANTI_SEED_DATA) {
+    Object.keys(window.MANTI_SEED_DATA).forEach(k => {
+        let existing = originalGetItem.call(localStorage, k);
+        if (!existing || existing === '[]' || existing === '{}') {
+            existing = JSON.stringify(window.MANTI_SEED_DATA[k]);
+            try { originalSetItem.call(localStorage, k, existing); } catch(e){}
+        }
+        if (existing) {
+            window.ERP_MEMORY.set(k, existing);
+        }
+    });
+}
+
 const originalGetItem = Storage.prototype.getItem;
 const originalSetItem = Storage.prototype.setItem;
 
@@ -130,10 +144,18 @@ window.addEventListener('beforeunload', (e) => {
 Storage.prototype.getItem = function (key) {
     if (key.startsWith('manti_')) {
         const memoryVal = window.ERP_MEMORY.get(key);
-        if (memoryVal !== undefined && memoryVal !== null) {
+        if (memoryVal !== undefined && memoryVal !== null && memoryVal !== '[]' && memoryVal !== '{}') {
             return memoryVal;
         }
-        return originalGetItem.call(this, key);
+        let diskVal = originalGetItem.call(this, key);
+        if (!diskVal || diskVal === '[]' || diskVal === '{}') {
+            if (window.MANTI_SEED_DATA && window.MANTI_SEED_DATA[key]) {
+                diskVal = JSON.stringify(window.MANTI_SEED_DATA[key]);
+                window.ERP_MEMORY.set(key, diskVal);
+                try { originalSetItem.call(this, key, diskVal); } catch(e){}
+            }
+        }
+        return diskVal || originalGetItem.call(this, key);
     }
     return originalGetItem.call(this, key);
 };
