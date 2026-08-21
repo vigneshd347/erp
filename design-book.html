@@ -499,300 +499,79 @@
         let isUploading = false;
 
         async function loadLocalData() {
-            let rawDesigns = JSON.parse(localStorage.getItem('manti_designs') || '[]');
-            // Read orders, trees, suppliers from ERP_MEMORY / localStorage
-            let orders = JSON.parse(localStorage.getItem('manti_order_records') || '[]');
-            let trees = JSON.parse(localStorage.getItem('manti_trees') || '[]');
-            let suppliers = JSON.parse(localStorage.getItem('manti_supplier_kyc_records') || '[]');
+            try {
+                // PRIMARY: Always fetch designs directly from Supabase (authoritative source)
+                const { data: supDesigns, error: supErr } = await window.supabase
+                    .from('designs').select('*').range(0, 9999);
 
-            // Ensure orders are present; fetch from Supabase if empty
-            if (!orders || orders.length === 0) {
-                const { data: supOrders, error: ordersErr } = await window.supabase.from('orders').select('*').range(0, 9999);
-                if (!ordersErr && supOrders && supOrders.length > 0) {
-                    orders = supOrders.map(o => {
-                        let extended = {};
-                        if (o.remark && o.remark.startsWith('{')) {
-                            try { extended = JSON.parse(o.remark); } catch(e) {}
-                        }
-                        return {
-                            id: o.order_number, type: o.type, date: o.date,
-                            customer: o.customer_name, vendor: o.vendor_id,
-                            product: o.product_name, qty: o.total_weight, weight: o.total_weight,
-                            amount: o.total_amount, paidAmount: o.paid_amount, status: o.status,
-                            items: extended.items || [], category: extended.category || '',
-                            designerName: extended.designerName || ''
-                        };
-                    });
-                    localStorage.setItem('manti_order_records', JSON.stringify(orders));
-                }
-            }
-            // Ensure trees are present; fetch from Supabase if empty
-            if (!trees || trees.length === 0) {
-                const { data: supTrees, error: treesErr } = await window.supabase.from('trees').select('*');
-                if (!treesErr && supTrees && supTrees.length > 0) {
-                    trees = supTrees.map(t => ({
-                        id: t.id,
-                        treeNo: t.tree_no,
-                        date: t.date,
-                        totalWeight: t.total_weight,
-                        designs: t.designs,
-                        notes: t.notes,
-                        _sourcePO: ''
+                if (!supErr && supDesigns && supDesigns.length > 0) {
+                    // Map Supabase columns to our local format
+                    const freshDesigns = supDesigns.map(d => ({
+                        id: d.id,
+                        category: d.category || 'Ladies ring',
+                        subCategory: d.sub_category || null,
+                        weight: d.weight || 0,
+                        size: d.size || '',
+                        designType: d.design_type || 'Mold',
+                        designerName: d.designer_name || '',
+                        purchaseValue: d.purchase_value || null,
+                        depreciation: d.depreciation || null,
+                        imageUrl: d.image_url || '',
+                        _sourcePO: d.source_po || ''
                     }));
-                    localStorage.setItem('manti_trees', JSON.stringify(trees));
-                }
-            }
-            let backfilledAny = false;
 
-            // Ensure we have all designs: fetch from Supabase and merge with any local cache
-            const { data: supDesigns, error: supErr } = await window.supabase.from('designs').select('*');
-            let fetchedDesigns = [];
-            if (!supErr && supDesigns && supDesigns.length > 0) {
-                fetchedDesigns = supDesigns.map(d => ({
-                    id: d.id,
-                    category: d.category,
-                    subCategory: d.sub_category,
-                    weight: d.weight,
-                    size: d.size,
-                    designType: d.design_type || 'Mold',
-                    designerName: d.designer_name || '',
-                    purchaseValue: d.purchase_value || null,
-                    imageUrl: d.image_url || '',
-                    _sourcePO: ''
-                }));
-            }
-            // Merge local cache (rawDesigns) with fetched designs, de‑duplicate by id
-            const mergedMap = new Map();
-            rawDesigns.forEach(d => mergedMap.set(d.id, d));
-            fetchedDesigns.forEach(d => mergedMap.set(d.id, d));
-            rawDesigns = Array.from(mergedMap.values());
-            // Persist the merged list for future loads
-            localStorage.setItem('manti_designs', JSON.stringify(rawDesigns));
-            if (window.syncKeyToSupabase) { window.syncKeyToSupabase('manti_designs', rawDesigns); }
-            // Continue with reconstruction logic as before
-            orders.forEach(po => {
-                const isDesignPO = po.category === 'Design' || (po.items && po.items.some(it => it.category === 'Design' || it.designSubCat || it.designType));
-                if (isDesignPO && po.items && po.items.length > 0) {
-                    let effectiveDesigner = po.designerName || '';
-                    if (!effectiveDesigner && po.vendor) {
-                        const vendorObj = suppliers.find(v => v.id === po.vendor || v.name === po.vendor);
-                        effectiveDesigner = vendorObj ? (vendorObj.name || vendorObj.id) : po.vendor;
-                    }
+                    // Also check app_settings for richer data (designer names, purchase values, etc.)
+                    const { data: settingsData } = await window.supabase
+                        .from('app_settings').select('setting_value')
+                        .eq('setting_key', 'manti_designs').single();
 
-                    po.items.forEach((it, idx) => {
-                        if (po.category === 'Design' || it.category === 'Design' || it.designSubCat || it.designType) {
-                            const wt = parseFloat(it.designWt) || 0;
-                            const size = it.designSize || '';
-                            const effectiveSubCat = it.designSubCat || 'Ladies ring';
-                            
-                            // Check if this specific item is already present
-                            const exists = rawDesigns.some(d => 
-                                (d._sourcePO === po.id && parseFloat(d.weight || 0) === wt && (!size || d.size === size)) ||
-                                (d.id && d.id.includes(po.id))
-                            );
-
-                            if (!exists) {
-                                let prefix = 'DSG';
-                                if (effectiveSubCat === 'Bangle' || effectiveSubCat === 'Bracelet') prefix = 'BG';
-                                else if (effectiveSubCat === 'Ring' || effectiveSubCat === 'Ladies ring' || effectiveSubCat === 'Gents ring') prefix = 'RG';
-                                else if (effectiveSubCat === 'Earring') prefix = 'ER';
-                                else if (effectiveSubCat === 'Necklace') prefix = 'NK';
-                                else if (effectiveSubCat === 'Mix') prefix = 'MX';
-
-                                const qty = parseFloat(it.qty) || 1;
-                                const itemTotal = (parseFloat(it.total) || 0) / qty;
-
-                                rawDesigns.push({
-                                    id: `${prefix}${String(rawDesigns.length + 1).padStart(3, '0')}${wt > 0 ? `-${wt}` : ''}${size ? `-${size}` : ''}`,
-                                    category: effectiveSubCat === 'Bracelet' ? 'Bangle' : (effectiveSubCat === 'Ring' ? 'Ladies ring' : effectiveSubCat),
-                                    subCategory: (effectiveSubCat === 'Ladies ring' || effectiveSubCat === 'Gents ring') ? effectiveSubCat : null,
-                                    weight: wt,
-                                    size: size,
-                                    designType: it.designType || 'Mold',
-                                    designerName: effectiveDesigner,
-                                    purchaseValue: itemTotal,
-                                    imageUrl: it.detailImageUrl || it.designImageUrl || '',
-                                    _sourcePO: po.id
-                                });
-                                backfilledAny = true;
-                            }
-                        }
-                    });
-                }
-            });
-
-            // 2. Also recover any designs recorded in Production Trees
-            trees.forEach(t => {
-                if (t.designs && Array.isArray(t.designs)) {
-                    t.designs.forEach(dd => {
-                        const dId = dd.design_id || dd.id;
-                        if (dId && !rawDesigns.some(d => d.id === dId)) {
-                            let prefix = String(dId).substring(0, 2).toUpperCase();
-                            let cat = 'Ladies ring';
-                            if (prefix === 'BG') cat = 'Bangle';
-                            else if (prefix === 'ER') cat = 'Earring';
-                            else if (prefix === 'NK') cat = 'Necklace';
-                            else if (prefix === 'MX') cat = 'Mix';
-                            else if (prefix === 'RG') cat = 'Ladies ring';
-
-                            rawDesigns.push({
-                                id: dId,
-                                category: cat,
-                                subCategory: cat === 'Ladies ring' ? 'Ladies ring' : null,
-                                weight: parseFloat(dd.unit_weight || dd.weight || 0),
-                                size: dd.size || '',
-                                designType: 'Mold',
-                                designerName: '',
-                                purchaseValue: null,
-                                imageUrl: dd.imageUrl || '',
-                                _sourcePO: ''
-                            });
-                            backfilledAny = true;
-                        }
-                    });
-                }
-            });
-
-            // 3. Deduplicate strictly by ID
-            let uniqueById = new Map();
-            rawDesigns.forEach(d => {
-                if (!d.id) return;
-                // Normalize legacy 'Ring' category to 'Ladies ring' or 'Gents ring'
-                if (d.category === 'Ring') {
-                    d.category = d.subCategory || 'Ladies ring';
-                }
-
-                if (!uniqueById.has(d.id)) {
-                    uniqueById.set(d.id, d);
-                }
-            });
-            
-            designs = Array.from(uniqueById.values());
-            
-            // 4. Enrich designs from source PO if any field is missing
-            designs.forEach(d => {
-                let po = null;
-                if (d._sourcePO) {
-                    po = orders.find(o => o.id === d._sourcePO);
-                } else {
-                    // Match legacy designs by matching item weight, size, or category
-                    po = orders.find(o => o.items && o.items.some(it => 
-                        (it.category === 'Design' || it.designSubCat || it.designType) &&
-                        parseFloat(it.designWt || 0) === parseFloat(d.weight || 0) &&
-                        (!d.size || it.designSize === d.size)
-                    ));
-                    if (po) {
-                        d._sourcePO = po.id;
-                        backfilledAny = true;
-                    }
-                }
-
-                if (po) {
-                    // Designer Name
-                    let effectiveDesigner = po.designerName || '';
-                    if (!effectiveDesigner && po.vendor) {
-                        const vendorObj = suppliers.find(v => v.id === po.vendor || v.name === po.vendor);
-                        effectiveDesigner = vendorObj ? (vendorObj.name || vendorObj.id) : po.vendor;
-                    }
-                    if (effectiveDesigner && (!d.designerName || d.designerName === 'Not Set')) {
-                        d.designerName = effectiveDesigner;
-                        backfilledAny = true;
-                    }
-
-                    // Matching PO Item for Design Type, Image, Purchase Value
-                    if (po.items && po.items.length > 0) {
-                        const matchedItem = po.items.find(it => 
-                            (parseFloat(it.designWt) === parseFloat(d.weight) && (!d.size || it.designSize === d.size)) ||
-                            (it.designType && (!d.designType || d.designType === '—'))
-                        ) || po.items.find(it => it.category === 'Design' || it.designSubCat || it.designType) || po.items[0];
-
-                        if (matchedItem) {
-                            if (!d.designType || d.designType === '—') {
-                                d.designType = matchedItem.designType || 'Mold';
-                                backfilledAny = true;
-                            }
-                            if (!d.imageUrl && (matchedItem.detailImageUrl || matchedItem.designImageUrl)) {
-                                d.imageUrl = matchedItem.detailImageUrl || matchedItem.designImageUrl;
-                                backfilledAny = true;
-                            }
-                            if (!d.purchaseValue && matchedItem.total) {
-                                const qty = parseFloat(matchedItem.qty) || 1;
-                                d.purchaseValue = (parseFloat(matchedItem.total) || 0) / qty;
-                                backfilledAny = true;
-                            }
-                        }
-                    }
-                }
-
-                // Default designType if still empty
-                if (!d.designType || d.designType === '—') {
-                    d.designType = 'Mold';
-                    backfilledAny = true;
-                }
-            });
-
-            // 4. Renumber all designs to start sequentially with 001 for each prefix (e.g. RG001, BG001, ER001)
-            let prefixCounters = {};
-            let idMap = {};
-            designs.forEach(d => {
-                let cat = d.category || 'Ladies ring';
-                let prefix = 'DSG';
-                if (cat === 'Bangle' || cat === 'Bracelet') prefix = 'BG';
-                else if (cat === 'Ladies ring' || cat === 'Gents ring' || cat === 'Ring') prefix = 'RG';
-                else if (cat === 'Earring') prefix = 'ER';
-                else if (cat === 'Necklace') prefix = 'NK';
-                else if (cat === 'Mix') prefix = 'MX';
-
-                if (!prefixCounters[prefix]) prefixCounters[prefix] = 1;
-                const nextNum = prefixCounters[prefix]++;
-                const numStr = nextNum.toString().padStart(3, '0');
-
-                let newId = `${prefix}${numStr}`;
-                const wt = parseFloat(d.weight) || 0;
-                if (wt > 0) newId += `-${wt}`;
-                if (d.size) newId += `-${d.size}`;
-
-                if (d.id !== newId) {
-                    idMap[d.id] = newId;
-                    d.id = newId;
-                    backfilledAny = true;
-                }
-            });
-
-            // 5. Update any tree records referencing old IDs
-            if (Object.keys(idMap).length > 0) {
-                let treeData = JSON.parse(localStorage.getItem('manti_trees') || '[]');
-                let treesUpdated = false;
-                treeData.forEach(t => {
-                    if (t.designs) {
-                        t.designs.forEach(dd => {
-                            if (idMap[dd.design_id]) {
-                                dd.design_id = idMap[dd.design_id];
-                                treesUpdated = true;
+                    if (settingsData && settingsData.setting_value && Array.isArray(settingsData.setting_value)) {
+                        const legacyMap = new Map();
+                        settingsData.setting_value.forEach(d => {
+                            if (d.id) legacyMap.set(d.id, d);
+                        });
+                        // Enrich freshDesigns with legacy fields
+                        freshDesigns.forEach(d => {
+                            const leg = legacyMap.get(d.id);
+                            if (leg) {
+                                if (!d.designerName && leg.designerName) d.designerName = leg.designerName;
+                                if (!d.designType || d.designType === 'Mold') d.designType = leg.designType || 'Mold';
+                                if (!d.purchaseValue && leg.purchaseValue) d.purchaseValue = leg.purchaseValue;
+                                if (!d.depreciation && leg.depreciation) d.depreciation = leg.depreciation;
+                                if (!d.imageUrl && leg.imageUrl) d.imageUrl = leg.imageUrl;
+                                if (!d._sourcePO && leg._sourcePO) d._sourcePO = leg._sourcePO;
+                                if (!d.subCategory && leg.subCategory) d.subCategory = leg.subCategory;
                             }
                         });
                     }
-                });
-                if (treesUpdated) {
-                    localStorage.setItem('manti_trees', JSON.stringify(treeData));
-                    if (window.syncKeyToSupabase) {
-                        window.syncKeyToSupabase('manti_trees', treeData);
-                    }
+
+                    designs = freshDesigns;
+                    // Cache locally for offline fallback
+                    try { localStorage.setItem('manti_designs', JSON.stringify(designs)); } catch(e) {}
+
+                } else {
+                    // FALLBACK: Use locally cached data if Supabase fails
+                    console.warn('[Design Book] Supabase fetch failed or empty, using localStorage fallback. Error:', supErr);
+                    const cached = JSON.parse(localStorage.getItem('manti_designs') || '[]');
+                    designs = cached;
                 }
+
+            } catch(e) {
+                console.error('[Design Book] loadLocalData error:', e);
+                // Last resort: use whatever is in localStorage
+                designs = JSON.parse(localStorage.getItem('manti_designs') || '[]');
             }
-            
-            // 6. Clean up localStorage and sync to Supabase
-            if (rawDesigns.length !== designs.length || backfilledAny) {
-                localStorage.setItem('manti_designs', JSON.stringify(designs));
-                if (window.syncKeyToSupabase) {
-                    window.syncKeyToSupabase('manti_designs', designs);
-                }
-            }
-            
+
+            // Normalize categories
+            designs.forEach(d => {
+                if (d.category === 'Ring') d.category = d.subCategory || 'Ladies ring';
+                if (!d.designType) d.designType = 'Mold';
+            });
+
             renderGrid();
         }
 
-        // Initial load from local
+        // Initial load
         loadLocalData();
 
         document.addEventListener('CloudDataLoaded', () => {
@@ -800,7 +579,7 @@
         });
 
         window.addEventListener('storage', (e) => {
-            if (e.key === 'manti_designs' || e.key === 'manti_order_records') {
+            if (e.key === 'manti_designs') {
                 loadLocalData();
             }
         });
